@@ -1,34 +1,30 @@
-import Image from "next/image";
-import { APP_NAME } from "./constants/constants";
+// src/app/page.tsx
+/**
+ * @fileoverview Página principal de la aplicación.
+ * @version 1.0.0
+ * @author Santiago Prada
+ * @date 2025-05-10
+ *
+ * @description
+ * Esta es la página de inicio que se muestra por defecto.
+ * Actualmente, integra el componente LoginGoogle para demostrar la funcionalidad
+ * de autenticación.
+ *
+ * @requires ./components/auth/LoginGoogle - Componente para el login con Google.
+ */
 
-export default function Home() {
+import LoginGoogle from './components/auth/LoginGoogle'; // Ajusta la ruta si es necesario
+
+/**
+ * Componente HomePage.
+ * Renderiza la página principal de la aplicación.
+ * @returns {JSX.Element} El elemento JSX de la página de inicio.
+ */
+export default function HomePage(): React.ReactElement {
   return (
-    // Remove justify-center and items-center to align content to top-left
-    // Adjust padding as needed (e.g., p-8 sm:p-16 md:p-24)
-    <div className="bg-white dark:bg-gray-800">
-      <div className="min-h-screen px-16 overflow-y-auto flex flex-col gap-y-32">
-        {/* Seccion 1  */}
-        <div className="grid grid-cols-12 gap-y-4 gap-x-4 p-90 overflow-y-auto">
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          <div>1</div>
-          
-
-        </div>
-
-        {/* Seccion 2 */}
-        <div className="bg-black/90 p-90"> </div>
-        </div>
-      </div>
+    <main>
+      {/* Puedes agregar más contenido aquí si es necesario */}
+      <LoginGoogle />
+    </main>
   );
 }
