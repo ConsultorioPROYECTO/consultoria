@@ -13,7 +13,7 @@
  * @requires ./components/auth/LoginGoogle - Componente para el login con Google.
  */
 
-import LoginGoogle from './components/auth/LoginGoogle'; // Ajusta la ruta si es necesario
+import LoginGoogle from './components/auth/LoginButtonGoogle'; // Ajusta la ruta si es necesario
 
 /**
  * Componente HomePage.
