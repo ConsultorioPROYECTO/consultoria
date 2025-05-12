@@ -19,6 +19,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
+import { copernicusFont } from './fonts'
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -40,7 +41,7 @@ export default function RootLayout({
 }>): React.ReactElement {
   return (
     <html lang="es">
-      <body className={inter.className}>
+      <body className={`${inter.className} ${copernicusFont.variable}`}>
         {/* Envuelve la aplicación con AuthProvider */}
         <AuthProvider>{children}</AuthProvider>
         {/* Es muy importante el componente AuthProvider ya que se encarga de la logica que mantiene la sesion el usuario */}
