@@ -2,8 +2,9 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { LoginForm } from '@rutas/app/components/login-form/login-form';
+import Link from 'next/link';
 
 export default function Login() {
     const { user } = useAuth();
@@ -28,11 +29,11 @@ export default function Login() {
         <LoginForm/>
         <div className="flex flex-col items-center justify-center">
             <p className="text-balance text-muted-foreground text-gray-500">
-                No tienes una cuenta?
+                Ya tienes cuenta??
             </p>
-            <a href="/pages/register" className="text-balance text-muted-foreground underline underline-offset-2 text-gray-950">
-                Registrate
-            </a>
+            <Link href="/login" className="text-balance text-muted-foreground underline underline-offset-2 text-gray-950">
+                Inicia seccion
+            </Link>
         </div>
         </div>
     </div>
