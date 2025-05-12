@@ -8,14 +8,14 @@
  * @date 2025-05-10
  *
  * @description
- * Este contexto proporciona el estado del usuario actual (si está autenticado y sus datos)
- * y las funciones para iniciar sesión con Google y cerrar sesión.
+ * Este contexto proporciona el estado del usuario actual y las funciones para
+ * iniciar sesión (Google, Email/Password), registrarse (Email/Password) y cerrar sesión.
  * Utiliza `onAuthStateChanged` de Firebase para escuchar los cambios en el estado
  * de autenticación en tiempo real.
  *
  * @requires react - Para crear el contexto y los hooks.
  * @requires firebase/auth - Para tipos de usuario y funciones de autenticación.
- * @requires ../../lib/firebase/config - Para la instancia de `auth` y `googleAuthProvider`.
+ * @requires ../lib/firebase/firebaseConfig - Para la instancia de `auth` y `googleAuthProvider`.
  *
  * @exports AuthContext - El contexto de React.
  * @exports AuthProvider - El componente proveedor del contexto.
@@ -34,23 +34,40 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   signOut as firebaseSignOut,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   AuthError,
 } from 'firebase/auth';
 import { auth, googleAuthProvider } from '../lib/firebase/firebaseConfig'; // Ajusta la ruta si es necesario
 
 /**
+ * @typedef {object} EmailPasswordCredentials
+ * @description Credenciales para autenticación con email y contraseña.
+ * @property {string} email - El correo electrónico del usuario.
+ * @property {string} password - La contraseña del usuario.
+ */
+export interface EmailPasswordCredentials {
+  email: string;
+  password: string;
+}
+
+/**
  * @typedef {object} AuthContextType
  * @description Define la forma del objeto que se comparte a través del AuthContext.
- * @property {User | null} user - El objeto User de Firebase si el usuario está autenticado, de lo contrario null.
- * @property {boolean} loading - Indica si se está cargando el estado inicial de autenticación.
+ * @property {User | null} user - El objeto User de Firebase.
+ * @property {boolean} loading - Indica si se está cargando el estado inicial.
  * @property {() => Promise<void>} signInWithGoogle - Función para iniciar sesión con Google.
+ * @property {(credentials: EmailPasswordCredentials) => Promise<void>} signInWithEmail - Función para iniciar sesión con email/contraseña.
+ * @property {(credentials: EmailPasswordCredentials) => Promise<void>} signUpWithEmail - Función para registrarse con email/contraseña.
  * @property {() => Promise<void>} signOut - Función para cerrar sesión.
- * @property {AuthError | null} error - Almacena cualquier error ocurrido durante la autenticación.
+ * @property {AuthError | null} error - Almacena cualquier error ocurrido.
  */
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>; // Nuevo
+  signUpWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>; // Nuevo
   signOut: () => Promise<void>;
   error: AuthError | null;
 }
@@ -74,7 +91,7 @@ interface AuthProviderProps {
  * Componente Proveedor del Contexto de Autenticación.
  * Envuelve la aplicación o partes de ella para proveer el estado de autenticación.
  * @param {AuthProviderProps} props - Las propiedades del componente.
- * @returns {JSX.Element} El proveedor del contexto con sus hijos.
+ * @returns {React.ReactElement} El proveedor del contexto con sus hijos.
  */
 export function AuthProvider({ children }: AuthProviderProps): React.ReactElement {
   const [user, setUser] = useState<User | null>(null);
@@ -138,9 +155,52 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       // Aunque onAuthStateChanged también setea loading a false,
       // es bueno tenerlo aquí para el caso de error inmediato en signInWithPopup.
       // Sin embargo, onAuthStateChanged es el que debe tener la última palabra.
-      // setLoading(false); // Se gestiona mejor con onAuthStateChanged
+      setLoading(false); // Se gestiona mejor con onAuthStateChanged
     }
   };
+
+  /**
+   * Inicia sesión de un usuario existente con correo electrónico y contraseña.
+   * @param {EmailPasswordCredentials} credentials - El email y contraseña del usuario.
+   * @returns {Promise<void>}
+   * @async
+   */
+  const signInWithEmail = async ({ email, password }: EmailPasswordCredentials): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged manejará la actualización del usuario
+    } catch (err) {
+      const authError = err as AuthError;
+      console.error('Error al iniciar sesión con email:', authError);
+      setError(authError);
+      setUser(null);
+    }
+    // setLoading(false); // Se gestiona por onAuthStateChanged
+  };
+
+  /**
+   * Registra un nuevo usuario con correo electrónico y contraseña.
+   * @param {EmailPasswordCredentials} credentials - El email y contraseña para el nuevo usuario.
+   * @returns {Promise<void>}
+   * @async
+   */
+  const signUpWithEmail = async ({ email, password }: EmailPasswordCredentials): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged manejará la actualización del usuario
+    } catch (err) {
+      const authError = err as AuthError;
+      console.error('Error al registrar con email:', authError);
+      setError(authError);
+      setUser(null);
+    }
+    // setLoading(false); // Se gestiona por onAuthStateChanged
+  };
+
 
   /**
    * Cierra la sesión del usuario actual.
@@ -174,6 +234,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     user,
     loading,
     signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail, 
     signOut,
     error,
   };
