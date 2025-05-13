@@ -21,7 +21,7 @@
 
 import { useAuth } from '../../context/AuthContext'; // Ajusta la ruta si es necesario
 import { useRouter } from 'next/navigation'; // Importamos el router de Next.js
-import Image from 'next/image'; // Importamos la clase Image de Next.js
+//import Image from 'next/image'; // Importamos la clase Image de Next.js
 
 /**
  * Componente LoginGoogle.

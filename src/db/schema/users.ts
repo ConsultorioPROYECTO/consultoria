@@ -5,6 +5,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para va
 
 /**
  * @typedef UserTableSchema
+ * @author Santiago Prada
  * @description Define la estructura de la tabla 'users' en la base de datos MySQL.
  *
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
