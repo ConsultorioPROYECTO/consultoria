@@ -92,6 +92,7 @@ export const db = drizzle(pool, {
     schema, // Pasa todos tus esquemas importados
     mode: 'default', // Recomendado: habilita prepared statements
     logger: true, // para ver las consultas SQL generadas por Drizzle (útil para depurar)
+    casing: 'snake_case',
 });
 
 console.log(' [DB] Instancia de Drizzle ORM inicializada correctamente.');

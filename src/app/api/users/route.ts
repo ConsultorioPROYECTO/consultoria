@@ -89,7 +89,7 @@ export async function GET() {
     const allUsers = await db.query.users.findMany(
         // Opcional: Puedes añadir opciones aquí como `orderBy`, `limit`, `offset`, `columns`
         // Ejemplo para ordenar por fecha de creación descendente:
-        // { orderBy: (users, { desc }) => [desc(users.createdAt)] }
+         { orderBy: (users, { desc }) => [desc(users.createdAt)], limit: 100 },
         // Ejemplo para seleccionar columnas específicas:
         // { columns: { id: true, email: true, displayName: true, role: true } }
     );
