@@ -2,10 +2,28 @@
 
 import { PanelRight } from 'lucide-react';
 import { useSidebar } from './layout'; // Importamos el hook useSidebar
+import { useAuth } from '../../context/AuthContext'; // Importamos useAuth
+import { useRouter } from 'next/navigation'; // Importamos useRouter
+import { useEffect } from 'react'; // Importamos useEffect
 
 export default function Home() {
-  // Obtenemos la función toggleSidebar del contexto
   const { toggleSidebar } = useSidebar();
+  const { user, loading } = useAuth(); 
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <p>Cargando...</p> {/* O un componente de spinner */}
+      </div>
+    );
+  }
   
   return (
     <div className='bg-[#2a2a2a]/80 backdrop-blur-xl rounded-xl border border-[#3a3a3a] shadow-xl h-[calc(100vh-20px)] sm:h-[calc(100vh-40px)] md:h-[calc(100vh-60px)] lg:h-[calc(100vh-80px)] overflow-hidden w-full flex flex-col'>

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { Home } from 'lucide-react';
+import LogoutButton from '../../components/logout/logout'
 
 const items = [
   { title: "Ve al login", url: "/login", icon: Home },
@@ -37,9 +38,9 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
       <div className="min-h-screen flex bg-stone-900 text-white font-sans">
         {/* Sidebar - Responsive */}
         <div 
-          className={`fixed left-0 sm:left-5 top-0 h-screen flex items-center z-40 transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:-translate-x-[calc(100%+20px)]'}`}
+          className={`fixed left-0 sm:left-5 top-0 h-screen flex items-center z-40 transition-transform duration-200 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:-translate-x-[calc(100%+20px)]'}`}
         >
-          <div className={`text-white h-[calc(100vh-40px)] sm:h-[calc(100vh-80px)] flex flex-col py-4 sm:py-6 transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[200px] sm:w-[240px] items-start px-3 sm:px-4' : 'w-[50px] sm:w-[60px] items-center'}`}>
+          <div className={`text-white h-[calc(100vh-40px)] sm:h-[calc(100vh-80px)] flex flex-col py-4 sm:py-6 transition-all duration-200 ease-in-out ${isSidebarOpen ? 'w-[200px] sm:w-[240px] items-start px-3 sm:px-4' : 'w-[50px] sm:w-[60px] items-center'}`}>
             <div className="space-y-6 sm:space-y-8 flex flex-col items-center w-full">
               {items.map((item, index) => (
                 <Link href={item.url} key={index} passHref className={`${isSidebarOpen ? 'w-full' : ''}`}>
@@ -53,6 +54,9 @@ export default function ChatLayout({ children }: { children: ReactNode }) {
                 </Link>
               ))}
             </div>
+
+            {/* Divider - Added at the bottom */}
+            <LogoutButton/>
 
             {/* Profile Image - Added at the bottom */}
             {<Link href={"/pages/home/profile"} className={`mt-auto flex items-center w-full pb-4 sm:pb-6 px-2.5`}>
