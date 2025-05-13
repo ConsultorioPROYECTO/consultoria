@@ -1,7 +1,7 @@
 'use client';
 
 import { PanelRight } from 'lucide-react';
-import { useSidebar } from './layout'; // Importamos el hook useSidebar
+import { useSidebar } from './sidebar-context'; // Importamos el hook useSidebar
 import { useAuth } from '../../context/AuthContext'; // Importamos useAuth
 import { useRouter } from 'next/navigation'; // Importamos useRouter
 import { useEffect } from 'react'; // Importamos useEffect

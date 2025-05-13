@@ -1,32 +1,18 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { createContext, useContext, useState, ReactNode } from 'react';
+//import { useRouter } from 'next/navigation';
+import { useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { Home } from 'lucide-react';
-import LogoutButton from '../../components/logout/logout'
+import LogoutButton from '../../components/logout/logout';
+import { SidebarContext } from './sidebar-context'; // Importar SidebarContext
 
 const items = [
   { title: "Ve al login", url: "/login", icon: Home },
-]
-
-interface SidebarContextType {
-  isSidebarOpen: boolean;
-  toggleSidebar: () => void;
-}
-
-const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
-
-export const useSidebar = () => {
-  const context = useContext(SidebarContext);
-  if (context === undefined) {
-    throw new Error('useSidebar must be used within a SidebarProvider');
-  }
-  return context;
-};
+];
 
 export default function ChatLayout({ children }: { children: ReactNode }) {
-  const router = useRouter();
+  //const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {
