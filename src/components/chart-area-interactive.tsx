@@ -150,6 +150,21 @@ export function ChartAreaInteractive() {
     }
   }, [isMobile])
 
+  // Asegurarse de que chartData existe y tiene elementos
+  if (!chartData || chartData.length === 0) {
+    return (
+      <Card className="@container/card">
+        <CardHeader>
+          <CardTitle>Total Visitors</CardTitle>
+          <CardDescription>No hay datos disponibles</CardDescription>
+        </CardHeader>
+        <CardContent className="h-80 flex items-center justify-center">
+          <p>No hay datos para mostrar</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)
     const referenceDate = new Date("2024-06-30")
@@ -163,6 +178,21 @@ export function ChartAreaInteractive() {
     startDate.setDate(startDate.getDate() - daysToSubtract)
     return date >= startDate
   })
+
+  // Verificar que filteredData tiene elementos antes de renderizar el gráfico
+  if (!filteredData || filteredData.length === 0) {
+    return (
+      <Card className="@container/card">
+        <CardHeader>
+          <CardTitle>Total Visitors</CardTitle>
+          <CardDescription>No hay datos para el período seleccionado</CardDescription>
+        </CardHeader>
+        <CardContent className="h-80 flex items-center justify-center">
+          <p>No hay datos para mostrar en el período seleccionado</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="@container/card">
@@ -257,10 +287,11 @@ export function ChartAreaInteractive() {
             />
             <ChartTooltip
               cursor={false}
-              defaultIndex={isMobile ? -1 : 10}
+              active={false} // Inicialmente inactivo
               content={
                 <ChartTooltipContent
                   labelFormatter={(value) => {
+                    if (!value) return "";
                     return new Date(value).toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
