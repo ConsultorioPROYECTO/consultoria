@@ -12,7 +12,7 @@ export default function Login() {
 
     useEffect(() => {
         if (user) {
-            router.push('/pages/home');
+            router.push('/dashboard');
         }
     }, [user, router]);
 
@@ -26,7 +26,7 @@ export default function Login() {
     <div className="flex items-center h-auto min-h-[97vh] w-full py-6 ">
         <div className="flex flex-col h-full w-full items-center justify-between">
         <h1 className="text-3xl font-bold text-center text-gray-950">Consultoria Logo</h1>
-        <LoginForm/>
+        <LoginForm isSignup={true} />
         <div className="flex flex-col items-center justify-center">
             <p className="text-balance text-muted-foreground text-gray-500">
                 Ya tienes cuenta??
