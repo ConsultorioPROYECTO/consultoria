@@ -1,4 +1,4 @@
-// src/lib/firebase/config.ts
+// src/lib/firebase/firebasConfig.ts
 
 /**
  * @fileoverview Configuración e inicialización de Firebase SDK.
