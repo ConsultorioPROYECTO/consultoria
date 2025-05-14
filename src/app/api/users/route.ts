@@ -1,123 +1,134 @@
 // src/app/api/users/route.ts
 
 /**
- * @fileoverview API Route para obtener la lista de todos los usuarios.
- * @version 1.0.0
+ * @fileoverview API Route para obtener la lista de todos los usuarios (protegida).
+ * @version 1.1.0 // Actualización de versión por añadir autenticación/autorización
  * @author Santiago Prada
- * @date 2025-05-11
+ * @date 2025-05-13
  *
  * @description
- * Maneja las solicitudes GET a `/api/users`.
+ * Maneja las solicitudes GET a `/api/users`. Requiere autenticación y que el
+ * usuario solicitante tenga el rol de 'admin'.
  * Utiliza la instancia de Drizzle ORM (`db`) para consultar todos los registros
  * de la tabla `users` en la base de datos MySQL.
  * Devuelve un array de objetos usuario en formato JSON.
  *
- * ¡¡¡ADVERTENCIA DE SEGURIDAD!!!
- * Este endpoint, tal como está, devuelve TODOS los usuarios sin ninguna restricción.
- * En una aplicación real, esto representa un RIESGO DE SEGURIDAD SIGNIFICATIVO.
- * DEBES implementar autenticación y autorización para asegurarte de que solo
- * los usuarios con los permisos adecuados (ej. administradores) puedan acceder
- * a esta información.
+ * La autenticación se maneja mediante la validación de Tokens ID de Firebase.
  *
  * @requires next/server - Para los tipos NextRequest y NextResponse.
  * @requires ../../../lib/db - Instancia `db` de Drizzle ORM.
  * @requires ../../../lib/db/schema - Definición de la tabla `users`.
- * @requires drizzle-orm - Para operadores y funciones de consulta (si fueran necesarios, aunque aquí no).
+ * @requires ../../../lib/server/middleware/authMiddleware - Para `withAuthentication`.
+ * @requires firebase-admin/auth - Para el tipo `DecodedIdToken`.
+ * @requires drizzle-orm - Para el operador `eq` y funciones de ordenamiento.
  *
- * @returns {Promise<NextResponse>} Una promesa que resuelve a:
- *  - Un NextResponse con status 200 y un array de usuarios si la consulta es exitosa.
- *  - Un NextResponse con status 500 y un mensaje de error si ocurre un problema.
+ * @returns {Promise<NextResponse | Response>} Una promesa que resuelve a:
+ *  - NextResponse con status 401 si la autenticación falla (token faltante/inválido).
+ *  - NextResponse con status 403 si el usuario autenticado no tiene el rol 'admin'.
+ *  - NextResponse con status 200 y un array de usuarios si la consulta es exitosa.
+ *  - NextResponse con status 500 y un mensaje de error si ocurre un problema en la BD.
  *
- * @example - Cómo probar la ruta con curl:
- * # GET (Obtener todos los usuarios - ¡Solo si tienes la seguridad implementada!)
- * curl http://localhost:3000/api/users
- * # (Asegúrate de incluir encabezados de autenticación/autorización si los implementaste)
+ * @example - Cómo probar la ruta con curl (requiere un token válido de un admin):
+ * # Asumiendo que tienes un TOKEN_ID_ADMIN válido
+ * curl -H "Authorization: Bearer <TOKEN_ID_ADMIN>" http://localhost:3000/api/users
  *
- * @todo ¡CRÍTICO! Implementar lógica de AUTENTICACIÓN y AUTORIZACIÓN.
- *       Verificar que el solicitante esté autenticado (ej. validar token Firebase ID).
- *       Verificar que el usuario autenticado tenga el ROL adecuado (ej. 'admin')
- *       para acceder a esta lista completa de usuarios.
- * @todo Considerar paginación y filtrado si la lista de usuarios puede crecer mucho.
- *       Devolver todos los usuarios puede ser ineficiente y sobrecargar el servidor/cliente.
- * @todo Refinar los campos devueltos. ¿Realmente necesitas devolver *toda* la información
- *       de cada usuario (incluyendo `firebaseUid`, etc.) en una lista pública (incluso para admins)?
- *       Considera usar `db.select({ ...campos deseados... }).from(users)`.
+ * @todo Considerar paginación más robusta si la lista de usuarios es muy grande (más allá del `limit: 100` actual).
+ * @todo Refinar los campos devueltos. Aunque es para admin, ¿necesita todas las columnas siempre?
+ *       Se puede ajustar en la opción `columns` de `findMany`.
  */
 
-import {  NextResponse } from 'next/server';
-import { db } from '../../../db/index'; // Importa la instancia configurada de Drizzle
-// import { eq } from 'drizzle-orm'; // Importar si necesitas filtros (no usado aquí)
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
+import { users } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
+import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
+import type { DecodedIdToken } from 'firebase-admin/auth';
+import { eq, desc } from 'drizzle-orm';
 
-export async function GET() {
-  console.log(`[API /api/users] Solicitud GET recibida.`);
+// --- Definición del Manejador GET con Autenticación y Autorización ---
 
-  // -------------------------------------------------------------------------
-  // --- ¡¡¡INICIO: ZONA CRÍTICA DE SEGURIDAD!!! ---
-  // -------------------------------------------------------------------------
-  // TODO: Implementar autenticación (¿quién hace la solicitud?)
-  // Ejemplo conceptual (necesita implementación real con firebase-admin u otro método):
-  // const userToken = request.headers.get('Authorization')?.split('Bearer ')[1];
-  // if (!userToken) {
-  //   console.warn('[API /api/users] Acceso denegado: Sin token.');
-  //   return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
-  // }
-  // const decodedToken = await verifyFirebaseToken(userToken); // Necesitas implementar verifyFirebaseToken
-  // if (!decodedToken) {
-  //   console.warn('[API /api/users] Acceso denegado: Token inválido.');
-  //   return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
-  // }
+/**
+ * Manejador para solicitudes GET a /api/users.
+ * Este manejador se ejecuta solo si la autenticación (verificación del token Firebase) es exitosa.
+ * Luego, realiza una verificación de autorización (rol de admin).
+ *
+ * @async
+ * @param {NextRequest} request - El objeto de la solicitud entrante (provisto por Next.js).
+ * @param {DecodedIdToken} decodedToken - El token decodificado del usuario autenticado (provisto por `withAuthentication`).
+ * @returns {Promise<NextResponse | Response>} La respuesta HTTP.
+ */
+const getUsersHandler = async (
+  request: NextRequest,
+  decodedToken: DecodedIdToken
+): Promise<NextResponse | Response> => {
+  console.log(`[API /api/users] Solicitud GET recibida y autenticada para UID: ${decodedToken.uid}`);
 
-  // TODO: Implementar autorización (¿tiene permiso esta persona?)
-  // Ejemplo conceptual (necesita buscar el rol del usuario en TU BD):
-  // const requestingUser = await db.query.users.findFirst({
-  //   where: eq(users.firebaseUid, decodedToken.uid),
-  //   columns: { role: true } // Solo necesitamos el rol para verificar
-  // });
-  // if (!requestingUser || requestingUser.role !== 'admin') { // Asume que solo 'admin' puede ver todos
-  //   console.warn(`[API /api/users] Acceso denegado: Usuario ${decodedToken.uid} no es admin.`);
-  //   return NextResponse.json({ error: 'Forbidden: Insufficient permissions' }, { status: 403 });
-  // }
-  // console.log(`[API /api/users] Acceso autorizado para admin: ${decodedToken.uid}`);
-  // -------------------------------------------------------------------------
-  // --- ¡¡¡FIN: ZONA CRÍTICA DE SEGURIDAD!!! ---
-  // -------------------------------------------------------------------------
-
+  // --- Autorización: Verificar si el usuario autenticado es un administrador ---
   try {
-    console.log('[API /api/users] Consultando la base de datos...');
+    const requestingUser = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid),
+      columns: { role: true }, // Solo necesitamos el rol para la autorización
+    });
 
-    // Utiliza Drizzle para obtener todos los usuarios y todas sus columnas
-    const allUsers = await db.query.users.findMany(
-        // Opcional: Puedes añadir opciones aquí como `orderBy`, `limit`, `offset`, `columns`
-        // Ejemplo para ordenar por fecha de creación descendente:
-         { orderBy: (users, { desc }) => [desc(users.createdAt)], limit: 100 },
-        // Ejemplo para seleccionar columnas específicas:
-        // { columns: { id: true, email: true, displayName: true, role: true } }
-    );
+    if (!requestingUser) {
+      // Esto sería raro si el token es válido, pero podría pasar si el usuario fue eliminado de tu BD
+      // pero no de Firebase Auth inmediatamente.
+      console.warn(`[API /api/users] Usuario autenticado con UID ${decodedToken.uid} no encontrado en la base de datos local.`);
+      return NextResponse.json(
+        { error: 'Forbidden: Authenticated user not found in local system.' },
+        { status: 403 }
+      );
+    }
 
-    /* Alternativa con db.select() - útil si quieres renombrar o transformar columnas */
-    // const allUsers = await db.select().from(users);
+    if (requestingUser.role !== 'admin') {
+      console.warn(`[API /api/users] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es admin.`);
+      return NextResponse.json(
+        { error: 'Forbidden: Insufficient permissions. Admin role required.' },
+        { status: 403 }
+      );
+    }
+
+    console.log(`[API /api/users] Acceso autorizado para admin: ${decodedToken.uid} (${decodedToken.email})`);
+
+    // --- Lógica principal: Obtener todos los usuarios ---
+    console.log('[API /api/users] Consultando la base de datos para obtener todos los usuarios...');
+
+    const allUsers = await db.query.users.findMany({
+      orderBy: [desc(users.createdAt)], // Ordenar por fecha de creación, más recientes primero
+      limit: 100, // Limitar resultados para evitar sobrecarga (implementar paginación para más)
+      // Opcional: Excluir campos sensibles si no son necesarios para el admin en esta vista
+      // columns: {
+      //   id: true,
+      //   firebaseUid: true, // Quizás útil para el admin
+      //   email: true,
+      //   displayName: true,
+      //   role: true,
+      //   isActive: true,
+      //   lastLoginAt: true,
+      //   createdAt: true,
+      //   // phoneNumber: false, // Ejemplo de exclusión
+      //   // photoURL: false,   // Ejemplo de exclusión
+      // }
+    });
 
     console.log(`[API /api/users] Consulta exitosa. ${allUsers.length} usuarios encontrados.`);
-
-    // Devuelve la lista de usuarios como JSON
     return NextResponse.json(allUsers, { status: 200 });
 
   } catch (error) {
-    console.error('[API /api/users] Error al consultar la base de datos:', error);
-
-    // Devuelve un error genérico en caso de fallo
-    // Evita filtrar detalles internos del error al cliente
-    const errorMessage = error instanceof Error ? error.message : 'Unknown database error';
+    console.error('[API /api/users] Error durante la autorización o la consulta a la base de datos:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown server error';
     return NextResponse.json(
-        {
-            error: errorMessage,
-            // Puedes incluir detalles adicionales si son seguros para exponer
-            // details: errorMessage
-        },
-        { status: 500 }
+      {
+        error: 'Failed to process request.',
+        details: errorMessage, // En desarrollo podría ser útil, en producción considera omitirlo o generalizarlo.
+      },
+      { status: 500 }
     );
   }
-}
+};
 
-// Nota: No se implementan POST, PUT, DELETE aquí ya que la solicitud era solo para GET.
-// Si los necesitaras, añadirías `export async function POST(...)`, etc.
+// Envolver el manejador con el middleware de autenticación
+export const GET = withAuthentication(getUsersHandler);
+
+// Nota: Si necesitaras otros métodos (POST, PUT, etc.) y también quieres protegerlos,
+// los envolverías de manera similar:
+// export const POST = withAuthentication(async (request, decodedToken) => { /* ... */ });
