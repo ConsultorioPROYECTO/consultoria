@@ -74,11 +74,8 @@ export default function Login() {
         <h1 className="text-3xl font-bold text-center text-gray-950">Consultoria Logo</h1>
         <LoginForm/>
         <div className="flex flex-col items-center justify-center">
-            <p className="text-balance text-gray-500">
-                No tienes una cuenta?
-            </p>
-            <Link href="/signup" className="text-balance text-gray-950 underline underline-offset-2">
-                Registrate
+            <Link href="/" className="text-balance text-gray-950 underline underline-offset-2">
+                Mas información
             </Link>
         </div>
         </div>
