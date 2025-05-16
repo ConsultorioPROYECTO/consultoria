@@ -12,6 +12,7 @@ import { SubscriptionCards } from "./com/SubscriptionCards"; // NUEVA IMPORTACI�
 import { plansData } from "./com/prices"; // NUEVA IMPORTACIÓN
 // import { Switch } from "@rutas/components/ui/switch"; // Switch ya no se usa directamente aquí
 import { ToggleGroup, ToggleGroupItem } from "@rutas/components/ui/toggle-group"; // NUEVA IMPORTACIÓN PARA EL SELECTOR DE FACTURACIÓN
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@rutas/components/ui/input-otp"; // NUEVA IMPORTACIÓN PARA INPUT OTP
 
 export default function OnboardingForm({ // Sugerencia: Renombrar LoginForm a OnboardingForm si es más preciso
   className,
@@ -165,7 +166,7 @@ export default function OnboardingForm({ // Sugerencia: Renombrar LoginForm a On
                     Ingresa el nombre de tu consultorio u organización.
                   </p>
                 </div>
-                <div className="grid gap-3 mt-4">
+                <div className="flex justify-center items-center gap-2 mt-4">
                   <Label htmlFor="nameConsultorio" className="text-md sr-only">Nombre del Consultorio</Label>
                   <Input 
                     id="nameConsultorio" 
@@ -185,16 +186,25 @@ export default function OnboardingForm({ // Sugerencia: Renombrar LoginForm a On
                     Ingresa el código de invitación que te proporcionaron.
                   </p>
                 </div>
-                <div className="grid gap-3 mt-4">
+                <div className="flex justify-center items-center gap-3 mt-4">
                   <Label htmlFor="invitationCode" className="text-md sr-only">Código de Invitación</Label>
-                  <Input 
-                    id="invitationCode" 
-                    type="text" 
-                    placeholder="Ej: XYZ123"
+                  <InputOTP
+                    maxLength={6}
                     value={invitationCode}
-                    onChange={e => setInvitationCode(e.target.value)}
-                    className="py-3 text-base"
-                  />
+                    onChange={(value) => setInvitationCode(value)}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPSeparator />
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
                 </div>
               </>
             )}
