@@ -28,7 +28,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@rutas/components/ui/sidebar"
-import { useAuth } from "../app/context/AuthContext"
+import { useAuth } from "../../context/AuthContext"
 
 
 export function NavUser({

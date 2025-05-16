@@ -20,7 +20,7 @@ import { Inter } from 'next/font/google';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
 import { copernicusFont } from './fonts';
-import { ThemeProvider } from "../components/theme-provider";
+import { ThemeProvider } from "./dashboard/com/theme-provider";
 
 const inter = Inter({ subsets: ['latin'] });
 
