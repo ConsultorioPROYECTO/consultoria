@@ -38,8 +38,6 @@ export default function LoginGoogle(): React.ReactElement {
       await signInWithGoogle();
       // El estado del usuario se actualizará a través de onAuthStateChanged en AuthContext
       console.log('Inicio de sesión con Google solicitado.');
-      // Redirigimos al usuario a la página de home después de iniciar sesión
-      router.push('/pages/home');
     } catch (err) {
       // El error ya se maneja y se muestra en AuthContext,
       // pero se puede registrar aquí si es necesario.
