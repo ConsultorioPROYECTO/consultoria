@@ -12,6 +12,7 @@ import {
   IconCalendarTime, // Añadir importación de IconCalendarTime
 } from "@tabler/icons-react"
 
+import { NavMain } from "@rutas/app/dashboard/com/nav-main"
 import { NavSecondary } from "@rutas/app/dashboard/com/nav-secondary"
 import { NavUser } from "@rutas/app/dashboard/com/nav-user"
 import {
@@ -54,7 +55,7 @@ const MOCK_APPOINTMENTS: { [key: string]: Appointment[] } = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [date, setDate] = React.useState<Date | undefined>(new Date()) // Fecha seleccionada en el calendario
+  const [date, setDate] = React.useState<Date | undefined>(undefined) // Estado inicial sin fecha seleccionada
   const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
   const { user } = useAuth()
 
@@ -77,6 +78,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       email: user.email || "m@example.com",
       avatar: user.photoURL || "/avatars/shadcn.jpg",
     },
+    navMain: [
+      {
+        title: "Chats",
+        url: "/dashboard/chats",
+        icon: IconCalendarTime,
+      },
+    ],
     navSecondary: [
       {
         title: "Settings",
@@ -107,7 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             >
               <a href="#">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <span className="text-base font-semibold">Irina</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -119,10 +127,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             mode="single"
             selected={date}
             onSelect={setDate} // setDate actualizará 'date', y el useEffect se encargará del resto
-            className="rounded-md border"
+            className="rounded-md "
           />
         </div>
-
+        
         {/* Sección para mostrar citas del día seleccionado */} 
         {date && selectedDayAppointments.length > 0 && (
           <div className="p-2 mt-2">
@@ -154,7 +162,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </p>
            </div>
         )}
-
+        <NavMain items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
