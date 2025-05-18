@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { Badge } from "@rutas/components/ui/badge";
-import { CalendarCheck2, UserCheck, UserX } from "lucide-react";
+import { CalendarCheck2 } from "lucide-react";
 
 // Mock data - en una aplicación real, esto vendría de una API o WebSocket
 const availabilityData = {

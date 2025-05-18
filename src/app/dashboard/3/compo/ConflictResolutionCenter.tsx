@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { Button } from "@rutas/components/ui/button";
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
-import { ShieldAlert, MessageCircle, CheckSquare, Users } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 import { Badge } from "@rutas/components/ui/badge";
 import { useState } from 'react';
 import {

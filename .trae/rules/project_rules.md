@@ -1,0 +1,1 @@
+ten encuenta el las reglas de @typescript-eslint/ antes generar codigo

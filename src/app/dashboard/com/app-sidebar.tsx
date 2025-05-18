@@ -25,7 +25,6 @@ import {
   SidebarMenuItem,
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
-import { LayoutDashboardIcon } from "lucide-react"
 
 // Interfaz para las citas y datos de ejemplo
 interface Appointment {

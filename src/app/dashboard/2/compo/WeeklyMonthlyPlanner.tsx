@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { Button } from "@rutas/components/ui/button";
-import { Calendar } from "@rutas/components/ui/calendar"; // Asumiendo que shadcn/ui tiene un componente Calendar
+import { Calendar } from "@rutas/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -92,15 +92,15 @@ export function WeeklyMonthlyPlanner() {
             month={currentDate} // Controlar el mes mostrado
             // Podríamos añadir lógica para mostrar eventos aquí
             components={{
-                DayContent: ({ date, ...props }) => {
+                Day: ({ day }) => {
                     const event = mockEvents.find(e => 
-                        e.date.getFullYear() === date.getFullYear() &&
-                        e.date.getMonth() === date.getMonth() &&
-                        e.date.getDate() === date.getDate()
+                        e.date.getFullYear() === day.date.getFullYear() &&
+                        e.date.getMonth() === day.date.getMonth() &&
+                        e.date.getDate() === day.date.getDate()
                     );
                     return (
                         <div className="relative h-full w-full flex items-center justify-center">
-                           <span>{date.getDate()}</span>
+                           <span>{day.date.getDate()}</span>
                            {event && <div className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 ${event.color} rounded-full`} title={event.title}></div>}
                         </div>
                     );

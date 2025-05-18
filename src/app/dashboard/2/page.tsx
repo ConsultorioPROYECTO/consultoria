@@ -28,6 +28,15 @@ export default function Page() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
 
+  const handleSelectPatient = (id: string, name: string) => {
+    setSelectedPatientId(id);
+    setSelectedPatientName(name);
+  };
+
+  const handleSelectAppointment = (id: string) => {
+    setSelectedAppointmentId(id);
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -37,19 +46,6 @@ export default function Page() {
   if (loading || !user) {
     return <div className="flex h-screen items-center justify-center">Cargando...</div>;
   }
-
-  // Funciones para manejar la selección de paciente/cita (simuladas)
-  const handleSelectPatientForHistory = (patientId: string, patientName: string) => {
-    setSelectedPatientId(patientId);
-    setSelectedPatientName(patientName);
-    setIsHistoryModalOpen(true);
-  };
-
-  const handleSelectAppointmentForNotes = (appointmentId: string, patientName: string) => {
-    setSelectedAppointmentId(appointmentId);
-    setSelectedPatientId(appointmentId); // Asumimos que la cita tiene un ID de paciente o similar
-    setSelectedPatientName(patientName);
-  };
 
   return (
     <SidebarProvider
@@ -75,7 +71,7 @@ export default function Page() {
             <div className="grid grid-cols-1 gap-6 @[60rem]:grid-cols-3 @[80rem]:grid-cols-4">
               {/* Columna Principal - Agenda y Notas */}
               <div className="@[60rem]:col-span-2 @[80rem]:col-span-3 space-y-6">
-                <DailyAgendaView /> {/* Este componente podría tener props para pasarle handleSelectPatientForHistory y handleSelectAppointmentForNotes */}
+                <DailyAgendaView onSelectPatient={handleSelectPatient} onSelectAppointment={handleSelectAppointment} />
                 <div className="grid grid-cols-1 @md:grid-cols-2 gap-6">
                   <QuickNotes appointmentId={selectedAppointmentId} patientName={selectedPatientName} />
                   <PatientAttendancePatterns patientId={selectedPatientId} patientName={selectedPatientName} />

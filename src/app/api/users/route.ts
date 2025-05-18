@@ -127,7 +127,12 @@ const getUsersHandler = async (
 };
 
 // Envolver el manejador con el middleware de autenticación
-export const GET = withAuthentication(getUsersHandler);
+export async function GET(
+  request: NextRequest,
+  context: { params: Record<string, string> }
+) {
+  return withAuthentication(getUsersHandler)(request, context);
+}
 
 // Nota: Si necesitaras otros métodos (POST, PUT, etc.) y también quieres protegerlos,
 // los envolverías de manera similar:

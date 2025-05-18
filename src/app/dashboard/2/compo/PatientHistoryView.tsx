@@ -59,7 +59,7 @@ export function PatientHistoryView({
   isOpen,
   onOpenChange,
 }: PatientHistoryViewProps) {
-  const [history, setHistory] = useState<MedicalRecord[]>(mockPatientHistory);
+  const [history] = useState<MedicalRecord[]>(mockPatientHistory);
 
   // En una app real, aquí se haría un fetch del historial del pacienteId
   // useEffect(() => {

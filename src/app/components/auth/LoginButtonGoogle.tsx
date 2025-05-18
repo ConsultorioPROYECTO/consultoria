@@ -20,7 +20,7 @@
  */
 
 import { useAuth } from '../../context/AuthContext'; // Ajusta la ruta si es necesario
-import { useRouter } from 'next/navigation'; // Importamos el router de Next.js
+//import { useRouter } from 'next/navigation'; // Importamos el router de Next.js
 //import Image from 'next/image'; // Importamos la clase Image de Next.js
 
 /**
@@ -31,7 +31,6 @@ import { useRouter } from 'next/navigation'; // Importamos el router de Next.js
  */
 export default function LoginGoogle(): React.ReactElement {
   const { signInWithGoogle } = useAuth();
-  const router = useRouter(); // Inicializamos el router
 
   const handleSignIn = async () => {
     try {

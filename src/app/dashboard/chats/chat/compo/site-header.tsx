@@ -1,6 +1,4 @@
 import { Button } from "@rutas/components/ui/button"
-import { Separator } from "@rutas/components/ui/separator"
-import { SidebarTrigger } from "@rutas/components/ui/sidebar"
 import { useRouter } from 'next/navigation'
 import { IconArrowLeft } from '@tabler/icons-react'
 

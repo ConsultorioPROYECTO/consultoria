@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@rutas/components/ui/dialog";
 
 // Mock data for patients/contacts - in a real app, this would come from an API

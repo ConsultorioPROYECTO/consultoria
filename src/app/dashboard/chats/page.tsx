@@ -7,13 +7,10 @@ import {
   SidebarProvider,
 } from "@rutas/components/ui/sidebar"
 
-import data from "../data.json"
 import { Chats } from "./compo/chats"
 import { useAuth } from "../../context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-
-import { Badge } from "@rutas/components/ui/badge"
 
 export default function Page() {
   const { user, loading } = useAuth(); 

@@ -1,7 +1,7 @@
 // src/app/dashboard/2/compo/DirectMessagingPanel.tsx
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@rutas/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@rutas/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@rutas/components/ui/avatar";
 import { Button } from "@rutas/components/ui/button";
 import { Input } from "@rutas/components/ui/input";

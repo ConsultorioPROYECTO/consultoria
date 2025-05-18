@@ -15,7 +15,7 @@ interface SubscriptionCardsProps {
 export function SubscriptionCards({ selectedPlanId, onSelectPlan, isAnnualBilling }: SubscriptionCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-      {plansData.map((plan) => {
+      {plansData.map((plan: Plan) => {
         const price = isAnnualBilling ? plan.priceAnnually / 12 : plan.priceMonthly;
         const billingCycle = isAnnualBilling ? "/mes (fact. anual)" : "/mes";
         const isProfesionalPlan = plan.name === "Profesional"; // Variable para identificar el plan Profesional

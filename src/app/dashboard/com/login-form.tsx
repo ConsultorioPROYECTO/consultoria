@@ -3,6 +3,7 @@ import { Button } from "@rutas/components/ui/button"
 import { Card, CardContent } from "@rutas/components/ui/card"
 import { Input } from "@rutas/components/ui/input"
 import { Label } from "@rutas/components/ui/label"
+import Image from 'next/image';
 
 export function LoginForm({
   className,
@@ -87,10 +88,13 @@ export function LoginForm({
             </div>
           </form>
           <div className="bg-muted relative hidden md:block">
-            <img
-              src="/placeholder.svg"
-              alt="Image"
-              className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+            <Image 
+                src="/img/photologin.png"
+                alt="Login"
+                width={500}
+                height={500}
+                className="object-contain"
+                priority
             />
           </div>
         </CardContent>

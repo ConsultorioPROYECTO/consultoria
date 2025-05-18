@@ -13,8 +13,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Trash2 } from "lucide-react"
-
 import { Button } from "@rutas/components/ui/button"
 import { Checkbox } from "@rutas/components/ui/checkbox"
 import { Input } from "@rutas/components/ui/input"
@@ -102,14 +100,6 @@ export function TInvTable({
   const columns: ColumnDef<InvitedRow>[] = [
     {
       id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={data.length > 0 && data.every(row => selectedRowIds[row.id])}
-          // Elimina indeterminate y ref si tu Checkbox no lo soporta
-          onCheckedChange={value => onSelectAll(!!value)}
-          aria-label="Seleccionar todos"
-        />
-      ),
       cell: ({ row }) => (
         <Checkbox
           checked={!!selectedRowIds[row.original.id]}
@@ -206,7 +196,7 @@ export function TInvTable({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
 
   const table = useReactTable({
-    data: paginatedData, // Solo los datos de la página actual
+    data: paginatedData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,

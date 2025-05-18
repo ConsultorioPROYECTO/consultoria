@@ -15,7 +15,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@rutas/components/ui/dialog";
 import { Label } from "@rutas/components/ui/label";
 

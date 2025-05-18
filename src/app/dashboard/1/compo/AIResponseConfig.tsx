@@ -4,7 +4,6 @@
 import { Button } from "@rutas/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@rutas/components/ui/card";
 import { Checkbox } from "@rutas/components/ui/checkbox";
-import { Input } from "@rutas/components/ui/input";
 import { Label } from "@rutas/components/ui/label";
 import { Textarea } from "@rutas/components/ui/textarea";
 

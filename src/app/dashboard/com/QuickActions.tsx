@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Button } from "@rutas/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"
-import { IconCalendarTime, IconSettingsAutomation, IconExternalLink } from "@tabler/icons-react"
+import { IconCalendarTime, IconSettingsAutomation } from "@tabler/icons-react"
 
 export function QuickActions() {
   return (

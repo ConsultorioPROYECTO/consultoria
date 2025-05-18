@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@ruta
 import { Button } from "@rutas/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@rutas/components/ui/table";
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
-import { Users, Clock, PlusCircle, Mail, Phone } from "lucide-react";
+import { Users, PlusCircle } from "lucide-react";
 import { Badge } from "@rutas/components/ui/badge";
 import { useState } from 'react';
 import {
@@ -15,7 +15,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@rutas/components/ui/dialog";
 import { Input } from "@rutas/components/ui/input";
 import { Label } from "@rutas/components/ui/label";

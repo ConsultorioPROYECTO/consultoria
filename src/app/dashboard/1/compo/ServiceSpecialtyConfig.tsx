@@ -4,7 +4,6 @@
 import { Button } from "@rutas/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@rutas/components/ui/card";
 import { Input } from "@rutas/components/ui/input";
-import { Label } from "@rutas/components/ui/label";
 import { Switch } from "@rutas/components/ui/switch";
 import { Badge } from "@rutas/components/ui/badge";
 import { useState } from "react";
@@ -38,8 +37,8 @@ const initialSpecialties: Specialty[] = [
 ];
 
 export function ServiceSpecialtyConfig() {
-  const [services, setServices] = useState<Service[]>(initialServices);
-  const [specialties, setSpecialties] = useState<Specialty[]>(initialSpecialties);
+  const [services] = useState<Service[]>(initialServices);
+  const [specialties] = useState<Specialty[]>(initialSpecialties);
   // Lógica para agregar, editar, activar/desactivar servicios y especialidades
 
   return (
