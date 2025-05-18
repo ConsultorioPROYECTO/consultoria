@@ -9,9 +9,6 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@rutas/components/ui/sidebar";
-;
-;
-;
 
 // Componentes específicos del Dashboard Master
 import { BusinessAnalytics } from "./compo/BusinessAnalytics";
