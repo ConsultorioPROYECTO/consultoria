@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@rutas/components/ui/dropdown-menu"
 import { ChevronDown, ArrowUpAZ, ArrowDownZA, ArrowUpDown } from "lucide-react"
-import { AlertDelete } from "../com/alertDele"
+import { AlertDelete } from "./alertDele"
 
 export type InviteStatus = "Pendiente" | "Aceptada" | "Expirada" | "Enviada"
 

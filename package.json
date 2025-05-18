@@ -41,6 +41,7 @@
     "drizzle-zod": "^0.7.1",
     "firebase": "^11.7.1",
     "firebase-admin": "^13.4.0",
+    "framer-motion": "^12.12.1",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.510.0",
     "mysql2": "^3.14.1",
