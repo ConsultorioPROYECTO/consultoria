@@ -25,6 +25,7 @@ import {
   SidebarMenuItem,
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
+import { LayoutDashboardIcon } from "lucide-react"
 
 // Interfaz para las citas y datos de ejemplo
 interface Appointment {
@@ -33,6 +34,7 @@ interface Appointment {
   patientName: string;
   description?: string;
 }
+
 
 // Helper to format date to YYYY-MM-DD string for mock data lookup
 const formatDateKey = (date: Date): string => {
@@ -84,6 +86,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/dashboard/chats",
         icon: IconCalendarTime,
       },
+      {
+        title: "Dashboard 1",
+        url: "/dashboard/1",
+        icon: IconCalendarTime,
+      },
+      {
+        title: "Dashboard 2",
+        url: "/dashboard/2",
+        icon: IconCalendarTime,
+      },
+      {
+        title: "Dashboard 3",
+        url: "/dashboard/3",
+        icon: IconCalendarTime,
+      },
     ],
     navSecondary: [
       {
@@ -113,7 +130,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <a href="/dashboard">
                 <IconInnerShadowTop className="!size-5" />
                 <span className="text-base font-semibold">Irina</span>
               </a>
