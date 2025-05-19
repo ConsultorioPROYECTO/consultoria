@@ -78,5 +78,5 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")], // plugin común para animaciones predefinidas
+  plugins: [require("tailwindcss-animate"), require('tailwind-scrollbar')], // plugin común para animaciones predefinidas
 }

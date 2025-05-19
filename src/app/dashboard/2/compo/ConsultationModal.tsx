@@ -40,76 +40,81 @@ export function ConsultationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl lg:max-w-6xl max-h-[90vh] flex flex-col p-6"> {/* Ajustar tamaño y layout */}
+      <DialogContent className="sm:max-w-5xl lg:max-w-7xl xl:max-w-[90vw] max-h-[95vh] flex flex-col p-6">
         <DialogHeader>
           <DialogTitle>Consulta con {appointment.patientName} ({appointment.service})</DialogTitle>
           <DialogDescription>
             Hora: {appointment.time}
           </DialogDescription>
         </DialogHeader>
-        
-        {/* Contenido principal: Dos columnas y sección inferior */}
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden"> {/* Usar grid para las columnas */}
-          {/* Columna Izquierda: Perfil del Paciente */}
-          <div className="lg:col-span-1 flex flex-col overflow-hidden"> {/* Ocupa 1 de 3 columnas en lg+ */}
-             <Card className="flex-shrink-0"> {/* flex-shrink-0 para no encogerse si hay mucho contenido al lado */}
-                <CardContent>
-                  {/* Aquí iría la información del perfil del paciente */}
-                  <div className="text-4xl font-bold mt-1">
-                     <span >{appointment.patientName}</span>
-                  </div>
-                  {/**/}
-                  <div className="text-sm opacity-80 mt-2">
-                     <span>Servicio: {appointment.service}</span>
-                  </div>
-                  {/**/}
-                  <div className="text-sm opacity-80 ">
-                     <span>Telefono: +1 232 92302</span>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
+          {/* Columna izquierda - Información del paciente */}
+          <div className="col-span-1 overflow-y-auto">
+            <Card className="flex-shrink-0"> {/* flex-shrink-0 para no encogerse si hay mucho contenido al lado */}
+              <CardContent>
+                {/* Aquí iría la información del perfil del paciente */}
+                <div className="text-4xl font-bold mt-1">
+                  <span >{appointment.patientName}</span>
+                </div>
+                {/**/}
+                <div className="text-sm opacity-80 mt-2">
+                  <span>Servicio: {appointment.service}</span>
+                </div>
+                {/**/}
+                <div className="text-sm opacity-80 ">
+                  <span>Telefono: +1 232 92302</span>
+                </div>
 
-                  {/* Información adicional del paciente */}
-                </CardContent>
-             </Card>
-             {/* Puedes añadir más tarjetas o componentes de perfil aquí */}
+                {/* Información adicional del paciente */}
+              </CardContent>
+            </Card>
+            {/* Puedes añadir más tarjetas o componentes de perfil aquí */}
+          </div>
+          
+          {/* Columna central - Transcripción de voz a texto */}
+          <div className="col-span-1 overflow-y-auto border rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-4">Transcripción</h3>
+            <div className="space-y-2">
+              {/* Aquí irá el contenido de la transcripción */}
+            </div>
           </div>
 
-          {/* Columna Derecha: Notas y Otro Componente */}
-          <div className="lg:col-span-2 flex flex-col space-y-6 overflow-hidden"> {/* Ocupa 2 de 3 columnas en lg+ */}
-             {/* Componente para Notas */}
-             <Card className="flex-1 flex flex-col overflow-hidden"> {/* flex-1 para ocupar espacio y permitir scroll si es necesario */}
-                <CardHeader>
-                   <CardTitle>Notas de Consulta</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto"> {/* flex-1 y overflow para hacer scroll en las notas */}
-                   <ScrollArea className="h-full pr-4"> {/* Añadir ScrollArea alrededor del textarea */}
-                     <Textarea 
-                       placeholder="Escribe tus notas de consulta aquí..." 
-                       className="min-h-[200px] resize-none"
-                       value={notes}
-                       onChange={(e) => setNotes(e.target.value)}
-                     />
-                   </ScrollArea>
-                </CardContent>
-             </Card>
+          {/* Columna derecha - Notas y observaciones */}
+          <div className="col-span-1 overflow-y-auto space-y-6">
+            <Card className="flex-1 flex flex-col overflow-hidden"> {/* flex-1 para ocupar espacio y permitir scroll si es necesario */}
+              <CardHeader>
+                <CardTitle>Notas de Consulta</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-y-auto "> {/* flex-1 y overflow para hacer scroll en las notas */}
+                <ScrollArea className="h-full overflow-hidden "> {/* Eliminado pr-4 */}
+                  <Textarea 
+                    placeholder="Escribe tus notas de consulta aquí..." 
+                    className="h-[200px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </ScrollArea>
+              </CardContent>
+            </Card>
 
-             {/* Otro Componente Abajo de Notas */}
-             <Card className="flex-shrink-0"> {/* flex-shrink-0 para que no se encoja */}
-                <CardHeader>
-                   <CardTitle>Otro Componente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   {/* Aquí iría el contenido del otro componente (ej. plan de tratamiento, recetas) */}
-                   <p>Contenido del componente inferior...</p>
-                </CardContent>
-             </Card>
+            {/* Otro Componente Abajo de Notas */}
+            <Card className="flex-shrink-0"> {/* flex-shrink-0 para que no se encoja */}
+              <CardHeader>
+                <CardTitle>Otro Componente</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Aquí iría el contenido del otro componente (ej. plan de tratamiento, recetas) */}
+                <p>Contenido del componente inferior...</p>
+              </CardContent>
+            </Card>
           </div>
         </div>
         
         {/* Añadir pie de diálogo con botón de guardar */}
         <DialogFooter>
-           <Button onClick={handleSaveClick}>Guardar y Completar Consulta</Button>
+          <Button onClick={handleSaveClick}>Guardar y Completar Consulta</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-} 
+}
