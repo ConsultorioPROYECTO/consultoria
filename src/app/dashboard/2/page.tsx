@@ -127,6 +127,19 @@ export default function Page() {
     setSelectedConsultationAppointment(null);
   };
 
+  const handleSaveAndCompleteConsultation = (appointmentId: string, notes: string) => {
+    console.log(`Guardando notas para cita ${appointmentId}:`, notes);
+    // Actualizar el estado de la cita a "Completada"
+    setTodayAppointmentsState(prevState =>
+      prevState.map(apt =>
+        apt.id === appointmentId ? { ...apt, status: "Completada" } : apt
+      )
+    );
+    // Cerrar el modal
+    setIsConsultationModalOpen(false);
+    setSelectedConsultationAppointment(null);
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
@@ -224,6 +237,7 @@ export default function Page() {
               appointment={selectedConsultationAppointment}
               isOpen={isConsultationModalOpen}
               onOpenChange={setIsConsultationModalOpen}
+              onSaveAndComplete={handleSaveAndCompleteConsultation}
             />
           </main>
         </div>

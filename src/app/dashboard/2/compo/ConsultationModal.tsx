@@ -4,6 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
 import { Textarea } from "@rutas/components/ui/textarea";
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
+import { Button } from "@rutas/components/ui/button";
+import { DialogFooter } from "@rutas/components/ui/dialog";
+import { useState } from 'react';
 
 interface Appointment {
   id: string;
@@ -17,14 +20,23 @@ interface ConsultationModalProps {
   appointment: Appointment | null; // La cita para la consulta actual
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaveAndComplete: (appointmentId: string, notes: string) => void;
 }
 
 export function ConsultationModal({
   appointment,
   isOpen,
   onOpenChange,
+  onSaveAndComplete,
 }: ConsultationModalProps) {
   if (!appointment) return null; // No renderizar si no hay cita seleccionada
+
+  const [notes, setNotes] = useState('');
+
+  const handleSaveClick = () => {
+    onSaveAndComplete(appointment.id, notes);
+    setNotes('');
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -70,7 +82,12 @@ export function ConsultationModal({
                 </CardHeader>
                 <CardContent className="flex-1 overflow-y-auto"> {/* flex-1 y overflow para hacer scroll en las notas */}
                    <ScrollArea className="h-full pr-4"> {/* Añadir ScrollArea alrededor del textarea */}
-                     <Textarea placeholder="Escribe tus notas de consulta aquí..." className="min-h-[200px] resize-none" /> {/* min-h ajustable, deshabilitar resize */}
+                     <Textarea 
+                       placeholder="Escribe tus notas de consulta aquí..." 
+                       className="min-h-[200px] resize-none"
+                       value={notes}
+                       onChange={(e) => setNotes(e.target.value)}
+                     />
                    </ScrollArea>
                 </CardContent>
              </Card>
@@ -88,10 +105,10 @@ export function ConsultationModal({
           </div>
         </div>
         
-        {/* Aquí podrías añadir botones de acción global para el modal, si son necesarios */}
-        {/* <DialogFooter>
-           <Button>Guardar Consulta</Button>
-        </DialogFooter> */}
+        {/* Añadir pie de diálogo con botón de guardar */}
+        <DialogFooter>
+           <Button onClick={handleSaveClick}>Guardar y Completar Consulta</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
