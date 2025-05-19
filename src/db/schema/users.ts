@@ -1,6 +1,6 @@
 // src/db/schema/users.ts (o donde definas tus esquemas de Drizzle)
 
-import { mysqlTable, varchar, timestamp, text, boolean, serial, index } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, text, boolean, serial, index, mysqlEnum } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
 
 /**
@@ -41,7 +41,7 @@ export const users = mysqlTable('users', {
   providerId: varchar('provider_id', { length: 50 }), // ej: 'google.com', 'password', 'phone'
 
   // --- Campos específicos de tu aplicación ---
-  role: varchar('role', { length: 50 }).default('user').notNull(), // ej: 'user', 'admin'
+  role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), // ej: 'user', 'admin', 'editor'
   isActive: boolean('is_active').default(true).notNull(),
   lastLoginAt: timestamp('last_login_at'),
 

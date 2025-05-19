@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1747670663631,
+      "tag": "0000_striped_marvel_zombies",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1747677205530,
+      "tag": "0001_simple_songbird",
+      "breakpoints": true
+    }
+  ]
+}
