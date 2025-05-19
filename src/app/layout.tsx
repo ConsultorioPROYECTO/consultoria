@@ -48,6 +48,7 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          themes={['light', 'dark', 'system', 'theme-vercel', 'theme-vercel-dark', 'theme-claude', 'theme-claude-dark']}
         >
           {/* Envuelve la aplicación con AuthProvider */}
           <AuthProvider>{children}</AuthProvider>
