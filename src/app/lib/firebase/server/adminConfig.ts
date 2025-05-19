@@ -36,14 +36,14 @@
 
 import * as admin from 'firebase-admin';
 import type { DecodedIdToken } from 'firebase-admin/auth'; // Solo para el tipado
-import serviceAccountCredentials_json from './consultoria-d1072-firebase-adminsdk-fbsvc-cc4b3613e1.json';
+import serviceAccountCredentials_json from './consultoria-d1072-firebase-adminsdk-fbsvc-348d22fe8e.json';
 
 // --- Configuración de Credenciales de Cuenta de Servicio ---
 // Las credenciales se cargan directamente desde el archivo JSON importado.
 // Asegúrate de que `resolveJsonModule: true` y `esModuleInterop: true` (recomendado)
 // estén en tu `tsconfig.json` para que la importación de JSON funcione correctamente.
 
-let serviceAccountParams: admin.ServiceAccount | undefined;
+let serviceAccountParams: admin.ServiceAccount | null;
 
 try {
   // El JSON importado se asigna directamente.
@@ -67,17 +67,17 @@ try {
     // Verificar que los campos mapeados no sean undefined o null si son críticos
     if (!serviceAccountParams.projectId || !serviceAccountParams.privateKey || !serviceAccountParams.clientEmail) {
         console.error(' [Firebase Admin] Valores críticos (projectId, privateKey, clientEmail) faltan o son inválidos en el JSON de credenciales importado.');
-        serviceAccountParams = undefined;
+        serviceAccountParams = null;
     }
 
   } else {
     console.error(' [Firebase Admin] El archivo JSON de credenciales importado está incompleto, no es un objeto, o no tiene el formato esperado (project_id, private_key, client_email deben ser strings).');
-    serviceAccountParams = undefined;
+    serviceAccountParams = null;
   }
 } catch (error) {
   const err = error as Error;
   console.error(` [Firebase Admin] Error al procesar el archivo JSON de credenciales importado: ${err.message}`);
-  serviceAccountParams = undefined;
+  serviceAccountParams = null;
 }
 
 // --- Inicialización de Firebase Admin App ---
@@ -88,6 +88,9 @@ try {
  */
 if (!admin.apps.length) {
   if (serviceAccountParams && serviceAccountParams.projectId) { // Verifica que las credenciales esenciales estén presentes
+    console.log(' [Firebase Admin] Inicializando SDK...');
+    console.log(' [Firebase Admin] Proyecto:', serviceAccountParams);
+    console.log(' [Firebase Admin] Inspeccionando objeto admin antes de initializeApp:', admin); // Nueva línea de log
     try {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountParams),
@@ -100,7 +103,7 @@ if (!admin.apps.length) {
       console.error(` [Firebase Admin] Error al inicializar el SDK: ${err.message}`, err.stack);
       // En un entorno de producción, podrías querer que esto sea un error fatal
       // si el admin SDK es crítico para el funcionamiento de tus APIs.
-      // throw new Error(`Failed to initialize Firebase Admin SDK: ${err.message}`);
+      throw new Error(`Failed to initialize Firebase Admin SDK: ${err.message}`);
     }
   } else {
     // Advertencia si las credenciales no están configuradas pero no es necesariamente un error fatal
