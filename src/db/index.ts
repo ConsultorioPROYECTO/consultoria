@@ -27,7 +27,7 @@
  *       tanto localmente (.env.local) como en el entorno de despliegue (Render.com).
  */
 
-import { drizzle } from 'drizzle-orm/mysql2';
+import { drizzle, MySql2Database } from 'drizzle-orm/mysql2';
 import mysql from 'mysql2/promise'; // Usamos la versión con promesas para el pool
 import * as schema from './schema'; // Importa TODOS tus esquemas definidos (users.ts, etc.)
 
@@ -40,6 +40,8 @@ import * as schema from './schema'; // Importa TODOS tus esquemas definidos (use
 declare global {
   // eslint-disable-next-line no-var -- Es necesario usar 'var' para declarar en el ámbito global
   var drizzleMysqlPool: mysql.Pool | undefined;
+  // eslint-disable-next-line no-var -- Es necesario usar 'var' para declarar en el ámbito global
+  var drizzleDbInstance: MySql2Database<typeof schema> | undefined;
 }
 
 const connectionString = process.env.DATABASE_URL;
@@ -50,7 +52,7 @@ if (!connectionString) {
   throw new Error('DATABASE_URL environment variable is not set. Application cannot start.');
 }
 
-let pool: mysql.Pool;
+
 
 /**
  * Obtiene o crea el pool de conexiones MySQL.
@@ -75,28 +77,38 @@ const getPool = (): mysql.Pool => {
   }
 };
 
-// Obtenemos/creamos el pool
-// eslint-disable-next-line prefer-const
-pool = getPool();
-
 // --- Inicialización de Drizzle ORM ---
 
-/**
- * Instancia principal de Drizzle ORM.
- * @description Se configura con el pool de conexiones de `mysql2` y todos los esquemas
- *              definidos en `./schema`. El `mode: 'default'` habilita el uso de
- *              prepared statements para mayor seguridad y rendimiento.
- * @type {import('drizzle-orm/mysql2').MySql2Database<typeof schema>}
- */
-export const db = drizzle(pool, {
-    schema, // Pasa todos tus esquemas importados
-    mode: 'default', // Recomendado: habilita prepared statements
-    logger: true, // para ver las consultas SQL generadas por Drizzle (útil para depurar)
+let dbInstance: MySql2Database<typeof schema>;
+
+if (process.env.NODE_ENV === 'production') {
+  const pool = getPool(); // pool is now a const scoped here
+  dbInstance = drizzle(pool, {
+    schema,
+    mode: 'default',
+    logger: process.env.DRIZZLE_LOGGER === 'true', // Logger configurable
     casing: 'snake_case',
-});
+  });
+  console.log(' [DB] Instancia de Drizzle ORM inicializada para producción.');
+} else {
+  // En desarrollo, reutilizar o crear la instancia de Drizzle
+  if (!global.drizzleDbInstance) {
+    const pool = getPool(); // pool is now a const scoped here
+    console.log(' [DB] Creando NUEVA instancia de Drizzle ORM para desarrollo (HMR)...');
+    global.drizzleDbInstance = drizzle(pool, {
+      schema,
+      mode: 'default',
+      logger: process.env.DRIZZLE_LOGGER === 'true', // Logger configurable
+      casing: 'snake_case',
+    });
+  } else {
+    console.log(' [DB] Reutilizando instancia de Drizzle ORM existente (HMR)...');
+  }
+  dbInstance = global.drizzleDbInstance;
+}
 
-console.log(' [DB] Instancia de Drizzle ORM inicializada correctamente.');
+export const db = dbInstance;
 
-// Opcional: Podrías exportar el pool si necesitas interactuar directamente con él,
-// pero generalmente solo interactuarás a través de la instancia `db` de Drizzle.
-// export { pool };
+// La variable 'pool' ya no está disponible en este ámbito para exportar.
+// Si se necesita acceso directo al pool, se debería gestionar de otra manera,
+// aunque generalmente no es necesario si se usa la instancia 'db' de Drizzle.
