@@ -22,6 +22,7 @@ import { SmartSuggestions } from "./compo/SmartSuggestions";
 import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
+import { LoaderCircle } from "lucide-react"
 
 // Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
 interface Appointment {
@@ -147,7 +148,11 @@ export default function Page() {
   }, [user, loading, router]);
 
   if (loading || !user) {
-    return <div className="flex h-screen items-center justify-center">Cargando...</div>;
+    return <div className="flex h-screen items-center justify-center">
+      <LoaderCircle 
+        className="h-15 w-15 animate-spin text-foreground"
+      />
+    </div>;
   }
 
   return (
