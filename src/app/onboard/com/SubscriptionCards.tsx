@@ -5,6 +5,7 @@ import { Button } from "@rutas/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@rutas/components/ui/card";
 import { Check, Zap } from "lucide-react"; // Iconos para características y plan popular
 import { cn } from "@rutas/lib/utils";
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface SubscriptionCardsProps {
   selectedPlanId: string | null;
@@ -40,17 +41,28 @@ export function SubscriptionCards({ selectedPlanId, onSelectPlan, isAnnualBillin
               <CardDescription className="text-xs text-muted-foreground min-h-[28px] leading-tight">{plan.description}</CardDescription>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col gap-1.5 px-3 pb-1"> {/* Reducido gap a 1.5, pb a 1 */}
-              <div className="text-2xl font-bold flex items-baseline"> {/* Añadido flex e items-baseline para alinear los precios */}
-                <span>${price.toFixed(0)}</span> {/* Precio principal (mensual o anual/12) */}
-                
-                {/* Mostrar precio mensual original tachado si es facturación anual y no es plan empresarial */}
-                {isAnnualBilling && plan.id !== "empresarial" && (
-                  <span className="text-sm font-normal text-muted-foreground line-through ml-1.5">
-                    ${plan.priceMonthly.toFixed(0)}
-                  </span>
-                )}
+              <div className="text-2xl font-bold flex items-baseline relative overflow-hidden">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={isAnnualBilling ? 'annual' : 'monthly'}
+                    initial={{ x: isAnnualBilling ? 50 : -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: isAnnualBilling ? -50 : 50, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="flex items-baseline"
+                  >
+                    <span>${price.toFixed(0)}</span> {/* Precio principal (mensual o anual/12) */}
+                    
+                    {/* Mostrar precio mensual original tachado si es facturación anual y no es plan empresarial */}
+                    {isAnnualBilling && plan.id !== "empresarial" && (
+                      <span className="text-sm font-normal text-muted-foreground line-through ml-1.5">
+                        ${plan.priceMonthly.toFixed(0)}
+                      </span>
+                    )}
 
-                <span className="text-xs font-normal text-muted-foreground ml-1">{billingCycle}</span>
+                    <span className="text-xs font-normal text-muted-foreground ml-1">{billingCycle}</span>
+                  </motion.div>
+                </AnimatePresence>
               </div>
               
               {/* La siguiente línea de texto de ahorro ha sido eliminada: */}
