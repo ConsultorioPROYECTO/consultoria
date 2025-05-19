@@ -3,80 +3,335 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
-import { Badge } from "@rutas/components/ui/badge";
 import { Button } from "@rutas/components/ui/button";
-import { ClockIcon, UserIcon } from "lucide-react"; // Asumiendo que usas lucide-react para iconos
+import { ClockIcon, UserIcon, AlertCircle, CalendarSync, Play } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@rutas/components/ui/dialog";
 
-interface DailyAgendaViewProps {
-  onSelectPatient?: (id: string, name: string) => void;
-  onSelectAppointment?: (id: string) => void;
+interface Appointment {
+  id: string;
+  time: string;
+  patientName: string;
+  service: string;
+  status: string; // Mantener status para la lógica condicional del botón
 }
 
-// Mock data - en una aplicación real, esto vendría de una API
-const todayAppointments = [
-  { id: "apt1", time: "09:00 AM", patientName: "Elena García", service: "Consulta General", status: "Confirmada" },
-  { id: "apt2", time: "09:30 AM", patientName: "Roberto Fernández", service: "Revisión", status: "Pendiente" },
-  { id: "apt3", time: "10:00 AM", patientName: "Lucía Martínez", service: "Consulta Especializada", status: "Confirmada" },
-  { id: "apt4", time: "11:00 AM", patientName: "Marcos Alonso", service: "Consulta General", status: "Confirmada" },
-  { id: "apt5", time: "11:30 AM", patientName: "Sofía Reyes", service: "Vacunación", status: "Llegó" },
-  { id: "apt6", time: "12:00 PM", patientName: "Javier Torres", service: "Consulta General", status: "Confirmada" },
-];
+interface DailyAgendaViewProps {
+  todayAppointments: Appointment[]; // Añadir la prop para recibir las citas
+  onSelectPatient?: (id: string, name: string) => void;
+  onSelectAppointment?: (id: string) => void;
+  onStartAppointment?: (id: string) => void;
+  onCompleteAppointment?: (id: string) => void;
+  onResetAppointment?: (id: string) => void; // Añadir nueva prop para restablecer cita
+  onStartConsultation?: (appointment: Appointment) => void; // Nueva prop para iniciar consulta
+}
 
-export function DailyAgendaView({ onSelectPatient, onSelectAppointment }: DailyAgendaViewProps) {
+// Función auxiliar para crear un objeto Date para hoy con una hora y minuto específicos
+function getDateFromTimeString(timeString: string): Date {
+  const [time, modifier] = timeString.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+
+  if (hours === 12) {
+    hours = 0; // Medianoche o Mediodía se manejan por el modifier
+  }
+  if (modifier === 'PM') {
+    hours += 12;
+  }
+
+  const today = new Date();
+  today.setHours(hours, minutes, 0, 0);
+  return today;
+}
+
+// Función para formatear el tiempo restante/pasado
+function formatTimeDifference(date: Date): string {
+  const now = new Date();
+  const diffInMs = date.getTime() - now.getTime();
+  const diffInMinutes = Math.round(diffInMs / 60000);
+
+  if (diffInMinutes > 0) {
+    const hours = Math.floor(diffInMinutes / 60);
+    const minutes = diffInMinutes % 60;
+    if (hours > 0) {
+      return `en ${hours}h ${minutes}m`;
+    } else {
+      return `en ${minutes}m`;
+    }
+  } else if (diffInMinutes < 0) {
+    const absDiffInMinutes = Math.abs(diffInMinutes);
+     const hours = Math.floor(absDiffInMinutes / 60);
+    const minutes = absDiffInMinutes % 60;
+     if (hours > 0) {
+      return `hace ${hours}h ${minutes}m`;
+    } else {
+       return `hace ${absDiffInMinutes}m`;
+    }
+  } else {
+    return "ahora";
+  }
+}
+
+export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartAppointment, onCompleteAppointment, onResetAppointment, onStartConsultation }: DailyAgendaViewProps) {
   const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const [activeTab, setActiveTab] = useState("pending");
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Actualizar el tiempo actual cada minuto para que el tiempo restante se refresque
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Actualizar cada minuto
+
+    return () => clearInterval(timerId); // Limpiar el intervalo al desmontar el componente
+  }, []); // El array vacío asegura que el efecto solo se ejecute una vez al montar
 
   const handlePatientClick = (id: string, name: string) => {
     onSelectPatient?.(id, name);
   };
 
-  const handleAppointmentClick = (id: string) => {
-    onSelectAppointment?.(id);
+  const handleStartAppointment = (id: string) => {
+    onStartAppointment?.(id);
+    console.log(`Iniciar consulta para cita: ${id}, estado cambiado a Llegó`);
   };
 
+  const handleCompleteAppointment = (id: string) => {
+    onCompleteAppointment?.(id);
+    console.log(`Cita ${id} marcada como completada.`);
+  };
+
+  const handleResetAppointment = (id: string) => {
+    const appointment = todayAppointments.find(apt => apt.id === id);
+    if (appointment) {
+      setSelectedAppointment(appointment);
+      setIsDialogOpen(true);
+    }
+  };
+
+  const confirmReschedule = () => {
+    if (selectedAppointment) {
+      onResetAppointment?.(selectedAppointment.id);
+      setIsDialogOpen(false);
+      setSelectedAppointment(null);
+    }
+  };
+
+  const handleStartConsultationClick = (e: React.MouseEvent, appointment: Appointment) => {
+    e.stopPropagation();
+    onStartConsultation?.(appointment);
+  };
+
+  // Filtrar citas según la pestaña activa
+  const filteredAppointments = todayAppointments.filter(apt => {
+    if (activeTab === "pending") {
+      // Consideramos pendientes y en curso como 'faltantes' para esta vista
+      return apt.status !== "Completada";
+    } else if (activeTab === "completed") {
+      return apt.status === "Completada";
+    }
+    return false; // No mostrar nada si la pestaña no es reconocida
+  });
+
   return (
+    <>
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Agenda del Día</span>
-          <Button variant="outline" size="sm">Ver Semana</Button>
-        </CardTitle>
+          <div className="flex justify-between items-center">
+             <CardTitle>Agenda del Día</CardTitle>
+          </div>
         <CardDescription>{currentDate}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow p-0">
-        <ScrollArea className="h-[calc(100%-0px)]"> {/* Ajustar altura según necesidad */}
+        <CardContent className="flex-grow p-0 flex flex-col">
+           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
+              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground self-end mr-4">
+                 <TabsTrigger value="pending" className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow">
+                    Pendientes ({todayAppointments.filter(apt => apt.status !== 'Completada').length})
+                 </TabsTrigger>
+                 <TabsTrigger value="completed" className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow">
+                    Completadas ({todayAppointments.filter(apt => apt.status === 'Completada').length})
+                 </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="pending" className="m-0 flex-grow overflow-y-auto">
+                 <ScrollArea className="h-full"> {/* Ajustar altura según necesidad */}
+                    <div className="p-4 space-y-4">
+                      {filteredAppointments.length > 0 ? (
+                        filteredAppointments.map((apt) => {
+                           const aptDateTime = getDateFromTimeString(apt.time);
+                           const timeDiff = formatTimeDifference(aptDateTime);
+                           return (
+                             <div 
+                               key={apt.id} 
+                               className="p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
+                               onClick={() => handlePatientClick(apt.id, apt.patientName)} // Hacer la tarjeta clickeable
+                             >
+                               
+                               
+                               {/* Sección principal: Info paciente a la izq, botones a la der */}
+                               <div className="flex items-center justify-between">
+                                 {/* Info del paciente y servicio (columna izquierda) */}
+                                 <div className="flex-1 mr-2">
+                                    {/* Fila superior: Hora e ícono + posible estado (para completadas) */}
+                                    <div className="flex justify-between items-center mb-2">
+                                      <div className="flex items-center">
+                                        <ClockIcon className="h-4 w-4 mr-2 text-primary" />
+                                          <span className="font-medium text-primary text-sm">{apt.time}</span>
+                                          <span className="text-muted-foreground text-xs ml-2">{timeDiff}</span>
+                                      </div>
+                                    </div>
+                                   <div className="flex items-center mb-1">
+                                      <UserIcon className="h-5 w-5 mr-2 flex-shrink-0 text-muted-foreground" />
+                                      <p className="text-xl font-bold text-foreground">{apt.patientName}</p> {/* Nombre más grande */}
+                                   </div>
+                                   <p className="text-sm text-muted-foreground ml-7">{apt.service}</p> {/* Servicio más pequeño, indentado */}
+                                 </div>
+
+                                 {/* Botones de acción (columna derecha, apilados) */}
+                                 <div className="flex flex-row space-x-2 xl:flex-col xl:space-x-0 xl:space-y-2 flex-shrink-0">
+                                   {/* Botón "Ver Historial" eliminado */}
+                                   {apt.status === "Confirmada" || apt.status === "Pendiente" ? (
+                                     <>
+                                       <Button
+                                         onClick={(e) => { e.stopPropagation(); handleResetAppointment(apt.id); }} // Botón Reprogramar con diálogo
+                                         variant="outline"
+                                         className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 w-20 h-20 p-0 xl:w-auto xl:h-8 xl:px-3 flex items-center justify-center"
+                                       >
+                                         <CalendarSync className="h-10 w-10 xl:h-4 xl:w-4 xl:mr-2" />
+                                         <span className="hidden xl:inline">Reprogramar</span>
+                                       </Button>
+                                       <Button
+                                         onClick={(e) => handleStartConsultationClick(e, apt)}
+                                         variant="outline"
+                                         className="flex-1 @sm:flex-none @sm:w-auto @sm:justify-center"
+                                       >
+                                         <Play className="h-10 w-10 xl:h-4 xl:w-4 xl:mr-2" />
+                                         <span className="hidden xl:inline">Iniciar Consulta</span>
+                                       </Button>
+                                     </>
+                                   ) : apt.status === "Llegó" ? (
+                                     <Button variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleCompleteAppointment(apt.id); }}>Completada</Button>
+                                   ) : null}
+                                 </div>
+                               </div>
+                             </div>
+                           );
+                        })
+                      ) : (
+                        <p className="text-center text-muted-foreground py-8">No hay citas pendientes.</p>
+                      )}
+                    </div>
+                 </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="completed" className="m-0 flex-grow overflow-y-auto">
+                  <ScrollArea className="h-full"> {/* Ajustar altura según necesidad */}
           <div className="p-4 space-y-4">
-            {todayAppointments.length > 0 ? (
-              todayAppointments.map((apt) => (
-                <div key={apt.id} className="p-3 border rounded-lg hover:shadow-md transition-shadow bg-card">
-                  <div className="flex justify-between items-start mb-2">
+                      {filteredAppointments.length > 0 ? (
+                        filteredAppointments.map((apt) => (
+                           <div 
+                             key={apt.id} 
+                             className="p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
+                             onClick={() => handlePatientClick(apt.id, apt.patientName)} // Hacer la tarjeta clickeable
+                           >
+                             {/* Fila superior: Hora e ícono + estado completada */}
+                             <div className="flex justify-between items-center mb-2">
                     <div className="flex items-center">
                       <ClockIcon className="h-4 w-4 mr-2 text-primary" />
                       <span className="font-semibold text-primary">{apt.time}</span>
                     </div>
-                    <Badge 
-                      variant={apt.status === "Confirmada" ? "default" : apt.status === "Pendiente" ? "secondary" : "outline"}
-                      className={`${apt.status === "Llegó" ? "bg-green-500 text-white" : ""}`}
-                    >
-                      {apt.status}
-                    </Badge>
+                               <span className="text-sm text-muted-foreground">Completada</span> {/* Estado Completada a la derecha */}
                   </div>
+                             
+                              {/* Sección principal: Info paciente a la izq, botón a la der */}
+                             <div className="flex items-center justify-between">
+                                {/* Info del paciente y servicio (columna izquierda) */}
+                               <div className="flex-1 mr-2">
                   <div className="mb-1 flex items-center">
                     <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <p className="font-medium text-foreground">{apt.patientName}</p>
+                                   <p className="font-medium text-foreground">{apt.patientName}</p> {/* Nombre del paciente */}
+                                 </div>
+                                 <p className="text-sm text-muted-foreground ml-6">{apt.service}</p> {/* Servicio */}
+                               </div>
+                                
+                                {/* Botón de acción (columna derecha, apilado) */}
+                               <div className="flex flex-col space-y-2 flex-shrink-0">
+                                  {/* Botón "Ver Historial" eliminado */}
+                                  {/* Botón Restablecer */}
+                                  <Button 
+                                    variant="secondary" // Usar variant secondary
+                                    size="sm" 
+                                    onClick={(e) => { e.stopPropagation(); onResetAppointment?.(apt.id); }} // Llama directamente a la prop onResetAppointment
+                                    className="text-muted-foreground hover:bg-muted"
+                                  >
+                                     Restablecer
+                                  </Button>
                   </div>
-                  <p className="text-sm text-muted-foreground ml-6">{apt.service}</p>
-                  <div className="mt-3 flex justify-end space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handlePatientClick(apt.id, apt.patientName)}>Ver Historial</Button>
-                    <Button size="sm" onClick={() => handleAppointmentClick(apt.id)}>Iniciar Consulta</Button>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-center text-muted-foreground py-8">No hay citas programadas para hoy.</p>
+                        <p className="text-center text-muted-foreground py-8">No hay citas completadas.</p>
             )}
           </div>
         </ScrollArea>
+              </TabsContent>
+           </Tabs>
       </CardContent>
     </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+              Confirmar Reprogramación
+            </DialogTitle>
+            <DialogDescription>
+              Estás a punto de reprogramar la siguiente cita:
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedAppointment && (
+            <div className="py-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{selectedAppointment.patientName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ClockIcon className="h-4 w-4 text-muted-foreground" />
+                <span>{selectedAppointment.time}</span>
+              </div>
+              <p className="text-sm text-muted-foreground ml-6">{selectedAppointment.service}</p>
+            </div>
+          )}
+
+          <DialogDescription className="text-amber-600 bg-amber-50 p-3 rounded-md">
+            Se enviará una notificación automática al paciente informando que su cita será reprogramada.
+          </DialogDescription>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmReschedule}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              Confirmar Reprogramación
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

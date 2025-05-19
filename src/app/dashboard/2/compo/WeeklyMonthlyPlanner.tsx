@@ -99,10 +99,10 @@ export function WeeklyMonthlyPlanner() {
                         e.date.getDate() === day.date.getDate()
                     );
                     return (
-                        <div className="relative h-full w-full flex items-center justify-center">
+                        <td className="relative h-full w-full flex items-center justify-center">
                            <span>{day.date.getDate()}</span>
                            {event && <div className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 ${event.color} rounded-full`} title={event.title}></div>}
-                        </div>
+                        </td>
                     );
                 }
             }}
