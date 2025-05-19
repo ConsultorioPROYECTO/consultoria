@@ -86,7 +86,7 @@ export function ConsultationModal({
                 <CardTitle>Notas de Consulta</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto "> {/* flex-1 y overflow para hacer scroll en las notas */}
-                <ScrollArea className="h-full pr-4 overflow-hidden "> {/* Añadir ScrollArea alrededor del textarea */}
+                <ScrollArea className="h-full overflow-hidden "> {/* Eliminado pr-4 */}
                   <Textarea 
                     placeholder="Escribe tus notas de consulta aquí..." 
                     className="h-[200px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
@@ -117,4 +117,4 @@ export function ConsultationModal({
       </DialogContent>
     </Dialog>
   );
-} 
+}
