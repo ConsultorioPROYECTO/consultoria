@@ -212,7 +212,7 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                                        <Button
                                          onClick={(e) => handleStartConsultationClick(e, apt)}
                                          variant="outline"
-                                         className="flex-1 @sm:flex-none @sm:w-auto @sm:justify-center"
+                                         className="w-20 h-20 p-0 xl:w-auto xl:h-8 xl:px-3 flex items-center justify-center"
                                        >
                                          <Play className="h-10 w-10 xl:h-4 xl:w-4 xl:mr-2" />
                                          <span className="hidden xl:inline">Iniciar Consulta</span>
