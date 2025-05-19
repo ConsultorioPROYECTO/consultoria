@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
                 displayName: displayName,
                 photoURL: photoURL,
                 providerId: providerId,
-                role: 'user', // Rol por defecto
+                role: 'N/A', // Rol por defecto
                 isActive: true, // Activo por defecto
                 lastLoginAt: new Date(),
                 createdAt: new Date(),
