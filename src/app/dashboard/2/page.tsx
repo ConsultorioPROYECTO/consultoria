@@ -123,11 +123,6 @@ export default function Page() {
     );
   };
 
-  const handleCloseConsultationModal = () => {
-    setIsConsultationModalOpen(false);
-    setSelectedConsultationAppointment(null);
-  };
-
   const handleSaveAndCompleteConsultation = (appointmentId: string, notes: string) => {
     console.log(`Guardando notas para cita ${appointmentId}:`, notes);
     // Actualizar el estado de la cita a "Completada"

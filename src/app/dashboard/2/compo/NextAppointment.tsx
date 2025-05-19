@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
-import { ClockIcon, UserIcon, CalendarCheck2 } from 'lucide-react'; // Iconos
+import { ClockIcon, UserIcon } from 'lucide-react'; // Iconos
 
 interface Appointment {
   id: string;
