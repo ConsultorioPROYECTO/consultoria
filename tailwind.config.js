@@ -64,7 +64,6 @@ module.exports = {
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
         },
         subtleFadeIn: { // <-- NUESTRA ANIMACIÓN
           '0%': { opacity: '0.5', transform: 'translateY(5px)' },
@@ -76,6 +75,16 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
         'subtle-fade-in': 'subtleFadeIn 0.4s ease-out forwards', // <-- NUESTRA ANIMACIÓN
       },
+      boxShadow: { // Añadimos esta sección para mapear las sombras a variables CSS
+        '2xs': 'var(--shadow-2xs)',
+        'xs': 'var(--shadow-xs)',
+        'sm': 'var(--shadow-sm)',
+        'DEFAULT': 'var(--shadow)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+        '2xl': 'var(--shadow-2xl)',
+      }
     },
   },
   plugins: [require("tailwindcss-animate"), require('tailwind-scrollbar')], // plugin común para animaciones predefinidas
