@@ -9,7 +9,7 @@ interface TodaysAppointmentsProps {
 
 export function TodaysAppointments({ appointmentCount }: TodaysAppointmentsProps) {
   return (
-    <Card className="w-full bg-card text-white rounded-xl overflow-hidden">
+    <Card className="w-full bg-card rounded-xl overflow-hidden">
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex flex-col">
           <span className="text-sm opacity-80">Hoy tienes</span>
