@@ -52,7 +52,10 @@ export function NavMain({
               <SidebarMenuButton
                 asChild
                 tooltip={item.title}
-                className={cn(item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground")}
+                className={cn(
+                  "text-muted-foreground",
+                  item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                )}
               >
                 <Link href={item.url}>
                   {item.icon && <item.icon />}

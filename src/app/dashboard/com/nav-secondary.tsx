@@ -31,7 +31,10 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild
-                className={cn(item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground")}
+                className={cn(
+                  "text-muted-foreground",
+                  item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                )}
               >
                 <a href={item.url}>
                   <item.icon />
