@@ -11,15 +11,18 @@ import {
   SidebarMenuItem,
 } from "@rutas/components/ui/sidebar"
 import Link from 'next/link'
+import { cn } from "@rutas/lib/utils"
 
 export function NavMain({
   items,
+  currentPath,
 }: {
   items: {
     title: string
     url: string
     icon?: Icon
   }[]
+  currentPath: string
 }) {
   return (
     <SidebarGroup>
@@ -46,7 +49,11 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                className={cn(item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground")}
+              >
                 <Link href={item.url}>
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>

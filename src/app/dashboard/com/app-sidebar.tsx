@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from 'next/navigation';
 // import { Calendar } from "@rutas/components/ui/calendar"
 import { Button } from "@rutas/components/ui/button" // Añadir importación de Button
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card" // Añadir importaciones de Card
@@ -59,6 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [date, setDate] = React.useState<Date | undefined>(undefined) // Estado inicial sin fecha seleccionada
   const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
   const { user } = useAuth()
+  const pathname = usePathname();
 
   React.useEffect(() => {
     if (date) {
@@ -178,8 +180,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </p>
            </div>
         )}
-        <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={data.navMain} currentPath={pathname} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" currentPath={pathname} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

@@ -8,6 +8,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import UiScreen from '@rutas/components/uiscreen';
+import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./compo/DailyAgendaView";
@@ -22,7 +24,6 @@ import { SmartSuggestions } from "./compo/SmartSuggestions";
 import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
-import { LoaderCircle } from "lucide-react"
 
 // Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
 interface Appointment {
@@ -143,11 +144,12 @@ export default function Page() {
   }, [user, loading, router]);
 
   if (loading || !user) {
-    return <div className="flex h-screen items-center justify-center">
-      <LoaderCircle 
-        className="h-15 w-15 animate-spin text-foreground"
-      />
-    </div>;
+    return (
+      <UiScreen className="flex h-screen flex-col items-center justify-center ">
+        <p className="font-bold text-muted-foreground text-2xl text-center">Preparando<br/>tu<br/>espacio</p>
+        <WaveformLoader className="mt-4 w-30 h-auto text-muted-foreground" />
+      </UiScreen>
+    );
   }
 
   return (
@@ -163,7 +165,7 @@ export default function Page() {
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <main className="flex-1 space-y-6 p-4 md:p-6 lg:p-8">
+          <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
             <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6">
               <h1 className="text-3xl font-bold tracking-tight text-foreground">Hola, {displayTwoNames}</h1>
               <p className="text-muted-foreground">
