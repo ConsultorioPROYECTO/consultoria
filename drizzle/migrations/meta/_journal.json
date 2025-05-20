@@ -15,6 +15,13 @@
       "when": 1747677205530,
       "tag": "0001_simple_songbird",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1747749847098,
+      "tag": "0002_living_goliath",
+      "breakpoints": true
     }
   ]
 }
