@@ -152,8 +152,8 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
         <CardDescription>{currentDate}</CardDescription>
       </CardHeader>
         <CardContent className="flex-grow p-0 flex flex-col">
-           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
-              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground self-end mr-4">
+           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col px-4 sm:px-0">
+              <TabsList className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground w-full justify-center sm:w-auto sm:self-end sm:mr-4">
                  <TabsTrigger value="pending" className="inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow">
                     Pendientes ({todayAppointments.filter(apt => apt.status !== 'Completada').length})
                  </TabsTrigger>
