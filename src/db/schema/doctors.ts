@@ -1,6 +1,6 @@
 // src/db/schema/users.ts (o donde definas tus esquemas de Drizzle)
 
-import { mysqlTable, varchar, timestamp, serial, index } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
 
 /**
@@ -8,7 +8,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para va
  * @author Santiago Prada
  * @description Define la estructura de la tabla 'users' en la base de datos MySQL.
  *
- * @property {number} idDoctor - Clave primaria autoincremental interna de la base de datos.
+ * @property {int} idDoctor - Clave primaria autoincremental interna de la base de datos.
  * @property { reference } userId - Clave foránea a la tabla 'users' para relacionar con el usuario.
  * @property { string } speciality - Especialidad del doctor.
  * @property { string } calendar_id - ID del calendario del doctor.
@@ -27,7 +27,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para va
  */
 export const doctors = mysqlTable('doctors', {
   // Clave primaria interna de la BD (opcional si firebaseUid es tu PK, pero recomendable tener una PK numérica simple)
-  idDoctor: serial('id').primaryKey(), // `serial` es un alias para `int unsigned not null auto_increment unique`
+  idDoctor: int('id').autoincrement().primaryKey(),
 
   // ----- Referencia a la tabla users -----
   userId: varchar('user_id', { length: 255 }).notNull().unique(), // Muy importante: único y notNull
