@@ -117,11 +117,6 @@ export default function Page() {
   const handleStartConsultation = (appointment: Appointment) => {
     setSelectedConsultationAppointment(appointment);
     setIsConsultationModalOpen(true);
-    setTodayAppointmentsState(prevState =>
-      prevState.map(apt =>
-        apt.id === appointment.id ? { ...apt, status: "En Curso" } : apt
-      )
-    );
   };
 
   const handleSaveAndCompleteConsultation = (appointmentId: string, notes: string) => {
