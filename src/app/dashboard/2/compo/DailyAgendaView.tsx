@@ -164,7 +164,7 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
 
               <TabsContent value="pending" className="m-0 flex-grow overflow-y-auto">
                  <ScrollArea className="h-full"> {/* Ajustar altura según necesidad */}
-                    <div className="p-4 space-y-4">
+                    <div className="p-2 md:p-4 space-y-2 md:space-y-4">
                       {filteredAppointments.length > 0 ? (
                         filteredAppointments.map((apt) => {
                            const aptDateTime = getDateFromTimeString(apt.time);
@@ -172,54 +172,55 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                            return (
                              <div 
                                key={apt.id} 
-                               className="p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
+                               className="p-2 md:p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
                                onClick={() => handlePatientClick(apt.id, apt.patientName)} // Hacer la tarjeta clickeable
                              >
                                
                                
                                {/* Sección principal: Info paciente a la izq, botones a la der */}
-                               <div className="flex items-center justify-between">
+                               <div className="flex flex-row items-center justify-between gap-3 md:gap-2">
                                  {/* Info del paciente y servicio (columna izquierda) */}
-                                 <div className="flex-1 mr-2">
+                                 <div className="flex-1 w-full md:w-auto md:mr-2">
                                     {/* Fila superior: Hora e ícono + posible estado (para completadas) */}
                                     <div className="flex justify-between items-center mb-2">
                                       <div className="flex items-center">
-                                        <ClockIcon className="h-4 w-4 mr-2 text-primary" />
+                                        <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
                                           <span className="font-medium text-primary text-sm">{apt.time}</span>
                                           <span className="text-muted-foreground text-xs ml-2">{timeDiff}</span>
                                       </div>
                                     </div>
                                    <div className="flex items-center mb-1">
                                       <UserIcon className="h-5 w-5 mr-2 flex-shrink-0 text-muted-foreground" />
-                                      <p className="text-xl font-bold text-foreground">{apt.patientName}</p> {/* Nombre más grande */}
+                                      <p className="text-lg md:text-xl font-bold text-foreground">{apt.patientName}</p> {/* Nombre más grande */}
                                    </div>
-                                   <p className="text-sm text-muted-foreground ml-7">{apt.service}</p> {/* Servicio más pequeño, indentado */}
+                                   <p className="text-sm text-muted-foreground md:ml-7">{apt.service}</p> {/* Servicio más pequeño, indentado */}
+
                                  </div>
 
-                                 {/* Botones de acción (columna derecha, apilados) */}
-                                 <div className="flex flex-row space-x-2 xl:flex-col xl:space-x-0 xl:space-y-2 flex-shrink-0">
+                                 {/* Botones de acción (fila en móvil, columna en md+) */}
+                                 <div className="flex flex-row space-x-2 items-center self-center md:flex-col md:space-y-2 md:space-x-0 md:items-stretch md:self-end flex-shrink-0">
                                    {/* Botón "Ver Historial" eliminado */}
                                    {apt.status === "Confirmada" || apt.status === "Pendiente" ? (
                                      <>
                                        <Button
                                          onClick={(e) => { e.stopPropagation(); handleResetAppointment(apt.id); }} // Botón Reprogramar con diálogo
                                          variant="outline"
-                                         className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 w-20 h-20 p-0 xl:w-auto xl:h-8 xl:px-3 flex items-center justify-center"
+                                         className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 flex items-center justify-center rounded-md text-xs p-2 h-9 w-9 md:w-full md:px-3 md:h-8 lg:w-auto"
                                        >
-                                         <CalendarSync className="h-10 w-10 xl:h-4 xl:w-4 xl:mr-2" />
-                                         <span className="hidden xl:inline">Reprogramar</span>
+                                         <CalendarSync className="h-4 w-4 md:mr-2" />
+                                         <span className="hidden md:inline">Reprogramar</span>
                                        </Button>
                                        <Button
                                          onClick={(e) => handleStartConsultationClick(e, apt)}
                                          variant="outline"
-                                         className="w-20 h-20 p-0 xl:w-auto xl:h-8 xl:px-3 flex items-center justify-center"
+                                         className="flex items-center justify-center rounded-md text-xs p-2 h-9 w-9 md:w-full md:px-3 md:h-8 lg:w-auto"
                                        >
-                                         <Play className="h-10 w-10 xl:h-4 xl:w-4 xl:mr-2" />
-                                         <span className="hidden xl:inline">Iniciar Consulta</span>
+                                         <Play className="h-4 w-4 md:mr-2" />
+                                         <span className="hidden md:inline">Iniciar</span>
                                        </Button>
                                      </>
                                    ) : apt.status === "Llegó" ? (
-                                     <Button variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleCompleteAppointment(apt.id); }}>Completada</Button>
+                                     <Button variant="secondary" className="w-full md:w-auto h-10 md:h-8 px-3 text-xs md:text-sm" onClick={(e) => { e.stopPropagation(); handleCompleteAppointment(apt.id); }}>Completada</Button>
                                    ) : null}
                                  </div>
                                </div>
@@ -235,43 +236,42 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
 
               <TabsContent value="completed" className="m-0 flex-grow overflow-y-auto">
                   <ScrollArea className="h-full"> {/* Ajustar altura según necesidad */}
-          <div className="p-4 space-y-4">
+          <div className="p-2 md:p-4 space-y-2 md:space-y-4">
                       {filteredAppointments.length > 0 ? (
                         filteredAppointments.map((apt) => (
                            <div 
                              key={apt.id} 
-                             className="p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
+                             className="p-2 md:p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
                              onClick={() => handlePatientClick(apt.id, apt.patientName)} // Hacer la tarjeta clickeable
                            >
                              {/* Fila superior: Hora e ícono + estado completada */}
-                             <div className="flex justify-between items-center mb-2">
+                             <div className="flex justify-between items-center mb-1 md:mb-2">
                     <div className="flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-2 text-primary" />
-                      <span className="font-semibold text-primary">{apt.time}</span>
+                      <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
+                      <span className="font-semibold text-primary text-sm md:text-base">{apt.time}</span>
                     </div>
-                               <span className="text-sm text-muted-foreground">Completada</span> {/* Estado Completada a la derecha */}
+                               <span className="text-xs md:text-sm text-muted-foreground">Completada</span> {/* Estado Completada a la derecha */}
                   </div>
                              
                               {/* Sección principal: Info paciente a la izq, botón a la der */}
-                             <div className="flex items-center justify-between">
+                             <div className="flex flex-row items-center justify-between gap-3 md:gap-2">
                                 {/* Info del paciente y servicio (columna izquierda) */}
-                               <div className="flex-1 mr-2">
+                               <div className="flex-1 w-full md:w-auto md:mr-2">
                   <div className="mb-1 flex items-center">
-                    <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                                   <p className="font-medium text-foreground">{apt.patientName}</p> {/* Nombre del paciente */}
+                    <UserIcon className="h-4 w-4 mr-1 md:mr-2 text-muted-foreground" />
+                                   <p className="font-medium text-foreground text-base md:text-lg">{apt.patientName}</p> {/* Nombre del paciente */}
                                  </div>
-                                 <p className="text-sm text-muted-foreground ml-6">{apt.service}</p> {/* Servicio */}
+                                 <p className="text-xs md:text-sm text-muted-foreground md:ml-6">{apt.service}</p> {/* Servicio */}
                                </div>
                                 
-                                {/* Botón de acción (columna derecha, apilado) */}
-                               <div className="flex flex-col space-y-2 flex-shrink-0">
+                                {/* Botón de acción (columna derecha, apilado en pantallas grandes, fila en pequeñas) */}
+                               <div className="flex flex-row md:flex-col space-x-2 md:space-x-0 md:space-y-2 flex-shrink-0 self-center md:self-auto">
                                   {/* Botón "Ver Historial" eliminado */}
                                   {/* Botón Restablecer */}
                                   <Button 
                                     variant="secondary" // Usar variant secondary
-                                    size="sm" 
                                     onClick={(e) => { e.stopPropagation(); onResetAppointment?.(apt.id); }} // Llama directamente a la prop onResetAppointment
-                                    className="text-muted-foreground hover:bg-muted"
+                                    className="text-muted-foreground hover:bg-muted w-full md:w-auto h-10 md:h-8 px-3 text-xs md:text-sm"
                                   >
                                      Restablecer
                                   </Button>
