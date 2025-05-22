@@ -16,13 +16,13 @@
  */
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { interFont } from './fonts';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
 import { copernicusFont } from './fonts';
 import { ThemeProvider } from "./dashboard/com/theme-provider";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = interFont;
 
 export const metadata: Metadata = {
   title: 'Mi App con Firebase Auth',

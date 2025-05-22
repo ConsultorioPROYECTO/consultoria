@@ -36,7 +36,7 @@
 
 import * as admin from 'firebase-admin';
 import type { DecodedIdToken } from 'firebase-admin/auth'; // Solo para el tipado
-import serviceAccountCredentials_json from './consultoria-d1072-firebase-adminsdk-fbsvc-348d22fe8e.json';
+import serviceAccountCredentials_json from '@rutas/../etc/secrets/consultoria-d1072-firebase-adminsdk-fbsvc-348d22fe8e.json';
 
 // --- Configuración de Credenciales de Cuenta de Servicio ---
 // Las credenciales se cargan directamente desde el archivo JSON importado.
@@ -89,8 +89,8 @@ try {
 if (!admin.apps.length) {
   if (serviceAccountParams && serviceAccountParams.projectId) { // Verifica que las credenciales esenciales estén presentes
     console.log(' [Firebase Admin] Inicializando SDK...');
-    console.log(' [Firebase Admin] Proyecto:', serviceAccountParams);
-    console.log(' [Firebase Admin] Inspeccionando objeto admin antes de initializeApp:', admin); // Nueva línea de log
+    //console.log(' [Firebase Admin] Proyecto:', serviceAccountParams);
+    //console.log(' [Firebase Admin] Inspeccionando objeto admin antes de initializeApp:', admin); // Nueva línea de log
     try {
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccountParams),
