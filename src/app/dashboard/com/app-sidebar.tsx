@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from 'next/navigation';
-// import { Calendar } from "@rutas/components/ui/calendar"
+import { Calendar } from "@rutas/components/ui/calendar"
 import { Button } from "@rutas/components/ui/button" // Añadir importación de Button
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card" // Añadir importaciones de Card
 import {
@@ -140,16 +140,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="flex flex-col">
-        {/* <div className="p-2">
+        <div className="p-2">
           <Calendar
             mode="single"
             selected={date}
             onSelect={setDate} // setDate actualizará 'date', y el useEffect se encargará del resto
             className="rounded-md "
           />
-        </div> */}
+        </div>
         
-        {/* Sección para mostrar citas del día seleccionado */} 
+        {/* Sección para mostrar citas del día seleccionado */}  
         {date && selectedDayAppointments.length > 0 && (
           <div className="p-2 mt-2">
             <Card>

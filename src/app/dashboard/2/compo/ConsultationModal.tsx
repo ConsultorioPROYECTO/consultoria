@@ -29,9 +29,9 @@ export function ConsultationModal({
   onOpenChange,
   onSaveAndComplete,
 }: ConsultationModalProps) {
-  if (!appointment) return null; // No renderizar si no hay cita seleccionada
-
   const [notes, setNotes] = useState('');
+
+  if (!appointment) return null; // No renderizar si no hay cita seleccionada
 
   const handleSaveClick = () => {
     onSaveAndComplete(appointment.id, notes);

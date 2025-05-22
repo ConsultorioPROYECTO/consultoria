@@ -58,7 +58,9 @@ import { eq, desc } from 'drizzle-orm';
  */
 const getUsersHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  decodedToken: DecodedIdToken,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  context: { params: Record<string, never> } // Para rutas no dinámicas, params es un objeto vacío (Record<string, never>).
 ): Promise<NextResponse | Response> => {
   console.log(`[API /api/users] Solicitud GET recibida y autenticada para UID: ${decodedToken.uid}`);
 
@@ -127,12 +129,7 @@ const getUsersHandler = async (
 };
 
 // Envolver el manejador con el middleware de autenticación
-export async function GET(
-  request: NextRequest,
-  context: { params: Record<string, string> }
-) {
-  return withAuthentication(getUsersHandler)(request, context);
-}
+export const GET = withAuthentication(getUsersHandler);
 
 // Nota: Si necesitaras otros métodos (POST, PUT, etc.) y también quieres protegerlos,
 // los envolverías de manera similar:

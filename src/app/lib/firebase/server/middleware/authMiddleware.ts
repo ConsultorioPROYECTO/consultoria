@@ -29,10 +29,9 @@ import type { DecodedIdToken } from 'firebase-admin/auth'; // Para el tipo de re
  * @property {DecodedIdToken} [decodedToken] - El token decodificado si la autenticación es exitosa.
  * @property {NextResponse} [errorResponse] - Una respuesta de error si la autenticación falla.
  */
-export interface AuthenticatedRequestResult {
-  decodedToken?: DecodedIdToken;
-  errorResponse?: NextResponse;
-}
+export type AuthenticatedRequestResult =
+  | { decodedToken: DecodedIdToken; errorResponse?: never }
+  | { decodedToken?: never; errorResponse: NextResponse };
 
 /**
  * Autentica una solicitud API validando el Token ID de Firebase.
@@ -117,14 +116,57 @@ export const authenticateRequest = async (
  * //   return NextResponse.json({ message: `Data for user ${userId}` });
  * // });
  */
-export function withAuthentication<T extends { params?: Record<string, string | string[]> } = object >(
-  handler: (
-    request: NextRequest,
-    decodedToken: DecodedIdToken,
-    context: T // Next.js pasa un segundo argumento `context` con `params` para rutas dinámicas
-  ) => Promise<NextResponse | Response> // Permitir también Response para streaming, etc.
-) {
-  return async (request: NextRequest, context: T): Promise<NextResponse | Response> => {
+// Helper type to check if an object type is empty (like {})
+// If T is {}, keyof T is never. Otherwise, keyof T is not never.
+// We need to handle P being potentially undefined or a specific record.
+// A more robust check for an empty params object:
+// If P is exactly {}, then it's for a non-dynamic route.
+// If P has specific keys, it's for a dynamic route.
+// `Record<string, never>` is a good way to represent an object that must be empty.
+// However, Next.js uses `{}` for non-dynamic params.
+
+// Type for the handler function that developers write and pass to withAuthentication
+type AuthenticatedHandler<P extends Record<string, string | string[] | undefined>> = (
+  request: NextRequest,
+  decodedToken: DecodedIdToken,
+  context: { params: P } // The developer's handler always receives context
+) => Promise<NextResponse | Response>;
+
+// Type for the actual route handler that Next.js will call
+// This type changes based on whether P signifies a dynamic route or not.
+// If P is {}, it's a non-dynamic route, so context is not part of Next.js's call signature.
+// If P is not {}, it's dynamic, and context is part of the call signature.
+
+// We use a trick: if P has no required keys, it's effectively {}. `keyof P extends never` is too strict if P can be `Record<string, string | undefined>`. 
+// A simpler way: if P is exactly `{}`, then it's non-dynamic.
+// This requires careful generic defaulting and inference.
+
+// Let's define the return type of withAuthentication conditionally.
+// If P is the default empty object `{}`, the returned handler should only take `request`.
+// Otherwise, it takes `request` and `context`.
+
+// Overload for non-dynamic routes (P is Record<string, never>)
+// This signature is chosen when withAuthentication is called with a handler
+// whose 'context.params' type is Record<string, never> (effectively an empty params object).
+export function withAuthentication(
+  handler: AuthenticatedHandler<Record<string, never>>
+): (request: NextRequest) => Promise<NextResponse | Response>;
+
+// Overload for dynamic routes (P is some record with actual parameter definitions)
+// This signature is chosen when P is inferred as something other than {}.
+export function withAuthentication<P extends Record<string, string | string[] | undefined>>(
+  handler: AuthenticatedHandler<P>
+): (request: NextRequest, context: { params: P }) => Promise<NextResponse | Response>;
+
+// Implementation
+// The return type is a union of the possible handler signatures based on P.
+// This makes the implementation signature more precise than 'any'.
+export function withAuthentication<P extends Record<string, string | string[] | undefined>>(
+  handler: AuthenticatedHandler<P>
+): ((request: NextRequest) => Promise<NextResponse | Response>) | ((request: NextRequest, context: { params: P }) => Promise<NextResponse | Response>) {
+  // This inner async function is the actual handler Next.js will call.
+  // Its 'context' parameter is optional to be compatible with both dynamic and non-dynamic route calls.
+  const routeHandler = async (request: NextRequest, context?: { params: P }): Promise<NextResponse | Response> => {
     const authResult = await authenticateRequest(request);
 
     if (authResult.errorResponse) {
@@ -132,6 +174,11 @@ export function withAuthentication<T extends { params?: Record<string, string | 
     }
 
     // Aseguramos que decodedToken no es undefined aquí debido a la verificación anterior
-    return handler(request, authResult.decodedToken!, context);
+    // decodedToken está garantizado aquí por la lógica anterior y el tipo de unión discriminada
+    // The original handler always expects a context. If Next.js doesn't pass one (non-dynamic route),
+    // we synthesize it based on P (which would be {} by default).
+    const effectiveContext = context || ({ params: {} as P });
+    return handler(request, authResult.decodedToken, effectiveContext);
   };
+  return routeHandler;
 }

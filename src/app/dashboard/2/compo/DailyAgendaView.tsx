@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@rutas/components/ui/dialog";
 
 interface Appointment {
@@ -38,7 +37,8 @@ interface DailyAgendaViewProps {
 // Función auxiliar para crear un objeto Date para hoy con una hora y minuto específicos
 function getDateFromTimeString(timeString: string): Date {
   const [time, modifier] = timeString.split(' ');
-  let [hours, minutes] = time.split(':').map(Number);
+  let hours = parseInt(time.split(':')[0], 10);
+  const minutes = parseInt(time.split(':')[1], 10);
 
   if (hours === 12) {
     hours = 0; // Medianoche o Mediodía se manejan por el modifier
@@ -87,6 +87,11 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  console.log("Citas para hoy:", todayAppointments);
+  console.log("Estado de las citas:", todayAppointments.map(apt => apt.status));
+  // Pendiente por debuggear
+  console.debug("Variables sin usar \ncurrentTime:\t", currentTime,"onStartAppointment:\t", onStartAppointment);
+
   // Actualizar el tiempo actual cada minuto para que el tiempo restante se refresque
   useEffect(() => {
     const timerId = setInterval(() => {
@@ -99,11 +104,12 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
   const handlePatientClick = (id: string, name: string) => {
     onSelectPatient?.(id, name);
   };
-
+  /*
   const handleStartAppointment = (id: string) => {
     onStartAppointment?.(id);
     console.log(`Iniciar consulta para cita: ${id}, estado cambiado a Llegó`);
   };
+  */
 
   const handleCompleteAppointment = (id: string) => {
     onCompleteAppointment?.(id);

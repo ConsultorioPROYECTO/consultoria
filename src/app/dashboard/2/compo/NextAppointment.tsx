@@ -19,7 +19,8 @@ interface NextAppointmentProps {
 // Función auxiliar para crear un objeto Date para hoy con una hora y minuto específicos
 function getDateFromTimeString(timeString: string): Date {
   const [time, modifier] = timeString.split(' ');
-  let [hours, minutes] = time.split(':').map(Number);
+  let hours = parseInt(time.split(':')[0], 10);
+  const minutes = parseInt(time.split(':')[1], 10);
 
   // Ajustar horas para formato 24h basado en AM/PM
   if (modifier === 'PM' && hours !== 12) {
