@@ -8,6 +8,8 @@ import { UpcomingAppointments } from "@rutas/app/dashboard/com/UpcomingAppointme
 import { PendingInteractions } from "@rutas/app/dashboard/com/PendingInteractions"
 import { AIStats } from "@rutas/app/dashboard/com/AIStats"
 import { QuickActions } from "@rutas/app/dashboard/com/QuickActions"
+import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
+
 import {
   SidebarInset,
   SidebarProvider,
@@ -18,6 +20,37 @@ import { useAuth } from "../context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
+export interface FetchRolUser {
+  role: string;
+}
+
+const fetchRolUser = async () => {
+  try {
+    const token = await getFirebaseAuthToken();
+
+    if (!token) {
+      console.error('No se pudo obtener el token de autenticación.');
+      return [];
+    }
+
+    const response = await fetch('/api/users/rol',{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, 
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data : FetchRolUser = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    return [];
+  }
+}
+
 export default function Page() {
   const { user, loading } = useAuth(); 
   const router = useRouter();
@@ -26,6 +59,17 @@ export default function Page() {
     if (!loading && !user) {
       router.push('/login');
     }
+
+    try {
+      fetchRolUser().then((data) => {
+        if ('role' in data && data.role === 'N/A') {
+          router.push('/onboard');
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    }
+
   }, [user, loading, router]);
   if (loading ||!user) {
     return null;

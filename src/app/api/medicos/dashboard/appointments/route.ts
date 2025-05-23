@@ -24,8 +24,8 @@
  *
  * @returns {Promise<NextResponse | Response>} Una promesa que resuelve a:
  *  - NextResponse con status 401 si la autenticación falla (token faltante/inválido).
- *  - NextResponse con status 403 si el usuario autenticado no tiene el rol 'admin'.
- *  - NextResponse con status 200 y un array de usuarios si la consulta es exitosa.
+ *  - NextResponse con status 403 si el usuario autenticado no tiene el rol 'medico'.
+ *  - NextResponse con status 200 y un array de appointments del doctor si la consulta es exitosa.
  *  - NextResponse con status 500 y un mensaje de error si ocurre un problema en la BD.
  *
  * @example - Cómo probar la ruta con curl (requiere un token válido de un admin):
@@ -83,9 +83,9 @@ const getUsersHandler = async (
       }   
   
       if (requestingUser.role !== 'medico') {
-        console.warn(`[API /api/medicos/dashboard/appointments] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es admin.`);
+        console.warn(`[API /api/medicos/dashboard/appointments] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es medico.`);
         return NextResponse.json(
-          { error: 'Acceso Denegado: No tienes los permisos necesarios, debes ser admin..' },
+          { error: 'Acceso Denegado: No tienes los permisos necesarios, debes ser medico..' },
           { status: 403 }
         );
       }

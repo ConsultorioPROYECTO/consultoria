@@ -37,11 +37,8 @@ interface Appointment {
 
 const fetchAppointments = async () => {
   try {
-    // Obtencion del token del usuario actual para validar con el servidor
-    // Esto es importante para garantizar que solo los usuarios autorizados accedan a los dato
     const token = await getFirebaseAuthToken();
 
-    // Si no hay token, no podemos continuar
     if (!token) {
       console.error('No se pudo obtener el token de autenticación.');
       return [];
@@ -64,10 +61,6 @@ const fetchAppointments = async () => {
     return [];
   }
 }
-const appointments : Appointment[] = await fetchAppointments();
-console.log('fetchAppointments:', appointments);
-// Mock data - mover esto al componente padre para gestionar el estado
-const initialTodayAppointments = appointments;
 
 export default function Page() {
   const { user, loading } = useAuth();
@@ -76,9 +69,10 @@ export default function Page() {
   const [selectedPatientName, setSelectedPatientName] = useState<string | undefined>(undefined);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-  const [todayAppointmentsState, setTodayAppointmentsState] = useState(initialTodayAppointments); // Estado para las citas del día
+  const [todayAppointmentsState, setTodayAppointmentsState] = useState<Appointment[]>([]);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<Appointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
+  const [appointmentsLoaded, setAppointmentsLoaded] = useState(false);
 
   // Obtener y formatear los dos primeros nombres del usuario (primera letra en mayúscula, resto en minúscula)
   const doctorNames = user?.displayName?.split(' ') || [];
@@ -163,7 +157,19 @@ export default function Page() {
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  useEffect(() => {
+    const loadAppointments = async () => {
+      if (user && !loading && !appointmentsLoaded) {
+        const appointments = await fetchAppointments();
+        setTodayAppointmentsState(appointments);
+        setAppointmentsLoaded(true);
+      }
+    };
+
+    loadAppointments();
+  }, [user, loading, appointmentsLoaded]);
+
+  if (loading || !user || !appointmentsLoaded) {
     return (
       <UiScreen className="flex h-screen flex-col items-center justify-center ">
         <p className="font-bold text-muted-foreground text-2xl text-center">Preparando<br/>tu<br/>espacio</p>
