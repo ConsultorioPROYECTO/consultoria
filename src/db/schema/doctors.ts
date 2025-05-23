@@ -3,6 +3,8 @@
 import { mysqlTable, varchar, timestamp, index, int } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
 import { users } from './users';
+import { appointments, type Appointment } from './appointments';
+import { relations } from 'drizzle-orm/relations';
 
 /**
  * @typedef UserTableSchema
@@ -55,5 +57,16 @@ export const doctors = mysqlTable('doctors', {
 export const insertDoctorsSchema = createInsertSchema(doctors);
 export const selectDoctorsSchema = createSelectSchema(doctors);
 
-export type Doctor = typeof doctors.$inferSelect; // Tipo para seleccionar usuarios
-export type NewDoctor = typeof doctors.$inferInsert; // Tipo para insertar nuevos usuarios
+export type Doctor = typeof doctors.$inferSelect; // Tipo para seleccionar medicos
+export type NewDoctor = typeof doctors.$inferInsert; // Tipo para insertar nuevos medicos
+
+// Definir las relaciones
+export const doctorRelationsToAppointments = relations(doctors, ({ many }) => ({
+  // Un doctor tiene muchas citas. 'appointments' será la propiedad en el objeto doctor.
+  appointments: many(appointments),
+}));
+
+// Opcional: Tipos inferidos para usar en tu aplicación
+export type DoctorWithAppointments = Doctor & {
+  appointments: Appointment[];
+};

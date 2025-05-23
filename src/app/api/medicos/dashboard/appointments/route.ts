@@ -80,7 +80,7 @@ const getUsersHandler = async (
           { error: 'Acceso denegado: No se encontró tu autenticacion de cuenta en el sistema, debes informar a tus superiores..' },
           { status: 403 }
         );
-      }
+      }   
   
       if (requestingUser.role !== 'medico') {
         console.warn(`[API /api/medicos/dashboard/appointments] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es admin.`);
@@ -90,42 +90,40 @@ const getUsersHandler = async (
         );
       }
 
-      const result = await db
-      .select()
-      .from(doctors, {useIndex : "firebase_uid_idx"})
-      .leftJoin(users, eq(doctors.userId, users.id))
-      .where(eq(doctors.userId, requestingUser.id));
-
-      const medico2 = result[0];
-      console.log(`[API /api/medicos/dashboard/appointments] objeto medico2: ${JSON.stringify(medico2)}`);
-
-      const medico = await db.query.doctors.findFirst({
+      const doctorRequested = await db.query.doctors.findFirst({
         where: eq(doctors.userId, requestingUser.id), //relacion con la tabla doctors
-        //where: eq(doctors.idDoctor, 1),  // falta la relacion con la tabla doctors
-      });
+      })
 
-      console.log(`[API /api/medicos/dashboard/appointments] objeto medico: ${JSON.stringify(medico)}`);
-
-      if (!medico) {
-        console.warn(`[API /api/medicos/dashboard/appointments] Medico autenticado con userId ${requestingUser.id} no encontrado en la base de datos local.`);
+      if (!doctorRequested) {
+        console.warn(`[API /api/medicos/dashboard/appointments] Doctor autenticado con userId ${requestingUser.id} no encontrado en la base de datos local.`);
         return NextResponse.json(
           { error: 'Acceso denegado: No se encontró tu autenticacion de cuenta en el sistema, debes informar a tus superiores..' },
           { status: 403 }
         )
       }
+
+      const doctorWithAppointments = await db.query.doctors.findFirst({
+        where: eq(doctors.idDoctor, doctorRequested.idDoctor),
+        with: {
+          appointments: true,
+        },
+      });
+
+      console.log("Doctor obtenido",doctorWithAppointments);
+
+      if (!doctorWithAppointments) {
+        // Esto podría ocurrir si el doctor fue eliminado después de la verificación inicial
+        console.warn(`[API /api/medicos/dashboard/appointments] No se encontró el doctor con id ${doctorRequested.idDoctor} y sus citas, a pesar de que el usuario ${requestingUser.id} está vinculado a él.`);
+        return NextResponse.json(
+          { error: 'No se pudo recuperar la información del médico y sus citas.' },
+          { status: 404 } // Not Found, ya que el recurso específico (doctor con citas) no se encontró
+        );
+      }
   
       console.log(`[API /api/medicos/dashboard/appointments] Acceso autorizado para Medico: ${decodedToken.uid} (${decodedToken.email})`);
   
-      return NextResponse.json(
-        [
-            { id: "apt1", time: "01:00 PM", patientName: "Sofia Solis", service: medico2.doctors.speciality, status: "Confirmada" },
-            { id: "apt2", time: "01:30 PM", patientName: "Roberto Fernández", service: "Revisión", status: "Pendiente" },
-            { id: "apt3", time: "02:00 PM", patientName: "Lucía Martínez", service: "Consulta Especializada", status: "Llegó" },
-            { id: "apt4", time: "02:30 PM", patientName: "Marcos Alonso", service: "Consulta General", status: "Confirmada" },
-            { id: "apt5", time: "03:00 PM", patientName: "Sofía Reyes", service: "Vacunación", status: "Completada" },
-            { id: "apt6", time: "11:30 PM", patientName: "Javier Torres", service: "Consulta General", status: "Confirmada" },
-        ]
-      );
+      // Devolver las citas del médico o un array vacío si no tiene
+      return NextResponse.json(doctorWithAppointments.appointments || []);
   
     } catch (error) {
       console.error('[API /api/medicos/dashboard/appointments] Error durante la autorización o la consulta a la base de datos:', error);

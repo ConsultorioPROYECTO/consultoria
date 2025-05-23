@@ -47,3 +47,13 @@ export const selectAppointmentsSchema = createSelectSchema(appointments);
 
 export type Appointment = typeof appointments.$inferSelect;
 export type NewAppointment = typeof appointments.$inferInsert;
+
+// Definir la relación desde Appointment hacia Doctor
+import { relations } from 'drizzle-orm/relations';
+
+export const appointmentRelationsToDoctor = relations(appointments, ({ one }) => ({
+  doctor: one(doctors, {
+    fields: [appointments.doctorId],
+    references: [doctors.idDoctor],
+  }),
+}));
