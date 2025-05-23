@@ -1,6 +1,6 @@
 // src/db/schema/appointments.ts (o donde definas tus esquemas de Drizzle)
 
-import { mysqlTable, varchar, timestamp, serial, index, date as mysqlDate, int } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, serial, index, date as mysqlDate, int, mysqlEnum } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { doctors } from './doctors'; // Importar el esquema de doctors
 
@@ -12,6 +12,7 @@ import { doctors } from './doctors'; // Importar el esquema de doctors
  * @property {number} idAppointment - Clave primaria autoincremental interna de la base de datos.
  * @property {number} doctorId - Clave foránea a la tabla 'doctors'.
  * @property {string} time - Tiempo en formato hora HH:MM (ej. 14:30).
+ * @property {enum} status - Estado de la cita enum("Confirmada", "Completada", "Pendiente", "Llegó"). 
  * @property {string} patientName - Nombre del paciente (temporalmente, luego se referenciará a 'patients').
  * @property {string} service - Descripción del servicio (temporalmente, luego se referenciará a 'services').
  * @property {Date} date - Fecha de la cita.
@@ -25,7 +26,8 @@ export const appointments = mysqlTable('appointments', {
   doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade' , onUpdate : 'cascade'}).notNull(),
 
   // --- Campos específicos de la cita ---
-  time: varchar('time', { length: 5 }).notNull(), // Formato HH:MM
+  time: varchar('time', { length: 12 }).notNull(), // Formato HH:MM AM/PM
+  status: mysqlEnum('status',["Confirmada", "Completada", "Pendiente", "Llegó"]).default("Pendiente").notNull(), // Enum("Confirmada", "Completada", "Pendiente", "Llegó")
   patientName: varchar('patient_name', { length: 255 }).notNull(),
   service: varchar('service', { length: 255 }).notNull(),
   date: mysqlDate('date').notNull(),
