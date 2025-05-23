@@ -54,5 +54,5 @@ export const doctors = mysqlTable('doctors', {
 export const insertDoctorsSchema = createInsertSchema(doctors);
 export const selectDoctorsSchema = createSelectSchema(doctors);
 
-export type User = typeof doctors.$inferSelect; // Tipo para seleccionar usuarios
-export type NewUser = typeof doctors.$inferInsert; // Tipo para insertar nuevos usuarios
+export type Doctor = typeof doctors.$inferSelect; // Tipo para seleccionar usuarios
+export type NewDoctor = typeof doctors.$inferInsert; // Tipo para insertar nuevos usuarios

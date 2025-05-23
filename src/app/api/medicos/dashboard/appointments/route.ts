@@ -37,7 +37,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
-import { users } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
+import { users, doctors } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { eq } from 'drizzle-orm';
@@ -60,19 +60,22 @@ const getUsersHandler = async (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     context: { params: Record<string, never> } // Para rutas no dinámicas, params es un objeto vacío (Record<string, never>).
   ): Promise<NextResponse | Response> => {
-    console.log(`[API /api/users] Solicitud GET recibida y autenticada para UID: ${decodedToken.uid}`);
+    console.log(`[API /api/medicos/dashboard/appointments] Solicitud GET recibida y autenticada para UID: ${decodedToken.uid}`);
   
     // --- Autorización: Verificar si el usuario autenticado es un administrador ---
     try {
       const requestingUser = await db.query.users.findFirst({
         where: eq(users.firebaseUid, decodedToken.uid),
-        columns: { role: true }, // Solo necesitamos el rol para la autorización
+        columns: { 
+            role: true,
+            id: true
+        }, // Solo necesitamos el rol para la autorización y id para la relacion con la tabla doctors
       });
   
       if (!requestingUser) {
         // Esto sería raro si el token es válido, pero podría pasar si el usuario fue eliminado de tu BD
         // pero no de Firebase Auth inmediatamente.
-        console.warn(`[API /api/users] Usuario autenticado con UID ${decodedToken.uid} no encontrado en la base de datos local.`);
+        console.warn(`[API /api/medicos/dashboard/appointments] Usuario autenticado con UID ${decodedToken.uid} no encontrado en la base de datos local.`);
         return NextResponse.json(
           { error: 'Acceso denegado: No se encontró tu autenticacion de cuenta en el sistema, debes informar a tus superiores..' },
           { status: 403 }
@@ -80,18 +83,31 @@ const getUsersHandler = async (
       }
   
       if (requestingUser.role !== 'medico') {
-        console.warn(`[API /api/users] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es admin.`);
+        console.warn(`[API /api/medicos/dashboard/appointments] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es admin.`);
         return NextResponse.json(
           { error: 'Acceso Denegado: No tienes los permisos necesarios, debes ser admin..' },
           { status: 403 }
         );
       }
+
+      const medico = await db.query.doctors.findFirst({
+        //where: eq(doctors.userId, requestingUser.id),  falta la relacion con la tabla doctors
+        where: eq(doctors.idDoctor, 1),  // falta la relacion con la tabla doctors
+      });
+
+      if (!medico) {
+        console.warn(`[API /api/medicos/dashboard/appointments] Medico autenticado con userId ${requestingUser.id} no encontrado en la base de datos local.`);
+        return NextResponse.json(
+          { error: 'Acceso denegado: No se encontró tu autenticacion de cuenta en el sistema, debes informar a tus superiores..' },
+          { status: 403 }
+        )
+      }
   
-      console.log(`[API /api/users] Acceso autorizado para admin: ${decodedToken.uid} (${decodedToken.email})`);
+      console.log(`[API /api/medicos/dashboard/appointments] Acceso autorizado para Medico: ${decodedToken.uid} (${decodedToken.email})`);
   
       return NextResponse.json(
         [
-            { id: "apt1", time: "01:00 PM", patientName: "Elena García", service: "Consulta General", status: "Confirmada" },
+            { id: "apt1", time: "01:00 PM", patientName: medico.speciality, service: "Consulta General", status: "Confirmada" },
             { id: "apt2", time: "01:30 PM", patientName: "Roberto Fernández", service: "Revisión", status: "Pendiente" },
             { id: "apt3", time: "02:00 PM", patientName: "Lucía Martínez", service: "Consulta Especializada", status: "Llegó" },
             { id: "apt4", time: "02:30 PM", patientName: "Marcos Alonso", service: "Consulta General", status: "Confirmada" },
@@ -101,7 +117,7 @@ const getUsersHandler = async (
       );
   
     } catch (error) {
-      console.error('[API /api/users] Error durante la autorización o la consulta a la base de datos:', error);
+      console.error('[API /api/medicos/dashboard/appointments] Error durante la autorización o la consulta a la base de datos:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown server error';
       return NextResponse.json(
         {
