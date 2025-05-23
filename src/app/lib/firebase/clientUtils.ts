@@ -25,7 +25,7 @@ import { User, onAuthStateChanged } from 'firebase/auth';
  * if (token) {
  *   // Usar el token
  * } else {
- *   console.log('Usuario no autenticado o token no disponible (método robusto).');
+ *   console.log('Usuario no autenticado o token no disponible.');
  * }
  */
 export const getFirebaseAuthToken = (): Promise<string | null> => {

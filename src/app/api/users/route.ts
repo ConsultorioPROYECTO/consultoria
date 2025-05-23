@@ -76,7 +76,7 @@ const getUsersHandler = async (
       // pero no de Firebase Auth inmediatamente.
       console.warn(`[API /api/users] Usuario autenticado con UID ${decodedToken.uid} no encontrado en la base de datos local.`);
       return NextResponse.json(
-        { error: 'Forbidden: Authenticated user not found in local system.' },
+        { error: 'Acceso denegado: No se encontró tu autenticacion de cuenta en el sistema, debes informar a tus superiores..' },
         { status: 403 }
       );
     }
@@ -84,7 +84,7 @@ const getUsersHandler = async (
     if (requestingUser.role !== 'admin') {
       console.warn(`[API /api/users] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es admin.`);
       return NextResponse.json(
-        { error: 'Forbidden: Insufficient permissions. Admin role required.' },
+        { error: 'Acceso Denegado: No tienes los permisos necesarios, debes ser admin..' },
         { status: 403 }
       );
     }

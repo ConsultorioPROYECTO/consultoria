@@ -24,6 +24,7 @@ import { SmartSuggestions } from "./compo/SmartSuggestions";
 import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
+import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
 
 // Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
 interface Appointment {
@@ -34,15 +35,39 @@ interface Appointment {
   status: string;
 }
 
+const fetchAppointments = async () => {
+  try {
+    // Obtencion del token del usuario actual para validar con el servidor
+    // Esto es importante para garantizar que solo los usuarios autorizados accedan a los dato
+    const token = await getFirebaseAuthToken();
+
+    // Si no hay token, no podemos continuar
+    if (!token) {
+      console.error('No se pudo obtener el token de autenticación.');
+      return [];
+    }
+
+    const response = await fetch('/api/medicos/dashboard/appointments',{
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, 
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    return [];
+  }
+}
+const appointments : Appointment[] = await fetchAppointments();
+console.log('fetchAppointments:', appointments);
 // Mock data - mover esto al componente padre para gestionar el estado
-const initialTodayAppointments = [
-  { id: "apt1", time: "01:00 PM", patientName: "Elena García", service: "Consulta General", status: "Confirmada" },
-  { id: "apt2", time: "01:30 PM", patientName: "Roberto Fernández", service: "Revisión", status: "Pendiente" },
-  { id: "apt3", time: "02:00 PM", patientName: "Lucía Martínez", service: "Consulta Especializada", status: "Llegó" },
-  { id: "apt4", time: "02:30 PM", patientName: "Marcos Alonso", service: "Consulta General", status: "Confirmada" },
-  { id: "apt5", time: "03:00 PM", patientName: "Sofía Reyes", service: "Vacunación", status: "Completada" },
-  { id: "apt6", time: "11:30 PM", patientName: "Javier Torres", service: "Consulta General", status: "Confirmada" },
-];
+const initialTodayAppointments = appointments;
 
 export default function Page() {
   const { user, loading } = useAuth();
