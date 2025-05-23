@@ -20,7 +20,7 @@ import { doctors } from './doctors'; // Importar el esquema de doctors
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
 export const appointments = mysqlTable('appointments', {
-  idAppointment: serial('id_appointment').primaryKey(),
+  id: serial('id').primaryKey(),
 
   // --- Clave foránea para la relación con doctors ---
   doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade' , onUpdate : 'cascade'}).notNull(),

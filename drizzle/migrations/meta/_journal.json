@@ -43,6 +43,13 @@
       "when": 1747980940326,
       "tag": "0005_salty_alice",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1747982122436,
+      "tag": "0006_silent_the_watchers",
+      "breakpoints": true
     }
   ]
 }
