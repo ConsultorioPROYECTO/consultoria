@@ -22,6 +22,20 @@
       "when": 1747749847098,
       "tag": "0002_living_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1747964898439,
+      "tag": "0003_certain_ser_duncan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1747965012452,
+      "tag": "0004_black_dracula",
+      "breakpoints": true
     }
   ]
 }

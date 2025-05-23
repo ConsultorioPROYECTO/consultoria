@@ -90,10 +90,21 @@ const getUsersHandler = async (
         );
       }
 
+      const result = await db
+      .select()
+      .from(doctors, {useIndex : "firebase_uid_idx"})
+      .leftJoin(users, eq(doctors.userId, users.id))
+      .where(eq(doctors.userId, requestingUser.id));
+
+      const medico2 = result[0];
+      console.log(`[API /api/medicos/dashboard/appointments] objeto medico2: ${JSON.stringify(medico2)}`);
+
       const medico = await db.query.doctors.findFirst({
-        //where: eq(doctors.userId, requestingUser.id),  falta la relacion con la tabla doctors
-        where: eq(doctors.idDoctor, 1),  // falta la relacion con la tabla doctors
+        where: eq(doctors.userId, requestingUser.id), //relacion con la tabla doctors
+        //where: eq(doctors.idDoctor, 1),  // falta la relacion con la tabla doctors
       });
+
+      console.log(`[API /api/medicos/dashboard/appointments] objeto medico: ${JSON.stringify(medico)}`);
 
       if (!medico) {
         console.warn(`[API /api/medicos/dashboard/appointments] Medico autenticado con userId ${requestingUser.id} no encontrado en la base de datos local.`);
@@ -107,7 +118,7 @@ const getUsersHandler = async (
   
       return NextResponse.json(
         [
-            { id: "apt1", time: "01:00 PM", patientName: medico.speciality, service: "Consulta General", status: "Confirmada" },
+            { id: "apt1", time: "01:00 PM", patientName: "Sofia Solis", service: medico2.doctors.speciality, status: "Confirmada" },
             { id: "apt2", time: "01:30 PM", patientName: "Roberto Fernández", service: "Revisión", status: "Pendiente" },
             { id: "apt3", time: "02:00 PM", patientName: "Lucía Martínez", service: "Consulta Especializada", status: "Llegó" },
             { id: "apt4", time: "02:30 PM", patientName: "Marcos Alonso", service: "Consulta General", status: "Confirmada" },

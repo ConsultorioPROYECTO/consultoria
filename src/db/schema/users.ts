@@ -1,6 +1,6 @@
 // src/db/schema/users.ts (o donde definas tus esquemas de Drizzle)
 
-import { mysqlTable, varchar, timestamp, text, boolean, serial, index, mysqlEnum } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, text, boolean, index, mysqlEnum, int } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
 
 /**
@@ -29,7 +29,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para va
  */
 export const users = mysqlTable('users', {
   // Clave primaria interna de la BD (opcional si firebaseUid es tu PK, pero recomendable tener una PK numérica simple)
-  id: serial('id').primaryKey(), // `serial` es un alias para `int unsigned not null auto_increment unique`
+  id: int('id').autoincrement().primaryKey(), // `serial` es un alias para `int unsigned not null auto_increment unique`
 
   // --- Campos de Firebase Auth ---
   firebaseUid: varchar('firebase_uid', { length: 255 }).notNull().unique(), // Muy importante: único y notNull

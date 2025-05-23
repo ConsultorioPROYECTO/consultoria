@@ -2,6 +2,7 @@
 
 import { mysqlTable, varchar, timestamp, index, int } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
+import { users } from './users';
 
 /**
  * @typedef UserTableSchema
@@ -30,7 +31,7 @@ export const doctors = mysqlTable('doctors', {
   idDoctor: int('id').autoincrement().primaryKey(),
 
   // ----- Referencia a la tabla users -----
-  userId: varchar('user_id', { length: 255 }).notNull().unique(), // Muy importante: único y notNull
+  userId: int('user_id').references(() => users.id,{onDelete: "cascade", onUpdate: "cascade"}).notNull(), // Clave foránea a la tabla users,
 
   // --- Campos específicos de tu doctor ---
   speciality: varchar('speciality', { length: 255 }).notNull(), // Especialidad del doctor
