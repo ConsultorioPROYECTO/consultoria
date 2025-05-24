@@ -11,7 +11,8 @@ import { Step2ConsultorioOrInvitacion } from "./com/Step2ConsultorioOrInvitacion
 import { Step3PlanSelect } from "./com/Step3PlanSelect";
 
 export default function OnboardingForm() {
-    const roles = [{ name: "Master", icon: UserCog },
+    const roles = [
+        { name: "Admin", icon: UserCog },
         { name: "Médico", icon: Stethoscope },
         { name: "Asistente", icon: User }
       ];

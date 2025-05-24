@@ -3,6 +3,7 @@ import { Input } from "@rutas/components/ui/input";
 import { Label } from "@rutas/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@rutas/components/ui/input-otp";
 import React from "react";
+import { getFirebaseAuthToken } from "@lib/firebase/clientUtils";
 
 export function Step2ConsultorioOrInvitacion({
   selectedRole,
@@ -21,7 +22,7 @@ export function Step2ConsultorioOrInvitacion({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      {selectedRole === "Master" ? (
+      {selectedRole === "Admin" ? (
         <>
           <div className="flex flex-col items-center text-center gap-2 mt-10 md:mt-12">
             <h1 className="text-3xl font-bold">Configura tu Consultorio</h1>
@@ -75,12 +76,41 @@ export function Step2ConsultorioOrInvitacion({
         <Button
           type="button"
           className="w-full py-3 text-base"
-          onClick={nextStep}
-          disabled={selectedRole === "Master" ? !nameConsultorio : !invitationCode}
+          onClick={async () => {
+            if (selectedRole === "Admin") {
+              const token = await getFirebaseAuthToken();
+              if (!token) {
+                alert("No se pudo obtener el token de autenticación. Por favor, inicia sesión nuevamente.");
+                return;
+              }
+              try {
+                const response = await fetch("/api/organization", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ organizationName: nameConsultorio})
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                  alert(data.error || "Error al crear la organización.");
+                  return;
+                }
+                nextStep();
+              } catch (error) {
+                console.error("Error:", error);
+                alert("Error de red al crear la organización.");
+              }
+            } else {
+              nextStep();
+            }
+          }}
+          disabled={selectedRole === "Admin" ? !nameConsultorio : !invitationCode}
         >
-          {selectedRole === "Master" ? "Siguiente" : "Unirse y Finalizar"}
+          {selectedRole === "Admin" ? "Siguiente" : "Unirse y Finalizar"}
         </Button>
       </div>
     </div>
   );
-} 
+}
