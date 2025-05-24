@@ -57,6 +57,20 @@
       "when": 1748046650357,
       "tag": "0007_abandoned_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1748113817473,
+      "tag": "0008_flippant_jack_power",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1748114001050,
+      "tag": "0009_outgoing_polaris",
+      "breakpoints": true
     }
   ]
 }

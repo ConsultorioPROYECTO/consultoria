@@ -1,0 +1,1 @@
+CREATE INDEX `organization_invitation_code_idx` ON `organization` (`invitation_code`);

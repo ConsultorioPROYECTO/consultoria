@@ -64,6 +64,8 @@ export default function Page() {
       fetchRolUser().then((data) => {
         if ('role' in data && data.role === 'N/A') {
           router.push('/onboard');
+        } else if ('role' in data && data.role === 'medico') {
+          router.push('/dashboard/2');
         }
       });
     } catch (error) {

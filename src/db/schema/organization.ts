@@ -10,6 +10,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
  *
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
  * @property {string} name - Nombre de la organización.
+ * @property {string} invitationCode - Código de invitación para la organización.
  * @property {string} address - Dirección de la organización.
  * @property {string} phone - Número de teléfono de la organización.
  * @property {string} email - Correo electrónico de la organización.
@@ -22,6 +23,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 export const organization = mysqlTable('organization', {
   id: int().autoincrement().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
+  invitationCode: varchar('invitation_code', { length: 6 }),
   address: varchar('address', { length: 255 }),
   phone: varchar('phone', { length: 15 }),
   email: varchar('email', { length: 255 }),
@@ -34,6 +36,7 @@ export const organization = mysqlTable('organization', {
     index('organization_email_idx').on(organization.email),
     index('organization_phone_idx').on(organization.phone),
     index('organization_nit_idx').on(organization.nit),
+    index('organization_invitation_code_idx').on(organization.invitationCode),
   
 ]);
 
