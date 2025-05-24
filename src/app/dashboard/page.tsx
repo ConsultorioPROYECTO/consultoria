@@ -30,7 +30,7 @@ const fetchRolUser = async () => {
 
     if (!token) {
       console.error('No se pudo obtener el token de autenticación.');
-      return [];
+      return null;
     }
 
     const response = await fetch('/api/users/rol',{
@@ -47,7 +47,7 @@ const fetchRolUser = async () => {
     return data;
   } catch (error) {
     console.error('Error fetching appointments:', error);
-    return [];
+    return null;
   }
 }
 
@@ -58,18 +58,21 @@ export default function Page() {
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
+      return;
     }
 
-    try {
+    if (!loading && user) {
       fetchRolUser().then((data) => {
-        if ('role' in data && data.role === 'N/A') {
-          router.push('/onboard');
-        } else if ('role' in data && data.role === 'medico') {
-          router.push('/dashboard/2');
+        if (data && 'role' in data) {
+          if (data.role === 'N/A') {
+            router.push('/onboard');
+          } else if (data.role === 'medico') {
+            router.push('/dashboard/2');
+          }
         }
+      }).catch((error) => {
+        console.error('Error fetching rol:', error);
       });
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
     }
 
   }, [user, loading, router]);
