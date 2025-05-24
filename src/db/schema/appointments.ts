@@ -1,4 +1,4 @@
-// src/db/schema/appointments.ts (o donde definas tus esquemas de Drizzle)
+// src/db/schema/appointments.ts 
 
 import { mysqlTable, varchar, timestamp, serial, index, date as mysqlDate, int, mysqlEnum } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';

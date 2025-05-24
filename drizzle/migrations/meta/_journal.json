@@ -50,6 +50,13 @@
       "when": 1747982122436,
       "tag": "0006_silent_the_watchers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1748046650357,
+      "tag": "0007_abandoned_zaran",
+      "breakpoints": true
     }
   ]
 }

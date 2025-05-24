@@ -2,6 +2,7 @@
 
 import { mysqlTable, varchar, timestamp, text, boolean, index, mysqlEnum, int } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
+import { organization } from './organization';
 
 /**
  * @typedef UserTableSchema
@@ -43,6 +44,7 @@ export const users = mysqlTable('users', {
   // --- Campos específicos de tu aplicación ---
   role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), // ej: 'user', 'admin', 'editor'
   isActive: boolean('is_active').default(true).notNull(),
+  organizationId: int('organization_id').references(()=> organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
   lastLoginAt: timestamp('last_login_at'),
 
   // --- Timestamps ---
