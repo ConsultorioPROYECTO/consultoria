@@ -49,7 +49,7 @@ import { eq } from 'drizzle-orm';
  * no solo crea el codigo, tambien verifica que no exista en la base de datos
  * @returns {string} - Codigo de invitacion aleatorio de 6 caracteres
  */
-export const generateRandomInvitationCode = async (): Promise<string> => {
+const generateRandomInvitationCode = async (): Promise<string> => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let invitationCode = '';
   for (let i = 0; i < 6; i++) {
