@@ -1,6 +1,5 @@
 'use client'
 
-
 import { Button } from "@rutas/components/ui/button"
 import { useState } from "react"
 import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react" // Zap y CheckCircle pueden ser removidos si no se usan directamente aquí
@@ -9,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Step1RoleSelect } from "./com/Step1RoleSelect";
 import { Step2ConsultorioOrInvitacion } from "./com/Step2ConsultorioOrInvitacion";
 import { Step3PlanSelect } from "./com/Step3PlanSelect";
+import { useRouter } from "next/navigation"; 
 
 export default function OnboardingForm() {
     const roles = [
@@ -19,6 +19,7 @@ export default function OnboardingForm() {
     const [selectedRole, setSelectedRole] = useState("");
     const [nameConsultorio, setNameConsultorio] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
+    const router = useRouter();
 
     // Nuevo estado para manejar los pasos del formulario
     const [currentStep, setCurrentStep] = useState(1);
@@ -39,6 +40,7 @@ export default function OnboardingForm() {
       );
       alert(`Has seleccionado el plan ${planId}. El siguiente paso sería el proceso de pago (no implementado en esta demo).`);
       // Ejemplo: router.push('/checkout?planId=' + planId + '&billing=' + (isAnnualBilling ? 'annually' : 'monthly'));
+      router.push('/dashboard')
     };
 
     const nextStep = () => setCurrentStep(prev => prev + 1);
@@ -91,16 +93,16 @@ export default function OnboardingForm() {
                 invitationCode={invitationCode}
                 setInvitationCode={setInvitationCode}
                 nextStep={() => {
-                  if (selectedRole === "Master") {
+                  if (selectedRole === "Admin") {
                     nextStep();
                   } else {
-                    console.log("Finalizar para no Master con código:", invitationCode);
+                    console.log("Finalizar para no Admin con código:", invitationCode);
                   }
                 }}
               />
             )}
-            {/* Paso 3: Selección de Plan (Solo para Master) */}
-            {currentStep === 3 && selectedRole === "Master" && (
+            {/* Paso 3: Selección de Plan (Solo para Admin) */}
+            {currentStep === 3 && selectedRole === "Admin" && (
               <Step3PlanSelect
                 nameConsultorio={nameConsultorio}
                 isAnnualBilling={isAnnualBilling}
