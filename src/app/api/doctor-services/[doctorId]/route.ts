@@ -187,7 +187,7 @@ const updateDoctorServicesHandler = async (
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: RouteParams }
+  { params }: { params: Promise<RouteParams> }
 ) {
   const decodedToken = await authenticateRequest(request);
   
@@ -195,12 +195,13 @@ export async function GET(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  return getDoctorServicesHandler(request, decodedToken, params);
+  const resolvedParams = await params;
+  return getDoctorServicesHandler(request, decodedToken, resolvedParams);
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: RouteParams }
+  { params }: { params: Promise<RouteParams> }
 ) {
   const decodedToken = await authenticateRequest(request);
   
@@ -208,5 +209,6 @@ export async function PUT(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  return updateDoctorServicesHandler(request, decodedToken, params);
+  const resolvedParams = await params;
+  return updateDoctorServicesHandler(request, decodedToken, resolvedParams);
 }

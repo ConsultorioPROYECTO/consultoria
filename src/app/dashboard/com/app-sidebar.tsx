@@ -102,6 +102,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/dashboard/3",
         icon: IconCalendarTime,
       },
+      {
+        title: "Demo APIs",
+        url: "/dashboard/apis-demo",
+        icon: IconInnerShadowTop,
+      },
     ],
     navSecondary: [
       {

@@ -181,7 +181,7 @@ const deleteDoctorServiceHandler = async (
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: RouteParams }
+  { params }: { params: Promise<RouteParams> }
 ) {
   const decodedToken = await authenticateRequest(request);
   
@@ -189,12 +189,13 @@ export async function GET(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  return getDoctorServiceHandler(request, decodedToken, params);
+  const resolvedParams = await params;
+  return getDoctorServiceHandler(request, decodedToken, resolvedParams);
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: RouteParams }
+  { params }: { params: Promise<RouteParams> }
 ) {
   const decodedToken = await authenticateRequest(request);
   
@@ -202,12 +203,13 @@ export async function PUT(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  return updateDoctorServiceHandler(request, decodedToken, params);
+  const resolvedParams = await params;
+  return updateDoctorServiceHandler(request, decodedToken, resolvedParams);
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: RouteParams }
+  { params }: { params: Promise<RouteParams> }
 ) {
   const decodedToken = await authenticateRequest(request);
   
@@ -215,5 +217,6 @@ export async function DELETE(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  return deleteDoctorServiceHandler(request, decodedToken, params);
+  const resolvedParams = await params;
+  return deleteDoctorServiceHandler(request, decodedToken, resolvedParams);
 }
