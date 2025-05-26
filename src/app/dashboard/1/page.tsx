@@ -3,7 +3,7 @@ import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar";
 import { SiteHeader } from "@rutas/app/dashboard/com/site-header"; // Importación añadida
 import { useAuth } from "../../context/AuthContext"; // Importación añadida
 import { useRouter } from "next/navigation"; // Importación añadida
-import { useEffect } from "react"; // Importación añadida
+import { useEffect, useState } from "react"; // Importación añadida/modificada
 
 import {
   SidebarInset,
@@ -18,32 +18,72 @@ import { AIResponseConfig } from "./compo/AIResponseConfig";
 import { WorkloadOverview } from "./compo/WorkloadOverview";
 import { ServiceSpecialtyConfig } from "./compo/ServiceSpecialtyConfig";
 import { AIPerformancePanel } from "./compo/AIPerformancePanel";
-
-
-
-
-
-
-
-
-
-
+import UiScreen from "@rutas/components/uiscreen";
+import WaveformLoader from "@rutas/components/custom/WaveformLoader";
 
 
 export default function Page() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
+      return;
     }
+    async function checkRole() {
+      if (!loading && user) {
+        try {
+          const token = await user.getIdToken ? await user.getIdToken() : null;
+          if (!token) {
+            router.push('/login');
+            return;
+          }
+          const response = await fetch('/api/users/rol', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          const data = await response.json();
+          if (!data || data.role !== 'admin') {
+            // Si no es admin, no renderiza y espera redirección
+            if (data && data.role === 'N/A') {
+              router.push('/onboard');
+            } else if (data && data.role === 'medico') {
+              router.push('/dashboard/2');
+            } else if (data && data.role === 'asistente') {
+              router.push('/dashboard/3');
+            } else {
+              router.push('/login');
+            }
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching role:', error);
+          // Si hay error, redirige a login
+          router.push('/login');
+          return;
+        }
+      }
+      setCheckingRole(false);
+    }
+    checkRole();
   }, [user, loading, router]);
 
-  if (loading || !user) {
-    return <div className="flex h-screen items-center justify-center">Cargando...</div>; // O un componente de carga más sofisticado
+  if (loading || !user || checkingRole) {
+    return (
+      <UiScreen className="flex h-screen flex-col items-center justify-center ">
+        <p className="font-bold text-muted-foreground text-2xl text-center">Preparando<br/>tu<br/>espacio</p>
+        <WaveformLoader className="mt-4 w-30 h-auto text-muted-foreground" />
+      </UiScreen>
+    );
   }
-
   return (
     <SidebarProvider
       style={
@@ -96,5 +136,5 @@ export default function Page() {
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

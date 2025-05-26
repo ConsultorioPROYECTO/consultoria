@@ -23,18 +23,47 @@ import {
 import data from "../data.json"
 import { useAuth } from "../../context/AuthContext"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { getFirebaseAuthToken } from "@lib/firebase/clientUtils"
 
 export default function Page() {
   const { user, loading } = useAuth(); 
   const router = useRouter();
+  const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login');
+      return;
+    }
+    if (!loading && user) {
+      (async () => {
+        try {
+          const token = await getFirebaseAuthToken();
+          const res = await fetch('/api/users/rol', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) throw new Error('No se pudo obtener el rol');
+          const { role } = await res.json();
+          if (role === 'asistente') {
+            setCheckingRole(false);
+          } else if (role === 'admin') {
+            router.push('/dashboard/1');
+          } else if (role === 'medico') {
+            router.push('/dashboard/2');
+          } else if (role === 'N/A') {
+            router.push('/onboard');
+          } else {
+            router.push('/login');
+          }
+        } catch (err) {
+          console.error(err);
+          if (user) router.push('/login');
+        }
+      })();
     }
   }, [user, loading, router]);
-  if (loading ||!user) {
+  if (loading || !user || checkingRole) {
     return null;
   }
 

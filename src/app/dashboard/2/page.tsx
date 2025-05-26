@@ -25,6 +25,7 @@ import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
+import { FetchRolUser } from "../page";
 
 // Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
 interface Appointment {
@@ -34,6 +35,7 @@ interface Appointment {
   service: string;
   status: string;
 }
+
 
 const fetchAppointments = async () => {
   try {
@@ -73,6 +75,7 @@ export default function Page() {
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<Appointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
   const [appointmentsLoaded, setAppointmentsLoaded] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true);
 
   // Obtener y formatear los dos primeros nombres del usuario (primera letra en mayúscula, resto en minúscula)
   const doctorNames = user?.displayName?.split(' ') || [];
@@ -152,24 +155,65 @@ export default function Page() {
   };
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
+    const verifyRole = async () => {
+      if (!loading && user) {
+        try {
+          const token = await getFirebaseAuthToken();
+          if (!token) {
+            router.push('/login');
+            return;
+          }
+          const response = await fetch('/api/users/rol', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          if (!response.ok) {
+            throw new Error('Error al obtener el rol');
+          }
+          const data: FetchRolUser = await response.json();
+          const rol = data.role;
+          if (rol === 'medico') {
+            setCheckingRole(false);
+          } else if (rol === 'admin') {
+            router.push('/dashboard/1');
+            return;
+          } else if (rol === 'asistente') {
+            router.push('/dashboard/3');
+            return;
+          } else if (rol === 'N/A') {
+            router.push('/onboard');
+            return;
+          } else {
+            router.push('/login');
+            return;
+          }
+        } catch (error) {
+          console.error('Error al verificar el rol:', error);
+          // Solo redirigir si el usuario sigue autenticado
+          if (!loading && user) {
+            router.push('/login');
+          }
+        }
+      }
+    };
+    verifyRole();
   }, [user, loading, router]);
 
   useEffect(() => {
     const loadAppointments = async () => {
-      if (user && !loading && !appointmentsLoaded) {
+      if (user && !loading && !appointmentsLoaded && !checkingRole) {
         const appointments = await fetchAppointments();
         setTodayAppointmentsState(appointments);
         setAppointmentsLoaded(true);
       }
     };
-
     loadAppointments();
-  }, [user, loading, appointmentsLoaded]);
+  }, [user, loading, appointmentsLoaded, checkingRole]);
 
-  if (loading || !user || !appointmentsLoaded) {
+  if (loading || !user || !appointmentsLoaded || checkingRole) {
     return (
       <UiScreen className="flex h-screen flex-col items-center justify-center ">
         <p className="font-bold text-muted-foreground text-2xl text-center">Preparando<br/>tu<br/>espacio</p>

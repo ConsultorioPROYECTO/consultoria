@@ -18,7 +18,7 @@ import {
 import data from "./data.json"
 import { useAuth } from "../context/AuthContext"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export interface FetchRolUser {
   role: string;
@@ -54,6 +54,7 @@ const fetchRolUser = async () => {
 export default function Page() {
   const { user, loading } = useAuth(); 
   const router = useRouter();
+  const [checkingRole, setCheckingRole] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -66,17 +67,26 @@ export default function Page() {
         if (data && 'role' in data) {
           if (data.role === 'N/A') {
             router.push('/onboard');
+            // No liberamos checkingRole aquí, así nunca se renderiza la página
+            return;
           } else if (data.role === 'medico') {
             router.push('/dashboard/2');
+          } else if (data.role ==='asistente') {
+            router.push('/dashboard/3');
+          } else if (data.role ==='admin') {
+            router.push('/dashboard/1');
           }
         }
+        setCheckingRole(false);
       }).catch((error) => {
         console.error('Error fetching rol:', error);
+        setCheckingRole(false);
       });
+    } else if (!loading) {
+      setCheckingRole(false);
     }
-
   }, [user, loading, router]);
-  if (loading ||!user) {
+  if (loading || !user || checkingRole) {
     return null;
   }
 
