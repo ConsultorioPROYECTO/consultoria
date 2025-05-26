@@ -26,6 +26,7 @@ import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
 import { FetchRolUser } from "../page";
+import { TodayIsDay } from "../2/compo/TodayIsDay"
 
 // Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
 interface Appointment {
@@ -253,8 +254,8 @@ export default function Page() {
             {/* Nueva fila/sección para Contador de Citas y Próxima Cita */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-col-2 xl:grid-cols-6 gap-6 mb-6"> {/* Contenedor Grid para 4 columnas y espaciado */} 
 
+                <TodayIsDay />
                 <TodaysAppointments appointmentCount={todayAppointmentsState.length} /> {/* Ocupa la primera columna */}
-
                 <NextAppointment appointments={todayAppointmentsState} className="col-span-2" /> {/* Ocupa dos columnas */}
 
                 {/* Las columnas 3 y 4 quedan vacías */}

@@ -64,6 +64,22 @@ export function ConsultationModal({
                 <div className="text-sm opacity-80 ">
                   <span>Telefono: +1 232 92302</span>
                 </div>
+                {/**/}
+                <div className="text-sm opacity-80 ">
+                  <span>Ultimo peso: 64kg</span>
+                </div>
+                {/**/}
+                <div className="text-sm opacity-80 ">
+                  <span>Tipo de sangre: </span>
+                </div>
+                {/**/}
+                <div className="text-sm opacity-80 ">
+                  <span>Estatura: </span>
+                </div>
+                {/**/}
+                <div className="text-sm opacity-80 ">
+                  <span>Edad: </span>
+                </div>
 
                 {/* Información adicional del paciente */}
               </CardContent>
@@ -71,14 +87,6 @@ export function ConsultationModal({
             {/* Puedes añadir más tarjetas o componentes de perfil aquí */}
           </div>
           
-          {/* Columna central - Transcripción de voz a texto */}
-          <div className="col-span-1 overflow-y-auto border rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-4">Transcripción</h3>
-            <div className="space-y-2">
-              {/* Aquí irá el contenido de la transcripción */}
-            </div>
-          </div>
-
           {/* Columna derecha - Notas y observaciones */}
           <div className="col-span-1 overflow-y-auto space-y-6">
             <Card className="flex-1 flex flex-col overflow-hidden"> {/* flex-1 para ocupar espacio y permitir scroll si es necesario */}
@@ -108,6 +116,17 @@ export function ConsultationModal({
               </CardContent>
             </Card>
           </div>
+
+          {/* Columna central - Transcripción de voz a texto */}
+          <Card className="col-span-1 overflow-y-auto border rounded-lg py-4">
+            <CardHeader>
+              <CardTitle>AI-Care</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {/* Aquí irá el contenido de la transcripción */}
+            </CardContent>
+          </Card>
+          
         </div>
         
         {/* Añadir pie de diálogo con botón de guardar */}
