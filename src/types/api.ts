@@ -9,6 +9,14 @@ export interface ApiResponse<T = unknown> {
   details?: string;
 }
 
+// Alias for consistency with existing code
+export interface APIResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
 export interface ApiError {
   error: string;
   details?: string;
@@ -104,11 +112,12 @@ export const HTTP_STATUS = {
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
+  CONFLICT: 409,
   INTERNAL_ERROR: 500,
 } as const;
 
 // === Helper Functions ===
-export function createSuccessResponse<T>(data: T, message: string, status = HTTP_STATUS.OK) {
+export function createSuccessResponse<T>(data: T, message: string, status: number = HTTP_STATUS.OK) {
   return NextResponse.json({ message, data }, { status });
 }
 

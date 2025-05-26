@@ -15,7 +15,7 @@ import {
   SidebarProvider,
 } from "@rutas/components/ui/sidebar"
 
-import data from "./data.json"
+// import data from "./data.json" // Removed unused import
 import { useAuth } from "../context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -116,7 +116,7 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <DataTable data={data} />
+              <DataTable />
             </div>
           </div>
         </div>

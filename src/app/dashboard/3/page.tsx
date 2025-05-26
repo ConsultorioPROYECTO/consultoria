@@ -20,7 +20,7 @@ import {
   SidebarProvider,
 } from "@rutas/components/ui/sidebar"
 
-import data from "../data.json"
+// import data from "../data.json" // Commented out - not currently used
 import { useAuth } from "../../context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"

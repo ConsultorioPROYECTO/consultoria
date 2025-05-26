@@ -35,9 +35,11 @@ export async function validateRequestBody<T>(
 }
 
 // === Role Validation Helpers ===
-export function validateUserRole(userRole: string, requiredRole: string) {
-  if (userRole !== requiredRole) {
-    const errorMessage = requiredRole === 'admin' ? API_ERRORS.ADMIN_ONLY : API_ERRORS.ASSISTANT_ONLY;
+export function validateUserRole(userRole: string, requiredRoles: string | string[]) {
+  const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
+  
+  if (!roles.includes(userRole)) {
+    const errorMessage = roles.includes('admin') ? API_ERRORS.ADMIN_ONLY : API_ERRORS.ASSISTANT_ONLY;
     return createErrorResponse(errorMessage, undefined, HTTP_STATUS.FORBIDDEN);
   }
   return null;

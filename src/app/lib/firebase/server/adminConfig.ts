@@ -151,3 +151,6 @@ export const verifyFirebaseToken = async (idToken: string): Promise<DecodedIdTok
 // Exportar la instancia `admin` si se necesita acceso directo en otras partes del backend.
 // Generalmente, `verifyFirebaseToken` será la interfaz principal.
 export { admin as firebaseAdmin };
+
+// Export auth for convenience
+export const auth = admin.auth;
