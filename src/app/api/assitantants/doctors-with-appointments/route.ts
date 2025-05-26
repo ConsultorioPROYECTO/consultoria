@@ -4,6 +4,8 @@ import { users, assistants, assistantDoctor, doctors } from "@rutas/db/schema";
 import { withAuthentication } from "@rutas/app/lib/firebase/server/middleware/authMiddleware";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import { eq, inArray } from "drizzle-orm";
+import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS, type DoctorsWithAppointmentsResponse } from "@/types/api";
+import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
 
 const getDoctorsWithAppointmentsHandler = async (
   request: NextRequest,
@@ -15,10 +17,11 @@ const getDoctorsWithAppointmentsHandler = async (
       columns: { role: true, id: true },
     });
     if (!requestingUser) {
-      return NextResponse.json({ error: "Acceso denegado: Usuario no encontrado." }, { status: 403 });
+      return createErrorResponse(API_ERRORS.USER_NOT_FOUND, undefined, HTTP_STATUS.FORBIDDEN);
     }
-    if (requestingUser.role !== "asistente") {
-      return NextResponse.json({ error: "Acceso denegado: Debes ser asistente." }, { status: 403 });
+    const roleValidationError = validateUserRole(requestingUser.role, "asistente");
+    if (roleValidationError) {
+      return roleValidationError;
     }
     // Buscar el registro de assistant por userId usando el índice
     const assistant = await db.query.assistants.findFirst({
@@ -26,7 +29,7 @@ const getDoctorsWithAppointmentsHandler = async (
       columns: { idAssistant: true },
     });
     if (!assistant) {
-      return NextResponse.json({ error: "Assistant not found" }, { status: 404 });
+      return createErrorResponse("Assistant not found", undefined, HTTP_STATUS.NOT_FOUND);
     }
     const assistantIdNum = assistant.idAssistant;
     // Obtener los doctores asociados y sus citas
@@ -36,7 +39,7 @@ const getDoctorsWithAppointmentsHandler = async (
     });
     const doctorIds = assistantDoctors.map((ad) => ad.doctorId);
     if (doctorIds.length === 0) {
-      return NextResponse.json([], { status: 200 });
+      return createSuccessResponse([] as DoctorsWithAppointmentsResponse, "No doctors found for this assistant");
     }
     const doctorsWithAppointments = await db.query.doctors.findMany({
       where: inArray(doctors.idDoctor, doctorIds),
@@ -44,10 +47,9 @@ const getDoctorsWithAppointmentsHandler = async (
         appointments: true,
       },
     });
-    return NextResponse.json(doctorsWithAppointments || [], { status: 200 });
+    return createSuccessResponse(doctorsWithAppointments as DoctorsWithAppointmentsResponse, "Doctors with appointments retrieved successfully");
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown server error";
-    return NextResponse.json({ error: "Failed to process request.", details: errorMessage }, { status: 500 });
+    return handleDatabaseError(error, "retrieve doctors with appointments");
   }
 };
 
