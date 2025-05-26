@@ -61,9 +61,18 @@ export type Doctor = typeof doctors.$inferSelect; // Tipo para seleccionar medic
 export type NewDoctor = typeof doctors.$inferInsert; // Tipo para insertar nuevos medicos
 
 // Definir las relaciones
-export const doctorRelationsToAppointments = relations(doctors, ({ many }) => ({
-  // Un doctor tiene muchas citas. 'appointments' será la propiedad en el objeto doctor.
+import { doctorServices } from './doctor_services';
+
+export const doctorRelations = relations(doctors, ({ many, one }) => ({
+  // Un doctor tiene muchas citas
   appointments: many(appointments),
+  // Un doctor puede ofrecer muchos servicios
+  doctorServices: many(doctorServices),
+  // Un doctor pertenece a un usuario
+  user: one(users, {
+    fields: [doctors.userId],
+    references: [users.id],
+  }),
 }));
 
 // Opcional: Tipos inferidos para usar en tu aplicación

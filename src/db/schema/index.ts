@@ -5,4 +5,7 @@ export * from './appointments';
 export * from './organization';
 export * from './assistants';
 export * from './assistant_doctor';
+export * from './patients';
+export * from './medical_services';
+export * from './doctor_services';
 // Add other schema exports here if you have more files
