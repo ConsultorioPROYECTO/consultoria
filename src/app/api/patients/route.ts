@@ -31,10 +31,7 @@ const getPatientsHandler = async (
 
     // Obtener pacientes de la misma organización
     const organizationPatients = await db.query.patients.findMany({
-      where: and(
-        eq(patients.organizationId, requestingUser.organizationId),
-        eq(patients.isActive, true)
-      ),
+      where: eq(patients.organizationId, requestingUser.organizationId),
       with: {
         user: {
           columns: { email: true, displayName: true }
