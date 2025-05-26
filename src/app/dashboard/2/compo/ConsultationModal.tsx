@@ -57,16 +57,12 @@ export function ConsultationModal({
                   <span >{appointment.patientName}</span>
                 </div>
                 {/**/}
-                <div className="text-sm opacity-80 mt-2">
-                  <span>Servicio: {appointment.service}</span>
+                <div className="text-sm opacity-80 ">
+                  <span>Telefono: </span>
                 </div>
                 {/**/}
                 <div className="text-sm opacity-80 ">
-                  <span>Telefono: +1 232 92302</span>
-                </div>
-                {/**/}
-                <div className="text-sm opacity-80 ">
-                  <span>Ultimo peso: 64kg</span>
+                  <span>Ultimo peso: </span>
                 </div>
                 {/**/}
                 <div className="text-sm opacity-80 ">
@@ -122,9 +118,16 @@ export function ConsultationModal({
             <CardHeader>
               <CardTitle>AI-Care</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {/* Aquí irá el contenido de la transcripción */}
-            </CardContent>
+            <CardContent className="flex-1 overflow-y-auto "> {/* flex-1 y overflow para hacer scroll en las notas */}
+                <ScrollArea className="h-full overflow-hidden "> {/* Eliminado pr-4 */}
+                  <Textarea 
+                    placeholder="Escribe tus notas de consulta aquí..." 
+                    className="h-[350px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </ScrollArea>
+              </CardContent>
           </Card>
           
         </div>
