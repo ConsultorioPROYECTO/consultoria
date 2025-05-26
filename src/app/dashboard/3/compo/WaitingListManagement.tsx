@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
 import { Users, PlusCircle } from "lucide-react";
 import { Badge } from "@rutas/components/ui/badge";
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,11 +19,13 @@ import {
 import { Input } from "@rutas/components/ui/input";
 import { Label } from "@rutas/components/ui/label";
 import { Textarea } from "@rutas/components/ui/textarea";
+import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
 
 interface WaitingPatient {
   id: string;
   patientName: string;
-  requestedDoctor?: string;
+  requestedDoctorId?: number;
   requestedSpecialty: string;
   reason: string;
   contactInfo: string;
@@ -32,46 +34,63 @@ interface WaitingPatient {
   status: 'Pendiente' | 'Contactado' | 'Agendado';
 }
 
-// Mock data
-const mockWaitingList: WaitingPatient[] = [
-  {
-    id: "wait1",
-    patientName: "Ricardo Gómez",
-    requestedDoctor: "Dr. Alan Grant",
-    requestedSpecialty: "Cardiología",
-    reason: "Revisión anual, preferentemente con Dr. Grant",
-    contactInfo: "ricardo@email.com / 555-1234",
-    addedAt: "2024-07-28",
-    priority: "Media",
-    status: "Pendiente"
-  },
-  {
-    id: "wait2",
-    patientName: "Fernanda López",
-    requestedSpecialty: "Pediatría",
-    reason: "Consulta para recién nacido",
-    contactInfo: "fernanda.l@email.com / 555-5678",
-    addedAt: "2024-07-30",
-    priority: "Alta",
-    status: "Contactado"
-  },
-  {
-    id: "wait3",
-    patientName: "Mario Bros",
-    requestedSpecialty: "General",
-    reason: "Chequeo general",
-    contactInfo: "mario@domain.com",
-    addedAt: "2024-08-01",
-    priority: "Baja",
-    status: "Pendiente"
-  },
-];
-
 export function WaitingListManagement() {
-  const [waitingList, setWaitingList] = useState<WaitingPatient[]>(mockWaitingList);
+  const { doctors, loading, error } = useDoctorsWithAppointments();
+  
+  // Lista de espera inicial con algunos datos de ejemplo basados en los doctores reales
+  const initialWaitingList = useMemo(() => {
+    if (!doctors.length) return [];
+    
+    return [
+      {
+        id: "wait1",
+        patientName: "Ricardo Gómez",
+        requestedDoctorId: doctors[0]?.idDoctor,
+        requestedSpecialty: doctors[0]?.speciality || "General",
+        reason: "Revisión anual programada",
+        contactInfo: "ricardo@email.com / 555-1234",
+        addedAt: "2024-07-28",
+        priority: "Media" as const,
+        status: "Pendiente" as const
+      },
+      {
+        id: "wait2",
+        patientName: "Fernanda López",
+        requestedSpecialty: doctors[1]?.speciality || "Pediatría",
+        reason: "Consulta para recién nacido",
+        contactInfo: "fernanda.l@email.com / 555-5678",
+        addedAt: "2024-07-30",
+        priority: "Alta" as const,
+        status: "Contactado" as const
+      }
+    ];
+  }, [doctors]);
+
+  const [waitingList, setWaitingList] = useState<WaitingPatient[]>([]);
+  
+  // Actualizar la lista cuando los datos de doctores cambien
+  React.useEffect(() => {
+    if (doctors.length > 0 && waitingList.length === 0) {
+      setWaitingList(initialWaitingList);
+    }
+  }, [doctors, initialWaitingList, waitingList.length]);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPatient, setCurrentPatient] = useState<Partial<WaitingPatient> | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // Obtener especialidades únicas de los doctores
+  const availableSpecialties = useMemo(() => {
+    const specialties = [...new Set(doctors.map(doctor => doctor.speciality))];
+    return specialties.filter(Boolean);
+  }, [doctors]);
+  
+  // Función para obtener el nombre del doctor
+  const getDoctorName = (doctorId?: number) => {
+    if (!doctorId) return '';
+    const doctor = doctors.find(d => d.idDoctor === doctorId);
+    return doctor ? `${doctor.speciality} (ID: ${doctor.idDoctor})` : '';
+  };
 
   const openModal = (patient?: WaitingPatient) => {
     if (patient) {
@@ -93,7 +112,11 @@ export function WaitingListManagement() {
     if (isEditing && currentPatient.id) {
       setWaitingList(waitingList.map(p => p.id === currentPatient.id ? currentPatient as WaitingPatient : p));
     } else {
-      setWaitingList([...waitingList, { ...currentPatient, id: `wait-${Date.now()}` } as WaitingPatient]);
+      setWaitingList([...waitingList, { 
+        ...currentPatient, 
+        id: `wait-${Date.now()}`,
+        addedAt: new Date().toISOString().split('T')[0]
+      } as WaitingPatient]);
     }
     setIsModalOpen(false);
     setCurrentPatient(null);
@@ -116,8 +139,44 @@ export function WaitingListManagement() {
     return <Badge>{status}</Badge>;
   };
 
+  if (loading) {
+    return (
+      <Card className="col-span-1 lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="h-5 w-5 mr-2 text-primary" />
+            Gestión de Lista de Espera
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="col-span-1 lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="h-5 w-5 mr-2 text-primary" />
+            Gestión de Lista de Espera
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-red-500">Error: {error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="col-span-1 lg:col-span-2"> {/* Ajustar según layout */}
+    <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
         <div className="flex justify-between items-center">
             <div>
@@ -126,7 +185,7 @@ export function WaitingListManagement() {
                     Gestión de Lista de Espera
                 </CardTitle>
                 <CardDescription>
-                    Administra pacientes en espera de una cita.
+                    Administra pacientes en espera de citas con tus médicos.
                 </CardDescription>
             </div>
             <Button onClick={() => openModal()} size="sm">
@@ -136,7 +195,7 @@ export function WaitingListManagement() {
       </CardHeader>
       <CardContent>
         {waitingList.length > 0 ? (
-          <ScrollArea className="h-[400px]"> {/* Altura ajustable */}
+          <ScrollArea className="h-[400px]">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -154,7 +213,12 @@ export function WaitingListManagement() {
                         <p className="font-medium">{patient.patientName}</p>
                         <p className="text-xs text-muted-foreground">{patient.contactInfo}</p>
                         <p className="text-xs text-muted-foreground">Motivo: {patient.reason}</p>
-                        {patient.requestedDoctor && <p className="text-xs text-muted-foreground">Pref. Dr: {patient.requestedDoctor}</p>}
+                        {patient.requestedDoctorId && (
+                          <p className="text-xs text-muted-foreground">
+                            Pref. Dr: {getDoctorName(patient.requestedDoctorId)}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">Agregado: {patient.addedAt}</p>
                     </TableCell>
                     <TableCell>{patient.requestedSpecialty}</TableCell>
                     <TableCell>{getPriorityBadge(patient.priority)}</TableCell>
@@ -194,11 +258,43 @@ export function WaitingListManagement() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="patient-specialty" className="text-right">Especialidad*</Label>
-                <Input id="patient-specialty" value={currentPatient.requestedSpecialty || ''} onChange={(e) => setCurrentPatient({...currentPatient, requestedSpecialty: e.target.value})} className="col-span-3" />
+                <Select 
+                  value={currentPatient.requestedSpecialty || ''} 
+                  onValueChange={(value) => setCurrentPatient({...currentPatient, requestedSpecialty: value})}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Seleccionar especialidad" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSpecialties.map((specialty) => (
+                      <SelectItem key={specialty} value={specialty}>
+                        {specialty}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="patient-doctor" className="text-right">Médico (Pref.)</Label>
-                <Input id="patient-doctor" value={currentPatient.requestedDoctor || ''} onChange={(e) => setCurrentPatient({...currentPatient, requestedDoctor: e.target.value})} className="col-span-3" />
+                <Select 
+                  value={currentPatient.requestedDoctorId?.toString() || ''} 
+                  onValueChange={(value) => setCurrentPatient({
+                    ...currentPatient, 
+                    requestedDoctorId: value ? parseInt(value) : undefined
+                  })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Seleccionar médico (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin preferencia</SelectItem>
+                    {doctors.map((doctor) => (
+                      <SelectItem key={doctor.idDoctor} value={doctor.idDoctor.toString()}>
+                        {doctor.speciality} (ID: {doctor.idDoctor})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="patient-reason" className="text-right pt-2">Motivo</Label>
@@ -206,11 +302,22 @@ export function WaitingListManagement() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="patient-priority" className="text-right">Prioridad</Label>
-                <select id="patient-priority" value={currentPatient.priority || 'Media'} onChange={(e) => setCurrentPatient({...currentPatient, priority: e.target.value as WaitingPatient['priority']})} className="col-span-3 p-2 border rounded-md">
-                    <option value="Baja">Baja</option>
-                    <option value="Media">Media</option>
-                    <option value="Alta">Alta</option>
-                </select>
+                <Select 
+                  value={currentPatient.priority || 'Media'} 
+                  onValueChange={(value) => setCurrentPatient({
+                    ...currentPatient, 
+                    priority: value as WaitingPatient['priority']
+                  })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Baja">Baja</SelectItem>
+                    <SelectItem value="Media">Media</SelectItem>
+                    <SelectItem value="Alta">Alta</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

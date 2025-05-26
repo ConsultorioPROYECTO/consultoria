@@ -6,7 +6,8 @@ import { Button } from "@rutas/components/ui/button";
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
 import { Bell, CalendarOff, CheckCheck, AlertTriangle } from "lucide-react";
 import { Badge } from "@rutas/components/ui/badge";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments";
 
 interface Notification {
   id: string;
@@ -21,62 +22,65 @@ interface Notification {
   priority: 'Alta' | 'Media' | 'Baja';
 }
 
-// Mock data
-const mockNotifications: Notification[] = [
-  {
-    id: "notif1",
-    type: "Cancelación",
-    patientName: "Carlos Ruiz",
-    doctorName: "Dr. Alan Grant",
-    originalTime: "2024-08-05 10:00 AM",
-    reason: "Paciente indica imprevisto",
-    timestamp: "Hace 15 minutos",
-    isRead: false,
-    priority: "Alta"
-  },
-  {
-    id: "notif2",
-    type: "Reprogramación",
-    patientName: "Laura Méndez",
-    doctorName: "Dra. Ellie Sattler",
-    originalTime: "2024-08-05 11:30 AM",
-    newTime: "2024-08-06 09:00 AM",
-    reason: "Solicitud del paciente",
-    timestamp: "Hace 1 hora",
-    isRead: false,
-    priority: "Media"
-  },
-  {
-    id: "notif3",
-    type: "Nueva Cita Urgente",
-    patientName: "Sofía Castro",
-    doctorName: "Dr. Ian Malcolm",
-    newTime: "Hoy 16:00 PM",
-    reason: "Caso de emergencia referido",
-    timestamp: "Hace 5 minutos",
-    isRead: false,
-    priority: "Alta"
-  },
-  {
-    id: "notif4",
-    type: "Retraso Médico",
-    doctorName: "Dr. Alan Grant",
-    reason: "Emergencia en quirófano, retraso estimado de 45 mins",
-    timestamp: "Hace 30 minutos",
-    isRead: true,
-    priority: "Media"
-  },
-];
-
 export function ScheduleChangeNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const { doctors, loading, error } = useDoctorsWithAppointments();
+  
+  // Generar notificaciones basadas en los datos reales
+  const generatedNotifications = useMemo(() => {
+    const notifications: Notification[] = [];
+    const now = new Date();
+    
+    doctors.forEach(doctor => {
+      doctor.appointments.forEach(appointment => {
+        const appointmentDate = new Date(`${appointment.date} ${appointment.time}`);
+        const timeDiff = appointmentDate.getTime() - now.getTime();
+        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        
+        // Simular notificaciones para citas con diferentes estados
+        if (appointment.status === 'Pendiente' && daysDiff === 0) {
+          notifications.push({
+            id: `pending-${appointment.id}`,
+            type: 'Nueva Cita Urgente',
+            patientName: appointment.patientName,
+            doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
+            newTime: `${appointment.time} - ${new Date(appointment.date).toLocaleDateString()}`,
+            reason: 'Cita pendiente de confirmación para hoy',
+            timestamp: 'Hace 30 minutos',
+            isRead: false,
+            priority: 'Alta'
+          });
+        }
+        
+        if (appointment.status === 'Confirmada' && timeDiff < 30 * 60 * 1000 && timeDiff > 0) {
+          notifications.push({
+            id: `reminder-${appointment.id}`,
+            type: 'Retraso Médico',
+            doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
+            reason: `Próxima cita con ${appointment.patientName} en 30 minutos`,
+            timestamp: 'Hace 5 minutos',
+            isRead: false,
+            priority: 'Media'
+          });
+        }
+      });
+    });
+    
+    return notifications.slice(0, 10); // Limitar a 10 notificaciones
+  }, [doctors]);
+
+  const [readNotifications, setReadNotifications] = useState<Set<string>>(new Set());
+  
+  const notifications = generatedNotifications.map(notif => ({
+    ...notif,
+    isRead: readNotifications.has(notif.id)
+  }));
 
   const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+    setReadNotifications(prev => new Set([...prev, id]));
   };
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    setReadNotifications(new Set(notifications.map(n => n.id)));
   };
 
   const getPriorityBadge = (priority: 'Alta' | 'Media' | 'Baja') => {
@@ -95,6 +99,42 @@ export function ScheduleChangeNotifications() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Bell className="h-5 w-5 mr-2 text-primary" />
+            Notificaciones de Cambios en Agenda
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-20 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Bell className="h-5 w-5 mr-2 text-primary" />
+            Notificaciones de Cambios en Agenda
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-red-500">Error: {error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -108,7 +148,7 @@ export function ScheduleChangeNotifications() {
                     )}
                 </CardTitle>
                 <CardDescription>
-                    Alertas importantes sobre cancelaciones, reprogramaciones y urgencias.
+                    Alertas sobre las citas de tus médicos asignados.
                 </CardDescription>
             </div>
             {unreadCount > 0 && (
@@ -120,7 +160,7 @@ export function ScheduleChangeNotifications() {
       </CardHeader>
       <CardContent>
         {notifications.length > 0 ? (
-          <ScrollArea className="h-[350px]"> {/* Altura ajustable */}
+          <ScrollArea className="h-[350px]">
             <div className="space-y-3 pr-3">
               {notifications.map((notif) => (
                 <div 

@@ -1,65 +1,61 @@
 // src/app/dashboard/3/compo/RealTimeAvailability.tsx
 'use client';
 
+import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { Badge } from "@rutas/components/ui/badge";
-import { CalendarCheck2 } from "lucide-react";
-
-// Mock data - en una aplicación real, esto vendría de una API o WebSocket
-const availabilityData = {
-  doctors: [
-    {
-      id: "doc1",
-      name: "Dr. Alan Grant",
-      specialty: "Cardiología",
-      status: "Disponible", // Disponible, Ocupado, En Cita, Fuera de Línea
-      nextAvailable: null,
-      location: "Consultorio A"
-    },
-    {
-      id: "doc2",
-      name: "Dra. Ellie Sattler",
-      specialty: "Pediatría",
-      status: "En Cita",
-      nextAvailable: "14:30 PM",
-      location: "Consultorio B"
-    },
-    {
-      id: "doc3",
-      name: "Dr. Ian Malcolm",
-      specialty: "General",
-      status: "Ocupado", // Ej. en una llamada, revisando expedientes
-      nextAvailable: "15:00 PM",
-      location: "Teleconsulta"
-    },
-    {
-      id: "doc4",
-      name: "Dra. Sarah Harding",
-      specialty: "Dermatología",
-      status: "Fuera de Línea",
-      nextAvailable: "Mañana 09:00 AM",
-      location: "-"
-    },
-  ],
-  supportStaff: [
-    {
-      id: "staff1",
-      name: "Laura Palmer",
-      role: "Recepción",
-      status: "Disponible", // Disponible, Ocupado, En Descanso
-      location: "Recepción Principal"
-    },
-    {
-      id: "staff2",
-      name: "Dale Cooper",
-      role: "Asistente Administrativo",
-      status: "Ocupado",
-      location: "Oficina"
-    },
-  ]
-};
+import { CalendarCheck2, User, Clock } from "lucide-react";
+import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments";
 
 export function RealTimeAvailability() {
+  const { doctors, loading, error } = useDoctorsWithAppointments();
+
+  const getDoctorStatus = React.useMemo(() => {
+    return doctors.map(doctor => {
+      const now = new Date();
+      const currentAppointment = doctor.appointments.find(apt => {
+        const aptDate = new Date(`${apt.date} ${apt.time}`);
+        const endTime = new Date(aptDate.getTime() + 60 * 60 * 1000); // Asumiendo citas de 1 hora
+        return aptDate <= now && now <= endTime && apt.status !== 'Completada';
+      });
+
+      const nextAppointment = doctor.appointments
+        .filter(apt => {
+          const aptDate = new Date(`${apt.date} ${apt.time}`);
+          return aptDate > now && apt.status !== 'Completada';
+        })
+        .sort((a, b) => {
+          const dateA = new Date(`${a.date} ${a.time}`);
+          const dateB = new Date(`${b.date} ${b.time}`);
+          return dateA.getTime() - dateB.getTime();
+        })[0];
+
+      let status = "Disponible";
+      let nextAvailable = null;
+
+      if (currentAppointment) {
+        status = "En Cita";
+        if (nextAppointment) {
+          nextAvailable = `${nextAppointment.time} - ${new Date(nextAppointment.date).toLocaleDateString()}`;
+        }
+      } else if (nextAppointment) {
+        const nextAptTime = new Date(`${nextAppointment.date} ${nextAppointment.time}`);
+        const timeDiff = nextAptTime.getTime() - now.getTime();
+        if (timeDiff < 30 * 60 * 1000) { // Menos de 30 minutos
+          status = "Ocupado";
+        }
+        nextAvailable = `${nextAppointment.time} - ${new Date(nextAppointment.date).toLocaleDateString()}`;
+      }
+
+      return {
+        ...doctor,
+        status,
+        nextAvailable,
+        currentPatient: currentAppointment?.patientName || null
+      };
+    });
+  }, [doctors]);
+
   const getStatusColor = (status: string) => {
     if (status === "Disponible") return "bg-green-500";
     if (status === "En Cita" || status === "Ocupado") return "bg-yellow-500";
@@ -67,59 +63,95 @@ export function RealTimeAvailability() {
     return "bg-gray-400";
   };
 
+  if (loading) {
+    return (
+      <Card className="col-span-1 lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CalendarCheck2 className="h-5 w-5 mr-2 text-primary" />
+            Disponibilidad en Tiempo Real
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="animate-pulse space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="col-span-1 lg:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <CalendarCheck2 className="h-5 w-5 mr-2 text-primary" />
+            Disponibilidad en Tiempo Real
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-red-500">Error: {error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="col-span-1 lg:col-span-2"> {/* Ajustar según layout general */}
+    <Card className="col-span-1 lg:col-span-2">
       <CardHeader>
         <CardTitle className="flex items-center">
           <CalendarCheck2 className="h-5 w-5 mr-2 text-primary" />
           Disponibilidad en Tiempo Real
         </CardTitle>
         <CardDescription>
-          Estado actual de los médicos y personal de soporte.
+          Estado actual de los médicos bajo tu supervisión.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div>
-          <h4 className="text-md font-semibold mb-3 text-foreground">Médicos</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availabilityData.doctors.map((doctor) => (
-              <div key={doctor.id} className="p-3 border rounded-lg bg-card hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-semibold text-foreground">{doctor.name}</p>
-                  <Badge variant={doctor.status === "Disponible" ? "default" : "secondary"} 
-                         className={`text-xs ${getStatusColor(doctor.status)} text-white`}>
-                    {doctor.status}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">{doctor.specialty}</p>
-                <p className="text-xs text-muted-foreground">Ubicación: {doctor.location}</p>
-                {doctor.nextAvailable && (
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                    Próx. disponible: {doctor.nextAvailable}
+          <h4 className="text-md font-semibold mb-3 text-foreground flex items-center">
+            <User className="h-4 w-4 mr-2" />
+            Médicos ({getDoctorStatus.length})
+          </h4>
+          {getDoctorStatus.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay médicos asignados.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {getDoctorStatus.map((doctor) => (
+                <div key={doctor.idDoctor} className="p-3 border rounded-lg bg-card hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-semibold text-foreground">Dr. ID {doctor.idDoctor}</p>
+                    <Badge variant={doctor.status === "Disponible" ? "default" : "secondary"} 
+                           className={`text-xs ${getStatusColor(doctor.status)} text-white`}>
+                      {doctor.status}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{doctor.speciality}</p>
+                  {doctor.currentPatient && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                      Atendiendo: {doctor.currentPatient}
+                    </p>
+                  )}
+                  {doctor.nextAvailable && (
+                    <p className="text-xs text-muted-foreground flex items-center mt-1">
+                      <Clock className="h-3 w-3 mr-1" />
+                      Próx. disponible: {doctor.nextAvailable}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Citas hoy: {doctor.appointments.filter(apt => {
+                      const today = new Date().toDateString();
+                      const aptDate = new Date(apt.date).toDateString();
+                      return today === aptDate && apt.status !== 'Completada';
+                    }).length}
                   </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h4 className="text-md font-semibold mb-3 text-foreground">Personal de Soporte</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availabilityData.supportStaff.map((staff) => (
-              <div key={staff.id} className="p-3 border rounded-lg bg-card hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-semibold text-foreground">{staff.name}</p>
-                  <Badge variant={staff.status === "Disponible" ? "default" : "secondary"} 
-                         className={`text-xs ${getStatusColor(staff.status)} text-white`}>
-                    {staff.status}
-                  </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">Rol: {staff.role}</p>
-                <p className="text-xs text-muted-foreground">Ubicación: {staff.location}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
