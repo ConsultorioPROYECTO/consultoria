@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db'; // Asegúrate que la ruta al db sea correcta
 import { users, NewUser } from '@rutas/db/schema/users'; // Asegúrate que la ruta al schema sea correcta
 import { eq } from 'drizzle-orm';
+import { assistants, doctors } from '@rutas/db/schema';
 
 export async function POST(request: NextRequest) {
     try {
@@ -64,14 +65,26 @@ export async function POST(request: NextRequest) {
                 })
                 .where(eq(users.firebaseUid, firebaseUid));
                 // .returning() eliminado; no es efectivo para MySQL y la consulta posterior ya existe.
-            
             // Después de actualizar, obtener el usuario para devolverlo
             const userAfterUpdate = await db
                 .select()
                 .from(users)
                 .where(eq(users.firebaseUid, firebaseUid))
                 .limit(1);
-
+            // Crear registro en doctors o assistants si corresponde
+            if (userAfterUpdate[0]?.role === 'medico') {
+                // Verifica si ya existe registro en doctors
+                const doctorExists = await db.query.doctors.findFirst({ where: eq(doctors.userId, userAfterUpdate[0].id) });
+                if (!doctorExists) {
+                    await db.insert(doctors).values({ userId: userAfterUpdate[0].id, speciality: '', calendar_id: '', privatePhone: '', nitId: '', availability: '', tokenGoogleId: '' });
+                }
+            } else if (userAfterUpdate[0]?.role === 'asistente') {
+                // Verifica si ya existe registro en assistants
+                const assistantExists = await db.query.assistants.findFirst({ where: eq(assistants.userId, userAfterUpdate[0].id) });
+                if (!assistantExists) {
+                    await db.insert(assistants).values({ userId: userAfterUpdate[0].id });
+                }
+            }
             console.log('[sync-user] Usuario actualizado:', JSON.stringify(userAfterUpdate[0], null, 2));
             return NextResponse.json({ message: 'Usuario actualizado exitosamente', user: userAfterUpdate[0] }, { status: 200 });
         } else {
@@ -91,19 +104,22 @@ export async function POST(request: NextRequest) {
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
-
             await db // No se asigna a createdUser ya que se vuelve a consultar después
                 .insert(users)
                 .values(newUser);
                 // .returning() eliminado; no es efectivo para MySQL y la consulta posterior ya existe.
-            
             // Después de insertar, obtener el usuario para devolverlo
             const userAfterInsert = await db
                 .select()
                 .from(users)
                 .where(eq(users.firebaseUid, firebaseUid)) // Usar firebaseUid que es único
                 .limit(1);
-
+            // Crear registro en doctors o assistants si corresponde
+            if (userAfterInsert[0]?.role === 'medico') {
+                await db.insert(doctors).values({ userId: userAfterInsert[0].id, speciality: '', calendar_id: '', privatePhone: '', nitId: '', availability: '', tokenGoogleId: '' });
+            } else if (userAfterInsert[0]?.role === 'asistente') {
+                await db.insert(assistants).values({ userId: userAfterInsert[0].id });
+            }
             console.log('[sync-user] Usuario creado:', JSON.stringify(userAfterInsert[0], null, 2));
             return NextResponse.json({ message: 'Usuario creado exitosamente', user: userAfterInsert[0] }, { status: 201 });
         }
