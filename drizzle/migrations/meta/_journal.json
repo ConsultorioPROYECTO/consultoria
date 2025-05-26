@@ -71,6 +71,13 @@
       "when": 1748114001050,
       "tag": "0009_outgoing_polaris",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1748233715505,
+      "tag": "0010_flippant_network",
+      "breakpoints": true
     }
   ]
 }

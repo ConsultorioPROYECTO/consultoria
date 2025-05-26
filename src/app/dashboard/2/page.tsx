@@ -155,6 +155,12 @@ export default function Page() {
   };
 
   useEffect(() => {
+
+    if (!loading && !user) {
+      router.push('/login');
+      return;
+    }
+
     const verifyRole = async () => {
       if (!loading && user) {
         try {
