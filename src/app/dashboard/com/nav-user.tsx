@@ -33,7 +33,7 @@ import {
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 
-import { SettingsModal } from "./SettingsModal"
+import { SettingsDialog } from "./SettingsModal"
 
 
 export function NavUser({
@@ -130,7 +130,7 @@ export function NavUser({
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <SettingsModal
+      <SettingsDialog
         isOpen={isSettingsModalOpen}
         onOpenChange={handleCloseSettingsModal}
       />
