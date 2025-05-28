@@ -251,17 +251,17 @@ export default function Page() {
             </div>
 
             {/* Reestructurar la grilla principal */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div className="col-span-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 mb-6">
+                <div className="col-span-2">
                   <TodayIsDay />
                 </div>
-                <div className="col-span-1">
+                <div className="col-span-2">
                   <TodaysAppointments appointmentCount={todayAppointmentsState.length} />
                 </div>
                 <div className="col-span-2">
                   <NextAppointment appointments={todayAppointmentsState} />
                 </div>
-                <div className="col-span-full"> {/* DailyAgendaView ocupará todo el ancho */}
+                <div className="lg:col-span-4"> {/* DailyAgendaView ocupará 3 columnas en pantallas grandes */}
                   <DailyAgendaView
                     todayAppointments={todayAppointmentsState}
                     onSelectPatient={handleSelectPatient}
