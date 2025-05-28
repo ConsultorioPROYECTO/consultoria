@@ -15,7 +15,7 @@ export function TodayIsDay() {
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex flex-col">
           <span className="text-sm opacity-80">Hoy es</span>
-          <span className="text-3xl lg:text-4xl font-bold mt-1">{date} de {capitalizedMonth}</span>
+          <span className="text-3xl lg:text-3xl font-bold mt-1">{date} de {capitalizedMonth}</span>
         </div>
       </CardContent>
     </Card>
