@@ -15,6 +15,7 @@ import {
   Paintbrush,
   Settings,
   Video,
+  Building,
 } from "lucide-react"
 
 import {
@@ -45,6 +46,7 @@ import {
 } from "@/components/ui/sidebar"
 
 import { Label } from "@rutas/components/ui/label";
+import { Input } from "@rutas/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
 import { useTheme } from "next-themes";
 
@@ -55,6 +57,7 @@ const data = {
     { name: "Home", icon: Home },
     { name: "Appearance", icon: Paintbrush },
     { name: "Messages & media", icon: MessageCircle },
+    { name: "Configuración de la organización", icon: Building },
     { name: "Language & region", icon: Globe },
     { name: "Accessibility", icon: Keyboard },
     { name: "Mark as read", icon: Check },
@@ -71,12 +74,14 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
-  // const [open, setOpen] = React.useState(true) // Eliminar estado local
   const { theme, setTheme } = useTheme();
-  const [selectedTheme, setSelectedTheme] = useState(theme || 'light');
+  const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system");
+  const [activeSection, setActiveSection] = useState("Appearance"); // New state for active section
 
   useEffect(() => {
-    setSelectedTheme(theme || 'light');
+    if (theme) {
+      setSelectedTheme(theme?.replace('-dark', '') || 'system');
+    }
   }, [theme]);
 
   const handleThemeChange = (value: string) => {
@@ -84,9 +89,17 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
   };
 
   const handleSaveClick = () => {
-    setTheme(selectedTheme);
-    onOpenChange(false); // Usar onOpenChange para cerrar el modal
+    // Apply the selected theme and current mode
+    const newTheme = theme?.endsWith('-dark') ? `${selectedTheme}-dark` : selectedTheme;
+    setTheme(newTheme);
+    // onOpenChange(false); // Prevent modal from closing
   };
+
+  const handleSectionChange = (sectionName: string) => {
+    setActiveSection(sectionName);
+  };
+
+  const isApplyButtonDisabled = selectedTheme === (theme?.replace('-dark', '') || 'system');
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}> {/* Usar isOpen y onOpenChange */}
@@ -108,7 +121,8 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                       <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton
                           asChild
-                          isActive={item.name === "Appearance"} // Highlight Appearance
+                          isActive={item.name === activeSection}
+                          onClick={() => handleSectionChange(item.name)}
                         >
                           <a href="#">
                             <item.icon />
@@ -132,35 +146,80 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                     </BreadcrumbItem>
                     <BreadcrumbSeparator className="hidden md:block" />
                     <BreadcrumbItem>
-                      <BreadcrumbPage>Appearance</BreadcrumbPage>
+                      <BreadcrumbPage>{activeSection}</BreadcrumbPage>
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
               </div>
             </header>
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
-              {/* Appearance settings section */}
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="theme" className="text-right">
-                    Tema
-                  </Label>
-                  <Select value={selectedTheme} onValueChange={handleThemeChange}>
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Seleccionar tema" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="theme-claude">Claude Claro</SelectItem>
-                      <SelectItem value="theme-claude-dark">Claude Oscuro</SelectItem>
-                      <SelectItem value="theme-vercel">Vercel Claro</SelectItem>
-                      <SelectItem value="theme-vercel-dark">Vercel Oscuro</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {activeSection === "Appearance" && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-4">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="theme">Tema</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={selectedTheme === 'theme-claude' ? 'default' : 'outline'}
+                          onClick={() => handleThemeChange('theme-claude')}
+                        >
+                          Claude
+                        </Button>
+                        <Button
+                          variant={selectedTheme === 'theme-vercel' ? 'default' : 'outline'}
+                          onClick={() => handleThemeChange('theme-vercel')}
+                        >
+                          Vercel
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="mode">Modo</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={!theme?.endsWith('-dark') ? 'default' : 'outline'}
+                          onClick={() => setTheme(selectedTheme)}
+                        >
+                          Claro
+                        </Button>
+                        <Button
+                          variant={theme?.endsWith('-dark') ? 'default' : 'outline'}
+                          onClick={() => setTheme(`${selectedTheme}-dark`)}
+                        >
+                          Oscuro
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Tema actual: {theme?.replace('-dark', '')} ({theme?.endsWith('-dark') ? 'Oscuro' : 'Claro'})
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <Button onClick={handleSaveClick}>Guardar</Button>
-            </div>
-          </main>
+              )}
+              {activeSection === "Configuración de la organización" && (
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="organizationName">Nombre de la Organización</Label>
+                    <Input id="organizationName" defaultValue="Mi Organización" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="address">Dirección</Label>
+                    <Input id="address" defaultValue="Calle Falsa 123" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Teléfono</Label>
+                    <Input id="phone" defaultValue="+1234567890" />
+                  </div>
+                </div>
+              )}
+              {activeSection === "Appearance" && (
+                 <Button onClick={handleSaveClick} disabled={isApplyButtonDisabled}>Aplicar</Button>
+               )}
+               {activeSection !== "Appearance" && (
+                 <Button onClick={handleSaveClick}>Guardar</Button>
+               )}
+             </div>
+           </main>
         </SidebarProvider>
       </DialogContent>
     </Dialog>
