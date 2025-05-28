@@ -6,6 +6,8 @@ export function TodayIsDay() {
   const today = new Date();
 //   const day = today.toLocaleString('default', { weekday: 'long' });
   const month = today.toLocaleString('default', { month: 'long' });
+  const shortMonth = month.slice(0, 3);
+  const capitalizedMonth = shortMonth.charAt(0).toUpperCase() + shortMonth.slice(1).toLowerCase();
   const date = today.getDate();
 
   return (
@@ -13,7 +15,7 @@ export function TodayIsDay() {
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex flex-col">
           <span className="text-sm opacity-80">Hoy es</span>
-          <span className="text-4xl font-bold mt-1">{date} de {month}</span>
+          <span className="text-3xl lg:text-4xl font-bold mt-1">{date} de {capitalizedMonth}</span>
         </div>
       </CardContent>
     </Card>

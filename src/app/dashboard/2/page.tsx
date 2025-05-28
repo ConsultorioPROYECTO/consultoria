@@ -251,31 +251,31 @@ export default function Page() {
             </div>
 
             {/* Reestructurar la grilla principal */}
-            {/* Nueva fila/sección para Contador de Citas y Próxima Cita */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-col-2 xl:grid-cols-6 gap-6 mb-6"> {/* Contenedor Grid para 4 columnas y espaciado */} 
-
-                <TodayIsDay />
-                <TodaysAppointments appointmentCount={todayAppointmentsState.length} /> {/* Ocupa la primera columna */}
-                <NextAppointment appointments={todayAppointmentsState} className="col-span-2" /> {/* Ocupa dos columnas */}
-
-                {/* Las columnas 3 y 4 quedan vacías */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                <div className="col-span-1">
+                  <TodayIsDay />
+                </div>
+                <div className="col-span-1">
+                  <TodaysAppointments appointmentCount={todayAppointmentsState.length} />
+                </div>
+                <div className="col-span-2">
+                  <NextAppointment appointments={todayAppointmentsState} />
+                </div>
+                <div className="col-span-full"> {/* DailyAgendaView ocupará todo el ancho */}
+                  <DailyAgendaView
+                    todayAppointments={todayAppointmentsState}
+                    onSelectPatient={handleSelectPatient}
+                    onSelectAppointment={handleSelectAppointment}
+                    onStartAppointment={handleStartAppointment}
+                    onCompleteAppointment={handleCompleteAppointment}
+                    onResetAppointment={handleResetAppointment}
+                    onStartConsultation={handleStartConsultation}
+                  />
+                </div>
             </div>
 
             {/* Grilla principal para el resto del contenido */}
             <div className="grid grid-cols-1 gap-6 @[60rem]:grid-cols-3 @[80rem]:grid-cols-4"> {/* Mantener la grilla principal para el resto */}
-
-              {/* Primera fila de esta grilla principal: Agenda del Día */}
-              <div className="col-span-1 @[60rem]:col-span-3 @[80rem]:col-span-4 space-y-6 relative"> {/* DailyAgendaView ocupa todo el ancho de esta grilla */}
-                <DailyAgendaView 
-                  todayAppointments={todayAppointmentsState} 
-                  onSelectPatient={handleSelectPatient} 
-                  onSelectAppointment={handleSelectAppointment}
-                  onStartAppointment={handleStartAppointment} 
-                  onCompleteAppointment={handleCompleteAppointment} 
-                  onResetAppointment={handleResetAppointment}
-                  onStartConsultation={handleStartConsultation}
-                />
-              </div>
 
               {/* Segunda fila de esta grilla principal: Notas Rápidas, Patrones, Métricas y Sugerencias */}
               {/* Usar una grilla anidada para la distribución interna de esta fila */}
