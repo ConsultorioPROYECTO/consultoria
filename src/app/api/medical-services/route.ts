@@ -1,3 +1,14 @@
+// @app/src/app/api/medical-services/route.ts
+
+/**
+ *  @author Santiago Prada - Backend Developer
+ *  @version 1.0.0
+ *  @date 2025-05-26
+ *  @description src/app/api/medical-services/route.ts
+ *   Este módulo define las rutas y manejadores para obtener y crear servicios médicos.
+ *   Incluye autenticación, validación de roles y manejo de errores.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { medicalServices, users } from "@/db/schema";
@@ -8,7 +19,20 @@ import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS } f
 import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
 import type { NewMedicalService } from "@/db/schema";
 
-// GET - Obtener todos los servicios médicos de la organización
+/**
+ * 
+ *  @description Manejador para obtener servicios médicos de la organización del usuario autenticado.
+ *  Permite filtrar por categoría y estado activo.
+ *  @author Santiago Prada - Backend Developer
+ *  @version 1.0.0
+ *  @date 2025-05-26
+ *  @throws {Error} Si ocurre un error al consultar la base de datos.
+ *  @param request 
+ *  @param decodedToken 
+ *  @URLParams 'category' (opcional) - Filtra por categoría de servicio médico.
+ *  @URLParams 'active' (opcional) - Filtra por servicios activos (true por defecto).
+ *  @returns {Promise<NextResponse | Response>} Respuesta con los servicios médicos encontrados o error.
+ */
 const getMedicalServicesHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken
@@ -40,14 +64,10 @@ const getMedicalServicesHandler = async (
     );
 
     // Si se solicita solo servicios activos
-    /**
-     *  @description Filtra los servicios médicos para que solo se muestren aquellos que están activos.
-     *  @bug No funciona correctamente las clausulas where con boolean.
-     
+    // Filtra los servicios médicos para que solo se muestren aquellos que están activos.
     if (activeOnly) {
       whereConditions = and(whereConditions, eq(medicalServices.isActive, true));
     }
-      */
 
     if (category) {
       whereConditions = and(whereConditions, eq(medicalServices.category, category));
@@ -67,7 +87,6 @@ const getMedicalServicesHandler = async (
               }
             }
           },
-          //where: eq(medicalServices.isActive, true) // Solo doctores activos
         }
       },
       orderBy: (medicalServices, { asc }) => [asc(medicalServices.category), asc(medicalServices.name)]
@@ -91,7 +110,17 @@ const getMedicalServicesHandler = async (
   }
 };
 
-// POST - Crear nuevo servicio médico
+/**
+ *  @description Manejador para crear un nuevo servicio médico en la organización del usuario autenticado.
+ *  Solo los administradores pueden crear servicios médicos.
+ *  @author Santiago Prada - Backend Developer
+ *  @version 1.0.0
+ *  @date 2025-05-26
+ *  @throws {Error} Si ocurre un error al consultar la base de datos o al validar los datos.
+ *  @param request
+ *  @param decodedToken
+ *  @returns {Promise<NextResponse | Response>} Respuesta con el servicio médico creado o error.
+ */
 const createMedicalServiceHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken
