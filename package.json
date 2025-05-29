@@ -69,6 +69,7 @@
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.1.5",
     "tw-animate-css": "^1.2.9",
+    "typedoc": "^0.28.5",
     "typescript": "^5"
   }
 }

@@ -1,0 +1,21 @@
+{
+  "entryPoints": [
+    "src/types/api.ts",
+    "src/types/medical-services-api.ts",
+    "src/hooks/useMedicalServices.ts",
+    "src/hooks/useDoctorServices.ts",
+    "src/db/schema/medical_services.ts",
+    "src/db/schema/doctor_services.ts",
+    "src/db/schema/doctors.ts",
+    "src/db/schema/users.ts"
+  ],
+  "out": "docs",
+  "includeVersion": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/migrations/**"],
+  "tsconfig": "tsconfig.json",
+  "name": "Consultoria API Docs",
+  "readme": "README.md"
+}
