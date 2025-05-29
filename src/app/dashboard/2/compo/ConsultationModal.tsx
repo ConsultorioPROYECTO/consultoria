@@ -143,7 +143,7 @@ export function ConsultationModal({
                 <Textarea
                   placeholder="Aquí aparecerá el resultado de AI Care..."
                   className="h-[350px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
-                  value={aiCareText}
+                  value={typeof aiCareText === 'string' ? aiCareText : ''}
                   readOnly
                 />
                 {error && <div className="text-red-500 text-sm mt-2">{error}</div>}

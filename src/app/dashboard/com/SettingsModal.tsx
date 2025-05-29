@@ -32,7 +32,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
-  DialogTrigger,
+  // DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Sidebar,
@@ -47,7 +47,7 @@ import {
 
 import { Label } from "@rutas/components/ui/label";
 import { Input } from "@rutas/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
 import { useTheme } from "next-themes";
 
 const data = {

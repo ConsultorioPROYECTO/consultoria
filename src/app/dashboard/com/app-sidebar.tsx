@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from 'next/navigation';
-import { Calendar } from "@rutas/components/ui/calendar"
+// import { Calendar } from "@rutas/components/ui/calendar"
 import { Button } from "@rutas/components/ui/button" // Añadir importación de Button
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card" // Añadir importaciones de Card
 import {
@@ -57,7 +57,7 @@ const MOCK_APPOINTMENTS: { [key: string]: Appointment[] } = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [date, setDate] = React.useState<Date | undefined>(undefined) // Estado inicial sin fecha seleccionada
+  const [date] = React.useState<Date | undefined>(undefined) // Estado inicial sin fecha seleccionada
   const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
   const { user } = useAuth()
   const pathname = usePathname();
@@ -145,6 +145,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent className="flex flex-col">
+        {/*
         <div className="p-2">
           <Calendar
             mode="single"
@@ -152,7 +153,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             onSelect={setDate} // setDate actualizará 'date', y el useEffect se encargará del resto
             className="rounded-md "
           />
-        </div>
+        </div> */}
         
         {/* Sección para mostrar citas del día seleccionado */}  
         {date && selectedDayAppointments.length > 0 && (
