@@ -7,6 +7,7 @@ import { ScrollArea } from "@rutas/components/ui/scroll-area";
 import { Button } from "@rutas/components/ui/button";
 import { DialogFooter } from "@rutas/components/ui/dialog";
 import { useState } from 'react';
+import { useAICare } from '@/app/hooks/useAICare';
 
 interface Appointment {
   id: string;
@@ -30,13 +31,26 @@ export function ConsultationModal({
   onSaveAndComplete,
 }: ConsultationModalProps) {
   const [notes, setNotes] = useState('');
+  const { data, loading, error, fetchAICare } = useAICare();
+
+  console.log('[AI Care] ConsultationModal render', { isOpen, appointment });
 
   if (!appointment) return null; // No renderizar si no hay cita seleccionada
 
   const handleSaveClick = () => {
+    console.log('[AI Care] handleSaveClick', { appointmentId: appointment.id, notes });
     onSaveAndComplete(appointment.id, notes);
     setNotes('');
   };
+
+  // Para mostrar el resultado de AI Care en el textarea central
+  const aiCareText = data?.text || '';
+
+  // Debug logs para AI Care
+  console.log('[AI Care] notes:', notes);
+  console.log('[AI Care] loading:', loading);
+  console.log('[AI Care] data:', data);
+  console.log('[AI Care] error:', error);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -117,17 +131,24 @@ export function ConsultationModal({
           <Card className="col-span-1 overflow-y-auto border rounded-lg py-4">
             <CardHeader>
               <CardTitle>AI-Care</CardTitle>
+              <Button onClick={() => {
+                console.log('[AI Care] Botón presionado, disparando fetchAICare con:', notes);
+                fetchAICare(notes);
+              }} disabled={loading}>
+                {loading ? 'Generando...' : 'Generar con AI Care'}
+              </Button>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto "> {/* flex-1 y overflow para hacer scroll en las notas */}
-                <ScrollArea className="h-full overflow-hidden "> {/* Eliminado pr-4 */}
-                  <Textarea 
-                    placeholder="Escribe tus notas de consulta aquí..." 
-                    className="h-[350px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                  />
-                </ScrollArea>
-              </CardContent>
+            <CardContent className="flex-1 overflow-y-auto ">{/* flex-1 y overflow para hacer scroll en las notas */}
+              <ScrollArea className="h-full overflow-hidden ">{/* Eliminado pr-4 */}
+                <Textarea
+                  placeholder="Aquí aparecerá el resultado de AI Care..."
+                  className="h-[350px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
+                  value={aiCareText}
+                  readOnly
+                />
+                {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+              </ScrollArea>
+            </CardContent>
           </Card>
           
         </div>
