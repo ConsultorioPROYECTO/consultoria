@@ -38,8 +38,8 @@ const getPatientsHandler = async (
         },
         appointments: {
           columns: { id: true, date: true, time: true, status: true },
-          where: eq(patients.isActive, true),
-          limit: 5,
+          //where: eq(patients.isActive, true),
+          //limit: 5,
           orderBy: (appointments, { desc }) => [desc(appointments.date)]
         }
       },

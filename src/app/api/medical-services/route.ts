@@ -39,9 +39,15 @@ const getMedicalServicesHandler = async (
       eq(medicalServices.organizationId, requestingUser.organizationId)
     );
 
+    // Si se solicita solo servicios activos
+    /**
+     *  @description Filtra los servicios médicos para que solo se muestren aquellos que están activos.
+     *  @bug No funciona correctamente las clausulas where con boolean.
+     
     if (activeOnly) {
       whereConditions = and(whereConditions, eq(medicalServices.isActive, true));
     }
+      */
 
     if (category) {
       whereConditions = and(whereConditions, eq(medicalServices.category, category));
@@ -61,7 +67,7 @@ const getMedicalServicesHandler = async (
               }
             }
           },
-          where: eq(medicalServices.isActive, true) // Solo doctores activos
+          //where: eq(medicalServices.isActive, true) // Solo doctores activos
         }
       },
       orderBy: (medicalServices, { asc }) => [asc(medicalServices.category), asc(medicalServices.name)]

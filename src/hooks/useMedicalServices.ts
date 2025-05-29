@@ -69,7 +69,7 @@ export function useMedicalServices(): UseMedicalServicesReturn {
       }
 
       const result = await response.json();
-      setServices(result.data || []);
+      setServices(result.data?.services || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido al cargar servicios médicos');
       setServices([]);
