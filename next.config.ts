@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
               "block-all-mixed-content",
               "upgrade-insecure-requests",
               // Agrega los dominios de Firebase
-              "connect-src 'self' https://n8n.srv828784.hstgr.cloud/ https://*.firebaseapp.com https://*.googleapis.com",
+              "connect-src 'self' https://n8n.srv828784.hstgr.cloud/ https://*.firebaseapp.com https://*.googleapis.com https://irina.makilacloud.com/",
             ].join("; "),
           },
         ],
