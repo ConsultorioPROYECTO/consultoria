@@ -2,12 +2,12 @@
   "entryPoints": [
     "src/types/api.ts",
     "src/types/medical-services-api.ts",
-    "src/hooks/useMedicalServices.ts",
-    "src/hooks/useDoctorServices.ts",
     "src/db/schema/medical_services.ts",
     "src/db/schema/doctor_services.ts",
     "src/db/schema/doctors.ts",
-    "src/db/schema/users.ts"
+    "src/db/schema/users.ts",
+    "src/app/api/**/*.ts",
+    "src/app/hooks/**/*.ts",
   ],
   "out": "docs",
   "includeVersion": true,
