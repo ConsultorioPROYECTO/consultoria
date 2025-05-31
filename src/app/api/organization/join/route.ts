@@ -2,21 +2,32 @@
 
 /**
  * @fileoverview API Route para unir a un usuario a una organizacion.
- * @version 1.0.1
+ * @version 1.0.2
  * @author Santiago Prada
- * @date 2025-05-24
+ * @date 2025-05-31
  *
  * @description
  * Maneja las solicitudes POST a `src/app/api/organization/join`. Requiere autenticación.
- * Utiliza la instancia de Drizzle ORM (`db`) para consultar todos los registros
- * de la tabla `organization` en la base de datos MySQL.
- * Devuelve un un mensaje con el status de la consulta en formato JSON.
+ * Utiliza la instancia de Drizzle ORM (`db`) para consultar y actualizar los registros
+ * de las tablas `organization` y `users` en la base de datos MySQL.
+ * Devuelve un mensaje con el status de la operación en formato JSON.
  *
  * La autenticación se maneja mediante la validación de Tokens ID de Firebase.
  *
+ * Validación:
+ * El cuerpo de la petición se valida usando Zod. Se espera el siguiente formato:
+ * {
+ *   organizationId: number, // ID de la organización a la que se unirá el usuario
+ *   role: 'admin' | 'medico' | 'asistente' | 'N/A' // Rol que tendrá el usuario en la organización
+ * }
+ * Si la validación falla, se responde con status 400 y detalles del error.
+ *
  * @requires next/server - Para los tipos NextRequest y NextResponse.
  * @requires @rutas/db - Instancia `db` de Drizzle ORM.
- * @requires @rutas/db/schema - Definición de la tabla `appointments`.
+ * @requires @rutas/db/schema/organization - Definición de la tabla `organization`.
+ * @requires @rutas/db/schema/users - Definición de la tabla `users`.
+ * @requires @rutas/app/lib/firebase/server/middleware/authMiddleware - Middleware de autenticación Firebase.
+ * @requires zod - Para validación de datos.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -26,19 +37,53 @@ import { organization } from '@rutas/db/schema/organization';
 import { users } from '@rutas/db/schema/users';
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware';
 import { DecodedIdToken } from 'firebase-admin/auth';
+import {z} from 'zod';
 
 
-/** 
- * Manejador para solicitudes POST a src/app/api/organization/join.
+// Esquema Zod para validar el cuerpo de la petición
+const joinOrganizationSchema = z.object({
+  organizationId: z.number({ invalid_type_error: 'organizationId must be a number' }),
+  role: z.enum(['admin', 'medico', 'asistente', 'N/A']),
+});
+
+/**
+ * Manejador para solicitudes POST a la ruta /api/organization/join.
  * 
- * @async
- * @param {NextRequest} request
- * @returns {Promise<NextResponse>}
+ * Este handler:
+ * - Valida el cuerpo de la petición usando Zod (organizationId: number, role: enum).
+ * - Verifica que la organización y el usuario existan en la base de datos.
+ * - Actualiza el usuario para asignarle la organización y el rol especificado.
+ * - Devuelve un mensaje de éxito o el error correspondiente en formato JSON.
+ * 
+ * @param {NextRequest} request - Objeto de la petición HTTP Next.js.
+ * @param {DecodedIdToken} decodedToken - Token de usuario autenticado por Firebase.
+ * @returns {Promise<NextResponse | Response>} Respuesta HTTP con el resultado de la operación.
+ * 
+ * @throws 400 - Si el cuerpo de la petición es inválido o no cumple el esquema Zod.
+ * @throws 404 - Si la organización o el usuario no existen.
+ * @throws 200 - Si la operación es exitosa.
  */
 const postOrganizationJoinHandler = async (
     request: NextRequest,
     decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
-  const { organizationId, role} = await request.json();
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
+  }
+  // Si organizationId viene como string, intenta convertirlo a número
+  if (typeof body.organizationId === 'string') {
+    body.organizationId = Number(body.organizationId);
+  }
+  const parseResult = joinOrganizationSchema.safeParse(body);
+  if (!parseResult.success) {
+    return NextResponse.json({
+      message: 'Invalid request body',
+      errors: parseResult.error.flatten().fieldErrors,
+    }, { status: 400 });
+  }
+  const { organizationId, role } = parseResult.data;
 
   const existingOrganization = await db.query.organization.findFirst({
     where: eq(organization.id, organizationId),
