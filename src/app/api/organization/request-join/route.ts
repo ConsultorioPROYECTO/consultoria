@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const BASIC_AUTH_USER = 'devUser';
 const BASIC_AUTH_PASS = 'Rigjeq-jujgy7-vejqexv';
 
-const sendInvitacionEmail = async (email: string, organizationName: string, role : string) => {
+const sendInvitacionEmail = async (email: string, organizationName: string, role : string, invitacionCode : string | null) => {
     const response = await fetch(`https://n8n.srv828784.hstgr.cloud/webhook/a91c2a89-22d3-495b-8455-42ad2c5ea860`, {
         method: 'POST',
         headers: {
@@ -23,6 +23,7 @@ const sendInvitacionEmail = async (email: string, organizationName: string, role
             email: email,
             organizationName: organizationName,
             role: role,
+            invitacionCode: invitacionCode,
         }),
     });
     if (!response.ok) {
@@ -62,7 +63,7 @@ const postOrganizationRequestHandler  = async (
 
             const organizacion = await db.query.organization.findFirst({
                 where: eq(organization.id, user.organizationId as number),
-                columns: { id: true, name: true },
+                columns: { id: true, name: true, invitationCode: true },
             });
             if (!organizacion) {
                 return NextResponse.json(
@@ -84,7 +85,7 @@ const postOrganizationRequestHandler  = async (
                 );
             }*/
 
-            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role);
+            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, organizacion.invitationCode);
             
             if (!invitacionEmail) {
                 return NextResponse.json(
