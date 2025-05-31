@@ -47,7 +47,6 @@ export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
     console.log('Sending invite to:', email, 'with role:', role);
     // Aquí iría la llamada a la API para enviar la invitación
     setEmail(''); // Limpiar el campo de correo electrónico
-    onOpenChange(false); // Cerrar el modal después de enviar
   };
 
   return (
@@ -65,6 +64,7 @@ export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
             <Input
               id="email"
               type="email"
+              
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
