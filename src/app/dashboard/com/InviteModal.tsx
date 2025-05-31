@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@rutas/components/ui/label";
 import { Input } from "@rutas/components/ui/input";
-import { Popover } from "@rutas/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -20,6 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { useAuth } from "../../context/AuthContext"
+
+
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -27,6 +29,7 @@ interface InviteModalProps {
 }
 
 export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
+  const {user, loading} = useAuth();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'medico' | 'asistente'>('medico');
   const [error, setError] = useState<string | null>(null);
@@ -37,16 +40,41 @@ export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
     return re.test(String(email).toLowerCase());
   };
 
-  const handleSendInvite = () => {
+  const handleSendInvite = async () => {
     if (!validateEmail(email)) {
       setError('Por favor, introduce un correo electrónico válido.');
       return;
     }
     setError(null);
-    // Lógica para enviar la invitación
-    console.log('Sending invite to:', email, 'with role:', role);
-    // Aquí iría la llamada a la API para enviar la invitación
-    setEmail(''); // Limpiar el campo de correo electrónico
+    try {
+      if (!user) {
+        setError('Usuario no autenticado.');
+        return;
+      }
+      const idToken = await user.getIdToken()
+      const response = await fetch('/api/organization/request-join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ email, role }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Error al enviar la invitación.');
+        return;
+      }
+
+      alert('Invitación enviada con éxito!');
+      setEmail('');
+      onOpenChange(false); // Cerrar el modal al enviar la invitación
+    } catch (err) {
+      console.error('Error sending invite:', err);
+      setError('Error de red o del servidor.');
+    }
   };
 
   return (
