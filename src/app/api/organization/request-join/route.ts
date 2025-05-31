@@ -21,13 +21,13 @@ import { NextRequest, NextResponse } from 'next/server';
 const postOrganizationRequestHandler  = async (
     request: NextRequest,
     decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
-    const { invitationCode, role, message} = await request.json();
+    const { email, role, message} = await request.json();
         try {
             // Se obtiene el usuario omitiendo el role, se debe de dejar claro el manejo de los 
             // roles el hacer una solicitud de unirse a una organizacion
             const user = await db.query.users.findFirst({
                 where: eq(users.firebaseUid, decodedToken.uid),
-                columns: { id: true}
+                columns: { id: true, organizationId: true, email: true },
             });
             if (!user) {
                 return NextResponse.json(
@@ -36,34 +36,26 @@ const postOrganizationRequestHandler  = async (
                 );
             }
 
-            const existingOrganization = await db.query.organization.findFirst({
-            where: eq(organization.invitationCode, invitationCode),
-            });
-
-            if (!existingOrganization) {
-                return NextResponse.json(
-                    { error: 'Organización no encontrada.' },
-                    { status: 404 }
-                );
-            }
-
             // Verificar si ya existe una solicitud pendiente del usuario a la organización
             const existingRequest = await db.query.organizationJoinRequest.findFirst({
-                where: eq(organizationJoinRequest.userId, user.id)
+                where: eq(organizationJoinRequest.userEmail, email),
             });
+            // Verificar si la organización existe
+            /** 
             if (existingRequest) {
                 return NextResponse.json(
                     { error: 'Ya existe una solicitud pendiente para esta organización.' },
                     { status: 400 }
                 );
-            }
+            }*/
+
             // Crear la solicitud de unión a la organización
             await db.insert(organizationJoinRequest).values({
-                organizationId: existingOrganization.id,
-                userId: user.id,
+                organizationId: user.organizationId as number,
+                userEmail: user.email as string, // Corregido el typo
                 role: role || 'N/A', // Asignar un rol por defecto si no se proporciona
                 status: 'pending',
-                message: message || null,
+                message: message || 'null', // Mensaje opcional del usuario
             });
 
     return NextResponse.json(

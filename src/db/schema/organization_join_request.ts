@@ -28,8 +28,7 @@ export const organizationJoinRequest = mysqlTable('organization_join_request', {
   organizationId: int('organization_id')
     .references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' })
     .notNull(),
-  userId: int('user_id')
-    .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' })
+  userEmail: varchar('user_email', {length: 255})
     .notNull(),
 
   role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), //'admin', 'medico', 'asistente', 'N/A'
@@ -44,7 +43,6 @@ export const organizationJoinRequest = mysqlTable('organization_join_request', {
   isDeleted: boolean('is_deleted').default(false).notNull(),
 }, (table) => [
   index('organization_id_idx').on(table.organizationId),
-  index('user_id_idx').on(table.userId),
   index('status_idx').on(table.status),
   index('created_at_idx').on(table.createdAt),
   index('approved_at_idx').on(table.approvedAt),
