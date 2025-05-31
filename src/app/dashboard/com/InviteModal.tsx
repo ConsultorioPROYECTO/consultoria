@@ -11,6 +11,15 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@rutas/components/ui/label";
 import { Input } from "@rutas/components/ui/input";
+import { Popover } from "@rutas/components/ui/popover"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -19,6 +28,7 @@ interface InviteModalProps {
 
 export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'medico' | 'asistente'>('medico');
   const [error, setError] = useState<string | null>(null);
 
   const validateEmail = (email: string) => {
@@ -34,7 +44,7 @@ export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
     }
     setError(null);
     // Lógica para enviar la invitación
-    console.log('Sending invite to:', email);
+    console.log('Sending invite to:', email, 'with role:', role);
     // Aquí iría la llamada a la API para enviar la invitación
     setEmail(''); // Limpiar el campo de correo electrónico
     onOpenChange(false); // Cerrar el modal después de enviar
@@ -66,6 +76,22 @@ export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
             />
           </div>
           {error && <p className="text-red-500 text-xs italic mt-1">{error}</p>}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="role" className="text-right">
+              Rol
+            </Label>
+            <Select onValueChange={(value: 'medico' | 'asistente') => setRole(value)} defaultValue={role}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Selecciona un rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="medico">Médico</SelectItem>
+                  <SelectItem value="asistente">Asistente</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex justify-end">
           <Button type="button" onClick={handleSendInvite}>
