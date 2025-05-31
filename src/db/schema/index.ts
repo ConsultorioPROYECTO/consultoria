@@ -8,4 +8,5 @@ export * from './assistant_doctor';
 export * from './patients';
 export * from './medical_services';
 export * from './doctor_services';
+export * from './organization_join_request';
 // Add other schema exports here if you have more files

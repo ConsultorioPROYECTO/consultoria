@@ -17,7 +17,7 @@ import { organization } from './organization';
  * @property {string | null} displayName - Nombre para mostrar del usuario, de Firebase.
  * @property {string | null} photoURL - URL de la foto de perfil del usuario, de Firebase.
  * @property {string | null} providerId - El proveedor de autenticación principal (ej. 'google.com', 'password').
- * @property {string} role - Rol del usuario en tu aplicación (ej. 'user', 'admin', 'editor'). Default 'user'.
+ * @property {mysqlEnum} role - Rol del usuario en tu aplicación (ej. 'user', 'admin', 'editor'). Default 'user'.
  * @property {Date} createdAt - Timestamp de cuándo se creó el registro en TU base de datos.
  * @property {Date} updatedAt - Timestamp de la última actualización del registro en TU base de datos.
  * @property {Date | null} lastLoginAt - Timestamp del último inicio de sesión del usuario (actualizado por tu lógica).
@@ -42,7 +42,7 @@ export const users = mysqlTable('users', {
   providerId: varchar('provider_id', { length: 50 }), // ej: 'google.com', 'password', 'phone'
 
   // --- Campos específicos de tu aplicación ---
-  role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), // ej: 'user', 'admin', 'editor'
+  role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), //'admin', 'medico', 'asistente', 'N/A'
   isActive: boolean('is_active').default(true).notNull(),
   organizationId: int('organization_id').references(()=> organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
   lastLoginAt: timestamp('last_login_at'),
