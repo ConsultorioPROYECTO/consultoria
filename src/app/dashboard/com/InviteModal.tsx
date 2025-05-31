@@ -67,10 +67,8 @@ export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
         setError(data.error || 'Error al enviar la invitación.');
         return;
       }
-
-      alert('Invitación enviada con éxito!');
       setEmail('');
-      onOpenChange(false); // Cerrar el modal al enviar la invitación
+      
     } catch (err) {
       console.error('Error sending invite:', err);
       setError('Error de red o del servidor.');

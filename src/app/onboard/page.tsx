@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Step1RoleSelect } from "./com/Step1RoleSelect";
 import { Step2ConsultorioOrInvitacion } from "./com/Step2ConsultorioOrInvitacion";
 import { Step3PlanSelect } from "./com/Step3PlanSelect";
-import { useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function OnboardingForm() {
     const roles = [
@@ -20,6 +21,7 @@ export default function OnboardingForm() {
     const [nameConsultorio, setNameConsultorio] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
     const router = useRouter();
+    // const { toast } = useToast(); // Eliminamos esta línea
 
     // Nuevo estado para manejar los pasos del formulario
     const [currentStep, setCurrentStep] = useState(1);
@@ -92,11 +94,45 @@ export default function OnboardingForm() {
                 setNameConsultorio={setNameConsultorio}
                 invitationCode={invitationCode}
                 setInvitationCode={setInvitationCode}
-                nextStep={() => {
+                nextStep={async () => {
                   if (selectedRole === "Admin") {
                     nextStep();
                   } else {
-                    console.log("Finalizar para no Admin con código:", invitationCode);
+                    // Lógica para Médico o Asistente: enviar código de invitación al backend
+                    if (!invitationCode) {
+                      toast.error("Por favor, introduce un código de invitación.", {
+                        description: "El código de invitación no puede estar vacío.",
+                      });
+                      return;
+                    }
+
+                    try {
+                      const response = await fetch('/api/organization/accept-join', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ RequestJoinId: invitationCode }),
+                      });
+
+                      const data = await response.json();
+
+                      if (response.ok) {
+                        toast.success("¡Bienvenido a bordo!", {
+                          description: data.message || "Te has unido a la organización exitosamente.",
+                        });
+                        router.push('/dashboard'); // Redirigir al dashboard en caso de éxito
+                      } else {
+                        toast.error("Error al unirse a la organización.", {
+                          description: data.message || "No se pudo unir a la organización. Inténtalo de nuevo.",
+                        });
+                      }
+                    } catch (error) {
+                      console.error("Error al enviar la solicitud de unión:", error);
+                      toast.error("Error de conexión", {
+                        description: "No se pudo conectar con el servidor. Inténtalo de nuevo más tarde.",
+                      });
+                    }
                   }
                 }}
               />
@@ -128,3 +164,13 @@ export default function OnboardingForm() {
     </div>
   )
 }
+
+toast.success("¡Bienvenido a bordo!", {
+  description: "Has sido añadido a la organización.",
+});
+toast.error("Error al unirse a la organización.", {
+  description: "Por favor, verifica el código de invitación o contacta al administrador.",
+});
+toast.error("Error al unirse a la organización.", {
+  description: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+});

@@ -21,6 +21,7 @@ import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
 import { copernicusFont } from './fonts';
 import { ThemeProvider } from "./dashboard/com/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = interFont;
 
@@ -54,6 +55,7 @@ export default function RootLayout({
           <AuthProvider>{children}</AuthProvider>
           {/* Es muy importante el componente AuthProvider ya que se encarga de la logica que mantiene la sesion el usuario */}
         </ThemeProvider>
+        <Toaster />
       </body>
     </html>
   );
