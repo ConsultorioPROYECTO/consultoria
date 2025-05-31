@@ -4,7 +4,7 @@ import { SiteHeader } from "@rutas/app/dashboard/com/site-header"; // Importaci�
 import { useAuth } from "../../context/AuthContext"; // Importación añadida
 import { useRouter } from "next/navigation"; // Importación añadida
 import { useEffect, useState } from "react"; // Importación añadida/modificada
-
+import { LoadingScreen } from '../com/loadingScreen';
 import {
   SidebarInset,
   SidebarProvider,
@@ -78,10 +78,7 @@ export default function Page() {
 
   if (loading || !user || checkingRole) {
     return (
-      <UiScreen className="flex h-screen flex-col items-center justify-center ">
-        <p className="font-bold text-muted-foreground text-2xl text-center">Preparando<br/>tu<br/>espacio</p>
-        <WaveformLoader className="mt-4 w-30 h-auto text-muted-foreground" />
-      </UiScreen>
+      <LoadingScreen />
     );
   }
   return (

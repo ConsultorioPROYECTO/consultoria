@@ -6,8 +6,11 @@ import { Textarea } from "@rutas/components/ui/textarea";
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
 import { Button } from "@rutas/components/ui/button";
 import { DialogFooter } from "@rutas/components/ui/dialog";
-import { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
+import { useState, useRef } from 'react';
 import { useAICare } from '@/app/hooks/useAICare';
+import { PatientHistoryView } from "./PatientHistoryView";
+
 
 interface Appointment {
   id: string;
@@ -31,6 +34,20 @@ export function ConsultationModal({
   onSaveAndComplete,
 }: ConsultationModalProps) {
   const [notes, setNotes] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      setSelectedFile(event.target.files[0]);
+      console.log("Archivo seleccionado:", event.target.files[0].name);
+    }
+  };
+
+  const handleAttachFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const { data, loading, error, fetchAICare } = useAICare();
 
   console.log('[AI Care] ConsultationModal render', { isOpen, appointment });
@@ -62,51 +79,65 @@ export function ConsultationModal({
           </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
-          {/* Columna izquierda - Información del paciente */}
-          <div className="col-span-1 overflow-y-auto">
-            <Card className="flex-shrink-0"> {/* flex-shrink-0 para no encogerse si hay mucho contenido al lado */}
-              <CardContent>
-                {/* Aquí iría la información del perfil del paciente */}
-                <div className="text-4xl font-bold mt-1">
-                  <span >{appointment.patientName}</span>
-                </div>
-                {/**/}
-                <div className="text-sm opacity-80 ">
-                  <span>Telefono: </span>
-                </div>
-                {/**/}
-                <div className="text-sm opacity-80 ">
-                  <span>Ultimo peso: </span>
-                </div>
-                {/**/}
-                <div className="text-sm opacity-80 ">
-                  <span>Tipo de sangre: </span>
-                </div>
-                {/**/}
-                <div className="text-sm opacity-80 ">
-                  <span>Estatura: </span>
-                </div>
-                {/**/}
-                <div className="text-sm opacity-80 ">
-                  <span>Edad: </span>
-                </div>
+          <div className="col-span-1 flex flex-col">
+            <Tabs defaultValue="patient-info" className="flex flex-col flex-1 overflow-hidden">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="patient-info">Información del Paciente</TabsTrigger>
+                <TabsTrigger value="medical-history">Historial Médico</TabsTrigger>
+              </TabsList>
+              <TabsContent value="patient-info" className="flex-1 overflow-hidden pt-4">
+                <Card className="flex-shrink-0"> {/* flex-shrink-0 para no encogerse si hay mucho contenido al lado */}
+                  <CardContent>
+                    {/* Aquí iría la información del perfil del paciente */}
+                    <div className="text-4xl font-bold mt-1 mb-2">
+                      <span >{appointment.patientName}</span>
+                    </div>
+                    {/**/}
+                    <div className="text-sm opacity-80 ">
+                      <span>Telefono: </span>
+                    </div>
+                    {/**/}
+                    <div className="text-sm opacity-80 ">
+                      <span>Ultimo peso: </span>
+                    </div>
+                    {/**/}
+                    <div className="text-sm opacity-80 ">
+                      <span>Tipo de sangre: </span>
+                    </div>
+                    {/**/}
+                    <div className="text-sm opacity-80 ">
+                      <span>Estatura: </span>
+                    </div>
+                    {/**/}
+                    <div className="text-sm opacity-80 ">
+                      <span>Edad: </span>
+                    </div>
 
-                {/* Información adicional del paciente */}
-              </CardContent>
-            </Card>
-            {/* Puedes añadir más tarjetas o componentes de perfil aquí */}
+                    {/* Información adicional del paciente */}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="medical-history" className="flex-1 overflow-hidden pt-4">
+                <PatientHistoryView
+                  patientId={appointment.id} // Usar el ID de la cita como ID de paciente mock
+                  patientName={appointment.patientName}
+                  // isOpen={isOpen} // La visibilidad del modal principal controla la del historial
+                  // onOpenChange={onOpenChange}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
-          
+
           {/* Columna derecha - Notas y observaciones */}
-          <div className="col-span-1 overflow-y-auto space-y-6">
+          <div className="col-span-1 overflow-y-auto flex flex-col gap-4">
             <Card className="flex-1 flex flex-col overflow-hidden"> {/* flex-1 para ocupar espacio y permitir scroll si es necesario */}
               <CardHeader>
                 <CardTitle>Notas de Consulta</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto "> {/* flex-1 y overflow para hacer scroll en las notas */}
                 <ScrollArea className="h-full overflow-hidden "> {/* Eliminado pr-4 */}
-                  <Textarea 
-                    placeholder="Escribe tus notas de consulta aquí..." 
+                  <Textarea
+                    placeholder="Escribe tus notas de consulta aquí..."
                     className="h-[200px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -116,13 +147,27 @@ export function ConsultationModal({
             </Card>
 
             {/* Otro Componente Abajo de Notas */}
-            <Card className="flex-shrink-0"> {/* flex-shrink-0 para que no se encoja */}
-              <CardHeader>
-                <CardTitle>Otro Componente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Aquí iría el contenido del otro componente (ej. plan de tratamiento, recetas) */}
-                <p>Contenido del componente inferior...</p>
+            <Card className="flex-shrink-0 rounded-lg shadow-sm p-4">
+             
+              <CardContent className="flex items-center justify-center h-full p-0">
+                <div
+                  className="w-full h-32 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-500 dark:text-gray-400 hover:border-blue-500 dark:hover:border-blue-400 transition-colors duration-200 cursor-pointer"
+                  onClick={handleAttachFileClick}
+                  onContextMenu={(e) => {
+                    e.preventDefault(); // Prevenir el menú contextual por defecto del navegador
+                    handleAttachFileClick();
+                  }}
+                >
+                  <p className="text-center">Arrastra y suelta archivos aquí o haz clic para adjuntar.</p>
+                </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  multiple
+                />
               </CardContent>
             </Card>
           </div>
@@ -138,8 +183,8 @@ export function ConsultationModal({
                 {loading ? 'Generando...' : 'Generar con AI Care'}
               </Button>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto ">{/* flex-1 y overflow para hacer scroll en las notas */}
-              <ScrollArea className="h-full overflow-hidden ">{/* Eliminado pr-4 */}
+            <CardContent className="flex-1 overflow-y-auto "> {/* flex-1 y overflow para hacer scroll en las notas */}
+              <ScrollArea className="h-full overflow-hidden "> {/* Eliminado pr-4 */}
                 <Textarea
                   placeholder="Aquí aparecerá el resultado de AI Care..."
                   className="h-[350px] resize-none w-full whitespace-pre-wrap break-words [word-break:break-all]"
@@ -150,9 +195,9 @@ export function ConsultationModal({
               </ScrollArea>
             </CardContent>
           </Card>
-          
+
         </div>
-        
+
         {/* Añadir pie de diálogo con botón de guardar */}
         <DialogFooter>
           <Button onClick={handleSaveClick}>Guardar y Completar Consulta</Button>

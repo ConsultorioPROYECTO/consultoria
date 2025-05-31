@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
+import { Card, CardContent } from "@rutas/components/ui/card";
 import { ClockIcon, UserIcon } from 'lucide-react'; // Iconos
 
 interface Appointment {
@@ -56,11 +56,8 @@ export function NextAppointment({ appointments, className }: NextAppointmentProp
   if (!nextAppointment) {
     return (
       <Card className={`flex flex-col justify-between h-full ${className}`}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-md font-semibold">Próxima Cita</CardTitle>
-        </CardHeader>
         <CardContent className="flex-grow flex items-center justify-center">
-          <p className="text-muted-foreground text-sm text-center">No hay citas pendientes próximas.</p>
+          <p className="text-muted-foreground text-md text-center">No hay citas pendientes próximas.</p>
         </CardContent>
       </Card>
     );

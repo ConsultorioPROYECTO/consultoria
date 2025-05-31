@@ -168,8 +168,8 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                  </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="pending" className="m-0 flex-grow overflow-y-auto">
-                 <ScrollArea className="h-full"> {/* Ajustar altura según necesidad */}
+              <TabsContent value="pending" className="m-0 flex-grow">
+                 <ScrollArea className="h-[430px]"> {/* Altura fija para mostrar 3.5 elementos y habilitar scroll */}
                     <div className="p-2 md:p-4 space-y-2 md:space-y-4">
                       {filteredAppointments.length > 0 ? (
                         filteredAppointments.map((apt) => {
@@ -241,7 +241,7 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
               </TabsContent>
 
               <TabsContent value="completed" className="m-0 flex-grow overflow-y-auto">
-                  <ScrollArea className="h-full"> {/* Ajustar altura según necesidad */}
+                 <ScrollArea className="h-[430px]"> {/* Altura fija para mostrar 3.5 elementos y habilitar scroll */}
           <div className="p-2 md:p-4 space-y-2 md:space-y-4">
                       {filteredAppointments.length > 0 ? (
                         filteredAppointments.map((apt) => (
