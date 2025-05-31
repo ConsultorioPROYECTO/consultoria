@@ -113,6 +113,13 @@
       "when": 1748705843518,
       "tag": "0015_rapid_skullbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1748721588460,
+      "tag": "0016_right_captain_flint",
+      "breakpoints": true
     }
   ]
 }

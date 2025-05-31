@@ -2,7 +2,7 @@
 
 /**
  * @fileoverview API Route para unir a un usuario a una organizacion.
- * @version 1.0.0
+ * @version 1.0.1
  * @author Santiago Prada
  * @date 2025-05-24
  *
@@ -38,10 +38,10 @@ import { DecodedIdToken } from 'firebase-admin/auth';
 const postOrganizationJoinHandler = async (
     request: NextRequest,
     decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
-  const { invitationCode, role} = await request.json();
+  const { organizationId, role} = await request.json();
 
   const existingOrganization = await db.query.organization.findFirst({
-    where: eq(organization.invitationCode, invitationCode),
+    where: eq(organization.id, organizationId),
   });
   if (!existingOrganization) {
     return NextResponse.json({ message: 'Organization not found' }, { status: 404 });

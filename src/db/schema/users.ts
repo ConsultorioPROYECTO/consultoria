@@ -42,7 +42,7 @@ export const users = mysqlTable('users', {
   providerId: varchar('provider_id', { length: 50 }), // ej: 'google.com', 'password', 'phone'
 
   // --- Campos específicos de tu aplicación ---
-  role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), // ej: 'user', 'admin', 'editor'
+  role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), //'admin', 'medico', 'asistente', 'N/A'
   isActive: boolean('is_active').default(true).notNull(),
   organizationId: int('organization_id').references(()=> organization.id, {onDelete: "cascade", onUpdate: "cascade"}),
   lastLoginAt: timestamp('last_login_at'),

@@ -13,6 +13,7 @@ import { users } from "./users";
  *  @property {number} id - Clave primaria autoincremental interna de la base de datos.
  *  @property {number} organizationId - Clave foránea a la organización solicitante.
  *  @property {number} userId - Clave foránea al usuario que solicita unirse a la organización.
+ *  @property {mysqlEnum} role - Rol del usuario en la organización (medivo, asistente).
  *  @property {mysqlEnum} status - Estado de la solicitud (Pendiente, Aprobada, Rechazada).
  *  @property {string | null} message - Mensaje opcional del usuario al solicitar unirse.
  *  @property {Date} createdAt - Timestamp de creación del registro.
@@ -30,6 +31,8 @@ export const organizationJoinRequest = mysqlTable('organization_join_request', {
   userId: int('user_id')
     .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' })
     .notNull(),
+
+  role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), //'admin', 'medico', 'asistente', 'N/A'
   status: mysqlEnum('status', ['pending', 'approved', 'rejected'])
     .default('pending')
     .notNull(),
