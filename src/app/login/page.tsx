@@ -54,7 +54,7 @@ export default function Login() {
     }, [user, router]);
 
     return (
-        <div className="bg-[#F9F6F1] flex flex-col lg:grid lg:grid-cols-2 gap-1 p-2 max-w-full h-screen">
+        <div className="bg-white flex flex-col lg:grid lg:grid-cols-2 gap-1 p-2 max-w-full h-screen">
             <LoginImage />
             <LoginContent />
         </div>

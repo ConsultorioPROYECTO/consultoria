@@ -1,4 +1,5 @@
 'use client';
+import { LoadingScreen } from "@rutas/app/dashboard/com/loadingScreen";
 import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar"
 import { ChartAreaInteractive } from "@rutas/app/dashboard/com/chart-area-interactive"
 import { DataTable } from "@rutas/app/dashboard/com/data-table"
@@ -64,7 +65,9 @@ export default function Page() {
     }
   }, [user, loading, router]);
   if (loading || !user || checkingRole) {
-    return null;
+    return (
+      <LoadingScreen />
+    );
   }
 
   return (

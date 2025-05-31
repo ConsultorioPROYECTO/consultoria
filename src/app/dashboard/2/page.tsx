@@ -1,4 +1,6 @@
-'use client';
+'use client'
+
+import { LoadingScreen } from '../com/loadingScreen';
 import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar";
 import { SiteHeader } from "@rutas/app/dashboard/com/site-header";
 import {
@@ -8,12 +10,9 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import UiScreen from '@rutas/components/uiscreen';
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./compo/DailyAgendaView";
-import { PatientHistoryView } from "./compo/PatientHistoryView";
 import { QuickNotes } from "./compo/QuickNotes";
 import { PatientAttendancePatterns } from "./compo/PatientAttendancePatterns";
 import { ProactiveFollowUps } from "./compo/ProactiveFollowUps";
@@ -24,9 +23,11 @@ import { SmartSuggestions } from "./compo/SmartSuggestions";
 import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
+import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
 import { FetchRolUser } from "../page";
-import { TodayIsDay } from "../2/compo/TodayIsDay"
+import { TodayIsDay } from "../2/compo/TodayIsDay";
+import { ImportantNotifications } from "./compo/ImportantNotifications";
 
 // Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
 interface Appointment {
@@ -68,15 +69,16 @@ const fetchAppointments = async () => {
 export default function Page() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [selectedPatientName, setSelectedPatientName] = useState<string | undefined>(undefined);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [selectedPatientId] = useState<string | null>(null);
+  const [selectedPatientName] = useState<string | undefined>(undefined);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [todayAppointmentsState, setTodayAppointmentsState] = useState<Appointment[]>([]);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<Appointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
   const [appointmentsLoaded, setAppointmentsLoaded] = useState(false);
   const [checkingRole, setCheckingRole] = useState(true);
+
+  const pendingAppointmentsCount = todayAppointmentsState.filter(apt => apt.status !== 'Completada').length;
 
   // Obtener y formatear los dos primeros nombres del usuario (primera letra en mayúscula, resto en minúscula)
   const doctorNames = user?.displayName?.split(' ') || [];
@@ -98,12 +100,6 @@ export default function Page() {
   } else {
     timeBasedPhrase = "Excelente jornada de trabajo. ¡Momento de descansar!";
   }
-
-  const handleSelectPatient = (id: string, name: string) => {
-    setSelectedPatientId(id);
-    setSelectedPatientName(name);
-    setIsHistoryModalOpen(true);
-  };
 
   const handleSelectAppointment = (id: string) => {
     setSelectedAppointmentId(id);
@@ -221,12 +217,7 @@ export default function Page() {
   }, [user, loading, appointmentsLoaded, checkingRole]);
 
   if (loading || !user || !appointmentsLoaded || checkingRole) {
-    return (
-      <UiScreen className="flex h-screen flex-col items-center justify-center ">
-        <p className="font-bold text-muted-foreground text-2xl text-center">Preparando<br/>tu<br/>espacio</p>
-        <WaveformLoader className="mt-4 w-30 h-auto text-muted-foreground" />
-      </UiScreen>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -251,26 +242,33 @@ export default function Page() {
             </div>
 
             {/* Reestructurar la grilla principal */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 mb-6">
-                <div className="col-span-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"> {/* Cambiar a 3 columnas en lg */}
+                <div className="col-span-1"> {/* Hoy es */}
                   <TodayIsDay />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1"> {/* Hoy tienes */}
                   <TodaysAppointments appointmentCount={todayAppointmentsState.length} />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2 lg:col-span-1 lg:row-span-2 flex flex-col gap-4"> {/* Tu próxima cita - ocupa 1 columna y 2 filas en lg, 2 columnas en sm y 1 en xs */}
                   <NextAppointment appointments={todayAppointmentsState} />
+                  <MonthlyAppointmentsSummary pendingAppointments={pendingAppointmentsCount} />
+                  <div className="hidden sm:block">
+                    <ImportantNotifications />
+                  </div>
                 </div>
-                <div className="lg:col-span-4"> {/* DailyAgendaView ocupará 3 columnas en pantallas grandes */}
+                <div className="col-span-full sm:col-span-2 lg:col-span-2 flex flex-col gap-4"> {/* Agenda del Día - ocupa todo el ancho en xs, 2 columnas en sm y lg */}
                   <DailyAgendaView
                     todayAppointments={todayAppointmentsState}
-                    onSelectPatient={handleSelectPatient}
+                    // onSelectPatient={handleSelectPatient}
                     onSelectAppointment={handleSelectAppointment}
                     onStartAppointment={handleStartAppointment}
                     onCompleteAppointment={handleCompleteAppointment}
                     onResetAppointment={handleResetAppointment}
                     onStartConsultation={handleStartConsultation}
                   />
+                  <div className="block sm:hidden">
+                    <ImportantNotifications />
+                  </div>
                 </div>
             </div>
 
@@ -305,12 +303,12 @@ export default function Page() {
                 </div>
               </div>
             
-            <PatientHistoryView 
+            {/* <PatientHistoryView 
               patientId={selectedPatientId}
               patientName={selectedPatientName}
               isOpen={isHistoryModalOpen}
               onOpenChange={setIsHistoryModalOpen}
-            />
+            /> */}
 
             <ConsultationModal
               appointment={selectedConsultationAppointment}
