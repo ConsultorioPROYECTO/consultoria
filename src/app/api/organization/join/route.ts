@@ -64,25 +64,32 @@ const joinOrganizationSchema = z.object({
  * @throws 200 - Si la operación es exitosa.
  */
 const postOrganizationJoinHandler = async (
-    request: NextRequest,
-    decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
+  request: NextRequest,
+  decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
+
   let body;
+
   try {
     body = await request.json();
   } catch (e) {
     return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
   }
+
   // Si organizationId viene como string, intenta convertirlo a número
   if (typeof body.organizationId === 'string') {
     body.organizationId = Number(body.organizationId);
   }
+  // Validación del cuerpo de la petición usando Zod
   const parseResult = joinOrganizationSchema.safeParse(body);
+  // Si la validación falla, devuelve un error 400 con los detalles
   if (!parseResult.success) {
     return NextResponse.json({
       message: 'Invalid request body',
       errors: parseResult.error.flatten().fieldErrors,
     }, { status: 400 });
   }
+
+  // Extrae los datos validados
   const { organizationId, role } = parseResult.data;
 
   const existingOrganization = await db.query.organization.findFirst({

@@ -2,7 +2,7 @@
 import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
 import { db } from '@/db';
 import { organization } from '@/db/schema/organization';
-import { organizationJoinRequest } from '@/db/schema/organization_join_request';
+import { organizationJoinRequest, OrganizationJoinRequestInsert } from '@/db/schema/organization_join_request';
 import { users } from '@/db/schema/users';
 import { eq } from 'drizzle-orm/sql/expressions/conditions';
 import { DecodedIdToken } from 'firebase-admin/auth';
@@ -49,14 +49,21 @@ const postOrganizationRequestHandler  = async (
                 );
             }*/
 
-            // Crear la solicitud de unión a la organización
-            await db.insert(organizationJoinRequest).values({
+            const newRequest: OrganizationJoinRequestInsert = {
                 organizationId: user.organizationId as number,
-                userEmail: user.email as string, // Corregido el typo
-                role: role || 'N/A', // Asignar un rol por defecto si no se proporciona
+                userEmail: email,
+                role: role,
                 status: 'pending',
-                message: message || 'null', // Mensaje opcional del usuario
-            });
+                message: message || null,
+                createdAt: new Date(),
+                approvedAt: null,
+                rejectedAt: null,
+                cancelledAt: null,
+                isDeleted: false,
+            };
+
+            await db.insert(organizationJoinRequest).values(newRequest);
+
 
     return NextResponse.json(
             { message: 'Solicitud de unión a la organización procesada correctamente.' },

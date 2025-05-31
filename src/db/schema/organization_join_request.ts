@@ -3,6 +3,7 @@
 import { boolean, index, int, mysqlEnum, mysqlTable, timestamp, varchar } from "drizzle-orm/mysql-core";
 import { organization } from "./organization";
 import { users } from "./users";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 /**
  *  @typedef NotificationTableSchema
@@ -49,3 +50,9 @@ export const organizationJoinRequest = mysqlTable('organization_join_request', {
   index('rejected_at_idx').on(table.rejectedAt),
   index('cancelled_at_idx').on(table.cancelledAt),
 ]);
+
+export type OrganizationJoinRequest = typeof organizationJoinRequest.$inferSelect;
+export type OrganizationJoinRequestInsert = typeof organizationJoinRequest.$inferInsert;
+
+export const OrganizationJoinRequestInsertSchema = createInsertSchema(organizationJoinRequest);
+export const OrganizationJoinRequestSelectSchema = createSelectSchema(organizationJoinRequest);
