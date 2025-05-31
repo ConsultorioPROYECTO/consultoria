@@ -8,6 +8,30 @@ import { eq } from 'drizzle-orm/sql/expressions/conditions';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Cambia estos valores por tus credenciales reales
+const BASIC_AUTH_USER = 'devUser';
+const BASIC_AUTH_PASS = 'Rigjeq-jujgy7-vejqexv';
+
+const sendInvitacionEmail = async (email: string, organizationName: string, role : string) => {
+    const response = await fetch(`https://n8n.srv828784.hstgr.cloud/webhook/a91c2a89-22d3-495b-8455-42ad2c5ea860`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Basic ' + btoa(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`),
+        },
+        body: JSON.stringify({
+            email: email,
+            organizationName: organizationName,
+            role: role,
+        }),
+    });
+    if (!response.ok) {
+        console.error('Error sending invitation email:', response.statusText);
+        throw new Error('Error sending invitation email');
+    }
+    return response;
+};
+
 
 /**
  * @typedef {Object} PostOrganizationRequestHandler
@@ -36,6 +60,17 @@ const postOrganizationRequestHandler  = async (
                 );
             }
 
+            const organizacion = await db.query.organization.findFirst({
+                where: eq(organization.id, user.organizationId as number),
+                columns: { id: true, name: true },
+            });
+            if (!organizacion) {
+                return NextResponse.json(
+                    { error: 'Organización no encontrada en la base de datos local.' },
+                    { status: 404 }
+                );
+            }
+
             // Verificar si ya existe una solicitud pendiente del usuario a la organización
             const existingRequest = await db.query.organizationJoinRequest.findFirst({
                 where: eq(organizationJoinRequest.userEmail, email),
@@ -48,6 +83,15 @@ const postOrganizationRequestHandler  = async (
                     { status: 400 }
                 );
             }*/
+
+            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role);
+            
+            if (!invitacionEmail) {
+                return NextResponse.json(
+                    { error: 'Error al enviar el correo de invitación.' },
+                    { status: 500 }
+                );
+            }
 
             const newRequest: OrganizationJoinRequestInsert = {
                 organizationId: user.organizationId as number,
