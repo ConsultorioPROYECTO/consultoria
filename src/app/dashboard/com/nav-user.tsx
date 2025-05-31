@@ -6,6 +6,7 @@ import {
   IconCreditCard,
   IconDotsVertical,
   IconLogout,
+  IconMail,
   IconNotification,
   IconSettings,
   IconUserCircle,
@@ -34,6 +35,7 @@ import {
 import { useAuth } from "../../context/AuthContext"
 
 import { SettingsDialog } from "./SettingsModal"
+import { InviteModal } from "./InviteModal"
 
 
 export function NavUser({
@@ -48,6 +50,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { signOut } = useAuth()
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const handleOpenSettingsModal = () => {
     setIsSettingsModalOpen(true);
@@ -55,6 +58,14 @@ export function NavUser({
 
   const handleCloseSettingsModal = (open: boolean) => {
     setIsSettingsModalOpen(open);
+  };
+
+  const handleOpenInviteModal = () => {
+    setIsInviteModalOpen(true);
+  };
+
+  const handleCloseInviteModal = (open: boolean) => {
+    setIsInviteModalOpen(open);
   };
 
   return (
@@ -102,6 +113,10 @@ export function NavUser({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handleOpenInviteModal}>
+                  <IconMail />
+                  Invitaciones
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <IconUserCircle />
                   Account
@@ -133,6 +148,11 @@ export function NavUser({
       <SettingsDialog
         isOpen={isSettingsModalOpen}
         onOpenChange={handleCloseSettingsModal}
+      />
+
+      <InviteModal
+        isOpen={isInviteModalOpen}
+        onOpenChange={handleCloseInviteModal}
       />
     </>
   )

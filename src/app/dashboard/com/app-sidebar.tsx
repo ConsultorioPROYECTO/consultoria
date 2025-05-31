@@ -10,7 +10,8 @@ import {
   IconInnerShadowTop,
   IconSearch,
   IconSettings,
-  IconCalendarTime, // Añadir importación de IconCalendarTime
+  IconCalendarTime,
+  IconMail,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@rutas/app/dashboard/com/nav-main"
@@ -83,23 +84,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     navMain: [
       {
-        title: "Chats",
-        url: "/dashboard/chats",
-        icon: IconCalendarTime,
-      },
-      {
-        title: "Dashboard 1",
-        url: "/dashboard/1",
-        icon: IconCalendarTime,
-      },
-      {
-        title: "Dashboard 2",
-        url: "/dashboard/2",
-        icon: IconCalendarTime,
-      },
-      {
-        title: "Dashboard 3",
-        url: "/dashboard/3",
+        title: "Dashboards",
+        url: "/dashboard/",
         icon: IconCalendarTime,
       },
       {

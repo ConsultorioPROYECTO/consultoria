@@ -5,6 +5,7 @@ import { Users, Stethoscope, CheckCircle, XCircle, DollarSign } from "lucide-rea
 
 import { Badge } from "@rutas/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"
+
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   TableRow,
 } from "@rutas/components/ui/table"
 import { useDoctorServices } from "@/hooks/useDoctorServices"
+
 
 export function DoctorServicesMatrix() {
   const { doctorServices, total, loading, error } = useDoctorServices();
