@@ -29,7 +29,7 @@ interface InviteModalProps {
 }
 
 export function InviteModal({ isOpen, onOpenChange }: InviteModalProps) {
-  const {user, loading} = useAuth();
+  const {user} = useAuth();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'medico' | 'asistente'>('medico');
   const [error, setError] = useState<string | null>(null);

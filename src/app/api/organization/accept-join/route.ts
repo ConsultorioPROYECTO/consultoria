@@ -1,9 +1,5 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rutas/db';
-import { eq } from 'drizzle-orm';
-import { organization } from '@rutas/db/schema/organization';
-import { users } from '@rutas/db/schema/users';
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import {z} from 'zod';

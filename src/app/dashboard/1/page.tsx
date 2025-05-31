@@ -18,8 +18,6 @@ import { AIResponseConfig } from "./compo/AIResponseConfig";
 import { WorkloadOverview } from "./compo/WorkloadOverview";
 import { ServiceSpecialtyConfig } from "./compo/ServiceSpecialtyConfig";
 import { AIPerformancePanel } from "./compo/AIPerformancePanel";
-import UiScreen from "@rutas/components/uiscreen";
-import WaveformLoader from "@rutas/components/custom/WaveformLoader";
 
 
 export default function Page() {

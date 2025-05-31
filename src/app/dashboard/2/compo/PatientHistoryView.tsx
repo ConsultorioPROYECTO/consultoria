@@ -53,9 +53,6 @@ interface PatientHistoryViewProps {
 
 export function PatientHistoryView({
   patientId,
-  patientName = "el paciente",
-  // isOpen,
-  // onOpenChange,
 }: PatientHistoryViewProps) {
   const [history] = useState<MedicalRecord[]>(mockPatientHistory);
 

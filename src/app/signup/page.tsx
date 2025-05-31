@@ -3,8 +3,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { LoginForm } from '@rutas/app/components/login-form/login-form';
-import Link from 'next/link';
 import { SignupImage } from './SignupImage';
 import { SignupContent } from './SignupContent';
 

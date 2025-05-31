@@ -1,14 +1,14 @@
 'use client'
 
 import { Button } from "@rutas/components/ui/button"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react" // Zap y CheckCircle pueden ser removidos si no se usan directamente aquí
 import { plansData } from "./com/prices"; // NUEVA IMPORTACIÓN
 import { motion, AnimatePresence } from 'framer-motion';
 import { Step1RoleSelect } from "./com/Step1RoleSelect";
 import { Step2ConsultorioOrInvitacion } from "./com/Step2ConsultorioOrInvitacion";
 import { Step3PlanSelect } from "./com/Step3PlanSelect";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 export default function OnboardingForm() {
@@ -21,6 +21,20 @@ export default function OnboardingForm() {
     const [nameConsultorio, setNameConsultorio] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
     const router = useRouter();
+    const searchParams = useSearchParams()
+    // const search = searchParams.has('inivtacionCode','role')
+    const initialInvitationCode = searchParams.get('invitationCode');
+    const initialRole = searchParams.get('role');
+
+    useEffect(() => {
+        if (initialInvitationCode) {
+            setInvitationCode(initialInvitationCode);
+        }
+        if (initialRole) {
+            setSelectedRole(initialRole);
+        }
+    }, [initialInvitationCode, initialRole]);
+
     // const { toast } = useToast(); // Eliminamos esta línea
 
     // Nuevo estado para manejar los pasos del formulario

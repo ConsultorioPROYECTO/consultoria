@@ -34,7 +34,7 @@ export function ConsultationModal({
   onSaveAndComplete,
 }: ConsultationModalProps) {
   const [notes, setNotes] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {

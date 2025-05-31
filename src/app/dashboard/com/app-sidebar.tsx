@@ -11,7 +11,6 @@ import {
   IconSearch,
   IconSettings,
   IconCalendarTime,
-  IconMail,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@rutas/app/dashboard/com/nav-main"
