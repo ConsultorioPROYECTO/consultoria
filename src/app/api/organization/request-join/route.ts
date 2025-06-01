@@ -2,8 +2,9 @@
 import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
 import { db } from '@/db';
 import { organization } from '@/db/schema/organization';
-import { organizationJoinRequest, OrganizationJoinRequestInsert } from '@/db/schema/organization_join_request';
+import { organizationInvitationRequest, organizationInvitationRequestInsert, organizationInvitationRequestInsertSchema } from '@/db/schema/organization_invitations_request';
 import { users } from '@/db/schema/users';
+import { create } from 'domain';
 import { eq } from 'drizzle-orm/sql/expressions/conditions';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { NextRequest, NextResponse } from 'next/server';
@@ -24,6 +25,7 @@ const sendInvitacionEmail = async (email: string, organizationName: string, role
             organizationName: organizationName,
             role: role,
             invitacionCode: invitacionCode,
+            createdAt : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
         }),
     });
     if (!response.ok) {
@@ -73,8 +75,8 @@ const postOrganizationRequestHandler  = async (
             }
 
             // Verificar si ya existe una solicitud pendiente del usuario a la organización
-            const existingRequest = await db.query.organizationJoinRequest.findFirst({
-                where: eq(organizationJoinRequest.userEmail, email),
+            const existingRequest = await db.query.organizationInvitationRequest.findFirst({
+                where: eq(organizationInvitationRequest.userEmail, email),
             });
             // Verificar si la organización existe
             /** 
@@ -94,7 +96,9 @@ const postOrganizationRequestHandler  = async (
                 );
             }
 
-            const newRequest: OrganizationJoinRequestInsert = {
+            const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos desde ahora
+
+            const newRequest: organizationInvitationRequestInsert = {
                 organizationId: user.organizationId as number,
                 userEmail: email,
                 role: role,
@@ -105,9 +109,10 @@ const postOrganizationRequestHandler  = async (
                 rejectedAt: null,
                 cancelledAt: null,
                 isDeleted: false,
+                expiresAt, // nuevo campo para expiración
             };
 
-            await db.insert(organizationJoinRequest).values(newRequest);
+            await db.insert(organizationInvitationRequest).values(newRequest);
 
 
     return NextResponse.json(

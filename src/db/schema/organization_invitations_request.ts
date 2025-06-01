@@ -1,4 +1,4 @@
-// @app/src/db/schema/organization_join_request.ts
+// @app/src/db/schema/organization_invitations_request.ts
 
 import { boolean, index, int, mysqlEnum, mysqlTable, timestamp, varchar } from "drizzle-orm/mysql-core";
 import { organization } from "./organization";
@@ -8,7 +8,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 /**
  *  @typedef NotificationTableSchema
  *  @author Santiago Prada
- *  @description Define la estructura de la tabla 'organization_join_request' en la base de datos MySQL,
+ *  @description Define la estructura de la tabla 'organization_invitations_request' en la base de datos MySQL,
  *  que gestiona las solicitudes de unión a organizaciones.
  * 
  *  @property {number} id - Clave primaria autoincremental interna de la base de datos.
@@ -24,7 +24,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
  *  @property {boolean} isDeleted - Indica si la solicitud ha sido eliminada lógicamente.
  */
 
-export const organizationJoinRequest = mysqlTable('organization_join_request', {
+export const organizationInvitationRequest = mysqlTable('organization_invitations_request', {
   id: int('id').autoincrement().primaryKey(),
   organizationId: int('organization_id')
     .references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' })
@@ -33,7 +33,7 @@ export const organizationJoinRequest = mysqlTable('organization_join_request', {
     .notNull(),
 
   role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), //'admin', 'medico', 'asistente', 'N/A'
-  status: mysqlEnum('status', ['pending', 'approved', 'rejected'])
+  status: mysqlEnum('status', ['pending', 'approved', 'rejected', 'cancelled', 'expired'])
     .default('pending')
     .notNull(),
   message: varchar('message', { length: 500 }),
@@ -42,6 +42,7 @@ export const organizationJoinRequest = mysqlTable('organization_join_request', {
   rejectedAt: timestamp('rejected_at'),
   cancelledAt: timestamp('cancelled_at'),
   isDeleted: boolean('is_deleted').default(false).notNull(),
+  expiresAt: timestamp('expires_at')
 }, (table) => [
   index('organization_id_idx').on(table.organizationId),
   index('status_idx').on(table.status),
@@ -49,10 +50,12 @@ export const organizationJoinRequest = mysqlTable('organization_join_request', {
   index('approved_at_idx').on(table.approvedAt),
   index('rejected_at_idx').on(table.rejectedAt),
   index('cancelled_at_idx').on(table.cancelledAt),
+  index('user_email_idx').on(table.userEmail),
+  index('role_idx').on(table.role),
 ]);
 
-export type OrganizationJoinRequest = typeof organizationJoinRequest.$inferSelect;
-export type OrganizationJoinRequestInsert = typeof organizationJoinRequest.$inferInsert;
+export type organizationInvitationRequest = typeof organizationInvitationRequest.$inferSelect;
+export type organizationInvitationRequestInsert = typeof organizationInvitationRequest.$inferInsert;
 
-export const OrganizationJoinRequestInsertSchema = createInsertSchema(organizationJoinRequest);
-export const OrganizationJoinRequestSelectSchema = createSelectSchema(organizationJoinRequest);
+export const organizationInvitationRequestInsertSchema = createInsertSchema(organizationInvitationRequest);
+export const organizationInvitationRequestSelectSchema = createSelectSchema(organizationInvitationRequest);
