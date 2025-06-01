@@ -21,9 +21,8 @@ export default function OnboardingForm() {
     const [nameConsultorio, setNameConsultorio] = useState("");
     const [invitationCode, setInvitationCode] = useState("");
     const router = useRouter();
-    const searchParams = useSearchParams()
-    // const search = searchParams.has('inivtacionCode','role')
-    const initialInvitationCode = searchParams.get('invitationCode');
+    const searchParams = useSearchParams();
+    const initialInvitationCode = searchParams.get('invitacionCode');
     const initialRole = searchParams.get('role');
 
     useEffect(() => {
@@ -32,6 +31,10 @@ export default function OnboardingForm() {
         }
         if (initialRole) {
             setSelectedRole(initialRole);
+        }
+        // Si ambos parámetros existen, saltar al paso 2 automáticamente
+        if (initialInvitationCode && initialRole) {
+            setCurrentStep(2);
         }
     }, [initialInvitationCode, initialRole]);
 
@@ -121,12 +124,12 @@ export default function OnboardingForm() {
                     }
 
                     try {
-                      const response = await fetch('/api/organization/accept-join', {
+                      const response = await fetch('/api/organization/join', {
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({ RequestJoinId: invitationCode }),
+                        body: JSON.stringify({ invitationCode: invitationCode, role : selectedRole }),
                       });
 
                       const data = await response.json();

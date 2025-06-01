@@ -23,7 +23,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 export const organization = mysqlTable('organization', {
   id: int().autoincrement().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
-  invitationCode: varchar('invitation_code', { length: 6 }),
+  invitationCode: varchar('invitation_code', { length: 6 }).unique().notNull(),
   address: varchar('address', { length: 255 }),
   phone: varchar('phone', { length: 15 }),
   email: varchar('email', { length: 255 }),

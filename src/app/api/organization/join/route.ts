@@ -38,11 +38,12 @@ import { users } from '@rutas/db/schema/users';
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import {z} from 'zod';
+import { generateRandomInvitationCode } from '../route';
 
 
 // Esquema Zod para validar el cuerpo de la petición
 const joinOrganizationSchema = z.object({
-  organizationId: z.number({ invalid_type_error: 'organizationId must be a number' }),
+  invitationCode: z.string({ invalid_type_error: 'organizationId must be a string' }),
   role: z.enum(['admin', 'medico', 'asistente', 'N/A']),
 });
 
@@ -75,10 +76,6 @@ const postOrganizationJoinHandler = async (
     return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Si organizationId viene como string, intenta convertirlo a número
-  if (typeof body.organizationId === 'string') {
-    body.organizationId = Number(body.organizationId);
-  }
   // Validación del cuerpo de la petición usando Zod
   const parseResult = joinOrganizationSchema.safeParse(body);
   // Si la validación falla, devuelve un error 400 con los detalles
@@ -90,10 +87,10 @@ const postOrganizationJoinHandler = async (
   }
 
   // Extrae los datos validados
-  const { organizationId, role } = parseResult.data;
+  const { invitationCode, role } = parseResult.data;
 
   const existingOrganization = await db.query.organization.findFirst({
-    where: eq(organization.id, organizationId),
+    where: eq(organization.invitationCode, invitationCode),
   });
   if (!existingOrganization) {
     return NextResponse.json({ message: 'Organization not found' }, { status: 404 });
@@ -108,6 +105,13 @@ const postOrganizationJoinHandler = async (
     organizationId: existingOrganization.id,
     role: role,
   }).where(eq(users.firebaseUid, decodedToken.uid));
+
+  // crear un nuevo codigo de invitación para la organización
+  const code = await generateRandomInvitationCode();
+  await db.update(organization).set({
+    invitationCode: code,
+  }).where(eq(organization.id, existingOrganization.id));
+
   return NextResponse.json({ message: 'Organization joined successfully' }, { status: 200 });
 }
 
