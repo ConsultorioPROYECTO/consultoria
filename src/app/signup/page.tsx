@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { SignupImage } from './SignupImage';
 import { SignupContent } from './SignupContent';
@@ -9,6 +9,10 @@ import { SignupContent } from './SignupContent';
 export default function Login() {
     const { user } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const invitacionCode = searchParams.get('invitacionCode');
+    const role = searchParams.get('role');
+
 
     useEffect(() => {
         if (user) {
@@ -46,7 +50,7 @@ export default function Login() {
                     console.error('Error en la llamada de sincronización tras registro:', error);
                 }
                 // Redirigir independientemente del resultado de la sincronización
-                router.push('/dashboard');
+                router.push('/onboard?invitacionCode=' + invitacionCode + '&role=' + role);
             };
 
             syncUser();
