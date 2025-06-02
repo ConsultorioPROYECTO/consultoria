@@ -4,129 +4,65 @@ import { db } from '@rutas/db'; // Asegúrate que la ruta al db sea correcta
 import { users, NewUser } from '@rutas/db/schema/users'; // Asegúrate que la ruta al schema sea correcta
 import { eq } from 'drizzle-orm';
 import { assistants, doctors } from '@rutas/db/schema';
+import { sql } from 'drizzle-orm';
 
 export async function POST(request: NextRequest) {
-    try {
-        const userData = await request.json();
-        console.log('[sync-user] userData recibida (raw):', JSON.stringify(userData, null, 2));
+  try {
+    const userData = await request.json();
+    const firebaseUid = typeof userData.firebaseUid === 'string' ? userData.firebaseUid.trim() : userData.firebaseUid;
 
-        // Extract and trim firebaseUid first
-        const rawFirebaseUid = userData.firebaseUid;
-        const firebaseUid = typeof rawFirebaseUid === 'string' ? rawFirebaseUid.trim() : rawFirebaseUid;
-
-        // Validate the trimmed firebaseUid
-        if (!userData || !firebaseUid) { 
-            console.log('[sync-user] firebaseUid es requerido o inválido después del trim:', firebaseUid);
-            return NextResponse.json({ error: 'firebaseUid es requerido y debe ser una cadena de texto válida' }, { status: 400 });
-        }
-        
-        console.log(`[sync-user] firebaseUid procesado (trimmed): '${firebaseUid}', type: ${typeof firebaseUid}`);
-
-        const { 
-            // firebaseUid is already defined and processed.
-            // Destructure other properties from userData.
-            email,
-            emailVerified,
-            phoneNumber,
-            displayName,
-            photoURL,
-            providerId 
-        } = userData;
-
-        const existingUser = await db
-            .select({ firebaseUidDb: users.firebaseUid, id: users.id }) // Seleccionar columnas específicas para depuración
-            .from(users)
-            .where(eq(users.firebaseUid, firebaseUid))
-            .limit(1);
-        console.log(`[sync-user] Querying for existing user with processed firebaseUid: '${firebaseUid}' (type: ${typeof firebaseUid})`);
-        console.log('[sync-user] existingUser query result:', JSON.stringify(existingUser, null, 2));
-        console.log(`[sync-user] Type of existingUser: ${typeof existingUser}, isArray: ${Array.isArray(existingUser)}`);
-        if (Array.isArray(existingUser)) {
-            console.log(`[sync-user] Length of existingUser array: ${existingUser.length}`);
-        }
-        // Log explícito para la evaluación de la condición de existencia del usuario
-        const userExists = Array.isArray(existingUser) && existingUser.length > 0;
-        console.log(`[sync-user] Evaluando existencia de usuario: existingUser.length = ${existingUser?.length}, userExists = ${userExists}`);
-
-        if (userExists) {
-            console.log(`[sync-user] Usuario EXISTENTE encontrado con firebaseUid: ${firebaseUid}. ID: ${existingUser[0].id}. Procediendo a actualizar.`);
-            // Usuario existe, actualizar
-            await db // No se asigna a updatedUser ya que se vuelve a consultar después
-                .update(users)
-                .set({
-                    email: email,
-                    emailVerified: emailVerified,
-                    phoneNumber: phoneNumber,
-                    displayName: displayName,
-                    photoURL: photoURL,
-                    providerId: providerId,
-                    lastLoginAt: new Date(), 
-                    updatedAt: new Date(), 
-                })
-                .where(eq(users.firebaseUid, firebaseUid));
-                // .returning() eliminado; no es efectivo para MySQL y la consulta posterior ya existe.
-            // Después de actualizar, obtener el usuario para devolverlo
-            const userAfterUpdate = await db
-                .select()
-                .from(users)
-                .where(eq(users.firebaseUid, firebaseUid))
-                .limit(1);
-            // Crear registro en doctors o assistants si corresponde
-            if (userAfterUpdate[0]?.role === 'medico') {
-                // Verifica si ya existe registro en doctors
-                const doctorExists = await db.query.doctors.findFirst({ where: eq(doctors.userId, userAfterUpdate[0].id) });
-                if (!doctorExists) {
-                    await db.insert(doctors).values({ userId: userAfterUpdate[0].id, speciality: '', calendar_id: '', privatePhone: '', nitId: '', availability: '', tokenGoogleId: '' });
-                }
-            } else if (userAfterUpdate[0]?.role === 'asistente') {
-                // Verifica si ya existe registro en assistants
-                const assistantExists = await db.query.assistants.findFirst({ where: eq(assistants.userId, userAfterUpdate[0].id) });
-                if (!assistantExists) {
-                    await db.insert(assistants).values({ userId: userAfterUpdate[0].id });
-                }
-            }
-            console.log('[sync-user] Usuario actualizado:', JSON.stringify(userAfterUpdate[0], null, 2));
-            return NextResponse.json({ message: 'Usuario actualizado exitosamente', user: userAfterUpdate[0] }, { status: 200 });
-        } else {
-            console.log(`[sync-user] Usuario con firebaseUid: ${firebaseUid} NO encontrado. Procediendo a crear.`);
-            // Usuario no existe, crear
-            const newUser: NewUser = {
-                firebaseUid: firebaseUid,
-                email: email,
-                emailVerified: emailVerified || false,
-                phoneNumber: phoneNumber,
-                displayName: displayName,
-                photoURL: photoURL,
-                providerId: providerId,
-                role: 'N/A', // Rol por defecto
-                isActive: true, // Activo por defecto
-                lastLoginAt: new Date(),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-            await db // No se asigna a createdUser ya que se vuelve a consultar después
-                .insert(users)
-                .values(newUser);
-                // .returning() eliminado; no es efectivo para MySQL y la consulta posterior ya existe.
-            // Después de insertar, obtener el usuario para devolverlo
-            const userAfterInsert = await db
-                .select()
-                .from(users)
-                .where(eq(users.firebaseUid, firebaseUid)) // Usar firebaseUid que es único
-                .limit(1);
-            // Crear registro en doctors o assistants si corresponde
-            if (userAfterInsert[0]?.role === 'medico') {
-                await db.insert(doctors).values({ userId: userAfterInsert[0].id, speciality: '', calendar_id: '', privatePhone: '', nitId: '', availability: '', tokenGoogleId: '' });
-            } else if (userAfterInsert[0]?.role === 'asistente') {
-                await db.insert(assistants).values({ userId: userAfterInsert[0].id });
-            }
-            console.log('[sync-user] Usuario creado:', JSON.stringify(userAfterInsert[0], null, 2));
-            return NextResponse.json({ message: 'Usuario creado exitosamente', user: userAfterInsert[0] }, { status: 201 });
-        }
-    } catch (error) {
-        console.error('Error en sync-user:', error);
-        // Considera un logging más robusto en producción
-        const errorMessage = error instanceof Error ? error.message : 'Un error desconocido ocurrió';
-        return NextResponse.json({ error: 'Error interno del servidor', details: errorMessage }, { status: 500 });
+    if (!firebaseUid) {
+      return NextResponse.json({ error: 'firebaseUid es requerido y debe ser una cadena de texto válida' }, { status: 400 });
     }
+
+    // Prepara los datos para insertar/actualizar
+    const newUser : NewUser = {
+      firebaseUid,
+      email: userData.email,
+      emailVerified: userData.emailVerified || false,
+      phoneNumber: userData.phoneNumber,
+      displayName: userData.displayName,
+      photoURL: userData.photoURL,
+      providerId: userData.providerId,
+      role: 'N/A',
+      isActive: true,
+      lastLoginAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Upsert: inserta o actualiza si ya existe
+    await db
+      .insert(users)
+      .values(newUser)
+      .onDuplicateKeyUpdate({
+        set: {
+          ...newUser,
+          createdAt: sql`${users.createdAt}`, // No sobreescribas createdAt si ya existe
+        },
+      });
+
+    // Ahora puedes hacer un select si necesitas devolver el usuario actualizado
+    const user = await db.query.users.findFirst({ where: eq(users.firebaseUid, firebaseUid) });
+
+    // Crear registro en doctors o assistants si corresponde
+    if (user?.role === 'medico') {
+      // Verifica si ya existe registro en doctors
+      const doctorExists = await db.query.doctors.findFirst({ where: eq(doctors.userId, user.id) });
+      if (!doctorExists) {
+        await db.insert(doctors).values({ userId: user.id, speciality: '', calendar_id: '', privatePhone: '', nitId: '', availability: '', tokenGoogleId: '' });
+      }
+    } else if (user?.role === 'asistente') {
+      // Verifica si ya existe registro en assistants
+      const assistantExists = await db.query.assistants.findFirst({ where: eq(assistants.userId, user.id) });
+      if (!assistantExists) {
+        await db.insert(assistants).values({ userId: user.id });
+      }
+    }
+
+    return NextResponse.json({ message: user ? 'Usuario actualizado exitosamente' : 'Usuario creado exitosamente', user }, { status: user ? 200 : 201 });
+  } catch (error) {
+    // Manejo de errores centralizado
+    return NextResponse.json({ error: 'Error interno del servidor', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+  }
 }

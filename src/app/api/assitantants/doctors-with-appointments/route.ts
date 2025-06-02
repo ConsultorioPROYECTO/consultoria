@@ -6,6 +6,10 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import { eq, inArray } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS, type DoctorsWithAppointmentsResponse } from "@/types/api";
 import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import type { InferSelectModel } from 'drizzle-orm';
+
+// Tipos inferidos para mayor robustez y autocompletado
+type Doctor = InferSelectModel<typeof doctors>;
 
 const getDoctorsWithAppointmentsHandler = async (
   request: NextRequest,
@@ -44,9 +48,16 @@ const getDoctorsWithAppointmentsHandler = async (
     const doctorsWithAppointments = await db.query.doctors.findMany({
       where: inArray(doctors.idDoctor, doctorIds),
       with: {
-        appointments: true,
+        appointments: {
+          with: {
+            patient: true, // Trae el paciente relacionado en cada cita
+          },
+        },
       },
     });
+
+    console.log("Doctors with appointments:", doctorsWithAppointments);
+
     return createSuccessResponse(doctorsWithAppointments as DoctorsWithAppointmentsResponse, "Doctors with appointments retrieved successfully");
   } catch (error) {
     return handleDatabaseError(error, "retrieve doctors with appointments");

@@ -37,7 +37,6 @@ export const getFirebaseAuthToken = (): Promise<string | null> => {
         if (user) {
           try {
             const idToken = await user.getIdToken(true); // true fuerza la actualización
-            console.log('[Client Utils] getFirebaseAuthTokenRobust: Token ID obtenido:', idToken);
             resolve(idToken);
           } catch (error) {
             console.error('[Client Utils] getFirebaseAuthTokenRobust: Error al obtener el Token ID:', error);

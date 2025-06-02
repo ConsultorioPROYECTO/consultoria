@@ -139,6 +139,31 @@ export interface DoctorWithAppointments {
     date: Date;
     createdAt: Date;
     updatedAt: Date;
+    patient: {
+      id: number;
+      patientCode: string;
+      userId?: number | null;
+      firstName: string;
+      lastName: string;
+      identificationType: 'CC' | 'TI' | 'CE' | 'PP' | 'RC' | 'AS';
+      identificationNumber: string;
+      birthDate?: Date | null;
+      gender: 'M' | 'F' | 'Other';
+      phone?: string | null;
+      email?: string | null;
+      address?: string | null;
+      emergencyContactName?: string | null;
+      emergencyContactPhone?: string | null;
+      emergencyContactRelation?: string | null;
+      medicalHistory?: string | null;
+      allergies?: string | null;
+      currentMedications?: string | null;
+      bloodType?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | null;
+      organizationId: number;
+      isActive: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+    };
   }>;
 }
 
