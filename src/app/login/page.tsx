@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { LoginImage } from './LoginImage';
 import { LoginContent } from './LoginContent';
+import { sendEmailVerification } from 'firebase/auth';
 
 export default function Login() {
     const { user } = useAuth();
@@ -12,6 +13,13 @@ export default function Login() {
 
     useEffect(() => {
         if (user) {
+            if (!user.emailVerified) {
+                sendEmailVerification(user).then(() => {
+                    alert('Te hemos enviado un correo de verificación. Por favor, verifica tu correo antes de continuar.');
+                });
+                // No redirigir hasta que el usuario verifique su correo
+                return;
+            }
             const syncUser = async () => {
                 try {
                     // Extraer los datos relevantes del objeto user de Firebase

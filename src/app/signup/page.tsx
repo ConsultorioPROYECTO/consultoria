@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { SignupImage } from './SignupImage';
 import { SignupContent } from './SignupContent';
+import { sendEmailVerification } from "firebase/auth";
 
 function SignupPageContent() {
     const { user } = useAuth();
@@ -16,6 +17,13 @@ function SignupPageContent() {
 
     useEffect(() => {
         if (user) {
+            if (!user.emailVerified) {
+                sendEmailVerification(user).then(() => {
+                    alert("Te hemos enviado un correo de verificación. Por favor, verifica tu correo antes de continuar.");
+                });
+                // Opcional: puedes mostrar un mensaje en la UI y no redirigir hasta que el usuario verifique su correo
+                return;
+            }
             const syncUser = async () => {
                 try {
                     // Extraer los datos relevantes del objeto user de Firebase
