@@ -2,7 +2,6 @@
 
 import { boolean, index, int, mysqlEnum, mysqlTable, timestamp, varchar } from "drizzle-orm/mysql-core";
 import { organization } from "./organization";
-import { users } from "./users";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 /**

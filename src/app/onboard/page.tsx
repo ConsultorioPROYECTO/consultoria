@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from "@rutas/components/ui/button"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react" // Zap y CheckCircle pueden ser removidos si no se usan directamente aquí
 import { plansData } from "./com/prices"; // NUEVA IMPORTACIÓN
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +11,7 @@ import { Step3PlanSelect } from "./com/Step3PlanSelect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
-export default function OnboardingForm() {
+function OnboardContent() {
     const roles = [
         { name: "Admin", icon: UserCog },
         { name: "Médico", icon: Stethoscope },
@@ -37,6 +37,19 @@ export default function OnboardingForm() {
             setCurrentStep(2);
         }
     }, [initialInvitationCode, initialRole]);
+
+    // Toasts globales para mostrar mensajes de ejemplo
+    useEffect(() => {
+        toast.success("¡Bienvenido a bordo!", {
+            description: "Has sido añadido a la organización.",
+        });
+        toast.error("Error al unirse a la organización.", {
+            description: "Por favor, verifica el código de invitación o contacta al administrador.",
+        });
+        toast.error("Error al unirse a la organización.", {
+            description: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+        });
+    }, []);
 
     // const { toast } = useToast(); // Eliminamos esta línea
 
@@ -182,12 +195,10 @@ export default function OnboardingForm() {
   )
 }
 
-toast.success("¡Bienvenido a bordo!", {
-  description: "Has sido añadido a la organización.",
-});
-toast.error("Error al unirse a la organización.", {
-  description: "Por favor, verifica el código de invitación o contacta al administrador.",
-});
-toast.error("Error al unirse a la organización.", {
-  description: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
-});
+export default function OnboardingForm() {
+    return (
+        <Suspense fallback={null}>
+            <OnboardContent />
+        </Suspense>
+    );
+}

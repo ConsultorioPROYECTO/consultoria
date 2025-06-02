@@ -2,9 +2,8 @@
 import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
 import { db } from '@/db';
 import { organization } from '@/db/schema/organization';
-import { organizationInvitationRequest, organizationInvitationRequestInsert, organizationInvitationRequestInsertSchema } from '@/db/schema/organization_invitations_request';
+import { organizationInvitationRequest, organizationInvitationRequestInsert } from '@/db/schema/organization_invitations_request';
 import { users } from '@/db/schema/users';
-import { create } from 'domain';
 import { eq } from 'drizzle-orm/sql/expressions/conditions';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { NextRequest, NextResponse } from 'next/server';
@@ -73,13 +72,13 @@ const postOrganizationRequestHandler  = async (
                     { status: 404 }
                 );
             }
-
+            /** 
             // Verificar si ya existe una solicitud pendiente del usuario a la organización
             const existingRequest = await db.query.organizationInvitationRequest.findFirst({
                 where: eq(organizationInvitationRequest.userEmail, email),
             });
             // Verificar si la organización existe
-            /** 
+            
             if (existingRequest) {
                 return NextResponse.json(
                     { error: 'Ya existe una solicitud pendiente para esta organización.' },

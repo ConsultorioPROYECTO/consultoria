@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { LoginImage } from './LoginImage';
@@ -56,7 +56,9 @@ export default function Login() {
     return (
         <div className="bg-white flex flex-col lg:grid lg:grid-cols-2 gap-1 p-2 max-w-full h-screen">
             <LoginImage />
-            <LoginContent />
+            <Suspense fallback={null}>
+                <LoginContent />
+            </Suspense>
         </div>
     );
 }

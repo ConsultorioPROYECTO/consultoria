@@ -74,7 +74,7 @@ const postOrganizationJoinHandler = async (
   try {
     body = await request.json();
   } catch (e) {
-    return NextResponse.json({ message: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ message: 'Invalid JSON body', error: e }, { status: 400 });
   }
 
   // Validación del cuerpo de la petición usando Zod
@@ -88,7 +88,7 @@ const postOrganizationJoinHandler = async (
   }
 
   // Extrae los datos validados
-  const { invitationCode, role } = parseResult.data;
+  const { invitationCode } = parseResult.data;
 
   // Buscar la organización por invitationCode
   const existingOrganization = await db.query.organization.findFirst({

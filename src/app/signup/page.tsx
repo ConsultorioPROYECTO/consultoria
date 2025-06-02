@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { SignupImage } from './SignupImage';
 import { SignupContent } from './SignupContent';
 
-export default function Login() {
+function SignupPageContent() {
     const { user } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -55,12 +55,20 @@ export default function Login() {
 
             syncUser();
         }
-    }, [user, router]);
+    }, [user, router, invitacionCode, role]);
 
     return (
         <div className="bg-white flex flex-col lg:grid lg:grid-cols-2 gap-1 p-2 max-w-full h-screen">
             <SignupImage />
             <SignupContent />
         </div>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={null}>
+            <SignupPageContent />
+        </Suspense>
     );
 }
