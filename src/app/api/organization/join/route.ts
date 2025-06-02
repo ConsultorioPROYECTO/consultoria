@@ -39,6 +39,7 @@ import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/au
 import { DecodedIdToken } from 'firebase-admin/auth';
 import {z} from 'zod';
 import { generateRandomInvitationCode } from '../route';
+import { organizationInvitationRequest } from '@rutas/db/schema/organization_invitations_request';
 
 
 // Esquema Zod para validar el cuerpo de la petición
@@ -89,22 +90,56 @@ const postOrganizationJoinHandler = async (
   // Extrae los datos validados
   const { invitationCode, role } = parseResult.data;
 
+  // Buscar la organización por invitationCode
   const existingOrganization = await db.query.organization.findFirst({
     where: eq(organization.invitationCode, invitationCode),
   });
   if (!existingOrganization) {
     return NextResponse.json({ message: 'Organization not found' }, { status: 404 });
   }
+  // Buscar el usuario autenticado
   const existingUser = await db.query.users.findFirst({
     where: eq(users.firebaseUid, decodedToken.uid),
   });
   if (!existingUser) {
     return NextResponse.json({ message: 'User not found' }, { status: 404 });
   }
+
+  // Buscar invitación pendiente para este usuario y organización
+  if (!existingUser.email) {
+    return NextResponse.json({ message: 'User email not found' }, { status: 400 });
+  }
+  const invitation = await db.query.organizationInvitationRequest.findFirst({
+    where: (row) =>
+      eq(row.userEmail, existingUser.email!) &&
+      eq(row.organizationId, existingOrganization.id) &&
+      eq(row.status, 'pending'),
+  });
+  if (!invitation) {
+    return NextResponse.json({ message: 'No invitation found for this user and organization' }, { status: 403 });
+  }
+  if (invitation.status !== 'pending') {
+    return NextResponse.json({ message: 'Invitation is not pending' }, { status: 403 });
+  }
+  if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+    return NextResponse.json({ message: 'Invitation has expired' }, { status: 403 });
+  }
+
   await db.update(users).set({
     organizationId: existingOrganization.id,
-    role: role,
+    role: invitation.role,
   }).where(eq(users.firebaseUid, decodedToken.uid));
+  
+  // Actualizar el estado de la invitación a 'accepted'
+  await db.update(organizationInvitationRequest).set({
+    status: 'approved',
+    approvedAt: new Date(),
+  }).where(
+      eq(organizationInvitationRequest.userEmail, existingUser.email!) &&
+      eq(organizationInvitationRequest.organizationId, existingOrganization.id) &&
+      eq(organizationInvitationRequest.status, 'pending'
+    )
+  );
 
   // crear un nuevo codigo de invitación para la organización
   const code = await generateRandomInvitationCode();
