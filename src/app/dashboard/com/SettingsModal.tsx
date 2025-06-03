@@ -4,17 +4,10 @@ import * as React from "react"
 import { useState, useEffect } from 'react';
 import {
   Bell,
-  Check,
   Globe,
-  Home,
   Keyboard,
-  Link,
-  Lock,
-  Menu,
   MessageCircle,
   Paintbrush,
-  Settings,
-  Video,
   Building,
 } from "lucide-react"
 
@@ -49,22 +42,16 @@ import { Label } from "@rutas/components/ui/label";
 import { Input } from "@rutas/components/ui/input";
 // import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
 import { useTheme } from "next-themes";
+import { useUIStyle } from "@/app/context/UIStyleContext";
 
 const data = {
   nav: [
+    { name: "Configuración de la organización", icon: Building },
     { name: "Notifications", icon: Bell },
-    { name: "Navigation", icon: Menu },
-    { name: "Home", icon: Home },
     { name: "Appearance", icon: Paintbrush },
     { name: "Messages & media", icon: MessageCircle },
-    { name: "Configuración de la organización", icon: Building },
     { name: "Language & region", icon: Globe },
     { name: "Accessibility", icon: Keyboard },
-    { name: "Mark as read", icon: Check },
-    { name: "Audio & video", icon: Video },
-    { name: "Connected accounts", icon: Link },
-    { name: "Privacy & visibility", icon: Lock },
-    { name: "Advanced", icon: Settings },
   ],
 }
 
@@ -75,6 +62,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
+  const { uiStyle, setUiStyle } = useUIStyle(); // Usar el contexto global
   const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system");
   const [activeSection, setActiveSection] = useState("Appearance"); // New state for active section
 
@@ -88,6 +76,10 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
     setSelectedTheme(value);
   };
 
+  const handleUiStyleChange = (style: 'normal' | 'minimal') => {
+    setUiStyle(style); // Ahora usa el contexto global que maneja localStorage automáticamente
+  };
+
   const handleSaveClick = () => {
     // Apply the selected theme and current mode
     const newTheme = theme?.endsWith('-dark') ? `${selectedTheme}-dark` : selectedTheme;
@@ -99,7 +91,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
     setActiveSection(sectionName);
   };
 
-  const isApplyButtonDisabled = selectedTheme === (theme?.replace('-dark', '') || 'system');
+  const isApplyButtonDisabled = selectedTheme === (theme?.replace('-dark', '') || 'system'); // Removido uiStyle ya que se aplica inmediatamente
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}> {/* Usar isOpen y onOpenChange */}
@@ -190,8 +182,27 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                         </Button>
                       </div>
                     </div>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="uiStyle">Estilo de interfaz</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={uiStyle === 'normal' ? 'default' : 'outline'}
+                          onClick={() => handleUiStyleChange('normal')}
+                        >
+                          Normal
+                        </Button>
+                        <Button
+                          variant={uiStyle === 'minimal' ? 'default' : 'outline'}
+                          onClick={() => handleUiStyleChange('minimal')}
+                        >
+                          Minimalista
+                        </Button>
+                      </div>
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       Tema actual: {theme?.replace('-dark', '')} ({theme?.endsWith('-dark') ? 'Oscuro' : 'Claro'})
+                      <br />
+                      Estilo de interfaz: {uiStyle === 'normal' ? 'Normal' : 'Minimalista'}
                     </div>
                   </div>
                 </div>

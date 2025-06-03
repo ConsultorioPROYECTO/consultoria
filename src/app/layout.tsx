@@ -19,6 +19,7 @@ import type { Metadata } from 'next';
 import { interFont } from './fonts';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
+import { UIStyleProvider } from './context/UIStyleContext'; // Importa el UIStyleProvider
 import { copernicusFont } from './fonts';
 import { ThemeProvider } from "./dashboard/com/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -51,9 +52,11 @@ export default function RootLayout({
           disableTransitionOnChange
           themes={['light', 'dark', 'system', 'theme-vercel', 'theme-vercel-dark', 'theme-claude', 'theme-claude-dark']}
         >
-          {/* Envuelve la aplicación con AuthProvider */}
-          <AuthProvider>{children}</AuthProvider>
-          {/* Es muy importante el componente AuthProvider ya que se encarga de la logica que mantiene la sesion el usuario */}
+          <UIStyleProvider>
+            {/* Envuelve la aplicación con AuthProvider */}
+            <AuthProvider>{children}</AuthProvider>
+            {/* Es muy importante el componente AuthProvider ya que se encarga de la logica que mantiene la sesion el usuario */}
+          </UIStyleProvider>
         </ThemeProvider>
         <Toaster />
       </body>

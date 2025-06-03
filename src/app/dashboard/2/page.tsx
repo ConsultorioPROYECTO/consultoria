@@ -13,13 +13,7 @@ import { useEffect, useState } from "react";
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./compo/DailyAgendaView";
-import { QuickNotes } from "./compo/QuickNotes";
-import { PatientAttendancePatterns } from "./compo/PatientAttendancePatterns";
-import { ProactiveFollowUps } from "./compo/ProactiveFollowUps";
-import { DirectMessagingPanel } from "./compo/DirectMessagingPanel";
-import { WeeklyMonthlyPlanner } from "./compo/WeeklyMonthlyPlanner";
-import { PersonalMetrics } from "./compo/PersonalMetrics";
-import { SmartSuggestions } from "./compo/SmartSuggestions";
+
 import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
@@ -55,13 +49,34 @@ const fetchAppointments = async () => {
         'Authorization': `Bearer ${token}`, 
       },
     });
+    
     if (!response.ok) {
+      // Manejo específico para diferentes códigos de error
+      if (response.status === 403) {
+        console.error('Error 403: Acceso denegado. Verifica que tu cuenta tenga el rol de médico asignado.');
+        // Podrías mostrar un mensaje al usuario aquí
+        return [];
+      } else if (response.status === 401) {
+        console.error('Error 401: No autorizado. Tu sesión puede haber expirado.');
+        return [];
+      } else {
+        console.error(`Error HTTP ${response.status}: ${response.statusText}`);
+      }
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
+    
     const data = await response.json();
+    
+    // Validar que la respuesta sea un array
+    if (!Array.isArray(data)) {
+      console.warn('La respuesta del API no es un array válido:', data);
+      return [];
+    }
+    
     return data;
   } catch (error) {
     console.error('Error fetching appointments:', error);
+    // En lugar de devolver un array vacío, podrías mostrar un mensaje de error al usuario
     return [];
   }
 }
@@ -69,9 +84,7 @@ const fetchAppointments = async () => {
 export default function Page() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [selectedPatientId] = useState<string | null>(null);
-  const [selectedPatientName] = useState<string | undefined>(undefined);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
+  const [, setSelectedAppointmentId] = useState<string | null>(null);
   const [todayAppointmentsState, setTodayAppointmentsState] = useState<Appointment[]>([]);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<Appointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
@@ -240,9 +253,8 @@ export default function Page() {
                 {timeBasedPhrase}
               </p>
             </div>
-
             {/* Reestructurar la grilla principal */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"> {/* Cambiar a 3 columnas en lg */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 "> {/* Cambiar a 3 columnas en lg */}
                 <div className="col-span-1"> {/* Hoy es */}
                   <TodayIsDay />
                 </div>
@@ -271,45 +283,6 @@ export default function Page() {
                   </div>
                 </div>
             </div>
-
-            {/* Grilla principal para el resto del contenido */}
-            <div className="grid grid-cols-1 gap-6 @[60rem]:grid-cols-3 @[80rem]:grid-cols-4"> {/* Mantener la grilla principal para el resto */}
-
-              {/* Segunda fila de esta grilla principal: Notas Rápidas, Patrones, Métricas y Sugerencias */}
-              {/* Usar una grilla anidada para la distribución interna de esta fila */}
-              <div className="col-span-1 @[60rem]:col-span-3 @[80rem]:col-span-4 grid grid-cols-1 gap-6 @[60rem]:grid-cols-3 @[80rem]:grid-cols-4 mt-6"> {/* Contenedor para la segunda fila de esta grilla */}
-                 {/* Columna izquierda (Notas Rápidas y Patrones) */}
-                <div className="@[60rem]:col-span-2 @[80rem]:col-span-3 space-y-6 relative">
-                  <QuickNotes appointmentId={selectedAppointmentId} patientName={selectedPatientName} />
-                  <PatientAttendancePatterns patientId={selectedPatientId} patientName={selectedPatientName} />
-                </div>
-
-                 {/* Columna derecha (Métricas y Sugerencias) */}
-                <div className="space-y-6 @[60rem]:col-span-1 @[80rem]:col-span-1 relative">
-                   <PersonalMetrics />
-                  <SmartSuggestions patientId={selectedPatientId} />
-                </div>
-              </div>
-            </div>
-
-            {/* Sección Inferior (Planificador, Seguimientos, Mensajería) - Ocupa todo el ancho debajo */}
-             <div className="grid grid-cols-1 gap-6 @xl:grid-cols-3 mt-6"> {/* Reutilizar la estructura de la sección inferior */}
-                <div className="@xl:col-span-2">
-                  <DirectMessagingPanel />
-                </div>
-                <div className="space-y-6">
-                  <WeeklyMonthlyPlanner />
-                  <ProactiveFollowUps />
-                </div>
-              </div>
-            
-            {/* <PatientHistoryView 
-              patientId={selectedPatientId}
-              patientName={selectedPatientName}
-              isOpen={isHistoryModalOpen}
-              onOpenChange={setIsHistoryModalOpen}
-            /> */}
-
             <ConsultationModal
               appointment={selectedConsultationAppointment}
               isOpen={isConsultationModalOpen}

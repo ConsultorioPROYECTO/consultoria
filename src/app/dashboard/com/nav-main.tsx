@@ -1,8 +1,6 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
-
-import { Button } from "@rutas/components/ui/button"
+import { type LucideIcon } from "lucide-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -12,40 +10,28 @@ import {
 } from "@rutas/components/ui/sidebar"
 import Link from 'next/link'
 import { cn } from "@rutas/lib/utils"
+import { motion } from "framer-motion"
 
 export function NavMain({
   items,
   currentPath,
+  hideIcons = false,
 }: {
   items: {
     title: string
     url: string
-    icon?: Icon
+    icon?: LucideIcon
   }[]
   currentPath: string
+  hideIcons?: boolean
 }) {
   return (
-    <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Quick Create"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-            >
-              <IconCirclePlusFilled />
-              <span>Quick Create</span>
-            </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <IconMail />
-              <span className="sr-only">Inbox</span>
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <SidebarGroup className={cn(hideIcons && "h-full flex flex-col")}>
+      <SidebarGroupContent className={cn(
+        "flex flex-col gap-2",
+        hideIcons && "justify-center items-center h-full"
+      )}>
+
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
@@ -53,13 +39,48 @@ export function NavMain({
                 asChild
                 tooltip={item.title}
                 className={cn(
-                  "text-muted-foreground",
-                  item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                  hideIcons ? (
+                    // Estilo minimalista
+                    cn(
+                      "text-muted-foreground hover:bg-transparent overflow-hidden",
+                      item.url === currentPath && "bg-transparent text-primary"
+                    )
+                  ) : (
+                    // Estilo normal
+                    cn(
+                      "text-muted-foreground",
+                      item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                    )
+                  )
                 )}
               >
                 <Link href={item.url}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
+                  {!hideIcons && item.icon && <item.icon />}
+                  {hideIcons ? (
+                    <motion.span
+                      className="block"
+                      initial={{ fontSize: "1.875rem" }}
+                      whileHover={{ 
+                        fontSize: "2.25rem",
+                        transition: { 
+                          type: "spring", 
+                          stiffness: 300, 
+                          damping: 20,
+                          duration: 0.2
+                        }
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                        duration: 0.2
+                      }}
+                    >
+                      {item.title}
+                    </motion.span>
+                  ) : (
+                    <span>{item.title}</span>
+                  )}
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

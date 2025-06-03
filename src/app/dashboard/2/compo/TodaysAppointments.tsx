@@ -10,7 +10,7 @@ interface TodaysAppointmentsProps {
 export function TodaysAppointments({ appointmentCount }: TodaysAppointmentsProps) {
   return (
     <Card className="w-full bg-card rounded-xl overflow-hidden">
-      <CardContent className="flex items-center justify-between py-2 px-6">
+      <CardContent className="flex items-center justify-between py-1 px-8">
         <div className="flex flex-col">
           <span className="text-sm opacity-80">Hoy tienes</span>
           <span className="text-3xl lg:text-3xl font-bold mt-1">{appointmentCount} Cita{appointmentCount !== 1 ? 's' : ''}</span>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { type Icon } from "@tabler/icons-react"
+import { type LucideIcon } from "lucide-react"
 
 import {
   SidebarGroup,
@@ -15,18 +15,22 @@ import { cn } from "@rutas/lib/utils"
 export function NavSecondary({
   items,
   currentPath,
+  hideIcons = false,
   ...props
 }: {
   items: {
     title: string
     url: string
-    icon: Icon
+    icon: LucideIcon
   }[]
   currentPath: string
+  hideIcons?: boolean
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (
-    <SidebarGroup {...props}>
-      <SidebarGroupContent>
+    <SidebarGroup className={cn(hideIcons && "h-full flex flex-col")} {...props}>
+      <SidebarGroupContent className={cn(
+        hideIcons && "justify-center items-center h-full"
+      )}>
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
@@ -37,7 +41,7 @@ export function NavSecondary({
                 )}
               >
                 <a href={item.url}>
-                  <item.icon />
+                  {!hideIcons && <item.icon />}
                   <span>{item.title}</span>
                 </a>
               </SidebarMenuButton>

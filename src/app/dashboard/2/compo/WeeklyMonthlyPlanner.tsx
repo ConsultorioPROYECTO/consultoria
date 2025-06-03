@@ -92,17 +92,24 @@ export function WeeklyMonthlyPlanner() {
             month={currentDate} // Controlar el mes mostrado
             // Podríamos añadir lógica para mostrar eventos aquí
             components={{
-                Day: ({ day }) => {
+                Day: (props) => {
+                    const { date } = props;
+                    
+                    // Verificar que date existe antes de usarlo
+                    if (!date) {
+                        return <div className="relative h-full w-full flex items-center justify-center"></div>;
+                    }
+                    
                     const event = mockEvents.find(e => 
-                        e.date.getFullYear() === day.date.getFullYear() &&
-                        e.date.getMonth() === day.date.getMonth() &&
-                        e.date.getDate() === day.date.getDate()
+                        e.date.getFullYear() === date.getFullYear() &&
+                        e.date.getMonth() === date.getMonth() &&
+                        e.date.getDate() === date.getDate()
                     );
                     return (
-                        <td className="relative h-full w-full flex items-center justify-center">
-                           <span>{day.date.getDate()}</span>
+                        <div className="relative h-full w-full flex items-center justify-center">
+                           <span>{date.getDate()}</span>
                            {event && <div className={`absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 ${event.color} rounded-full`} title={event.title}></div>}
-                        </td>
+                        </div>
                     );
                 }
             }}

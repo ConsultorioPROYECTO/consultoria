@@ -34,3 +34,5 @@ export function OrganizationSettings({ isOpen, onOpenChange }: OrganizationSetti
     </Dialog>
   )
 }
+
+

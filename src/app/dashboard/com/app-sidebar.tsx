@@ -6,12 +6,11 @@ import { usePathname } from 'next/navigation';
 import { Button } from "@rutas/components/ui/button" // Añadir importación de Button
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card" // Añadir importaciones de Card
 import {
-  IconHelp,
-  IconInnerShadowTop,
-  IconSearch,
-  IconSettings,
-  IconCalendarTime,
-} from "@tabler/icons-react"
+  House,
+  HelpCircle,
+  Layers,
+  CalendarClock,
+} from "lucide-react"
 
 import { NavMain } from "@rutas/app/dashboard/com/nav-main"
 import { NavSecondary } from "@rutas/app/dashboard/com/nav-secondary"
@@ -26,6 +25,7 @@ import {
   SidebarMenuItem,
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
+import { useUIStyle } from "../../context/UIStyleContext"
 
 // Interfaz para las citas y datos de ejemplo
 interface Appointment {
@@ -60,6 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [date] = React.useState<Date | undefined>(undefined) // Estado inicial sin fecha seleccionada
   const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
   const { user } = useAuth()
+  const { uiStyle } = useUIStyle() // Obtener el estilo de interfaz
   const pathname = usePathname();
 
   React.useEffect(() => {
@@ -83,31 +84,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     navMain: [
       {
-        title: "Dashboards",
-        url: "/dashboard/",
-        icon: IconCalendarTime,
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: House,
+      },
+      {
+        title: "Calendario",
+        url: "/dashboard/calender",
+        icon: CalendarClock,
       },
       {
         title: "Demo APIs",
         url: "/dashboard/apis-demo",
-        icon: IconInnerShadowTop,
+        icon: Layers,
       },
     ],
     navSecondary: [
       {
-        title: "Settings",
-        url: "#",
-        icon: IconSettings,
-      },
-      {
         title: "Get Help",
         url: "#",
-        icon: IconHelp,
-      },
-      {
-        title: "Search",
-        url: "#",
-        icon: IconSearch,
+        icon: HelpCircle,
       },
     ],
   }
@@ -122,14 +118,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="/dashboard">
-                <IconInnerShadowTop className="!size-5" />
+                {uiStyle !== 'minimal' && <Layers className="!size-5" />}
                 <span className="text-base font-semibold">Irina</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent className="flex flex-col">
+      <SidebarContent className={`flex flex-col h-full ${uiStyle === 'minimal' ? 'items-center' : ''}`}>
         {/*
         <div className="p-2">
           <Calendar
@@ -157,7 +153,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </div>
                 ))}
                  <Button variant="outline" size="sm" className="w-full mt-2">
-                  <IconCalendarTime className="mr-2 h-3 w-3" />
+                  <CalendarClock className="mr-2 h-3 w-3" />
                   Ver todas las citas
                 </Button>
               </CardContent>
@@ -171,8 +167,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </p>
            </div>
         )}
-        <NavMain items={data.navMain} currentPath={pathname} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" currentPath={pathname} />
+        <NavMain items={data.navMain} currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

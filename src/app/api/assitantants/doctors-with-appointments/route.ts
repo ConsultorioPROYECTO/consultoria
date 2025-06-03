@@ -6,10 +6,8 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import { eq, inArray } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS, type DoctorsWithAppointmentsResponse } from "@/types/api";
 import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
-import type { InferSelectModel } from 'drizzle-orm';
-
 // Tipos inferidos para mayor robustez y autocompletado
-type Doctor = InferSelectModel<typeof doctors>;
+// type Doctor = InferSelectModel<typeof doctors>;
 
 const getDoctorsWithAppointmentsHandler = async (
   request: NextRequest,

@@ -26,8 +26,8 @@ export function PersonalMetrics() {
           Un resumen de tu desempeño y la satisfacción de tus pacientes.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="p-4 border rounded-lg bg-card space-y-2">
+      <CardContent className="grid gap-8 sm:gap-10 md:gap-12 sm:grid-cols-2 lg:grid-cols-3 py-6 sm:py-8 md:py-10">
+        <div className="p-6 sm:p-8 md:p-10 border rounded-lg bg-card space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">Consultas este Mes</p>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -35,7 +35,7 @@ export function PersonalMetrics() {
           <p className="text-2xl font-bold">{personalMetricsData.appointmentsThisMonth}</p>
         </div>
 
-        <div className="p-4 border rounded-lg bg-card space-y-2">
+        <div className="p-6 sm:p-8 md:p-10 border rounded-lg bg-card space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">Tiempo Prom. Consulta</p>
             <Star className="h-4 w-4 text-muted-foreground" /> {/* Icono placeholder */}
@@ -43,7 +43,7 @@ export function PersonalMetrics() {
           <p className="text-2xl font-bold">{personalMetricsData.avgConsultationTime} <span className="text-sm font-normal text-muted-foreground">min</span></p>
         </div>
 
-        <div className="p-4 border rounded-lg bg-card space-y-2">
+        <div className="p-6 sm:p-8 md:p-10 border rounded-lg bg-card space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">Satisfacción Pacientes</p>
             <Smile className="h-4 w-4 text-muted-foreground" />
@@ -52,7 +52,7 @@ export function PersonalMetrics() {
           <p className="text-right text-sm font-bold">{personalMetricsData.patientSatisfactionRate}%</p>
         </div>
 
-        <div className="p-4 border rounded-lg bg-card space-y-2">
+        <div className="p-6 sm:p-8 md:p-10 border rounded-lg bg-card space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">Seguimientos Completados</p>
             <Star className="h-4 w-4 text-muted-foreground" /> {/* Icono placeholder */}
@@ -61,7 +61,7 @@ export function PersonalMetrics() {
           <p className="text-right text-sm font-bold">{personalMetricsData.followUpCompletionRate}%</p>
         </div>
         
-        <div className="p-4 border rounded-lg bg-card space-y-2">
+        <div className="p-6 sm:p-8 md:p-10 border rounded-lg bg-card space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium text-muted-foreground">Pacientes Nuevos (Mes)</p>
             <Users className="h-4 w-4 text-muted-foreground" />
