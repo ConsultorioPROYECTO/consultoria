@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
         set: {
           ...newUser,
           createdAt: sql`${users.createdAt}`, // No sobreescribas createdAt si ya existe
+          role: sql`${users.role}`, // No sobreescribas el rol si ya existe
+          isActive: sql`${users.isActive}`, // No sobreescribas isActive si ya existe
         },
       });
 
