@@ -21,7 +21,7 @@ const getDoctorsWithAppointmentsHandler = async (
     if (!requestingUser) {
       return createErrorResponse(API_ERRORS.USER_NOT_FOUND, undefined, HTTP_STATUS.FORBIDDEN);
     }
-    const roleValidationError = validateUserRole(requestingUser.role, "asistente");
+    const roleValidationError = validateUserRole(requestingUser.role, ["asistente","medico"]);
     if (roleValidationError) {
       return roleValidationError;
     }
