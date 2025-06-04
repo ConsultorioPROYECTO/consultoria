@@ -35,6 +35,7 @@ import { useTheme } from "next-themes";
 import { useUIStyle } from "@/app/context/UIStyleContext";
 import { useAuth } from "@/app/context/AuthContext";
 import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils";
+import { cn } from "@/lib/utils";
 
 const navAccount = [
   { name: "Mi Cuenta", icon: User },
@@ -145,11 +146,29 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                       <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton
                           asChild
-                          isActive={item.name === activeSection}
                           onClick={() => handleSectionChange(item.name)}
+                          className={cn(
+                            uiStyle === 'minimal' ? (
+                               // Estilo minimalista
+                               cn(
+                                 "text-muted-foreground overflow-hidden",
+                                 item.name === activeSection 
+                                    ? "!bg-transparent text-primary hover:!bg-transparent focus:!bg-transparent active:!bg-transparent data-[active=true]:!bg-transparent" 
+                                    : "hover:!bg-transparent focus:!bg-transparent active:!bg-transparent"
+                               )
+                             ) : (
+                               // Estilo normal
+                               cn(
+                                 "text-muted-foreground",
+                                 item.name === activeSection 
+                                    ? "bg-primary text-primary-foreground" 
+                                    : "hover:bg-accent hover:text-accent-foreground"
+                               )
+                             )
+                          )}
                         >
                           <a href="#">
-                            <item.icon />
+                            {uiStyle !== 'minimal' && <item.icon />}
                             <span>{item.name}</span>
                           </a>
                         </SidebarMenuButton>
@@ -169,11 +188,29 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                         <SidebarMenuItem key={item.name}>
                           <SidebarMenuButton
                             asChild
-                            isActive={item.name === activeSection}
                             onClick={() => handleSectionChange(item.name)}
+                            className={cn(
+                              uiStyle === 'minimal' ? (
+                                 // Estilo minimalista
+                                 cn(
+                                   "text-muted-foreground overflow-hidden",
+                                   item.name === activeSection 
+                                      ? "!bg-transparent text-primary hover:!bg-transparent focus:!bg-transparent active:!bg-transparent data-[active=true]:!bg-transparent" 
+                                      : "hover:!bg-transparent focus:!bg-transparent active:!bg-transparent"
+                                 )
+                               ) : (
+                                 // Estilo normal
+                                 cn(
+                                   "text-muted-foreground",
+                                   item.name === activeSection 
+                                      ? "bg-primary text-primary-foreground" 
+                                      : "hover:bg-accent hover:text-accent-foreground"
+                                 )
+                               )
+                            )}
                           >
                             <a href="#">
-                              <item.icon />
+                              {uiStyle !== 'minimal' && <item.icon />}
                               <span>{item.name}</span>
                             </a>
                           </SidebarMenuButton>
@@ -340,7 +377,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                       {user?.providerData?.[0]?.providerId !== 'google.com' && (
                         <>
                           {/* 2FA Section */}
-                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start py-4 ">
+                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start ">
                             <div className="space-y-1">
                               <div className="text-sm font-medium">Verificación en dos pasos</div>
                               <div className="text-sm text-muted-foreground">
@@ -360,7 +397,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                           </div>
 
                           {/* Passkeys Section */}
-                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start py-4">
+                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
                             <div className="space-y-1">
                               <div className="text-sm font-medium">Passkeys</div>
                               <div className="text-sm text-muted-foreground">
