@@ -121,9 +121,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {uiStyle === 'minimal' ? (
           // Modo minimalista: contenido centrado
           <div className="flex flex-col gap-4">
+            
             <NavMain items={data.navMain} currentPath={pathname} hideIcons={true} />
             {/* <NavSecondary items={data.navSecondary} currentPath={pathname} hideIcons={true} /> */}
             <NavUser user={data.user} hideIcons={true} />
+            
           </div>
           
         ) : (
