@@ -4,10 +4,9 @@ import * as React from "react"
 import { useState, useEffect } from 'react';
 import {
   Settings2,
-  Building,
+  Building2,
   User,
-  Shield,
-  Plug,
+  Blocks,
 } from "lucide-react"
 
 // Importaciones de componentes UI
@@ -27,6 +26,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 
 import { Label } from "@rutas/components/ui/label";
@@ -36,15 +36,15 @@ import { useUIStyle } from "@/app/context/UIStyleContext";
 import { useAuth } from "@/app/context/AuthContext";
 import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils";
 
-const data = {
-  nav: [
-    { name: "Mi Cuenta", icon: User },
-    { name: "Preferencias", icon: Settings2 },
-    { name: "Configuración de la organización", icon: Building },
-    { name: "Seguridad y Privacidad", icon: Shield },
-    { name: "Integraciones", icon: Plug },
-  ],
-}
+const navAccount = [
+  { name: "Mi Cuenta", icon: User },
+  { name: "Preferencias", icon: Settings2 },
+];
+
+const navWorkspace = [
+  { name: "Configuración de la organización", icon: Building2 },
+  { name: "Integraciones", icon: Blocks },
+];
 
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -56,7 +56,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
   const { uiStyle, setUiStyle } = useUIStyle(); // Usar el contexto global
   const { user } = useAuth(); // Obtener el usuario actual
   const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system");
-  const [activeSection, setActiveSection] = useState("Appearance"); // New state for active section
+  const [activeSection, setActiveSection] = useState("Mi Cuenta"); // New state for active section
   const [userRole, setUserRole] = useState<string>(""); // Estado para almacenar el rol del usuario
 
   useEffect(() => {
@@ -136,10 +136,12 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
         <SidebarProvider className="items-start">
           <Sidebar collapsible="none" className="hidden md:flex">
             <SidebarContent>
+              {/* Cuenta y Preferencias - Visible para todos */}
               <SidebarGroup>
+              <SidebarGroupLabel>Cuenta</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {data.nav.map((item) => (
+                    {navAccount.map((item) => (
                       <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton
                           asChild
@@ -156,6 +158,31 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
+              
+              {/* Configuración de organización e Integraciones - Solo para rol master */}
+              {userRole === 'admin' && (
+                <SidebarGroup>
+                  <SidebarGroupLabel>Organizacion</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {navWorkspace.map((item) => (
+                        <SidebarMenuItem key={item.name}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={item.name === activeSection}
+                            onClick={() => handleSectionChange(item.name)}
+                          >
+                            <a href="#">
+                              <item.icon />
+                              <span>{item.name}</span>
+                            </a>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              )}
             </SidebarContent>
           </Sidebar>
           <main className="flex h-[490px] flex-1 flex-col overflow-hidden">
@@ -458,71 +485,197 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                 </div>
               )}
               {activeSection === "Configuración de la organización" && (
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="organizationName">Nombre de la Organización</Label>
-                    <Input id="organizationName" defaultValue="Mi Organización" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="address">Dirección</Label>
-                    <Input id="address" defaultValue="Calle Falsa 123" />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input id="phone" defaultValue="+1234567890" />
-                  </div>
-                </div>
-              )}
-              {activeSection === "Seguridad y Privacidad" && (
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label>Cambiar Contraseña</Label>
-                    <div className="grid gap-2">
-                      <Input type="password" placeholder="Contraseña actual" />
-                      <Input type="password" placeholder="Nueva contraseña" />
-                      <Input type="password" placeholder="Confirmar nueva contraseña" />
+                <div className="grid gap-6 py-4">
+                  {/* Organization Information Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Información de la Organización</h3>
+                    <div className="grid gap-4">
+                      {/* Organization Name */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Nombre de la Organización</div>
+                          <div className="text-sm text-muted-foreground">Centro Médico Especializado San Rafael</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Editar
+                        </Button>
+                      </div>
+
+                      {/* NIT/Tax ID */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">NIT</div>
+                          <div className="text-sm text-muted-foreground">900.123.456-7</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Editar
+                        </Button>
+                      </div>
+
+                      {/* Legal Representative */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Representante Legal</div>
+                          <div className="text-sm text-muted-foreground">Dr. Carlos Eduardo Mendoza Ruiz</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Editar
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="twoFactor">Autenticación de dos factores</Label>
-                    <Button variant="outline" size="sm">Configurar</Button>
+
+                  {/* Contact Information Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Información de Contacto</h3>
+                    <div className="grid gap-4">
+                      {/* Address */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Dirección Principal</div>
+                          <div className="text-sm text-muted-foreground">
+                            Carrera 15 #93-07, Chapinero, Bogotá D.C., Colombia
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Editar
+                        </Button>
+                      </div>
+
+                      {/* Phone */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Teléfono Principal</div>
+                          <div className="text-sm text-muted-foreground">+57 (1) 234-5678</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Editar
+                        </Button>
+                      </div>
+
+                      {/* Emergency Phone */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Teléfono de Emergencias</div>
+                          <div className="text-sm text-muted-foreground">+57 (1) 234-5679</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Editar
+                        </Button>
+                      </div>
+
+                      {/* Email */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Correo Institucional</div>
+                          <div className="text-sm text-muted-foreground">contacto@centromedicosanrafael.com</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Editar
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="sessions">Sesiones activas</Label>
-                    <Button variant="outline" size="sm">Ver sesiones</Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="dataBackup">Respaldo de datos</Label>
-                    <Button variant="outline" size="sm">Configurar</Button>
+
+                  {/* Medical License Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Licencias y Certificaciones</h3>
+                    <div className="grid gap-4">
+                      {/* Health License */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Habilitación en Salud</div>
+                          <div className="text-sm text-muted-foreground">
+                            No. 25001234567 - Vigente hasta: Diciembre 2025
+                          </div>
+                        </div>
+                        <div className="text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded-full justify-self-end">
+                          Vigente
+                        </div>
+                      </div>
+
+                      {/* REPS Registration */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Registro REPS</div>
+                          <div className="text-sm text-muted-foreground">
+                            No. REPS-2500123456 - Vigente hasta: Junio 2026
+                          </div>
+                        </div>
+                        <div className="text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded-full justify-self-end">
+                          Vigente
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
               {activeSection === "Integraciones" && (
-                <div className="grid gap-4 py-4">
-                  <div className="text-sm text-muted-foreground mb-4">
-                    Conecta tu aplicación con servicios externos para mejorar tu flujo de trabajo.
+                <div className="grid gap-6 py-4">
+                  
+                  {/* Cloud Storage Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Almacenamiento en la Nube</h3>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Google Drive</div>
+                          <div className="text-sm text-muted-foreground">
+                            Almacena y sincroniza documentos médicos de forma segura
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                            <span className="text-xs text-muted-foreground">No conectado</span>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Conectar
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid gap-4">
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">MCP</h4>
-                        <p className="text-sm text-muted-foreground">Configura la integración con MCP</p>
+
+                  {/* Communication Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Comunicación</h3>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">WhatsApp Business</div>
+                          <div className="text-sm text-muted-foreground">
+                            Envía recordatorios automáticos y notificaciones a pacientes
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>
+                            <span className="text-xs text-muted-foreground">No conectado</span>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Conectar
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm">Configurar</Button>
                     </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Google Calendar</h4>
-                        <p className="text-sm text-muted-foreground">Sincroniza citas con tu calendario</p>
+                  </div>
+
+                  {/* Development Tools Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Herramientas de Desarrollo</h3>
+                    <div className="grid gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">MCP (Model Context Protocol)</div>
+                          <div className="text-sm text-muted-foreground">
+                            Configura la integración con servicios de IA y automatización
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                            <span className="text-xs text-green-600 dark:text-green-400">Configurado</span>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" className="justify-self-end">
+                          Configurar
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm">Conectar</Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">WhatsApp Business</h4>
-                        <p className="text-sm text-muted-foreground">Envía recordatorios por WhatsApp</p>
-                      </div>
-                      <Button variant="outline" size="sm">Conectar</Button>
                     </div>
                   </div>
                 </div>
