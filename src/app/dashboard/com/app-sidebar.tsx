@@ -4,7 +4,7 @@ import * as React from "react"
 import { usePathname } from 'next/navigation';
 // import { Calendar } from "@rutas/components/ui/calendar"
 import { Button } from "@rutas/components/ui/button" // Añadir importación de Button
-import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card" // Añadir importaciones de Card
+import { Card, CardHeader, CardTitle } from "@rutas/components/ui/card" // Añadir importaciones de Card
 import {
   House,
   HelpCircle,
@@ -26,6 +26,7 @@ import {
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 import { useUIStyle } from "../../context/UIStyleContext"
+import { geistFont } from "../../fonts"
 
 // Interfaz para las citas y datos de ejemplo
 interface Appointment {
@@ -109,23 +110,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="offcanvas" className={geistFont.className} {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="/dashboard">
-                {uiStyle !== 'minimal' && <Layers className="!size-5" />}
-                <span className="text-base font-semibold">Irina</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex items-center p-1.5">
+            <Layers className="size-8" />
+            {uiStyle !== 'minimal' && <span className="ml-2 text-base font-semibold">Irina</span>}
+        </div>
       </SidebarHeader>
-      <SidebarContent className={`flex flex-col h-full ${uiStyle === 'minimal' ? 'items-center' : ''}`}>
+      <SidebarContent className={`flex flex-col h-full ${uiStyle === 'minimal' ? 'content-center' : ''}`}>
         {/*
         <div className="p-2">
           <Calendar
@@ -138,14 +130,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         
         {/* Sección para mostrar citas del día seleccionado */}  
         {date && selectedDayAppointments.length > 0 && (
-          <div className="p-2 mt-2">
+          <div className="flex flex-col gap-3 p-2 mt-4">
             <Card>
               <CardHeader className="pb-2 pt-3">
                 <CardTitle className="text-sm font-medium">
                   Citas para {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-xs max-h-40 overflow-y-auto">
+              <div className="flex flex-col gap-3 p-2">
                 {selectedDayAppointments.map(app => (
                   <div key={app.id} className="p-1 border-b last:border-b-0">
                     <p className="font-semibold">{app.time} - {app.patientName}</p>
@@ -156,7 +148,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <CalendarClock className="mr-2 h-3 w-3" />
                   Ver todas las citas
                 </Button>
-              </CardContent>
+              </div>
             </Card>
           </div>
         )}
@@ -167,8 +159,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </p>
            </div>
         )}
-        <NavMain items={data.navMain} currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
+        <div className="flex flex-col">
+          <NavMain items={data.navMain} currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
+        </div>
+        <div className="flex flex-col mt-auto">
+          <NavSecondary items={data.navSecondary} currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

@@ -16,7 +16,7 @@
  */
 
 import type { Metadata } from 'next';
-import { interFont } from './fonts';
+import { interFont, geistFont } from './fonts';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
 import { UIStyleProvider } from './context/UIStyleContext'; // Importa el UIStyleProvider
@@ -24,7 +24,7 @@ import { copernicusFont } from './fonts';
 import { ThemeProvider } from "./dashboard/com/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = interFont;
+const inter = geistFont;
 
 export const metadata: Metadata = {
   title: 'Mi App con Firebase Auth',

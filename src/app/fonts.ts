@@ -1,4 +1,5 @@
 import localFont from 'next/font/local'
+import { GeistSans } from 'geist/font/sans'
 
 export const interFont = localFont({
   src: './Inter.ttf',
@@ -10,3 +11,5 @@ export const copernicusFont = localFont({
   display: 'swap',
   variable: '--font-copernicus',
 })
+
+export const geistFont = GeistSans

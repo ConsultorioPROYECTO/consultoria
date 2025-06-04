@@ -10,7 +10,6 @@ import {
 } from "@rutas/components/ui/sidebar"
 import Link from 'next/link'
 import { cn } from "@rutas/lib/utils"
-import { motion } from "framer-motion"
 
 export function NavMain({
   items,
@@ -42,7 +41,7 @@ export function NavMain({
                   hideIcons ? (
                     // Estilo minimalista
                     cn(
-                      "text-muted-foreground hover:bg-transparent overflow-hidden",
+                      "text-muted-foreground hover:!bg-transparent focus:!bg-transparent active:!bg-transparent overflow-hidden",
                       item.url === currentPath && "bg-transparent text-primary"
                     )
                   ) : (
@@ -57,29 +56,11 @@ export function NavMain({
                 <Link href={item.url}>
                   {!hideIcons && item.icon && <item.icon />}
                   {hideIcons ? (
-                    <motion.span
-                      className="block"
-                      initial={{ fontSize: "1.875rem" }}
-                      whileHover={{ 
-                        fontSize: "2.25rem",
-                        transition: { 
-                          type: "spring", 
-                          stiffness: 300, 
-                          damping: 20,
-                          duration: 0.2
-                        }
-                      }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 20,
-                        duration: 0.2
-                      }}
-                    >
+                    <span className="block font-semibold text-3xl" >
                       {item.title}
-                    </motion.span>
+                    </span>
                   ) : (
-                    <span>{item.title}</span>
+                    <span className="font-medium text-2xl">{item.title}</span> 
                   )}
                 </Link>
               </SidebarMenuButton>
