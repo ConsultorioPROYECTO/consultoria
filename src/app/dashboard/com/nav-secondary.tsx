@@ -35,10 +35,21 @@ export function NavSecondary({
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild
-                className={cn(
-                  "text-muted-foreground",
-                  item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                )}
+                className={
+                  hideIcons ? (
+                    // Estilo minimalista
+                    cn(
+                      "text-muted-foreground hover:!bg-transparent focus:!bg-transparent active:!bg-transparent overflow-hidden",
+                      item.url === currentPath && "bg-transparent text-primary"
+                    )
+                  ) : (
+                    // Estilo normal
+                    cn(
+                      "text-muted-foreground",
+                      item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                    )
+                  )
+                }
               >
                 <a href={item.url}>
                   {!hideIcons && <item.icon />}

@@ -117,58 +117,72 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {uiStyle !== 'minimal' && <span className="ml-2 text-base font-semibold">Irina</span>}
         </div>
       </SidebarHeader>
-      <SidebarContent className={`flex flex-col h-full ${uiStyle === 'minimal' ? 'content-center' : ''}`}>
-        {/*
-        <div className="p-2">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={setDate} // setDate actualizará 'date', y el useEffect se encargará del resto
-            className="rounded-md "
-          />
-        </div> */}
-        
-        {/* Sección para mostrar citas del día seleccionado */}  
-        {date && selectedDayAppointments.length > 0 && (
-          <div className="flex flex-col gap-3 p-2 mt-4">
-            <Card>
-              <CardHeader className="pb-2 pt-3">
-                <CardTitle className="text-sm font-medium">
-                  Citas para {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
-                </CardTitle>
-              </CardHeader>
-              <div className="flex flex-col gap-3 p-2">
-                {selectedDayAppointments.map(app => (
-                  <div key={app.id} className="p-1 border-b last:border-b-0">
-                    <p className="font-semibold">{app.time} - {app.patientName}</p>
-                    {app.description && <p className="text-muted-foreground">{app.description}</p>}
-                  </div>
-                ))}
-                 <Button variant="outline" size="sm" className="w-full mt-2">
-                  <CalendarClock className="mr-2 h-3 w-3" />
-                  Ver todas las citas
-                </Button>
-              </div>
-            </Card>
+      <SidebarContent className={`flex flex-col h-full ${uiStyle === 'minimal' ? 'justify-center' : ''}`}>
+        {uiStyle === 'minimal' ? (
+          // Modo minimalista: contenido centrado
+          <div className="flex flex-col gap-4">
+            <NavMain items={data.navMain} currentPath={pathname} hideIcons={true} />
+            {/* <NavSecondary items={data.navSecondary} currentPath={pathname} hideIcons={true} /> */}
+            <NavUser user={data.user} hideIcons={true} />
           </div>
+          
+        ) : (
+          // Modo normal: layout completo
+          <>
+            {/*
+            <div className="p-2">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate} // setDate actualizará 'date', y el useEffect se encargará del resto
+                className="rounded-md "
+              />
+            </div> */}
+            {/* Sección para mostrar citas del día seleccionado */}  
+            {date && selectedDayAppointments.length > 0 && (
+              <div className="flex flex-col gap-3 p-2 mt-4">
+                <Card>
+                  <CardHeader className="pb-2 pt-3">
+                    <CardTitle className="text-sm font-medium">
+                      Citas para {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                    </CardTitle>
+                  </CardHeader>
+                  <div className="flex flex-col gap-3 p-2">
+                    {selectedDayAppointments.map(app => (
+                      <div key={app.id} className="p-1 border-b last:border-b-0">
+                        <p className="font-semibold">{app.time} - {app.patientName}</p>
+                        {app.description && <p className="text-muted-foreground">{app.description}</p>}
+                      </div>
+                    ))}
+                     <Button variant="outline" size="sm" className="w-full mt-2">
+                      <CalendarClock className="mr-2 h-3 w-3" />
+                      Ver todas las citas
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            )}
+            {date && selectedDayAppointments.length === 0 && (
+               <div className="p-2 mt-2 text-center">
+                <p className="text-xs text-muted-foreground">
+                    No hay citas para {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}.
+                </p>
+               </div>
+            )}
+            <div className="flex flex-col">
+              <NavMain items={data.navMain} currentPath={pathname} hideIcons={false} />
+            </div>
+            <div className="flex flex-col mt-auto">
+              <NavSecondary items={data.navSecondary} currentPath={pathname} hideIcons={false} />
+            </div>
+          </>
         )}
-        {date && selectedDayAppointments.length === 0 && (
-           <div className="p-2 mt-2 text-center">
-            <p className="text-xs text-muted-foreground">
-                No hay citas para {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}.
-            </p>
-           </div>
-        )}
-        <div className="flex flex-col">
-          <NavMain items={data.navMain} currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
-        </div>
-        <div className="flex flex-col mt-auto">
-          <NavSecondary items={data.navSecondary} currentPath={pathname} hideIcons={uiStyle === 'minimal'} />
-        </div>
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+      {uiStyle !== 'minimal' && (
+        <SidebarFooter>
+          <NavUser user={data.user} />
+        </SidebarFooter>
+      )}
     </Sidebar>
   )
 }
