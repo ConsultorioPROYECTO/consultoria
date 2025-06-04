@@ -25,7 +25,6 @@ import {
   DialogContent,
   DialogDescription,
   DialogTitle,
-  // DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Sidebar,
@@ -40,7 +39,6 @@ import {
 
 import { Label } from "@rutas/components/ui/label";
 import { Input } from "@rutas/components/ui/input";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
 import { useTheme } from "next-themes";
 import { useUIStyle } from "@/app/context/UIStyleContext";
 

@@ -53,8 +53,10 @@ export function NavUser({
   const { signOut } = useAuth()
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleOpenSettingsModal = () => {
+    setIsDropdownOpen(false); // Cerrar dropdown explícitamente
     setIsSettingsModalOpen(true);
   };
 
@@ -63,6 +65,7 @@ export function NavUser({
   };
 
   const handleOpenInviteModal = () => {
+    setIsDropdownOpen(false); // Cerrar dropdown explícitamente
     setIsInviteModalOpen(true);
   };
 
@@ -74,7 +77,7 @@ export function NavUser({
     <>
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenu>
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size={hideIcons ? "default" : "lg"}
