@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useState, useEffect } from 'react';
 import {
-  Paintbrush,
+  Settings2,
   Building,
   User,
   Shield,
@@ -39,8 +39,8 @@ import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils";
 const data = {
   nav: [
     { name: "Mi Cuenta", icon: User },
+    { name: "Preferencias", icon: Settings2 },
     { name: "Configuración de la organización", icon: Building },
-    { name: "Appearance", icon: Paintbrush },
     { name: "Seguridad y Privacidad", icon: Shield },
     { name: "Integraciones", icon: Plug },
   ],
@@ -101,6 +101,9 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
 
   const handleThemeChange = (value: string) => {
     setSelectedTheme(value);
+    // Apply the theme immediately while preserving the current mode (light/dark)
+    const newTheme = theme?.endsWith('-dark') ? `${value}-dark` : value;
+    setTheme(newTheme);
   };
 
   const handleUiStyleChange = (style: 'normal' | 'minimal') => {
@@ -155,68 +158,94 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
               </SidebarGroup>
             </SidebarContent>
           </Sidebar>
-          <main className="flex h-[480px] flex-1 flex-col overflow-hidden">
+          <main className="flex h-[490px] flex-1 flex-col overflow-hidden">
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
-              {activeSection === "Appearance" && (
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-4">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="theme">Tema</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          variant={selectedTheme === 'theme-claude' ? 'default' : 'outline'}
-                          onClick={() => handleThemeChange('theme-claude')}
-                        >
-                          Claude
-                        </Button>
-                        <Button
-                          variant={selectedTheme === 'theme-vercel' ? 'default' : 'outline'}
-                          onClick={() => handleThemeChange('theme-vercel')}
-                        >
-                          Vercel
-                        </Button>
+              {activeSection === "Preferencias" && (
+                <div className="grid gap-6 py-4">
+                  {/* Appearance Section */}
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Apariencia</h3>
+                    <div className="grid gap-4">
+                      {/* Theme Selection */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Tema</div>
+                          <div className="text-sm text-muted-foreground">
+                            Selecciona el tema visual de la aplicación
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-self-end">
+                          <Button
+                            variant={selectedTheme === 'theme-claude' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleThemeChange('theme-claude')}
+                          >
+                            Claude
+                          </Button>
+                          <Button
+                            variant={selectedTheme === 'theme-vercel' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleThemeChange('theme-vercel')}
+                          >
+                            Vercel
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="mode">Modo</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          variant={!theme?.endsWith('-dark') ? 'default' : 'outline'}
-                          onClick={() => setTheme(selectedTheme)}
-                        >
-                          Claro
-                        </Button>
-                        <Button
-                          variant={theme?.endsWith('-dark') ? 'default' : 'outline'}
-                          onClick={() => setTheme(`${selectedTheme}-dark`)}
-                        >
-                          Oscuro
-                        </Button>
+                      
+                      {/* Mode Selection */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Modo</div>
+                          <div className="text-sm text-muted-foreground">
+                            Elige entre modo claro u oscuro
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-self-end">
+                          <Button
+                            variant={!theme?.endsWith('-dark') ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setTheme(selectedTheme)}
+                          >
+                            Claro
+                          </Button>
+                          <Button
+                            variant={theme?.endsWith('-dark') ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setTheme(`${selectedTheme}-dark`)}
+                          >
+                            Oscuro
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="uiStyle">Estilo de interfaz</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          variant={uiStyle === 'normal' ? 'default' : 'outline'}
-                          onClick={() => handleUiStyleChange('normal')}
-                        >
-                          Normal
-                        </Button>
-                        <Button
-                          variant={uiStyle === 'minimal' ? 'default' : 'outline'}
-                          onClick={() => handleUiStyleChange('minimal')}
-                        >
-                          Minimalista
-                        </Button>
+                      
+                      {/* UI Style Selection */}
+                      <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
+                        <div className="space-y-1">
+                          <div className="text-sm font-medium">Estilo de interfaz</div>
+                          <div className="text-sm text-muted-foreground">
+                            Personaliza la densidad visual de la interfaz
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-self-end">
+                          <Button
+                            variant={uiStyle === 'normal' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleUiStyleChange('normal')}
+                          >
+                            Normal
+                          </Button>
+                          <Button
+                            variant={uiStyle === 'minimal' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => handleUiStyleChange('minimal')}
+                          >
+                            Minimalista
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Tema actual: {theme?.replace('-dark', '')} ({theme?.endsWith('-dark') ? 'Oscuro' : 'Claro'})
-                      <br />
-                      Estilo de interfaz: {uiStyle === 'normal' ? 'Normal' : 'Minimalista'}
                     </div>
                   </div>
+
                 </div>
               )}
               {activeSection === "Mi Cuenta" && (
@@ -225,7 +254,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
                   <div>
                     <h3 className="text-lg font-medium mb-4">Account</h3>
                       <div className="flex items-center gap-4">
-                        <div className="h-16 w-16 rounded-full overflow-hidden border-2 border-primary flex-shrink-0">
+                        <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0">
                           <img 
                             src={user?.photoURL || "/avatars/shadcn.jpg"} 
                             alt="Foto de perfil" 
@@ -501,9 +530,9 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
               {activeSection === "Appearance" && (
                  <Button onClick={handleSaveClick} disabled={isApplyButtonDisabled}>Aplicar</Button>
                )}
-               {activeSection !== "Appearance" && activeSection !== "Integraciones" && (
+               {/* {activeSection !== "Appearance" && activeSection !== "Integraciones" && (
                  <Button onClick={handleSaveClick}>Guardar</Button>
-               )}
+               )} */}
              </div>
            </main>
         </SidebarProvider>
