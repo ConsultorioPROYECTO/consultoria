@@ -129,13 +129,13 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
       {/* <DialogTrigger asChild>
         <Button size="sm">Open Dialog</Button>
       </DialogTrigger> */}
-      <DialogContent className="overflow-hidden p-0 h-[90vh] w-[95vw] md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px] flex flex-col">
+      <DialogContent className="overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px] ">
         
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">
           Customize your settings here.
         </DialogDescription>
-        <SidebarProvider className="items-start flex-1 flex flex-col">
+        <SidebarProvider className="items-start">
           <Sidebar collapsible="none" className="hidden md:flex">
             <SidebarContent>
               {/* Cuenta y Preferencias - Visible para todos */}
@@ -223,7 +223,7 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
               )}
             </SidebarContent>
           </Sidebar>
-          <main className="flex flex-1 flex-col overflow-hidden md:h-[490px]">
+          <main className="flex h-[490px] flex-1 flex-col overflow-hidden">
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
               {activeSection === "Preferencias" && (
                 <div className="grid gap-6 py-4">

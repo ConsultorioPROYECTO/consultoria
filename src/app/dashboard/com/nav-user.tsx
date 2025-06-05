@@ -34,6 +34,7 @@ import {
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 
+import { SettingsModal2 } from "./SettingsModal2"
 import { SettingsDialog } from "./SettingsModal"
 import { InviteModal } from "./InviteModal"
 
@@ -52,6 +53,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { signOut } = useAuth()
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isSettingsModalOpen2, setIsSettingsModalOpen2] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -71,6 +73,10 @@ export function NavUser({
 
   const handleCloseInviteModal = (open: boolean) => {
     setIsInviteModalOpen(open);
+  };
+
+  const handleCloseSettingsModal2 = (open: boolean) => {
+    setIsSettingsModalOpen2(open);
   };
 
   return (
@@ -145,6 +151,12 @@ export function NavUser({
                   <IconSettings />
                   Configuraciones
                 </DropdownMenuItem>
+
+                <DropdownMenuItem onClick={() => setIsSettingsModalOpen2(true)}>
+                  <IconSettings />
+                  Configuraciones 2
+                </DropdownMenuItem>
+
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -160,6 +172,10 @@ export function NavUser({
       <SettingsDialog
         isOpen={isSettingsModalOpen}
         onOpenChange={handleCloseSettingsModal}
+      />
+      <SettingsModal2
+        isOpen={isSettingsModalOpen2}
+        onOpenChange={handleCloseSettingsModal2}
       />
 
       <InviteModal
