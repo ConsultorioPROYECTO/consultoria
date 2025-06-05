@@ -75,6 +75,11 @@ export function NavUser({
     setIsInviteModalOpen(open);
   };
 
+  const handleOpenSettingsModal2 = () => {
+    setIsDropdownOpen(false); // Cerrar dropdown explícitamente
+    setIsSettingsModalOpen2(true);
+  };
+
   const handleCloseSettingsModal2 = (open: boolean) => {
     setIsSettingsModalOpen2(open);
   };
@@ -152,7 +157,7 @@ export function NavUser({
                   Configuraciones
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={() => setIsSettingsModalOpen2(true)}>
+                <DropdownMenuItem onClick={handleOpenSettingsModal2}>
                   <IconSettings />
                   Configuraciones 2
                 </DropdownMenuItem>

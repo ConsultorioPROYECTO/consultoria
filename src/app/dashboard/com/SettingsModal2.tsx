@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect} from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,6 +25,7 @@ import {
   Key
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AppearanceSection } from "./AppearanceSection"
 import {
   Sidebar,
   SidebarContent,
@@ -38,6 +39,11 @@ import {
 } from "@/components/ui/sidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useTheme } from "next-themes"
+import { useUIStyle } from "@/app/context/UIStyleContext"
+import { useAuth } from "@/app/context/AuthContext"
+import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"
+import { AccountSection } from "./AccountSection";
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -48,28 +54,16 @@ interface SettingsModalProps {
     email?: string
     dni?: string
   }
-  theme?: string
-  setTheme?: (theme: string) => void
-  uiStyle?: 'normal' | 'minimal'
-  setUiStyle?: (style: 'normal' | 'minimal') => void
 }
 
 const navAccount = [
-  {
-    name: "Preferencias",
-    icon: Palette,
-  },
   {
     name: "Cuenta",
     icon: User,
   },
   {
-    name: "Passkeys",
-    icon: Key,
-  },
-  {
-    name: "Dispositivos",
-    icon: Smartphone,
+    name: "Preferencias",
+    icon: Palette,
   },
 ]
 
@@ -106,18 +100,57 @@ const navMedico = [
 export function SettingsModal2({ 
   isOpen, 
   onOpenChange, 
-  userRole = 'paciente',
-  user,
-  theme,
-  setTheme,
-  uiStyle = 'normal',
-  setUiStyle
+  
 }: SettingsModalProps) {
+  
+  const { theme, setTheme } = useTheme()
+  const { uiStyle, setUiStyle } = useUIStyle()
+  const { user } = useAuth()
   const [activeSection, setActiveSection] = useState("Preferencias")
-  const [selectedTheme, setSelectedTheme] = useState(theme?.replace('-dark', '') || 'theme-claude')
-  const [isDarkMode, setIsDarkMode] = useState(theme?.endsWith('-dark') || false)
+  const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system")
+  const [userRole, setUserRole] = useState<string>("")
   const isMobile = useIsMobile()
   const [showMobileNav, setShowMobileNav] = useState(true)
+
+  useEffect(() => {
+    if (theme) {
+      setSelectedTheme(theme?.replace('-dark', '') || 'system');
+    }
+  }, [theme]);
+
+  // Efecto para obtener el rol del usuario
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const token = await getFirebaseAuthToken();
+        if (!token) {
+          console.error('No se pudo obtener el token de autenticación.');
+          return;
+        }
+
+        const response = await fetch('/api/users/rol', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setUserRole(data.role);
+      } catch (error) {
+        console.error('Error al obtener el rol del usuario:', error);
+      }
+    };
+
+    if (user) {
+      fetchUserRole();
+    }
+  }, [user]);
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section)
@@ -144,162 +177,36 @@ export function SettingsModal2({
     return sections
   }, [userRole])
 
-  const handleThemeChange = (newTheme: string) => {
-    setSelectedTheme(newTheme)
-    const finalTheme = isDarkMode ? `${newTheme}-dark` : newTheme
-    setTheme?.(finalTheme)
-  }
-
-  const handleModeChange = (darkMode: boolean) => {
-    setIsDarkMode(darkMode)
-    const finalTheme = darkMode ? `${selectedTheme}-dark` : selectedTheme
-    setTheme?.(finalTheme)
-  }
+  const handleThemeChange = (value: string) => {
+    setSelectedTheme(value);
+    // Apply the theme immediately while preserving the current mode (light/dark)
+    const newTheme = theme?.endsWith('-dark') ? `${value}-dark` : value;
+    setTheme(newTheme);
+  };
 
   const handleUiStyleChange = (style: 'normal' | 'minimal') => {
-    setUiStyle?.(style)
-  }
+    setUiStyle(style); // Usa el contexto global que maneja localStorage automáticamente
+  };
 
   const renderSectionContent = () => {
     switch (activeSection) {
       case "Preferencias":
         return (
           <div className="grid gap-6 py-4">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Apariencia</h3>
-              <div className="grid gap-4">
-                {/* Theme Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Tema</div>
-                    <div className="text-sm text-muted-foreground">
-                      Selecciona el tema visual de la aplicación
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-self-end">
-                    <Button
-                      variant={selectedTheme === 'theme-claude' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleThemeChange('theme-claude')}
-                    >
-                      Claude
-                    </Button>
-                    <Button
-                      variant={selectedTheme === 'theme-vercel' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleThemeChange('theme-vercel')}
-                    >
-                      Vercel
-                    </Button>
-                    <Button
-                      variant={selectedTheme === 'system' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleThemeChange('system')}
-                    >
-                      Sistema
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Mode Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Modo</div>
-                    <div className="text-sm text-muted-foreground">
-                      Selecciona entre modo claro u oscuro
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-self-end">
-                    <Button
-                      variant={!isDarkMode ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleModeChange(false)}
-                    >
-                      <Sun className="h-4 w-4 mr-2" />
-                      Claro
-                    </Button>
-                    <Button
-                      variant={isDarkMode ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleModeChange(true)}
-                    >
-                      <Moon className="h-4 w-4 mr-2" />
-                      Oscuro
-                    </Button>
-                  </div>
-                </div>
-
-                {/* UI Style Selection */}
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Estilo de UI</div>
-                    <div className="text-sm text-muted-foreground">
-                      Selecciona el estilo de la interfaz de usuario
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-self-end">
-                    <Button
-                      variant={uiStyle === 'normal' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleUiStyleChange('normal')}
-                    >
-                      Normal
-                    </Button>
-                    <Button
-                      variant={uiStyle === 'minimal' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => handleUiStyleChange('minimal')}
-                    >
-                      Minimal
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AppearanceSection 
+              selectedTheme={selectedTheme}
+              onThemeChange={handleThemeChange}
+            />
           </div>
         );
 
       case "Cuenta":
         return (
           <div className="grid gap-6 py-4">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Información de la cuenta</h3>
-              <div className="grid gap-4">
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Nombre y DNI</div>
-                    <div className="text-sm text-muted-foreground">
-                      {user?.name || 'Usuario'} - {user?.dni || 'No especificado'}
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Cambiar nombre
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Correo electrónico</div>
-                    <div className="text-sm text-muted-foreground">
-                      {user?.email || 'No especificado'}
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Cambiar correo electrónico
-                  </Button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-                  <div className="space-y-1">
-                    <div className="text-sm font-medium">Contraseña</div>
-                    <div className="text-sm text-muted-foreground">
-                      Autenticada por Google
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Cambiar contraseña
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <AccountSection 
+                  user={user}
+                  userRole={userRole}
+                />
           </div>
         );
 
@@ -439,7 +346,7 @@ export function SettingsModal2({
           </div>
         ) : (
           // Vista desktop con sidebar
-          <SidebarProvider className="items-start">
+          <SidebarProvider className="items-start flex-1 flex">
             <Sidebar collapsible="none" className="hidden md:flex">
               <SidebarContent>
                 {/* Cuenta y Preferencias - Visible para todos */}
@@ -527,8 +434,8 @@ export function SettingsModal2({
                 )}
               </SidebarContent>
             </Sidebar>
-            <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4 pt-0">
+            <main className="flex flex-1 flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-4 pt-0">
                 {/* Contenido de la sección */}
                 {renderSectionContent()}
               </div>
