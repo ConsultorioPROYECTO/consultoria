@@ -56,3 +56,78 @@ export const getFirebaseAuthToken = (): Promise<string | null> => {
     );
   });
 };
+
+/**
+ * Obtiene el email del usuario actualmente autenticado en Firebase.
+ * 
+ * @async
+ * @returns {Promise<string | null>} Una promesa que resuelve al email del usuario si está autenticado,
+ *                                   o `null` si no hay usuario autenticado o no tiene email.
+ * @example
+ * const email = await getCurrentUserEmail();
+ * if (email) {
+ *   console.log('Email del usuario:', email);
+ * } else {
+ *   console.log('Usuario no autenticado o sin email.');
+ * }
+ */
+export const getCurrentUserEmail = (): Promise<string | null> => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user: User | null) => {
+        unsubscribe();
+        if (user && user.email) {
+          resolve(user.email);
+        } else {
+          console.warn('[Client Utils] getCurrentUserEmail: No hay usuario autenticado o el usuario no tiene email.');
+          resolve(null);
+        }
+      },
+      (error) => {
+        unsubscribe();
+        console.error('[Client Utils] getCurrentUserEmail: Error en el observador onAuthStateChanged:', error);
+        reject(error);
+      }
+    );
+  });
+};
+
+/**
+ * Obtiene tanto el token como el email del usuario autenticado de forma eficiente.
+ * 
+ * @async
+ * @returns {Promise<{token: string | null, email: string | null}>} Un objeto con el token y email del usuario.
+ * @example
+ * const { token, email } = await getAuthTokenAndEmail();
+ * if (token && email) {
+ *   // Usar ambos valores
+ * }
+ */
+export const getAuthTokenAndEmail = (): Promise<{token: string | null, email: string | null}> => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user: User | null) => {
+        unsubscribe();
+        if (user) {
+          try {
+            const idToken = await user.getIdToken(true);
+            resolve({ token: idToken, email: user.email });
+          } catch (error) {
+            console.error('[Client Utils] getAuthTokenAndEmail: Error al obtener el Token ID:', error);
+            resolve({ token: null, email: user.email });
+          }
+        } else {
+          console.warn('[Client Utils] getAuthTokenAndEmail: No hay usuario autenticado.');
+          resolve({ token: null, email: null });
+        }
+      },
+      (error) => {
+        unsubscribe();
+        console.error('[Client Utils] getAuthTokenAndEmail: Error en el observador onAuthStateChanged:', error);
+        reject(error);
+      }
+    );
+  });
+};

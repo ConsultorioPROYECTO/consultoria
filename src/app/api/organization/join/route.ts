@@ -35,16 +35,59 @@ import { db } from '@rutas/db';
 import { eq } from 'drizzle-orm';
 import { organization } from '@rutas/db/schema/organization';
 import { users } from '@rutas/db/schema/users';
+import { doctors } from '@rutas/db/schema/doctors';
+import { assistants } from '@rutas/db/schema/assistants';
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import {z} from 'zod';
 import { generateRandomInvitationCode } from '../route';
 import { organizationInvitationRequest } from '@rutas/db/schema/organization_invitations_request';
 
+// Credenciales para autenticación básica del webhook
+const BASIC_AUTH_USER = 'devUser';
+const BASIC_AUTH_PASS = 'Rigjeq-jujgy7-vejqexv';
+
+// Función para enviar correo de invitación
+const sendInvitacionEmail = async (
+  email: string,
+  organizationName: string,
+  role: string,
+  subject: string,
+  message: string
+): Promise<boolean> => {
+  try {
+    const response = await fetch('https://n8n.srv828784.hstgr.cloud/webhook/a91c2a89-22d3-495b-8455-42ad2c5ea860', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic ' + btoa(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`),
+      },
+      body: JSON.stringify({
+        email: email,
+        organizationName: organizationName,
+        role: role,
+        subject: subject,
+        message: message
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Error sending invitation email:', response.statusText);
+      return false;
+    }
+
+    console.log(`Correo de invitación enviado exitosamente a ${email}`);
+    return true;
+  } catch (error) {
+    console.error('Error enviando correo:', error);
+    return false;
+  }
+};
+
 
 // Esquema Zod para validar el cuerpo de la petición
 const joinOrganizationSchema = z.object({
-  invitationCode: z.string({ invalid_type_error: 'organizationId must be a string' }),
+  invitationCode: z.string().length(6, "Código de invitación debe tener 6 caracteres"),
   role: z.enum(['admin', 'medico', 'asistente', 'N/A']),
 });
 
@@ -90,19 +133,30 @@ const postOrganizationJoinHandler = async (
   // Extrae los datos validados
   const { invitationCode } = parseResult.data;
 
-  // Buscar la organización por invitationCode
-  const existingOrganization = await db.query.organization.findFirst({
-    where: eq(organization.invitationCode, invitationCode),
-  });
-  if (!existingOrganization) {
-    return NextResponse.json({ message: 'Organization not found' }, { status: 404 });
-  }
-  // Buscar el usuario autenticado
+  // Verificar que el usuario no esté ya en una organización
   const existingUser = await db.query.users.findFirst({
     where: eq(users.firebaseUid, decodedToken.uid),
   });
   if (!existingUser) {
     return NextResponse.json({ message: 'User not found' }, { status: 404 });
+  }
+
+  if (existingUser.organizationId) {
+    return NextResponse.json({ 
+      error: 'El usuario ya pertenece a una organización',
+      message: 'User already belongs to an organization' 
+    }, { status: 400 });
+  }
+
+  // Buscar la organización por invitationCode
+  const existingOrganization = await db.query.organization.findFirst({
+    where: eq(organization.invitationCode, invitationCode),
+  });
+  if (!existingOrganization) {
+    return NextResponse.json({ 
+      error: 'Código de invitación inválido',
+      message: 'Organization not found' 
+    }, { status: 404 });
   }
 
   // Buscar invitación pendiente para este usuario y organización
@@ -116,13 +170,31 @@ const postOrganizationJoinHandler = async (
       eq(row.status, 'pending'),
   });
   if (!invitation) {
-    return NextResponse.json({ message: 'No invitation found for this user and organization' }, { status: 403 });
+    return NextResponse.json({ 
+      error: 'No se encontró una invitación pendiente',
+      message: 'No invitation found for this user and organization' 
+    }, { status: 403 });
   }
   if (invitation.status !== 'pending') {
-    return NextResponse.json({ message: 'Invitation is not pending' }, { status: 403 });
+    return NextResponse.json({ 
+      error: 'La invitación no está pendiente',
+      message: 'Invitation is not pending' 
+    }, { status: 403 });
   }
   if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
-    return NextResponse.json({ message: 'Invitation has expired' }, { status: 403 });
+    // Marcar la invitación como expirada
+    await db.update(organizationInvitationRequest).set({
+      status: 'expired',
+    }).where(
+      eq(organizationInvitationRequest.userEmail, existingUser.email!) &&
+      eq(organizationInvitationRequest.organizationId, existingOrganization.id) &&
+      eq(organizationInvitationRequest.status, 'pending')
+    );
+    
+    return NextResponse.json({ 
+      error: 'La invitación ha expirado',
+      message: 'Invitation has expired' 
+    }, { status: 403 });
   }
 
   await db.update(users).set({
@@ -147,7 +219,83 @@ const postOrganizationJoinHandler = async (
     invitationCode: code,
   }).where(eq(organization.id, existingOrganization.id));
 
-  return NextResponse.json({ message: 'Organization joined successfully' }, { status: 200 });
+  // Crear registro en tabla específica según el rol
+  if (invitation.role === 'medico') {
+    try {
+      await db.insert(doctors).values({
+        userId: existingUser.id,
+        speciality: 'General', // Valor por defecto, se puede actualizar después
+        calendar_id: '', // Se puede configurar después
+        privatePhone: '', // Se puede configurar después
+        nitId: '', // Se puede configurar después
+        availability: 'Disponible', // Valor por defecto
+        tokenGoogleId: '', // Se puede configurar después
+      });
+      console.log(`Registro de doctor creado para usuario ${existingUser.id}`);
+    } catch (doctorError) {
+      console.error('Error creando registro de doctor:', doctorError);
+    }
+  } else if (invitation.role === 'asistente') {
+    try {
+      await db.insert(assistants).values({
+        userId: existingUser.id,
+      });
+      console.log(`Registro de asistente creado para usuario ${existingUser.id}`);
+    } catch (assistantError) {
+      console.error('Error creando registro de asistente:', assistantError);
+    }
+  }
+
+  // Enviar correo de bienvenida al usuario
+  try {
+    await sendInvitacionEmail(
+      existingUser.email!,
+      existingOrganization.name,
+      invitation.role,
+      'Bienvenido a la organización',
+      `¡Bienvenido a ${existingOrganization.name}! Te has unido exitosamente como ${invitation.role}. Ahora puedes acceder a todas las funcionalidades de la plataforma.`
+    );
+  } catch (emailError) {
+    console.error('Error enviando correo de bienvenida:', emailError);
+  }
+
+  // Notificar a los administradores sobre el nuevo miembro
+  try {
+    // Buscar administradores en la base de datos MySQL usando Drizzle
+    const admins = await db.select()
+      .from(users)
+      .where(
+        eq(users.organizationId, existingOrganization.id) &&
+        eq(users.role, 'admin')
+      )
+
+    // Enviar correo a cada administrador
+    for (const admin of admins) {
+      if (admin.email) {
+        try {
+          await sendInvitacionEmail(
+            admin.email,
+            existingOrganization.name,
+            'admin',
+            'Nuevo miembro se ha unido a la organización',
+            `${existingUser.email} se ha unido a ${existingOrganization.name} como ${invitation.role}.`
+          );
+        } catch (emailError) {
+          console.error(`Error enviando correo a administrador ${admin.email}:`, emailError);
+        }
+      }
+    }
+  } catch (notificationError) {
+    console.error('Error notificando administradores:', notificationError);
+  }
+
+  return NextResponse.json({
+    success: true,
+    message: 'Te has unido exitosamente a la organización',
+    organizationId: existingOrganization.id,
+    organizationName: existingOrganization.name,
+    role: invitation.role
+  }, { status: 200 });
 }
 
 export const POST = withAuthentication(postOrganizationJoinHandler);

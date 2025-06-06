@@ -12,27 +12,41 @@ import { NextRequest, NextResponse } from 'next/server';
 const BASIC_AUTH_USER = 'devUser';
 const BASIC_AUTH_PASS = 'Rigjeq-jujgy7-vejqexv';
 
-const sendInvitacionEmail = async (email: string, organizationName: string, role : string, invitacionCode : string | null) => {
-    const response = await fetch(`https://n8n.srv828784.hstgr.cloud/webhook/a91c2a89-22d3-495b-8455-42ad2c5ea860`, {
+const sendInvitacionEmail = async (
+    email: string,
+    organizationName: string,
+    role: string,
+    subject: string,
+    message: string
+  ): Promise<boolean> => {
+    try {
+      const response = await fetch('https://n8n.srv828784.hstgr.cloud/webhook/a91c2a89-22d3-495b-8455-42ad2c5ea860', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Basic ' + btoa(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`),
+          'Content-Type': 'application/json',
+          'Authorization': 'Basic ' + btoa(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`),
         },
         body: JSON.stringify({
-            email: email,
-            organizationName: organizationName,
-            role: role,
-            invitacionCode: invitacionCode,
-            createdAt : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+          email: email,
+          organizationName: organizationName,
+          role: role,
+          subject: subject,
+          message: message
         }),
-    });
-    if (!response.ok) {
+      });
+  
+      if (!response.ok) {
         console.error('Error sending invitation email:', response.statusText);
-        throw new Error('Error sending invitation email');
+        return false;
+      }
+  
+      console.log(`Correo de invitación enviado exitosamente a ${email}`);
+      return true;
+    } catch (error) {
+      console.error('Error enviando correo:', error);
+      return false;
     }
-    return response;
-};
+  };
 
 
 /**
@@ -86,7 +100,9 @@ const postOrganizationRequestHandler  = async (
                 );
             }*/
 
-            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, organizacion.invitationCode);
+            const messageToSend = `Hola, soy ${user.email} y quiero que te unas a mi organización ${organizacion.name} como ${role}.\ningresa con el codigo ${organizacion.invitationCode} para aceptar la invitación.\n\n\thttp://localhost:3000/signup?invitacionCode=${organizacion.invitationCode}&role=${role}`;
+
+            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, "Invitacion",messageToSend);
             
             if (!invitacionEmail) {
                 return NextResponse.json(

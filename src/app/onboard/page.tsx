@@ -14,8 +14,8 @@ import { toast } from "sonner";
 function OnboardContent() {
     const roles = [
         { name: "Admin", icon: UserCog },
-        { name: "Médico", icon: Stethoscope },
-        { name: "Asistente", icon: User }
+        { name: "medico", icon: Stethoscope },
+        { name: "asistente", icon: User }
       ];
     const [selectedRole, setSelectedRole] = useState("");
     const [nameConsultorio, setNameConsultorio] = useState("");
