@@ -27,8 +27,8 @@ import { Toaster } from "@/components/ui/sonner";
 const inter = geistFont;
 
 export const metadata: Metadata = {
-  title: 'Mi App con Firebase Auth',
-  description: 'Ejemplo de login con Google usando Next.js y Firebase',
+  title: 'Irina',
+  description: 'Sistema de gestión de citas médicas',
 };
 
 /**

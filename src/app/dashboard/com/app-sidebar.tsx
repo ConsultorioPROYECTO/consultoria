@@ -90,6 +90,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: House,
       },
       {
+        title: "Org",
+        url: "/dashboard/1/org",
+        icon: House,
+      },
+      {
         title: "Calendario",
         url: "/dashboard/calender",
         icon: CalendarClock,
