@@ -165,7 +165,8 @@ export default function CalendarView() {
             locale={es}
             weekStartsOn={0} // 0 para domingo, 1 para lunes (valor predeterminado)
             components={{
-              DayContent: ({ date: dayDate }) => {
+              DayButton: ({ day, modifiers, ...props }) => {
+                const dayDate = day.date;
                 const dayEvents = events.filter(
                   (event) =>
                     event.date.getDate() === dayDate.getDate() &&
@@ -184,20 +185,26 @@ export default function CalendarView() {
                                   date?.getFullYear() === dayDate.getFullYear();
                 
                 return (
-                  <div 
+                  <button
+                    {...props}
                     className={cn(
-                      "relative w-full flex flex-col items-start p-1 rounded-lg cursor-pointer",
-                      // Ajustar la altura según si hay eventos o no
-                      dayEvents.length > 0 ? "h-auto min-h-[70px]" : "h-auto min-h-[70px]",
+                      "relative w-full flex flex-col items-start p-1 rounded-lg cursor-pointer h-auto min-h-[70px] border-0 bg-transparent hover:bg-primary/5",
                       isSelected ? "bg-primary/10" : "bg-primary/3",
-                      isToday ? "ring-2 ring-primary" : ""
+                      isToday ? "ring-2 ring-primary" : "",
+                      modifiers.selected ? "bg-primary/10" : "",
+                      modifiers.today ? "ring-2 ring-primary" : ""
                     )}
-                    onClick={() => dayEvents.length > 0 && openEventModal(dayDate, dayEvents)}
+                    onClick={(e) => {
+                      props.onClick?.(e);
+                      if (dayEvents.length > 0) {
+                        openEventModal(dayDate, dayEvents);
+                      }
+                    }}
                   >
                     <div className="flex justify-between w-full items-center">
                       <div className={cn(
                         "text-sm font-medium",
-                        isSelected ? "text-primary" : ""
+                        isSelected || modifiers.selected ? "text-primary" : ""
                       )}>
                         {dayDate.getDate()}
                       </div>
@@ -216,7 +223,7 @@ export default function CalendarView() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               },
             }}
