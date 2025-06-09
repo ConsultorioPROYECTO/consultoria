@@ -1,6 +1,6 @@
 // src/db/schema/users.ts (o donde definas tus esquemas de Drizzle)
 
-import { mysqlTable, varchar, timestamp, index, int } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int, json } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
 import { users } from './users';
 import { appointments, type Appointment } from './appointments';
@@ -40,7 +40,7 @@ export const doctors = mysqlTable('doctors', {
   calendar_id: varchar('calendar_id', { length: 255 }).notNull(), // ID del calendario del doctor
   privatePhone: varchar('private_phone', { length: 255 }).notNull(), // Número de teléfono privado del doctor
   nitId: varchar('nit_id', { length: 255 }).notNull(), // NIT del doctor
-  availability: varchar('availability', { length: 255 }).notNull(), // Disponibilidad del doctor
+  availability: json('availability').notNull(), // Horarios de trabajo del doctor (JSON)
   tokenGoogleId: varchar('token_google_id', { length: 255 }).notNull(), // Token de Google
  
   // --- Timestamps ---

@@ -13,6 +13,7 @@ import {
 // Componentes específicos del Dashboard Master
 import { BusinessAnalytics } from "./compo/BusinessAnalytics";
 import { StaffManagement } from "./compo/StaffManagement";
+import { AddStaffForm } from "./compo/AddStaffForm";
 import { FinancialMetrics } from "./compo/FinancialMetrics";
 import { AIResponseConfig } from "./compo/AIResponseConfig";
 import { WorkloadOverview } from "./compo/WorkloadOverview";
@@ -119,6 +120,15 @@ export default function Page() {
             <div className="grid gap-6 lg:grid-cols-2">
               <StaffManagement />
               <AIResponseConfig />
+            </div>
+            
+            {/* Formulario de Agregar Personal */}
+            <div className="grid gap-6">
+              <AddStaffForm onAddStaff={() => {}} />
+            </div>
+            {/* Formulario de Agregar Personal */}
+            <div className="grid gap-6">
+            <StaffManagement />
             </div>
             
             <div className="grid gap-6 lg:grid-cols-2">

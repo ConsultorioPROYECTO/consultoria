@@ -9,7 +9,7 @@ import { es } from "date-fns/locale";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { EventModal } from "./event-modal";
-import { calendarService } from "@/services/calendar-service";
+// Removed direct import of calendarService to avoid client-side Node.js module issues
 import { CalendarEvent } from "@/types/calendar";
 
 // Mock data for events with more realistic medical appointment data
@@ -39,7 +39,7 @@ const events = [
     date: new Date(2025, 0, 17), 
     title: "Damián Prado", 
     time: "11:00", 
-    endTime: "11:30",
+    endTime: "12:30",
     type: "Dermatología",
     color: "bg-green-500",
     status: "confirmada"
@@ -155,19 +155,19 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     const loadEvents = async () => {
       setLoading(true);
       try {
-        const { start, end } = getDateRange();
-        const googleEventsData = await calendarService.getConsultorioEvents(
-          calendarId,
-          { start, end }
-        );
+        const response = await fetch(`/api/appointments?consultorioId=${calendarId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch appointments');
+        }
+        const googleEventsData = await response.json();
         
         // Convertir formato de Google a tu formato
-        const formattedEvents = googleEventsData.map(event => ({
+        const formattedEvents = googleEventsData.map((event: any) => ({
           id: event.id || '',
-          date: event.start,
-          title: event.patientData?.patient || event.title,
-          time: format(event.start, 'HH:mm'),
-          endTime: format(event.end, 'HH:mm'),
+          date: new Date(event.start.dateTime || event.start.date),
+          title: event.patientData?.patient || event.summary || event.title,
+          time: format(new Date(event.start.dateTime || event.start.date), 'HH:mm'),
+          endTime: format(new Date(event.end.dateTime || event.end.date), 'HH:mm'),
           type: event.patientData?.type || 'Consulta General',
           color: getColorByType(event.patientData?.type),
           status: event.patientData?.status || 'confirmada'
@@ -296,22 +296,56 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
 
   // Función para crear nueva cita
   const createNewAppointment = async (appointmentData: any) => {
-    if (!useGoogleCalendar || !calendarId) {
-      console.warn('Google Calendar not available, cannot create appointment');
+    if (!calendarId || !useGoogleCalendar) {
+      console.warn('Google Calendar not configured');
       return;
     }
-    
+
     try {
-      await calendarService.createAppointment(calendarId, appointmentData);
-      // Recargar eventos
-      const { start, end } = getDateRange();
-      const googleEventsData = await calendarService.getConsultorioEvents(
-        calendarId,
-        { start, end }
-      );
-      setGoogleEvents(googleEventsData);
+      setLoading(true);
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          consultorioId: calendarId,
+          ...appointmentData
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create appointment');
+      }
+      
+      // Reload events after creation
+      const eventsResponse = await fetch(`/api/appointments?consultorioId=${calendarId}`);
+      if (!eventsResponse.ok) {
+        throw new Error('Failed to fetch updated appointments');
+      }
+      const events = await eventsResponse.json();
+      
+      const formattedEvents: CalendarEvent[] = events.map((event: any, index: number) => ({
+        id: parseInt(event.id.replace(/\D/g, '')) || index + 1000,
+        title: event.summary || 'Sin título',
+        patient: event.description?.split('\n')[0] || 'Paciente no especificado',
+        time: new Date(event.start.dateTime || event.start.date).toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        type: event.description?.includes('consulta') ? 'consulta' : 
+              event.description?.includes('control') ? 'control' : 'otro',
+        color: getColorByType(event.description?.includes('consulta') ? 'consulta' : 
+                            event.description?.includes('control') ? 'control' : 'otro'),
+        status: event.status === 'confirmed' ? 'confirmada' : 'pendiente',
+        date: new Date(event.start.dateTime || event.start.date)
+      }));
+      
+      setGoogleEvents(formattedEvents);
     } catch (error) {
       console.error('Error creating appointment:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
