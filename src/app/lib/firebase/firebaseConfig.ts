@@ -67,4 +67,11 @@ const auth = getAuth(firebaseApp);
  */
 const googleAuthProvider = new GoogleAuthProvider();
 
+// Configurar parámetros personalizados para mostrar la selección de cuenta
+// El parámetro 'prompt: select_account' fuerza a Google a mostrar la pantalla de selección de cuenta
+// cada vez que el usuario inicie sesión, permitiendo elegir entre múltiples cuentas
+googleAuthProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
 export { firebaseApp, auth, googleAuthProvider };
