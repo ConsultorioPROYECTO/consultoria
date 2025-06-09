@@ -9,6 +9,8 @@ import { es } from "date-fns/locale";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { EventModal } from "./event-modal";
+import { calendarService } from "@/services/calendar-service";
+import { CalendarEvent } from "@/types/calendar";
 
 // Mock data for events with more realistic medical appointment data
 const events = [
@@ -97,7 +99,7 @@ const events = [
 type ViewMode = "month" | "week" | "day";
 type Event = typeof events[0];
 
-export default function CalendarView() {
+export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
   // Estado para controlar la vista (mes, semana, día)
   const [viewMode, setViewMode] = React.useState<ViewMode>("week");
   // Determinar si es vista móvil para ajustar la altura de las celdas
@@ -110,6 +112,12 @@ export default function CalendarView() {
   // Estado para la fecha actual y navegación
   const [currentDate, setCurrentDate] = React.useState(new Date(2025, 0, 17)); // Enero 17, 2025
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date(2025, 0, 17));
+  
+  // Estado para Google Calendar
+  const [googleEvents, setGoogleEvents] = React.useState<CalendarEvent[]>([]);
+  const [calendarId, setCalendarId] = React.useState<string>('');
+  const [loading, setLoading] = React.useState(true);
+  const [useGoogleCalendar, setUseGoogleCalendar] = React.useState(!!consultorioId);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768); // md breakpoint
@@ -117,6 +125,65 @@ export default function CalendarView() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Obtener ID del calendario del consultorio
+  React.useEffect(() => {
+    if (!consultorioId || !useGoogleCalendar) return;
+    
+    const getCalendarId = async () => {
+      try {
+        // Obtener desde tu BD local o API
+        const consultorio = await fetch(`/api/consultorios/${consultorioId}`);
+        const data = await consultorio.json();
+        setCalendarId(data.googleCalendarId);
+      } catch (error) {
+        console.error('Error getting calendar ID:', error);
+        setUseGoogleCalendar(false); // Fallback a eventos mock
+      }
+    };
+    
+    getCalendarId();
+  }, [consultorioId, useGoogleCalendar]);
+
+  // Cargar eventos desde Google Calendar
+  React.useEffect(() => {
+    if (!useGoogleCalendar || !calendarId) {
+      setLoading(false);
+      return;
+    }
+    
+    const loadEvents = async () => {
+      setLoading(true);
+      try {
+        const { start, end } = getDateRange();
+        const googleEventsData = await calendarService.getConsultorioEvents(
+          calendarId,
+          { start, end }
+        );
+        
+        // Convertir formato de Google a tu formato
+        const formattedEvents = googleEventsData.map(event => ({
+          id: event.id || '',
+          date: event.start,
+          title: event.patientData?.patient || event.title,
+          time: format(event.start, 'HH:mm'),
+          endTime: format(event.end, 'HH:mm'),
+          type: event.patientData?.type || 'Consulta General',
+          color: getColorByType(event.patientData?.type),
+          status: event.patientData?.status || 'confirmada'
+        }));
+        
+        setGoogleEvents(googleEventsData);
+      } catch (error) {
+        console.error('Error loading events:', error);
+        setUseGoogleCalendar(false); // Fallback a eventos mock
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvents();
+  }, [calendarId, currentDate, viewMode, useGoogleCalendar]);
 
   // Funciones de navegación
   const goToPrevious = () => {
@@ -163,8 +230,37 @@ export default function CalendarView() {
     return { start: currentDate, end: currentDate, days: [] };
   };
 
+  // Función para obtener color por tipo de consulta
+  const getColorByType = (type?: string): string => {
+    const colors: Record<string, string> = {
+      'Consulta General': 'bg-blue-500',
+      'Cardiología': 'bg-pink-500',
+      'Dermatología': 'bg-green-500',
+      'Neurología': 'bg-yellow-500',
+      'Ginecología': 'bg-purple-500',
+      'Pediatría': 'bg-indigo-500',
+      'Oftalmología': 'bg-orange-500',
+    };
+    return colors[type || 'Consulta General'] || 'bg-blue-500';
+  };
+
   // Obtener eventos para una fecha específica
   const getEventsForDate = (date: Date): Event[] => {
+    if (useGoogleCalendar && googleEvents.length > 0) {
+      // Convertir eventos de Google Calendar al formato local
+      return googleEvents
+        .filter(event => isSameDay(event.start, date))
+        .map((event, index) => ({
+          id: event.id ? parseInt(event.id.replace(/\D/g, '')) || index + 1000 : index + 1000,
+          date: event.start,
+          title: event.patientData?.patient || event.title,
+          time: format(event.start, 'HH:mm'),
+          endTime: format(event.end, 'HH:mm'),
+          type: event.patientData?.type || 'Consulta General',
+          color: getColorByType(event.patientData?.type),
+          status: event.patientData?.status || 'confirmada'
+        }));
+    }
     return events.filter(event => isSameDay(event.date, date));
   };
 
@@ -194,6 +290,29 @@ export default function CalendarView() {
   // Función para cerrar el modal
   const closeEventModal = () => {
     setIsModalOpen(false);
+    setSelectedDayEvents([]);
+    setSelectedEventDate(null);
+  };
+
+  // Función para crear nueva cita
+  const createNewAppointment = async (appointmentData: any) => {
+    if (!useGoogleCalendar || !calendarId) {
+      console.warn('Google Calendar not available, cannot create appointment');
+      return;
+    }
+    
+    try {
+      await calendarService.createAppointment(calendarId, appointmentData);
+      // Recargar eventos
+      const { start, end } = getDateRange();
+      const googleEventsData = await calendarService.getConsultorioEvents(
+        calendarId,
+        { start, end }
+      );
+      setGoogleEvents(googleEventsData);
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+    }
   };
 
   // Renderizar vista semanal
@@ -326,12 +445,28 @@ export default function CalendarView() {
   };
 
 
+  if (loading && useGoogleCalendar) {
+    return (
+      <div className="h-full flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+          <p className="text-gray-600">Cargando eventos del calendario...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full w-full bg-transparent text-card-foreground rounded-lg p-2 md:p-4">
       {/* Header con controles */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-semibold">Calendario</h1>
+          {useGoogleCalendar && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              Google Calendar
+            </span>
+          )}
           <Button 
             variant="outline" 
             size="sm" 

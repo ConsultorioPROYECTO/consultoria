@@ -45,6 +45,7 @@
     "firebase-admin": "^13.4.0",
     "framer-motion": "^12.12.1",
     "geist": "^1.4.2",
+    "googleapis": "^150.0.1",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.510.0",
     "mysql2": "^3.14.1",
