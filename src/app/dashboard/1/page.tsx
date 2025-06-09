@@ -125,10 +125,7 @@ export default function Page() {
             {/* Formulario de Agregar Personal */}
             <div className="grid gap-6">
               <AddStaffForm onAddStaff={() => {}} />
-            </div>
-            {/* Formulario de Agregar Personal */}
-            <div className="grid gap-6">
-            <StaffManagement />
+              <StaffManagement />
             </div>
             
             <div className="grid gap-6 lg:grid-cols-2">

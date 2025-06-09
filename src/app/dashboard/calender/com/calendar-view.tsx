@@ -349,6 +349,24 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     }
   };
 
+  // Función para calcular la posición y altura de un evento
+  const calculateEventPosition = (startTime: string, endTime: string) => {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    
+    // Calcular minutos desde las 8:00 AM
+    const startMinutes = (startHour - 8) * 60 + startMinute;
+    const endMinutes = (endHour - 8) * 60 + endMinute;
+    
+    // Cada hora tiene 64px (h-16), entonces cada minuto es 64/60 = 1.067px
+    const pixelsPerMinute = 64 / 60;
+    
+    const top = startMinutes * pixelsPerMinute;
+    const height = (endMinutes - startMinutes) * pixelsPerMinute;
+    
+    return { top, height };
+  };
+
   // Renderizar vista semanal
   const renderWeekView = () => {
     const { days } = getDateRange();
@@ -390,38 +408,43 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                   </div>
                 </div>
 
-                {/* Slots de tiempo */}
-                <div className="relative">
+                {/* Contenedor de eventos con posicionamiento absoluto */}
+                <div className="relative" style={{ height: `${12 * 64}px` }}>
+                  {/* Líneas de tiempo de fondo */}
                   {timeSlots.map((hour) => (
-                    <div key={hour} className="h-16 border-b border-border relative">
-                      {/* Eventos en este slot de tiempo */}
-                      {dayEvents
-                        .filter(event => {
-                          const eventHour = parseInt(event.time.split(':')[0]);
-                          return eventHour === hour;
-                        })
-                        .map((event, eventIndex) => (
-                          <div
-                            key={event.id}
-                            className={cn(
-                              "absolute left-1 right-1 top-1 rounded p-1 text-xs cursor-pointer",
-                              event.color,
-                              "text-white",
-                              event.status === "cancelada" ? "opacity-50 line-through" : ""
-                            )}
-                            style={{
-                              height: '28px',
-                              zIndex: eventIndex + 1
-                            }}
-                            onClick={() => openEventModal(day, [event])}
-                          >
-                            <div className="font-medium truncate">{event.title}</div>
-                            <div className="text-[10px] opacity-90">{event.time} - {event.endTime}</div>
-                          </div>
-                        ))
-                      }
+                    <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 8) * 64}px` }}>
                     </div>
                   ))}
+                  
+                  {/* Eventos posicionados según su tiempo real */}
+                  {dayEvents.map((event, eventIndex) => {
+                    const { top, height } = calculateEventPosition(event.time, event.endTime);
+                    return (
+                      <div
+                        key={event.id}
+                        className={cn(
+                          "absolute left-1 right-1 rounded p-1 text-xs cursor-pointer overflow-hidden",
+                          event.color,
+                          "text-white",
+                          event.status === "cancelada" ? "opacity-50 line-through" : ""
+                        )}
+                        style={{
+                          top: `${top}px`,
+                          height: `${Math.max(height, 20)}px`, // Altura mínima de 20px
+                          zIndex: eventIndex + 1
+                        }}
+                        onClick={() => openEventModal(day, [event])}
+                      >
+                        <div className="font-medium truncate text-[11px]">{event.title}</div>
+                        {height > 30 && (
+                          <div className="text-[9px] opacity-90">{event.time} - {event.endTime}</div>
+                        )}
+                        {height > 45 && (
+                          <div className="text-[9px] opacity-75">{event.type}</div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -438,41 +461,56 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
 
     return (
       <div className="flex-1 overflow-auto">
-        <div className="max-w-2xl mx-auto">
-          {timeSlots.map((hour) => {
-            const hourEvents = dayEvents.filter(event => {
-              const eventHour = parseInt(event.time.split(':')[0]);
-              return eventHour === hour;
-            });
-
-            return (
-              <div key={hour} className="flex border-b border-border min-h-[60px]">
-                <div className="w-20 flex-shrink-0 p-2 text-right">
-                  <span className="text-sm text-muted-foreground">
-                    {hour.toString().padStart(2, '0')}:00
-                  </span>
-                </div>
-                <div className="flex-1 p-2 space-y-1">
-                  {hourEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className={cn(
-                        "p-2 rounded-lg cursor-pointer",
-                        event.color,
-                        "text-white",
-                        event.status === "cancelada" ? "opacity-50 line-through" : ""
-                      )}
-                      onClick={() => openEventModal(currentDate, [event])}
-                    >
-                      <div className="font-medium">{event.title}</div>
-                      <div className="text-sm opacity-90">{event.time} - {event.endTime}</div>
-                      <div className="text-xs opacity-75">{event.type}</div>
-                    </div>
-                  ))}
-                </div>
+        <div className="flex w-full">
+          {/* Columna de horas */}
+          <div className="w-20 flex-shrink-0">
+            {timeSlots.map((hour) => (
+              <div key={hour} className="h-16 border-b border-border flex items-start justify-end pr-2 pt-1">
+                <span className="text-sm text-muted-foreground">
+                  {hour.toString().padStart(2, '0')}:00
+                </span>
               </div>
-            );
-          })}
+            ))}
+          </div>
+          
+          {/* Área de eventos */}
+          <div className="flex-1 relative border-l border-border" style={{ height: `${12 * 64}px` }}>
+            {/* Líneas de tiempo de fondo */}
+            {timeSlots.map((hour) => (
+              <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 8) * 64}px` }}>
+              </div>
+            ))}
+            
+            {/* Eventos posicionados según su tiempo real */}
+            {dayEvents.map((event, eventIndex) => {
+              const { top, height } = calculateEventPosition(event.time, event.endTime);
+              return (
+                <div
+                  key={event.id}
+                  className={cn(
+                    "absolute left-2 right-2 rounded p-2 cursor-pointer overflow-hidden",
+                    event.color,
+                    "text-white",
+                    event.status === "cancelada" ? "opacity-50 line-through" : ""
+                  )}
+                  style={{
+                    top: `${top}px`,
+                    height: `${Math.max(height, 30)}px`, // Altura mínima de 30px para vista de día
+                    zIndex: eventIndex + 1
+                  }}
+                  onClick={() => openEventModal(currentDate, [event])}
+                >
+                  <div className="font-medium text-sm">{event.title}</div>
+                  {height > 40 && (
+                    <div className="text-xs opacity-90">{event.time} - {event.endTime}</div>
+                  )}
+                  {height > 55 && (
+                    <div className="text-xs opacity-75">{event.type}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -491,11 +529,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-transparent text-card-foreground rounded-lg p-2 md:p-4">
+    <div className="flex flex-col h-full w-full bg-transparent text-card-foreground rounded-lg">
       {/* Header con controles */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold">Calendario</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Calendario</h1>
           {useGoogleCalendar && (
             <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
               Google Calendar
@@ -505,7 +543,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
             variant="outline" 
             size="sm" 
             onClick={goToToday}
-            className="text-sm"
+            className="text-sm text-muted-foreground"
           >
             Hoy
           </Button>
@@ -518,7 +556,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
             <div className="min-w-[200px] text-center">
-              <h2 className="text-lg font-medium capitalize">{getViewTitle()}</h2>
+              <h2 className="text-lg font-medium capitalize text-muted-foreground">{getViewTitle()}</h2>
             </div>
             <Button variant="outline" size="icon" onClick={goToNext}>
               <ChevronRightIcon className="h-4 w-4" />

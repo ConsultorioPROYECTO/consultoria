@@ -108,7 +108,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
   };
 
   return (
-    <div className="p-6 border rounded-lg bg-muted/50 space-y-4">
+    <div className="w-full max-w-full p-4 sm:p-6 border rounded-lg bg-muted/50 space-y-4 overflow-hidden">
       <div className="flex items-center mb-4">
         <UserPlus className="h-5 w-5 mr-2 text-primary" />
         <h3 className="text-lg font-semibold">Agregar Nuevo Personal</h3>
@@ -116,7 +116,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="staffEmail">Email y Rol</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input 
               id="staffEmail" 
               type="email"
@@ -128,7 +128,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                   setError(null); // Limpiar el error cuando el usuario empieza a escribir
                 }
               }}
-              className={`flex-1 ${error ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+              className={`w-full sm:flex-1 min-w-0 ${error ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
             />
             <Popover open={roleOpen} onOpenChange={setRoleOpen}>
               <PopoverTrigger asChild>
@@ -136,7 +136,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                   variant="outline"
                   role="combobox"
                   aria-expanded={roleOpen}
-                  className="w-[140px] justify-between"
+                  className="w-full sm:w-[140px] justify-between"
                 >
                   {newStaff.role || "Rol..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

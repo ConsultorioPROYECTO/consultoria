@@ -19,10 +19,10 @@ import {
 } from "@rutas/types/working-hours";
 
 interface DoctorWorkingHoursProps {
-  doctorId: string;
+  doctorId: number;
   doctorName: string;
   initialWorkingHours?: WorkingHours;
-  onSave?: (doctorId: string, workingHours: WorkingHours) => Promise<void>;
+  onSave?: (doctorId: number, workingHours: WorkingHours) => Promise<void>;
 }
 
 export function DoctorWorkingHours({ 

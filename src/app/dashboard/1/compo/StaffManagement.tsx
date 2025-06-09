@@ -1,69 +1,107 @@
 // src/app/dashboard/1/compo/StaffManagement.tsx
 'use client';
 
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@rutas/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@rutas/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@rutas/components/ui/table";
 import { Badge } from "@rutas/components/ui/badge";
-import { Users, Stethoscope, UserCheck, Edit, Trash2, Clock } from "lucide-react";
-import { useState } from "react";
+import { Users, Stethoscope, UserCheck, Edit, Trash2, Clock, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@rutas/components/ui/dialog";
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
 import { AddStaffForm } from "./AddStaffForm";
 import { WorkingHours } from "@rutas/types/working-hours";
+import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
+import type { User } from '@rutas/db/schema/users';
 
+// Definir el tipo de miembro del personal basado en el schema de la base de datos
 interface StaffMember {
-  id: string;
+  id: number;
   name: string;
-  role: 'Médico' | 'Asistente';
+  role: 'admin' | 'medico' | 'asistente' | 'N/A';
   specialty?: string;
   assignedDoctor?: string;
   status: 'active' | 'inactive';
-  email?: string;
+  email: string;
+  patients?: number;
+  appointments?: number;
   workingHours?: WorkingHours;
 }
 
-// Mock data - en una aplicación real, esto vendría de una API
-const initialStaffMembers: StaffMember[] = [
-  { 
-    id: "doc1", 
-    name: "Dr. Ana Pérez", 
-    role: "Médico", 
-    specialty: "Cardiología", 
-    status: "active",
-    email: "ana.perez@clinica.com"
-  },
-  { 
-    id: "asist1", 
-    name: "Carlos López", 
-    role: "Asistente", 
-    assignedDoctor: "Dr. Ana Pérez", 
-    status: "active",
-    email: "carlos.lopez@clinica.com"
-  },
-  { 
-    id: "doc2", 
-    name: "Dr. Juan Rodríguez", 
-    role: "Médico", 
-    specialty: "Pediatría", 
-    status: "active",
-    email: "juan.rodriguez@clinica.com"
-  },
-];
-
 export function StaffManagement() {
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>(initialStaffMembers);
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [selectedDoctorForSchedule, setSelectedDoctorForSchedule] = useState<StaffMember | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const handleAddStaff = (newMember: StaffMember) => {
     setStaffMembers([...staffMembers, newMember]);
   };
 
-  const handleDeleteStaff = (id: string) => {
-    setStaffMembers(staffMembers.filter(member => member.id !== id));
+  // Función para obtener los miembros del personal de la API
+  const fetchStaffMembers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const token = await getFirebaseAuthToken();
+
+    if (!token) {
+      setError('Autenticación requerida. Por favor, inicia sesión.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: response.statusText }));
+        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      const users: User[] = await response.json();
+      
+      // Filtrar solo usuarios activos y con roles relevantes (excluir N/A)
+      const activeStaff = users
+        .filter(user => user.isActive && user.role !== 'N/A')
+        .map(user => ({
+          id: user.id,
+          name: user.displayName || user.email || 'Usuario sin nombre',
+          role: user.role as 'admin' | 'medico' | 'asistente',
+          email: user.email || '',
+          status: 'active' as const,
+          // Datos mock para pacientes y citas - en una implementación real vendrían de otras APIs
+          patients: Math.floor(Math.random() * 50) + 10,
+          appointments: Math.floor(Math.random() * 20) + 5,
+          specialty: user.role === 'medico' ? 'Especialidad General' : undefined,
+        }));
+
+      setStaffMembers(activeStaff);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Un error desconocido ocurrió.';
+      console.error('Error al obtener miembros del personal:', errorMessage);
+      setError(`No se pudieron cargar los miembros del personal: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStaffMembers();
+  }, [fetchStaffMembers]);
+
+  const handleDeleteStaff = (id: number) => {
+    // En una implementación real, esto haría una llamada a la API para eliminar el usuario
+    setStaffMembers(prev => prev.filter(member => member.id !== id));
   };
 
-  const handleSaveWorkingHours = async (doctorId: string, workingHours: WorkingHours) => {
+  const handleSaveWorkingHours = async (doctorId: number, workingHours: WorkingHours) => {
     try {
       const response = await fetch(`/api/doctors/${doctorId}/working-hours`, {
         method: 'PUT',
@@ -91,49 +129,101 @@ export function StaffManagement() {
     }
   };
 
-  const getRoleIcon = (role: string) => {
-    return role === 'Médico' ? <Stethoscope className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />;
-  };
+
 
   const getRoleBadgeVariant = (role: string) => {
-    return role === 'Médico' ? 'default' : 'secondary';
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'medico':
+        return 'default';
+      case 'asistente':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
   };
 
   const activeStaff = staffMembers.filter(member => member.status === 'active');
-  const doctorsCount = activeStaff.filter(member => member.role === 'Médico').length;
-  const assistantsCount = activeStaff.filter(member => member.role === 'Asistente').length;
+  const doctorsCount = activeStaff.filter(member => member.role === 'medico').length;
+  const assistantsCount = activeStaff.filter(member => member.role === 'asistente').length;
 
   return (
-    <Card>
-      <CardContent className="space-y-6">
+    <Card className="w-full max-w-full overflow-hidden">
+      <CardContent className="space-y-6 p-4 sm:p-6">
         {/* Lista de personal actual */}
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold flex items-center">
-            <Users className="h-5 w-5 mr-2" />
-            Personal Actual
-
-
-
-          </h3>
-          <div className="h-[400px] border rounded-lg overflow-auto">
-            <Table className="min-w-[800px] w-full">
-                <TableHeader>
-                   <TableRow>
-                     <TableHead className="min-w-[200px]">Personal</TableHead>
-                     <TableHead className="min-w-[100px]">Rol</TableHead>
-                     <TableHead className="min-w-[150px]">Detalles</TableHead>
-                     <TableHead className="min-w-[200px]">Email</TableHead>
-                     <TableHead className="text-right min-w-[150px]">Acciones</TableHead>
-                   </TableRow>
-                 </TableHeader>
-              <TableBody>
-                {activeStaff.map((member) => (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h3 className="text-lg font-semibold flex items-center">
+                <Users className="h-5 w-5 mr-2" />
+                Personal Actual ({staffMembers.length})
+              </h3>
+              <div className="flex items-center space-x-3 text-sm text-muted-foreground">
+                <span className="flex items-center">
+                  <Stethoscope className="h-4 w-4 mr-1" />
+                  {doctorsCount} Médicos
+                </span>
+                <span className="flex items-center">
+                  <UserCheck className="h-4 w-4 mr-1" />
+                  {assistantsCount} Asistentes
+                </span>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchStaffMembers}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Cargando
+                </>
+              ) : (
+                <>
+                <RefreshCw className="h-4 w-4 mr-2"/>
+                  Actualizar
+                </>
+              )}
+            </Button>
+          </div>
+          {error && (
+            <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-700">
+              {error}
+            </div>
+          )}
+          
+          {isLoading ? (
+            <div className="h-[400px] border rounded-lg flex items-center justify-center">
+              <p className="text-muted-foreground">Cargando personal...</p>
+            </div>
+          ) : (
+            <div className="h-[400px] border rounded-lg overflow-auto w-full">
+              <Table className="w-full table-auto">
+                  <TableHeader>
+                     <TableRow>
+                       <TableHead className="min-w-[120px] sm:min-w-[200px]">Personal</TableHead>
+                       <TableHead className="min-w-[80px] sm:min-w-[100px]">Rol</TableHead>
+                       <TableHead className="min-w-[100px] sm:min-w-[150px] hidden sm:table-cell">Detalles</TableHead>
+                       <TableHead className="min-w-[120px] sm:min-w-[200px] hidden md:table-cell">Email</TableHead>
+                       <TableHead className="text-right min-w-[100px] sm:min-w-[150px]">Acciones</TableHead>
+                     </TableRow>
+                   </TableHeader>
+                <TableBody>
+                  {staffMembers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No se encontraron miembros del personal
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    staffMembers.map((member) => (
                   <TableRow key={member.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center space-x-3">
-                        <div className="p-2 rounded-full bg-primary/10">
-                          {getRoleIcon(member.role)}
-                        </div>
+                        
                         <div>
                           <p className="font-medium">{member.name}</p>
                           <p className="text-sm text-muted-foreground">ID: {member.id}</p>
@@ -147,10 +237,10 @@ export function StaffManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        {member.role === "Médico" && member.specialty && (
+                        {member.role === "medico" && member.specialty && (
                           <p className="text-sm font-medium">{member.specialty}</p>
                         )}
-                        {member.role === "Asistente" && member.assignedDoctor && (
+                        {member.role === "asistente" && member.assignedDoctor && (
                           <p className="text-sm text-muted-foreground">
                             Asignado a: {member.assignedDoctor}
                           </p>
@@ -160,14 +250,12 @@ export function StaffManagement() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                       {member.email && (
-                         <p className="text-sm">{member.email}</p>
-                       )}
-                     </TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">
+                      <div className="truncate max-w-[120px] sm:max-w-none">{member.email}</div>
+                    </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        {member.role === 'Médico' && (
+                      <div className="flex justify-end space-x-1 sm:space-x-2">
+                        {member.role === 'medico' && (
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button 
@@ -175,8 +263,10 @@ export function StaffManagement() {
                                 size="sm" 
                                 title="Configurar Horarios"
                                 onClick={() => setSelectedDoctorForSchedule(member)}
+                                className="px-2 sm:px-3"
                               >
-                                <Clock className="h-4 w-4" />
+                                <Clock className="h-4 w-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Horarios</span>
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="w-full h-full max-w-none max-h-none sm:max-w-5xl sm:max-h-[95vh] lg:max-w-7xl xl:max-w-[90vw] flex flex-col p-4 sm:p-6">
@@ -200,41 +290,32 @@ export function StaffManagement() {
                             </DialogContent>
                           </Dialog>
                         )}
-                        <Button variant="outline" size="sm" title="Editar">
-                          <Edit className="h-4 w-4" />
+                        <Button variant="outline" size="sm" title="Editar" className="px-2 sm:px-3">
+                          <Edit className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Editar</span>
                         </Button>
                         <Button 
                           variant="destructive" 
                           size="sm" 
                           onClick={() => handleDeleteStaff(member.id)}
                           title="Eliminar"
+                          className="px-2 sm:px-3"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Eliminar</span>
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between items-center">
-        <p className="text-sm text-muted-foreground">
-          Total de personal activo: {activeStaff.length}
-        </p>
-        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-          <span className="flex items-center">
-            <Stethoscope className="h-4 w-4 mr-1" />
-            {doctorsCount} Médicos
-          </span>
-          <span className="flex items-center">
-            <UserCheck className="h-4 w-4 mr-1" />
-            {assistantsCount} Asistentes
-          </span>
-        </div>
-      </CardFooter>
+
     </Card>
   );
 }

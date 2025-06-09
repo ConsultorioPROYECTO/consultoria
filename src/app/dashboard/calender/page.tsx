@@ -23,7 +23,7 @@ export default function CalendarPage() {
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6 lg:p-8">
+          <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
             <div className="h-full w-full flex flex-col">
               <CalendarView />
             </div>
