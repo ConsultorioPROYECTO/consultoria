@@ -19,7 +19,7 @@ const events = [
     date: new Date(2025, 0, 1), 
     title: "Amalia Solis", 
     time: "09:00", 
-    endTime: "09:30",
+    endTime: "09:45",
     type: "Consulta General",
     color: "bg-blue-500",
     status: "confirmada"
@@ -39,7 +39,7 @@ const events = [
     date: new Date(2025, 0, 17), 
     title: "Damián Prado", 
     time: "11:00", 
-    endTime: "12:30",
+    endTime: "12:27",
     type: "Dermatología",
     color: "bg-green-500",
     status: "confirmada"
@@ -380,9 +380,14 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
             <div className="h-12 border-b border-border"></div>
             {timeSlots.map((hour) => (
               <div key={hour} className="h-16 border-b border-border flex items-start justify-end pr-2 pt-1">
-                <span className="text-xs text-muted-foreground">
-                  {hour.toString().padStart(2, '0')}:00
-                </span>
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground">
+                    {hour.toString().padStart(2, '0')}:00
+                  </div>
+                  <div className="text-[10px] text-muted-foreground/70">
+                    {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : hour === 0 ? '12 AM' : `${hour} AM`}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -466,9 +471,14 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           <div className="w-20 flex-shrink-0">
             {timeSlots.map((hour) => (
               <div key={hour} className="h-16 border-b border-border flex items-start justify-end pr-2 pt-1">
-                <span className="text-sm text-muted-foreground">
-                  {hour.toString().padStart(2, '0')}:00
-                </span>
+                <div className="text-right">
+                  <div className="text-sm text-muted-foreground">
+                    {hour.toString().padStart(2, '0')}:00
+                  </div>
+                  <div className="text-xs text-muted-foreground/70">
+                    {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : hour === 0 ? '12 AM' : `${hour} AM`}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
