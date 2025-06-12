@@ -1,8 +1,7 @@
 // src/db/schema/patients.ts
 
-import { mysqlTable, varchar, timestamp, index, int, mysqlEnum, date as mysqlDate, text, boolean } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int, mysqlEnum, date as mysqlDate, text, boolean, unique } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { users } from './users';
 import { organization } from './organization';
 
 /**
@@ -36,12 +35,6 @@ import { organization } from './organization';
  */
 export const patients = mysqlTable('patients', {
   id: int('id').autoincrement().primaryKey(),
-  
-  // Código único del paciente (se puede generar automáticamente)
-  patientCode: varchar('patient_code', { length: 20 }).notNull().unique(),
-  
-  // Referencia opcional a usuario registrado
-  userId: int('user_id').references(() => users.id, { onDelete: 'set null', onUpdate: 'cascade' }),
   
   // Información personal básica
   firstName: varchar('first_name', { length: 100 }).notNull(),
@@ -78,13 +71,12 @@ export const patients = mysqlTable('patients', {
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => [
   // Índices para mejorar el rendimiento
-  index('patient_code_idx').on(table.patientCode),
-  index('patient_user_id_idx').on(table.userId),
   index('patient_organization_id_idx').on(table.organizationId),
-  index('patient_identification_idx').on(table.identificationType, table.identificationNumber),
   index('patient_name_idx').on(table.firstName, table.lastName),
   index('patient_email_idx').on(table.email),
   index('patient_phone_idx').on(table.phone),
+  // Índice único compuesto para evitar duplicados de identificación
+  unique('patient_identification_unique').on(table.identificationType, table.identificationNumber),
 ]);
 
 // Esquemas Zod para validación
@@ -105,10 +97,5 @@ export const patientRelations = relations(patients, ({ many, one }) => ({
   organization: one(organization, {
     fields: [patients.organizationId],
     references: [organization.id],
-  }),
-  // Un paciente puede estar vinculado a un usuario (opcional)
-  user: one(users, {
-    fields: [patients.userId],
-    references: [users.id],
   }),
 }));
