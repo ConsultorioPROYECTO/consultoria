@@ -18,6 +18,7 @@ import { AIResponseConfig } from "../compo/AIResponseConfig";
 import { WorkloadOverview } from "../compo/WorkloadOverview";
 import { ServiceSpecialtyConfig } from "../compo/ServiceSpecialtyConfig";
 import { AIPerformancePanel } from "../compo/AIPerformancePanel";
+import { AddStaffForm } from "../compo/AddStaffForm";
 
 
 export default function Page() {
@@ -124,6 +125,12 @@ export default function Page() {
               <StaffManagement />
               {/* <WorkloadOverview /> */}
               <ServiceSpecialtyConfig />
+            </div>
+
+            {/* Formulario de Agregar Personal */}
+            <div className="grid gap-6">
+              <AddStaffForm onAddStaff={() => {}} />
+              <StaffManagement />
             </div>
             
             {/* Podrías agregar más secciones aquí según sea necesario */}

@@ -14,24 +14,10 @@ export function FinancialMetrics() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Métricas Financieras y de Consultas</CardTitle>
+        <CardTitle>Métricas de Consultas</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Ingresos Totales (Mes Actual)</p>
-          <p className="text-3xl font-bold">${totalIncome.toLocaleString()}</p>
-        </div>
-        
-        <div>
-          <div className="flex justify-between mb-1">
-            <p className="text-sm font-medium text-muted-foreground">Consultas Realizadas vs. Programadas</p>
-            <p className="text-sm text-muted-foreground">{completedAppointments} / {scheduledAppointments}</p>
-          </div>
-          <Progress value={completionRate} className="w-full" />
-          <p className="text-xs text-muted-foreground mt-1 text-right">Tasa de realización: {completionRate.toFixed(1)}%</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+        <div className="grid grid-cols-2 gap-4">
             <div>
                 <p className="text-sm font-medium text-muted-foreground">Consultas Programadas</p>
                 <p className="text-2xl font-bold">{scheduledAppointments}</p>

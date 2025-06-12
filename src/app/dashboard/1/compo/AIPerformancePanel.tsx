@@ -25,17 +25,18 @@ export function AIPerformancePanel() {
           </div>
           <Progress value={precisionRate} aria-label={`${precisionRate}% de precisión`} />
         </div>
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">Casos Escalados a Humanos</p>
-          <p className="text-2xl font-bold">{escalatedCases}</p>
-          <p className="text-xs text-muted-foreground">de {totalInteractions} interacciones totales</p>
-        </div>
+        
         <div>
           <div className="flex justify-between mb-1">
             <p className="text-sm font-medium text-muted-foreground">Tasa de Resolución Autónoma</p>
             <p className="text-sm font-bold">{resolutionRate.toFixed(1)}%</p>
           </div>
           <Progress value={resolutionRate} aria-label={`${resolutionRate.toFixed(1)}% de resolución`} />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">Casos Escalados a Humanos</p>
+          <p className="text-2xl font-bold">{escalatedCases}</p>
+          <p className="text-xs text-muted-foreground">de {totalInteractions} interacciones totales</p>
         </div>
       </CardContent>
     </Card>
