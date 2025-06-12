@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import {
   Select,
@@ -52,7 +52,7 @@ function SortableBarChart({ title, description, dataKey, dataLabel, unit }: Work
   const [chartData, setChartData] = React.useState(initialWorkloadData);
 
   React.useEffect(() => {
-    let sortedData = [...initialWorkloadData];
+    const sortedData = [...initialWorkloadData];
     switch (sortOption) {
       case "name_asc":
         sortedData.sort((a, b) => a.name.localeCompare(b.name));

@@ -2,11 +2,10 @@
 
 import * as React from "react";
 import { Calendar } from "@rutas/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@rutas/components/ui/select";
-import { ChevronLeftIcon, ChevronRightIcon, LayoutGrid, List, CalendarDays, Clock } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, LayoutGrid, CalendarDays, Clock } from "lucide-react";
 import { Button } from "@rutas/components/ui/button";
 import { es } from "date-fns/locale";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday, startOfDay } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
 import { EventModal } from "./event-modal";
 // Removed direct import of calendarService to avoid client-side Node.js module issues
@@ -161,17 +160,6 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         }
         const googleEventsData = await response.json();
         
-        // Convertir formato de Google a tu formato
-        const formattedEvents = googleEventsData.map((event: any) => ({
-          id: event.id || '',
-          date: new Date(event.start.dateTime || event.start.date),
-          title: event.patientData?.patient || event.summary || event.title,
-          time: format(new Date(event.start.dateTime || event.start.date), 'HH:mm'),
-          endTime: format(new Date(event.end.dateTime || event.end.date), 'HH:mm'),
-          type: event.patientData?.type || 'Consulta General',
-          color: getColorByType(event.patientData?.type),
-          status: event.patientData?.status || 'confirmada'
-        }));
         
         setGoogleEvents(googleEventsData);
       } catch (error) {
@@ -292,61 +280,6 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     setIsModalOpen(false);
     setSelectedDayEvents([]);
     setSelectedEventDate(null);
-  };
-
-  // Función para crear nueva cita
-  const createNewAppointment = async (appointmentData: any) => {
-    if (!calendarId || !useGoogleCalendar) {
-      console.warn('Google Calendar not configured');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          consultorioId: calendarId,
-          ...appointmentData
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create appointment');
-      }
-      
-      // Reload events after creation
-      const eventsResponse = await fetch(`/api/appointments?consultorioId=${calendarId}`);
-      if (!eventsResponse.ok) {
-        throw new Error('Failed to fetch updated appointments');
-      }
-      const events = await eventsResponse.json();
-      
-      const formattedEvents: CalendarEvent[] = events.map((event: any, index: number) => ({
-        id: parseInt(event.id.replace(/\D/g, '')) || index + 1000,
-        title: event.summary || 'Sin título',
-        patient: event.description?.split('\n')[0] || 'Paciente no especificado',
-        time: new Date(event.start.dateTime || event.start.date).toLocaleTimeString('es-ES', {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        type: event.description?.includes('consulta') ? 'consulta' : 
-              event.description?.includes('control') ? 'control' : 'otro',
-        color: getColorByType(event.description?.includes('consulta') ? 'consulta' : 
-                            event.description?.includes('control') ? 'control' : 'otro'),
-        status: event.status === 'confirmed' ? 'confirmada' : 'pendiente',
-        date: new Date(event.start.dateTime || event.start.date)
-      }));
-      
-      setGoogleEvents(formattedEvents);
-    } catch (error) {
-      console.error('Error creating appointment:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   // Función para calcular la posición y altura de un evento
@@ -651,7 +584,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                         </div>
                         {dayEvents.length > 0 && (
                           <div className="flex gap-0.5">
-                            {dayEvents.slice(0, 3).map((event, index) => (
+                            {dayEvents.slice(0, 3).map((event) => (
                               <div 
                                 key={event.id} 
                                 className={`w-2 h-2 rounded-full ${event.color}`}

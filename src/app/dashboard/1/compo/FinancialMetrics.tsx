@@ -2,14 +2,12 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
-import { Progress } from "@rutas/components/ui/progress";
 
 export function FinancialMetrics() {
   // Lógica para obtener y mostrar métricas financieras
-  const totalIncome = 55000; // Ejemplo en USD
   const scheduledAppointments = 250;
   const completedAppointments = 210;
-  const completionRate = (completedAppointments / scheduledAppointments) * 100;
+
 
   return (
     <Card>

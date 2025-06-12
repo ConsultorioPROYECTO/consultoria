@@ -12,11 +12,8 @@ import {
 
 // Componentes específicos del Dashboard Master
 import { BusinessAnalytics } from "./compo/BusinessAnalytics";
-import { StaffManagement } from "./compo/StaffManagement";
 import { FinancialMetrics } from "./compo/FinancialMetrics";
-import { AIResponseConfig } from "./compo/AIResponseConfig";
 import { WorkloadOverview } from "./compo/WorkloadOverview";
-import { ServiceSpecialtyConfig } from "./compo/ServiceSpecialtyConfig";
 import { AIPerformancePanel } from "./compo/AIPerformancePanel";
 
 

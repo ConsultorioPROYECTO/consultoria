@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from "@rutas/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rutas/components/ui/card";
+import { Card, CardContent } from "@rutas/components/ui/card";
 import { Input } from "@rutas/components/ui/input";
 import { Label } from "@rutas/components/ui/label";
 import { Switch } from "@rutas/components/ui/switch";
@@ -27,7 +27,6 @@ interface DoctorWorkingHoursProps {
 
 export function DoctorWorkingHours({ 
   doctorId, 
-  doctorName, 
   initialWorkingHours = DEFAULT_WORKING_HOURS,
   onSave 
 }: DoctorWorkingHoursProps) {
@@ -65,7 +64,7 @@ export function DoctorWorkingHours({
         await onSave(doctorId, workingHours);
         setSuccessMessage('Horarios guardados exitosamente');
       }
-    } catch (error) {
+    } catch {
       setErrors(['Error al guardar los horarios. Intente nuevamente.']);
     } finally {
       setIsSaving(false);

@@ -3,13 +3,12 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@rutas/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@rutas/components/ui/card";
+import { Card, CardContent } from "@rutas/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@rutas/components/ui/table";
 import { Badge } from "@rutas/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Edit, Trash2, Clock, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@rutas/components/ui/dialog";
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
-import { AddStaffForm } from "./AddStaffForm";
 import { WorkingHours } from "@rutas/types/working-hours";
 import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
 import type { User } from '@rutas/db/schema/users';
@@ -33,10 +32,6 @@ export function StaffManagement() {
   const [selectedDoctorForSchedule, setSelectedDoctorForSchedule] = useState<StaffMember | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
-  const handleAddStaff = (newMember: StaffMember) => {
-    setStaffMembers([...staffMembers, newMember]);
-  };
 
   // Función para obtener los miembros del personal de la API
   const fetchStaffMembers = useCallback(async () => {
