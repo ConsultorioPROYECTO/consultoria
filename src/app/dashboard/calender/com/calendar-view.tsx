@@ -159,7 +159,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       console.error('Error getting calendar ID:', error);
       setUseGoogleCalendar(false); // Fallback a eventos mock
     }
-  }, [consultorioId, useGoogleCalendar]);
+  }, [consultorioId, useGoogleCalendar, consultorios]);
 
   // Cargar eventos desde Google Calendar
   React.useEffect(() => {
