@@ -58,7 +58,7 @@ const getMedicalServiceByIdHandler = async (
           columns: { id: true, date: true, time: true, status: true },
           with: {
             patient: {
-              columns: { firstName: true, lastName: true, patientCode: true }
+              columns: { firstName: true, lastName: true}
             }
           },
           limit: 10,

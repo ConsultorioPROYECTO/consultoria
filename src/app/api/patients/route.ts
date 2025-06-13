@@ -33,9 +33,6 @@ const getPatientsHandler = async (
     const organizationPatients = await db.query.patients.findMany({
       where: eq(patients.organizationId, requestingUser.organizationId),
       with: {
-        user: {
-          columns: { email: true, displayName: true }
-        },
         appointments: {
           columns: { id: true, date: true, time: true, status: true },
           //where: eq(patients.isActive, true),
@@ -105,7 +102,6 @@ const createPatientHandler = async (
     }
 
     const newPatientData: NewPatient = {
-      patientCode,
       firstName: body.firstName,
       lastName: body.lastName,
       identificationType: body.identificationType,
@@ -122,8 +118,7 @@ const createPatientHandler = async (
       allergies: body.allergies || null,
       currentMedications: body.currentMedications || null,
       bloodType: body.bloodType || null,
-      organizationId: requestingUser.organizationId,
-      userId: body.userId || null, // Opcional: vincular con usuario existente
+      organizationId: requestingUser.organizationId
     };
 
     const [createdPatient] = await db.insert(patients).values(newPatientData);

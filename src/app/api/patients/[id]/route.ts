@@ -41,9 +41,6 @@ const getPatientByIdHandler = async (
         eq(patients.isActive, true)
       ),
       with: {
-        user: {
-          columns: { email: true, displayName: true, phoneNumber: true }
-        },
         appointments: {
           with: {
             doctor: {

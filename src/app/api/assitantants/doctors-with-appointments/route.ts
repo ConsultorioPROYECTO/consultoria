@@ -56,7 +56,7 @@ const getDoctorsWithAppointmentsHandler = async (
 
     console.log("Doctors with appointments:", doctorsWithAppointments);
 
-    return createSuccessResponse(doctorsWithAppointments as DoctorsWithAppointmentsResponse, "Doctors with appointments retrieved successfully");
+    return createSuccessResponse(doctorsWithAppointments  as DoctorsWithAppointmentsResponse, "Doctors with appointments retrieved successfully");
   } catch (error) {
     return handleDatabaseError(error, "retrieve doctors with appointments");
   }

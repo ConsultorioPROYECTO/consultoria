@@ -125,24 +125,29 @@ export interface DoctorWithAppointments {
   calendar_id: string;
   privatePhone: string;
   nitId: string;
-  availability: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  availability: any; // JSON type from database schema
   tokenGoogleId: string;
   createdAt: Date;
   updatedAt: Date;
   appointments: Array<{
     id: number;
     doctorId: number;
+    patientId?: number | null;
+    serviceId?: number | null;
     time: string;
-    status: 'Confirmada' | 'Completada' | 'Pendiente' | 'Llegó';
-    patientName: string;
-    service: string;
+    status: 'Confirmada' | 'Completada' | 'Pendiente' | 'Llegó' | 'Cancelada';
     date: Date;
+    notes?: string | null;
+    cancelReason?: string | null;
+    reminderSent: boolean;
+    // Campos temporales para compatibilidad (DEPRECATED)
+    patientName?: string | null;
+    service?: string | null;
     createdAt: Date;
     updatedAt: Date;
-    patient: {
+    patient?: {
       id: number;
-      patientCode: string;
-      userId?: number | null;
       firstName: string;
       lastName: string;
       identificationType: 'CC' | 'TI' | 'CE' | 'PP' | 'RC' | 'AS';
@@ -163,7 +168,7 @@ export interface DoctorWithAppointments {
       isActive: boolean;
       createdAt: Date;
       updatedAt: Date;
-    };
+    } | null;
   }>;
 }
 
