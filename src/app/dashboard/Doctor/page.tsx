@@ -20,7 +20,7 @@ import { ConsultationModal } from "./compo/ConsultationModal";
 import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
 import { FetchRolUser } from "../page";
-import { TodayIsDay } from "../2/compo/TodayIsDay";
+import { TodayIsDay } from "./compo/TodayIsDay";
 import { ImportantNotifications } from "./compo/ImportantNotifications";
 
 // Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
@@ -81,7 +81,7 @@ const fetchAppointments = async () => {
   }
 }
 
-export function DoctorDashboard() {
+export default function DoctorDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [, setSelectedAppointmentId] = useState<string | null>(null);

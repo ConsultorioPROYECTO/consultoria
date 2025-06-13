@@ -1,7 +1,7 @@
 'use client';
-import { AdminDashboard } from "./1/page";
-import { DoctorDashboard } from "./2/page";
-import { AssistantDashboard } from "./3/page";
+import AdminDashboard from "./Admin/page";
+import DoctorDashboard from "./Doctor/page";
+import AssistantDashboard from "./Assistant/page";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
 import { useAuth } from "../context/AuthContext"
 import { useRouter } from "next/navigation"
