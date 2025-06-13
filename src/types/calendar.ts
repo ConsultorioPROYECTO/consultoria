@@ -26,11 +26,19 @@ export interface DateRange {
   end: Date;
 }
 
+export interface PatientData {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  notes?: string;
+}
+
 export interface CalendarEvent {
   id?: string;
   title: string;
   start: Date;
   end: Date;
   description?: string;
-  patientData?: any;
+  patientData?: PatientData;
 }

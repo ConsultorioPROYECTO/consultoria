@@ -64,7 +64,7 @@ export function validateWorkingHours(hours: WorkingHours): string[] {
 // Función para formatear horarios para mostrar
 export function formatWorkingHours(hours: WorkingHours): string {
   const activeDays = Object.entries(hours)
-    .filter(([_, schedule]) => schedule.isActive)
+    .filter(([, schedule]) => schedule.isActive)
     .map(([day, schedule]) => {
       const dayLabel = DAYS_OF_WEEK.find(d => d.key === day)?.label || day;
       return `${dayLabel}: ${schedule.startTime}-${schedule.endTime}`;

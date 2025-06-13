@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@rutas/components/ui/label";
 import { Input } from "@rutas/components/ui/input";
 import { User } from "firebase/auth";
+import Image from 'next/image';
 
 interface AccountSectionProps {
   user?: User | null;
@@ -19,7 +20,7 @@ export function AccountSection({ user, userRole }: AccountSectionProps) {
         <h3 className="text-lg font-medium mb-4">Account</h3>
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full overflow-hidden flex-shrink-0">
-              <img 
+              <Image 
                 src={user?.photoURL || "/avatars/shadcn.jpg"} 
                 alt="Foto de perfil" 
                 className="h-full w-full object-cover"

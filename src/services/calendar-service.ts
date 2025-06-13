@@ -2,6 +2,29 @@
 import { googleCalendar } from '@/lib/google-calendar';
 import { AppointmentData, DateRange, CalendarEvent } from '@/types/calendar';
 
+// Interfaz para el formato de evento de Google Calendar API
+interface GoogleCalendarEvent {
+  summary?: string;
+  description?: string;
+  start?: {
+    dateTime: string;
+    timeZone: string;
+  };
+  end?: {
+    dateTime: string;
+    timeZone: string;
+  };
+  extendedProperties?: {
+    private: {
+      patientId: string;
+      patientName: string;
+      patientEmail: string;
+      patientPhone: string;
+      patientNotes: string;
+    };
+  };
+}
+
 class CalendarService {
   // Crear calendario para nuevo consultorio
   async createConsultorioCalendar(consultorioData: {
@@ -72,14 +95,65 @@ class CalendarService {
     return event.data;
   }
 
+  // Transformar CalendarEvent a formato Google Calendar API
+  private transformToGoogleEvent(event: Partial<CalendarEvent>): GoogleCalendarEvent {
+    const googleEvent: GoogleCalendarEvent = {};
+    
+    if (event.title) {
+      googleEvent.summary = event.title;
+    }
+    
+    if (event.description) {
+      googleEvent.description = event.description;
+    }
+    
+    if (event.start) {
+      googleEvent.start = {
+        dateTime: event.start.toISOString(),
+        timeZone: 'America/Mexico_City'
+      };
+    }
+    
+    if (event.end) {
+      googleEvent.end = {
+        dateTime: event.end.toISOString(),
+        timeZone: 'America/Mexico_City'
+      };
+    }
+    
+    // Agregar datos del paciente como metadata extendida
+    if (event.patientData) {
+      googleEvent.extendedProperties = {
+        private: {
+          patientId: event.patientData.id,
+          patientName: event.patientData.name,
+          patientEmail: event.patientData.email || '',
+          patientPhone: event.patientData.phone || '',
+          patientNotes: event.patientData.notes || ''
+        }
+      };
+    }
+    
+    return googleEvent;
+  }
+
   // Actualizar cita
-  async updateAppointment(calendarId: string, eventId: string, updates: any) {
-    return await googleCalendar.calendar.events.patch({
-      auth: googleCalendar.auth,
-      calendarId: calendarId,
-      eventId: eventId,
-      requestBody: updates
-    });
+  async updateAppointment(calendarId: string, eventId: string, updates: Partial<CalendarEvent>) {
+    try {
+      const googleEventUpdates = this.transformToGoogleEvent(updates);
+      
+      const response = await googleCalendar.calendar.events.patch({
+        auth: googleCalendar.auth,
+        calendarId: calendarId,
+        eventId: eventId,
+        requestBody: googleEventUpdates
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      throw new Error(`Failed to update appointment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   // Eliminar cita

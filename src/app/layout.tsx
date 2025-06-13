@@ -16,7 +16,7 @@
  */
 
 import type { Metadata } from 'next';
-import { interFont, geistFont } from './fonts';
+import { geistFont } from './fonts';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
 import { UIStyleProvider } from './context/UIStyleContext'; // Importa el UIStyleProvider

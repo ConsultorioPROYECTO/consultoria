@@ -29,8 +29,6 @@ import {
   SidebarGroupLabel,
 } from "@/components/ui/sidebar"
 
-import { Label } from "@rutas/components/ui/label";
-import { Input } from "@rutas/components/ui/input";
 import { useTheme } from "next-themes";
 import { useUIStyle } from "@/app/context/UIStyleContext";
 import { useAuth } from "@/app/context/AuthContext";
@@ -56,7 +54,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
-  const { uiStyle, setUiStyle } = useUIStyle(); // Usar el contexto global
+  const { uiStyle, } = useUIStyle(); // Usar el contexto global
   const { user } = useAuth(); // Obtener el usuario actual
   const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system");
   const [activeSection, setActiveSection] = useState("Mi Cuenta"); // New state for active section
@@ -107,10 +105,6 @@ export function SettingsDialog({ isOpen, onOpenChange }: SettingsDialogProps) {
     // Apply the theme immediately while preserving the current mode (light/dark)
     const newTheme = theme?.endsWith('-dark') ? `${value}-dark` : value;
     setTheme(newTheme);
-  };
-
-  const handleUiStyleChange = (style: 'normal' | 'minimal') => {
-    setUiStyle(style); // Ahora usa el contexto global que maneja localStorage automáticamente
   };
 
   const handleSaveClick = () => {

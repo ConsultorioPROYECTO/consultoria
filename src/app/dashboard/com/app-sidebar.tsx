@@ -20,9 +20,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 import { useUIStyle } from "../../context/UIStyleContext"

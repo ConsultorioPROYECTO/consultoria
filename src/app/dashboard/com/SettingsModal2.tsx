@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect} from "react"
+import { useState, useEffect} from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,18 +11,10 @@ import {
 import {
   ChevronLeft,
   User,
-  Settings,
   Palette,
-  Shield,
-  Smartphone,
   Building,
   Phone,
-  FileText,
-  Award,
-  Plug,
-  Sun,
-  Moon,
-  Key
+  Plug
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AppearanceSection } from "./AppearanceSection"
@@ -37,8 +29,6 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useTheme } from "next-themes"
 import { useUIStyle } from "@/app/context/UIStyleContext"
@@ -83,20 +73,7 @@ const navWorkspace = [
   },
 ]
 
-const navMedico = [
-  {
-    name: "Información Profesional",
-    icon: FileText,
-  },
-  {
-    name: "Licencia Médica",
-    icon: Shield,
-  },
-  {
-    name: "Certificaciones",
-    icon: Award,
-  },
-]
+
 
 export function SettingsModal2({ 
   isOpen, 
@@ -105,7 +82,7 @@ export function SettingsModal2({
 }: SettingsModalProps) {
   
   const { theme, setTheme } = useTheme()
-  const { uiStyle, setUiStyle } = useUIStyle()
+  const { uiStyle } = useUIStyle()
   const { user } = useAuth()
   const [activeSection, setActiveSection] = useState("Preferencias")
   const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system")
@@ -164,29 +141,11 @@ export function SettingsModal2({
     setShowMobileNav(true)
   }
 
-  const availableSections = useMemo(() => {
-    let sections = [...navAccount]
-    
-    if (userRole === 'medico') {
-      sections = [...sections, ...navMedico]
-    }
-    
-    if (userRole === 'admin') {
-      sections = [...sections, ...navWorkspace]
-    }
-    
-    return sections
-  }, [userRole])
-
   const handleThemeChange = (value: string) => {
     setSelectedTheme(value);
     // Apply the theme immediately while preserving the current mode (light/dark)
     const newTheme = theme?.endsWith('-dark') ? `${value}-dark` : value;
     setTheme(newTheme);
-  };
-
-  const handleUiStyleChange = (style: 'normal' | 'minimal') => {
-    setUiStyle(style); // Usa el contexto global que maneja localStorage automáticamente
   };
 
   const renderSectionContent = () => {
