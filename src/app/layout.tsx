@@ -23,6 +23,7 @@ import { UIStyleProvider } from './context/UIStyleContext'; // Importa el UIStyl
 import { copernicusFont } from './fonts';
 import { ThemeProvider } from "./dashboard/com/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { ReactElement } from 'react';
 
 const inter = geistFont;
 
@@ -41,7 +42,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>): React.ReactElement<any> {
+}>): React.ReactElement<ReactElement> {
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} ${copernicusFont.variable}`}>

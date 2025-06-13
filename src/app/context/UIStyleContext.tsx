@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  ReactElement,
 } from 'react';
 
 /**
@@ -40,7 +41,7 @@ interface UIStyleProviderProps {
  * @param {UIStyleProviderProps} props - Las propiedades del componente.
  * @returns {React.ReactElement} El proveedor del contexto con sus hijos.
  */
-export function UIStyleProvider({ children }: UIStyleProviderProps): React.ReactElement<any> {
+export function UIStyleProvider({ children }: UIStyleProviderProps): React.ReactElement<ReactElement> {
   const [uiStyle, setUiStyleState] = useState<'normal' | 'minimal'>('normal');
 
   // Cargar el estilo desde localStorage al inicializar

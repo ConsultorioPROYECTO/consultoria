@@ -1,6 +1,7 @@
 // src/app/components/auth/LoginGoogle.tsx
 'use client'; // Necesario porque usa el hook useAuth y maneja eventos onClick
 
+import React, { ReactElement } from 'react';
 /**
  * @fileoverview Componente para el inicio de sesión con Google y mostrar estado del usuario.
  * @version 
@@ -21,7 +22,7 @@
 import { useAuth } from '../../context/AuthContext'; 
 import { useRouter } from 'next/navigation'; // Importamos useRouter
 
-export default function LogoutButton(): React.ReactElement<any> { // Nombre cambiado para claridad
+export default function LogoutButton(): React.ReactElement<ReactElement> { // Nombre cambiado para claridad
   const { signOut } = useAuth();
   const router = useRouter(); // Inicializamos el router
 

@@ -15,6 +15,7 @@
  */
 
 import Link from "next/link";
+import { ReactElement } from "react";
 
 /**
  * Interfaz para la información del proyecto que se mostrará en la landing page.
@@ -74,7 +75,7 @@ const projectData: ProjectInfo = {
  * Renderiza la landing page principal de la aplicación.
  * @returns {React.ReactElement} El elemento JSX de la página de inicio.
  */
-export default function HomePage(): React.ReactElement<any> {
+export default function HomePage(): React.ReactElement<ReactElement> {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', color: '#333' }}>
       {/* Header */}
