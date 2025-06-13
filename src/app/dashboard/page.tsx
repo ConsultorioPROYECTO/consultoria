@@ -1,7 +1,7 @@
 'use client';
-import { default as MasterDashboard } from "./1/page";
-import { default as MedicoDashboard } from "./2/page";
-import { default as AsistenteDashboard } from "./3/page";
+import { AdminDashboard } from "./1/page";
+import { DoctorDashboard } from "./2/page";
+import { AssistantDashboard } from "./3/page";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
 import { useAuth } from "../context/AuthContext"
 import { useRouter } from "next/navigation"
@@ -58,11 +58,11 @@ export default function Page() {
             // No liberamos checkingRole aquí, así nunca se renderiza la página
             return;
           } else if (data.role === 'medico') {
-            setUserDashboard(() => MedicoDashboard);
+            setUserDashboard(() => DoctorDashboard);
           } else if (data.role ==='asistente') {
-            setUserDashboard(() => AsistenteDashboard);
+            setUserDashboard(() => AssistantDashboard);
           } else if (data.role ==='admin') {
-            setUserDashboard(() => MasterDashboard);
+            setUserDashboard(() => AdminDashboard);
           }
         }
         setCheckingRole(false);

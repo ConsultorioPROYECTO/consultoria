@@ -81,7 +81,7 @@ const fetchAppointments = async () => {
   }
 }
 
-export default function Page() {
+export function DoctorDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [, setSelectedAppointmentId] = useState<string | null>(null);

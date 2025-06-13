@@ -17,7 +17,7 @@ import { WorkloadOverview } from "./compo/WorkloadOverview";
 import { AIPerformancePanel } from "./compo/AIPerformancePanel";
 
 
-export default function Page() {
+export function AdminDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [checkingRole, setCheckingRole] = useState(true);

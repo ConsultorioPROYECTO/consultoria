@@ -27,7 +27,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { getFirebaseAuthToken } from "@lib/firebase/clientUtils"
 
-export default function Page() {
+export function AssistantDashboard() {
   const { user, loading } = useAuth(); 
   const router = useRouter();
   const [checkingRole, setCheckingRole] = useState(true);
