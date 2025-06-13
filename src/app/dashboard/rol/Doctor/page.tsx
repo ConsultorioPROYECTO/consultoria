@@ -1,13 +1,13 @@
 'use client'
 
-import { LoadingScreen } from '../com/loadingScreen';
+import { LoadingScreen } from '../../com/loadingScreen';
 import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar";
 import { SiteHeader } from "@rutas/app/dashboard/com/site-header";
 import {
   SidebarInset,
   SidebarProvider,
 } from "@rutas/components/ui/sidebar";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -19,7 +19,7 @@ import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
 import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
-import { FetchRolUser } from "../page";
+import { FetchRolUser } from "../../page";
 import { TodayIsDay } from "./compo/TodayIsDay";
 import { ImportantNotifications } from "./compo/ImportantNotifications";
 

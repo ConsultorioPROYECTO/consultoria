@@ -88,7 +88,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
       {
         title: "Org",
-        url: "/dashboard/1/org",
+        url: "/dashboard/Admin/org",
         icon: House,
       },
       {

@@ -1,9 +1,9 @@
 'use client';
-import { AppSidebar } from "../../com/app-sidebar";
-import { SiteHeader } from "../../com/site-header";
-import { useAuth } from "../../../context/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar";
+import { SiteHeader } from "@rutas/app/dashboard/com/site-header"; // Importación añadida
+import { useAuth } from "../../../context/AuthContext"; // Importación añadida
+import { useRouter } from "next/navigation"; // Importación añadida
+import { useEffect, useState } from "react"; // Importación añadida/modificada
 import { LoadingScreen } from '../../com/loadingScreen';
 import {
   SidebarInset,
@@ -11,12 +11,13 @@ import {
 } from "@rutas/components/ui/sidebar";
 
 // Componentes específicos del Dashboard Master
-import { StaffManagement } from "../compo/StaffManagement";
-import { ServiceSpecialtyConfig } from "../compo/ServiceSpecialtyConfig";
-import { AddStaffForm } from "../compo/AddStaffForm";
+import { BusinessAnalytics } from "./compo/BusinessAnalytics";
+import { FinancialMetrics } from "./compo/FinancialMetrics";
+import { WorkloadOverview } from "./compo/WorkloadOverview";
+import { AIPerformancePanel } from "./compo/AIPerformancePanel";
 
 
-export default function Page() {
+export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [checkingRole, setCheckingRole] = useState(true);
@@ -105,27 +106,15 @@ export default function Page() {
             </div>
 
             {/* Sección de KPIs principales y análisis de negocio */}
-            {/* <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <BusinessAnalytics />
               <FinancialMetrics />
               <AIPerformancePanel />
-            </div> */}
-
-            {/* Sección de Gestión y Configuración */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* <AIResponseConfig /> */}
             </div>
             
+            
             <div className="grid gap-6 lg:grid-cols-2">
-              <StaffManagement />
-              {/* <WorkloadOverview /> */}
-              <ServiceSpecialtyConfig />
-            </div>
-
-            {/* Formulario de Agregar Personal */}
-            <div className="grid gap-6">
-              <AddStaffForm onAddStaff={() => {}} />
-              <StaffManagement />
+              <WorkloadOverview />
             </div>
             
             {/* Podrías agregar más secciones aquí según sea necesario */}

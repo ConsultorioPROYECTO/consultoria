@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@rutas/components/ui/po
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@rutas/components/ui/command";
 import { cn } from "@rutas/lib/utils";
 import { useState } from "react";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../../context/AuthContext";
 
 interface StaffMember {
   id: string;

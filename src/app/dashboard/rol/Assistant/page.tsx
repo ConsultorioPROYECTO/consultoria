@@ -22,7 +22,7 @@ import {
 } from "@rutas/components/ui/sidebar"
 
 // import data from "../data.json" // Commented out - not currently used
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../../context/AuthContext"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { getFirebaseAuthToken } from "@lib/firebase/clientUtils"
