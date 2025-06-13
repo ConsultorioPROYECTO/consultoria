@@ -1,6 +1,7 @@
 // src/app/components/auth/LoginGoogle.tsx
 'use client'; // Necesario porque usa el hook useAuth y maneja eventos onClick
 
+import { ReactElement } from 'react';
 /**
  * @fileoverview Componente para el inicio de sesión con Google y mostrar estado del usuario.
  * @version 
@@ -27,9 +28,9 @@ import { useAuth } from '../../context/AuthContext'; // Ajusta la ruta si es nec
  * Componente LoginGoogle.
  * Proporciona la interfaz de usuario para el inicio de sesión con Google y
  * muestra la información del usuario o mensajes de estado.
- * @returns {JSX.Element} El elemento JSX del componente de login.
+ * @returns {React.ReactElement} El elemento JSX del componente de login.
  */
-export default function LoginGoogle(): React.ReactElement<any> {
+export default function LoginGoogle(): React.ReactElement<ReactElement> {
   const { signInWithGoogle } = useAuth();
 
   const handleSignIn = async () => {
