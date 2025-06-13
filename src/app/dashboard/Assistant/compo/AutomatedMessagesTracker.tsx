@@ -36,7 +36,7 @@ export function AutomatedMessagesTracker() {
         const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
         
         // Recordatorio de cita (1 día antes)
-        if (daysDiff === 1 && appointment.status === 'Confirmada') {
+        if (daysDiff === 1 && appointment.status === 'Confirmada' && appointment.patientName) {
           messages.push({
             id: `reminder-${appointment.id}`,
             patientName: appointment.patientName,
@@ -51,7 +51,7 @@ export function AutomatedMessagesTracker() {
         }
         
         // Confirmación de cita
-        if (appointment.status === 'Confirmada') {
+        if (appointment.status === 'Confirmada' && appointment.patientName) {
           messages.push({
             id: `confirmation-${appointment.id}`,
             patientName: appointment.patientName,
@@ -66,7 +66,7 @@ export function AutomatedMessagesTracker() {
         }
         
         // Solicitud de feedback para citas completadas
-        if (appointment.status === 'Completada') {
+        if (appointment.status === 'Completada' && appointment.patientName) {
           messages.push({
             id: `feedback-${appointment.id}`,
             patientName: appointment.patientName,
@@ -81,7 +81,7 @@ export function AutomatedMessagesTracker() {
         }
         
         // Información pre-consulta
-        if (appointment.status === 'Confirmada' && daysDiff <= 2 && daysDiff >= 0) {
+        if (appointment.status === 'Confirmada' && daysDiff <= 2 && daysDiff >= 0 && appointment.patientName) {
           messages.push({
             id: `preconsult-${appointment.id}`,
             patientName: appointment.patientName,

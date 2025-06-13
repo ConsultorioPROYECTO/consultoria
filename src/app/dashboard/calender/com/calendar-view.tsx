@@ -125,8 +125,8 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Datos locales de consultorios
-  const consultorios = {
+  // Datos locales de consultorios - usando useMemo para evitar recreación en cada render
+  const consultorios = React.useMemo(() => ({
     '1': {
       id: '1',
       name: 'Consultorio Central',
@@ -141,7 +141,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       address: 'Calle Norte 456',
       phone: '+1234567891'
     }
-  };
+  }), []);
 
   // Obtener ID del calendario del consultorio
   React.useEffect(() => {

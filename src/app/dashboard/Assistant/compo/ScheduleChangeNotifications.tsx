@@ -41,7 +41,7 @@ export function ScheduleChangeNotifications() {
           notifications.push({
             id: `pending-${appointment.id}`,
             type: 'Nueva Cita Urgente',
-            patientName: appointment.patientName,
+            patientName: appointment.patientName || undefined,
             doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
             newTime: `${appointment.time} - ${new Date(appointment.date).toLocaleDateString()}`,
             reason: 'Cita pendiente de confirmación para hoy',
@@ -56,7 +56,7 @@ export function ScheduleChangeNotifications() {
             id: `reminder-${appointment.id}`,
             type: 'Retraso Médico',
             doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
-            reason: `Próxima cita con ${appointment.patientName} en 30 minutos`,
+            reason: `Próxima cita con ${appointment.patientName || 'paciente'} en 30 minutos`,
             timestamp: 'Hace 5 minutos',
             isRead: false,
             priority: 'Media'

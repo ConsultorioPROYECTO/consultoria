@@ -93,7 +93,8 @@ export function WeeklyMonthlyPlanner() {
             // Podríamos añadir lógica para mostrar eventos aquí
             components={{
                 Day: (props) => {
-                    const { date } = props;
+                    const { day } = props;
+                    const date = day.date;
                     
                     // Verificar que date existe antes de usarlo
                     if (!date) {
