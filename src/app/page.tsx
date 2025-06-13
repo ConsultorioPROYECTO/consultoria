@@ -74,7 +74,7 @@ const projectData: ProjectInfo = {
  * Renderiza la landing page principal de la aplicación.
  * @returns {React.ReactElement} El elemento JSX de la página de inicio.
  */
-export default function HomePage(): React.ReactElement {
+export default function HomePage(): React.ReactElement<any> {
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', color: '#333' }}>
       {/* Header */}

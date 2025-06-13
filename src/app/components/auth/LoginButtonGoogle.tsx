@@ -29,7 +29,7 @@ import { useAuth } from '../../context/AuthContext'; // Ajusta la ruta si es nec
  * muestra la información del usuario o mensajes de estado.
  * @returns {JSX.Element} El elemento JSX del componente de login.
  */
-export default function LoginGoogle(): React.ReactElement {
+export default function LoginGoogle(): React.ReactElement<any> {
   const { signInWithGoogle } = useAuth();
 
   const handleSignIn = async () => {

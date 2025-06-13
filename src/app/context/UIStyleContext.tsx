@@ -40,7 +40,7 @@ interface UIStyleProviderProps {
  * @param {UIStyleProviderProps} props - Las propiedades del componente.
  * @returns {React.ReactElement} El proveedor del contexto con sus hijos.
  */
-export function UIStyleProvider({ children }: UIStyleProviderProps): React.ReactElement {
+export function UIStyleProvider({ children }: UIStyleProviderProps): React.ReactElement<any> {
   const [uiStyle, setUiStyleState] = useState<'normal' | 'minimal'>('normal');
 
   // Cargar el estilo desde localStorage al inicializar

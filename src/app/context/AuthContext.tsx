@@ -93,7 +93,7 @@ interface AuthProviderProps {
  * @param {AuthProviderProps} props - Las propiedades del componente.
  * @returns {React.ReactElement} El proveedor del contexto con sus hijos.
  */
-export function AuthProvider({ children }: AuthProviderProps): React.ReactElement {
+export function AuthProvider({ children }: AuthProviderProps): React.ReactElement<any> {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<AuthError | null>(null);

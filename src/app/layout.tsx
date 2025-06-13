@@ -41,7 +41,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>): React.ReactElement {
+}>): React.ReactElement<any> {
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} ${copernicusFont.variable}`}>

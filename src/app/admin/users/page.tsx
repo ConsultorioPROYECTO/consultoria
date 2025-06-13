@@ -37,7 +37,7 @@ type UserApiResponse = DbUser;
  * Muestra una lista de usuarios obtenidos de la API `/api/users`.
  * @returns {React.ReactElement} El elemento JSX de la página.
  */
-export default function UsersListPage(): React.ReactElement {
+export default function UsersListPage(): React.ReactElement<any> {
   const [users, setUsers] = useState<UserApiResponse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

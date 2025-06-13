@@ -125,23 +125,40 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Datos locales de consultorios
+  const consultorios = {
+    '1': {
+      id: '1',
+      name: 'Consultorio Central',
+      googleCalendarId: 'primary',
+      address: 'Av. Principal 123',
+      phone: '+1234567890'
+    },
+    '2': {
+      id: '2',
+      name: 'Consultorio Norte',
+      googleCalendarId: 'consultorio-norte@example.com',
+      address: 'Calle Norte 456',
+      phone: '+1234567891'
+    }
+  };
+
   // Obtener ID del calendario del consultorio
   React.useEffect(() => {
     if (!consultorioId || !useGoogleCalendar) return;
     
-    const getCalendarId = async () => {
-      try {
-        // Obtener desde tu BD local o API
-        const consultorio = await fetch(`/api/consultorios/${consultorioId}`);
-        const data = await consultorio.json();
-        setCalendarId(data.googleCalendarId);
-      } catch (error) {
-        console.error('Error getting calendar ID:', error);
+    try {
+      const consultorio = consultorios[consultorioId as keyof typeof consultorios];
+      if (consultorio) {
+        setCalendarId(consultorio.googleCalendarId);
+      } else {
+        console.error('Consultorio not found:', consultorioId);
         setUseGoogleCalendar(false); // Fallback a eventos mock
       }
-    };
-    
-    getCalendarId();
+    } catch (error) {
+      console.error('Error getting calendar ID:', error);
+      setUseGoogleCalendar(false); // Fallback a eventos mock
+    }
   }, [consultorioId, useGoogleCalendar]);
 
   // Cargar eventos desde Google Calendar
@@ -241,7 +258,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         .map((event, index) => ({
           id: event.id ? parseInt(event.id.replace(/\D/g, '')) || index + 1000 : index + 1000,
           date: event.start,
-          title: event.patientData?.patient || event.title,
+          title: event.patientData?.name || event.title,
           time: format(event.start, 'HH:mm'),
           endTime: format(event.end, 'HH:mm'),
           type: event.patientData?.type || 'Consulta General',

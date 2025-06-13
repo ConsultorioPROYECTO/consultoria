@@ -32,6 +32,8 @@ export interface PatientData {
   email?: string;
   phone?: string;
   notes?: string;
+  type?: string;
+  status?: string;
 }
 
 export interface CalendarEvent {

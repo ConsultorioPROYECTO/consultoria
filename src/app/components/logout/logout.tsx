@@ -21,7 +21,7 @@
 import { useAuth } from '../../context/AuthContext'; 
 import { useRouter } from 'next/navigation'; // Importamos useRouter
 
-export default function LogoutButton(): React.ReactElement { // Nombre cambiado para claridad
+export default function LogoutButton(): React.ReactElement<any> { // Nombre cambiado para claridad
   const { signOut } = useAuth();
   const router = useRouter(); // Inicializamos el router
 
