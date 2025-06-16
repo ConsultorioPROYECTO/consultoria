@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import * as React from "react"
 import { Users, Stethoscope, UserCheck, Calendar, TrendingUp, Activity } from "lucide-react"

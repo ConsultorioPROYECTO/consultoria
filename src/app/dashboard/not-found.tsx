@@ -1,8 +1,17 @@
-import Link from 'next/link';
+'use client'
+
 import { Button } from '@rutas/components/ui/button';
 import { Home, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function NotFound() {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
   return (
     <div className="flex h-screen flex-col items-center justify-center space-y-6">
       <div className="text-center space-y-2">
@@ -21,11 +30,9 @@ export default function NotFound() {
           </Link>
         </Button>
         
-        <Button asChild>
-          <Link href="javascript:history.back()">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
-          </Link>
+        <Button onClick={handleGoBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver
         </Button>
       </div>
     </div>

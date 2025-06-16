@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"

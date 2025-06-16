@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@rutas/components/ui/dialog"
 import { Label } from "@rutas/components/ui/label";

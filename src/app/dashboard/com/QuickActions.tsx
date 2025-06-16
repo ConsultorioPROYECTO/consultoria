@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Button } from "@rutas/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"

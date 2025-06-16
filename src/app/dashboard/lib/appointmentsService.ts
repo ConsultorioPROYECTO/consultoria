@@ -76,6 +76,7 @@ export const fetchAppointments = async (): Promise<Appointment[]> => {
 
 // Función con cache para Server Components (cuando sea posible)
 export const getCachedAppointments = unstable_cache(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (doctorId: string): Promise<Appointment[]> => {
     // Esta función se usaría en Server Components cuando tengamos el doctorId
     // Por ahora, retornamos un array vacío ya que necesitamos autenticación del cliente

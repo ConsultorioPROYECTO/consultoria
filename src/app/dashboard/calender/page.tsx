@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import CalendarView from "./com/calendar-view";
 import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar";

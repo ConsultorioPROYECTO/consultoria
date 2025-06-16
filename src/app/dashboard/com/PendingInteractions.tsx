@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"
 import { IconMessageCircle, IconBell } from "@tabler/icons-react"
