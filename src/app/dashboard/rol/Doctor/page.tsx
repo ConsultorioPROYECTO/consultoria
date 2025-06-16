@@ -156,21 +156,20 @@ export default function DoctorDashboard() {
               </p>
             </div>
             {/* Reestructurar la grilla principal */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 "> {/* Cambiar a 3 columnas en lg */}
-                <div className="col-span-1"> {/* Hoy es */}
-                  <TodayIsDay />
-                </div>
-                <div className="col-span-1"> {/* Hoy tienes */}
-                  <TodaysAppointments appointmentCount={todayAppointmentsState.length} />
-                </div>
-                <div className="col-span-1 sm:col-span-2 lg:col-span-1 lg:row-span-2 flex flex-col gap-4"> {/* Tu próxima cita - ocupa 1 columna y 2 filas en lg, 2 columnas en sm y 1 en xs */}
-                  <NextAppointment appointments={todayAppointmentsState} />
-                  <MonthlyAppointmentsSummary pendingAppointments={pendingAppointmentsCount} />
-                  <div className="hidden sm:block">
-                    <ImportantNotifications />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Bloque Izquierdo/Central */}
+              <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
+                {/* Fila para TodayIsDay y TodaysAppointments */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="col-span-1"> {/* Hoy es */}
+                    <TodayIsDay />
+                  </div>
+                  <div className="col-span-1"> {/* Hoy tienes */}
+                    <TodaysAppointments appointmentCount={todayAppointmentsState.length} />
                   </div>
                 </div>
-                <div className="col-span-full sm:col-span-2 lg:col-span-2 flex flex-col gap-4"> {/* Agenda del Día - ocupa todo el ancho en xs, 2 columnas en sm y lg */}
+                {/* Agenda del Día */}
+                <div>
                   <DailyAgendaView
                     todayAppointments={todayAppointmentsState}
                     // onSelectPatient={handleSelectPatient}
@@ -178,12 +177,23 @@ export default function DoctorDashboard() {
                     onStartAppointment={handleStartAppointment}
                     onCompleteAppointment={handleCompleteAppointment}
                     onResetAppointment={handleResetAppointment}
-                    onStartConsultation={handleStartConsultation}
+                    onStartConsultation={handleStartConsultation} // Added this line back as it was in original and likely needed in new structure
                   />
-                  <div className="block sm:hidden">
-                    <ImportantNotifications />
-                  </div>
                 </div>
+              </div>
+
+              {/* Bloque Derecho */}
+              <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col gap-4">
+                <NextAppointment appointments={todayAppointmentsState} />
+                <MonthlyAppointmentsSummary pendingAppointments={pendingAppointmentsCount} />
+                <div className="hidden sm:block">
+                  <ImportantNotifications />
+                </div>
+                {/* ImportantNotifications for small screens, moved to be consistent with original logic if needed, or can be placed elsewhere */}
+                <div className="block sm:hidden">
+                  <ImportantNotifications />
+                </div>
+              </div>
             </div>
             <ConsultationModal
               appointment={selectedConsultationAppointment}
