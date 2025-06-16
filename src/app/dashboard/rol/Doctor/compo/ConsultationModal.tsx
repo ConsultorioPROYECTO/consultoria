@@ -40,7 +40,7 @@ export function ConsultationModal({
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       setSelectedFile(event.target.files[0]);
-      console.log("Archivo seleccionado:", event.target.files[0].name);
+      // Archivo seleccionado - log removido para producción
     }
   };
 
@@ -50,12 +50,12 @@ export function ConsultationModal({
 
   const { data, loading, error, fetchAICare } = useAICare();
 
-  console.log('[AI Care] ConsultationModal render', { isOpen, appointment });
+  // Debug logs removidos para producción
 
   if (!appointment) return null; // No renderizar si no hay cita seleccionada
 
   const handleSaveClick = () => {
-    console.log('[AI Care] handleSaveClick', { appointmentId: appointment.id, notes });
+    // Debug logs removidos para producción
     onSaveAndComplete(appointment.id, notes);
     setNotes('');
   };
@@ -64,10 +64,7 @@ export function ConsultationModal({
   const aiCareText = data?.text || '';
 
   // Debug logs para AI Care
-  console.log('[AI Care] notes:', notes);
-  console.log('[AI Care] loading:', loading);
-  console.log('[AI Care] data:', data);
-  console.log('[AI Care] error:', error);
+  // Debug logs removidos para producción
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -177,7 +174,7 @@ export function ConsultationModal({
             <CardHeader>
               <CardTitle>AI-Care</CardTitle>
               <Button onClick={() => {
-                console.log('[AI Care] Botón presionado, disparando fetchAICare con:', notes);
+                // Debug logs removidos para producción
                 fetchAICare(notes);
               }} disabled={loading}>
                 {loading ? 'Generando...' : 'Generar con AI Care'}

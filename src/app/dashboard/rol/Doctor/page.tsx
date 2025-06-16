@@ -5,72 +5,19 @@ import { useState, useEffect } from "react";
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./compo/DailyAgendaView";
-
 import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
 import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
-import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
 import { TodayIsDay } from "./compo/TodayIsDay";
 import { ImportantNotifications } from "./compo/ImportantNotifications";
 
-// Definir la interfaz Appointment (copia de DailyAgendaView para resolver linter)
-interface Appointment {
-  id: string;
-  time: string;
-  patientName: string;
-  service: string;
-  status: string;
-}
-
-
-const fetchAppointments = async () => {
-  try {
-    const token = await getFirebaseAuthToken();
-
-    if (!token) {
-      console.error('No se pudo obtener el token de autenticación.');
-      return [];
-    }
-
-    const response = await fetch('/api/medicos/dashboard/appointments',{
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`, 
-      },
-    });
-    
-    if (!response.ok) {
-      // Manejo específico para diferentes códigos de error
-      if (response.status === 403) {
-        console.error('Error 403: Acceso denegado. Verifica que tu cuenta tenga el rol de médico asignado.');
-        // Podrías mostrar un mensaje al usuario aquí
-        return [];
-      } else if (response.status === 401) {
-        console.error('Error 401: No autorizado. Tu sesión puede haber expirado.');
-        return [];
-      } else {
-        console.error(`Error HTTP ${response.status}: ${response.statusText}`);
-      }
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Validar que la respuesta sea un array
-    if (!Array.isArray(data)) {
-      console.warn('La respuesta del API no es un array válido:', data);
-      return [];
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error fetching appointments:', error);
-    // En lugar de devolver un array vacío, podrías mostrar un mensaje de error al usuario
-    return [];
-  }
-}
+// Importar el nuevo servicio de data fetching
+import { 
+  fetchAppointments, 
+  updateAppointmentStatus,
+  type Appointment 
+} from "../../lib/appointmentsService";
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
@@ -107,31 +54,56 @@ export default function DoctorDashboard() {
   };
 
   // Funciones para manejar el estado de las citas
-  const handleStartAppointment = (id: string) => {
+  const handleStartAppointment = async (id: string) => {
+    // Actualizar estado local inmediatamente para mejor UX
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
-        apt.id === id ? { ...apt, status: "Llegó" } : apt // Cambiar estado a 'Llegó' para mostrar botón Completada
+        apt.id === id ? { ...apt, status: "Llegó" } : apt
       )
     );
-    console.log(`Iniciar consulta para cita: ${id}, estado cambiado a Llegó`);
+    
+    // Actualizar en el servidor
+    const success = await updateAppointmentStatus(id, "Llegó");
+    if (!success) {
+      // Revertir cambio local si falla la actualización
+      setTodayAppointmentsState(prevState =>
+        prevState.map(apt =>
+          apt.id === id ? { ...apt, status: "Confirmada" } : apt
+        )
+      );
+    }
   };
 
-  const handleCompleteAppointment = (id: string) => {
+  const handleCompleteAppointment = async (id: string) => {
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
-        apt.id === id ? { ...apt, status: "Completada" } : apt // Cambiar estado a 'Completada'
+        apt.id === id ? { ...apt, status: "Completada" } : apt
       )
     );
-    console.log(`Cita ${id} marcada como completada.`);
+    
+    const success = await updateAppointmentStatus(id, "Completada");
+    if (!success) {
+      setTodayAppointmentsState(prevState =>
+        prevState.map(apt =>
+          apt.id === id ? { ...apt, status: "Llegó" } : apt
+        )
+      );
+    }
   };
 
-  const handleResetAppointment = (id: string) => {
+  const handleResetAppointment = async (id: string) => {
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
         apt.id === id ? { ...apt, status: "Confirmada" } : apt
       )
     );
-    console.log(`Cita ${id} restablecida a Confirmada.`);
+    
+    const success = await updateAppointmentStatus(id, "Confirmada");
+    if (!success) {
+      // En caso de error, recargar las citas
+      const appointments = await fetchAppointments();
+      setTodayAppointmentsState(appointments);
+    }
   };
 
   const handleStartConsultation = (appointment: Appointment) => {
@@ -139,14 +111,25 @@ export default function DoctorDashboard() {
     setIsConsultationModalOpen(true);
   };
 
-  const handleSaveAndCompleteConsultation = (appointmentId: string, notes: string) => {
-    console.log(`Guardando notas para cita ${appointmentId}:`, notes);
+  const handleSaveAndCompleteConsultation = async (appointmentId: string, notes: string) => {
     // Actualizar el estado de la cita a "Completada"
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
-        apt.id === appointmentId ? { ...apt, status: "Completada" } : apt
+        apt.id === appointmentId ? { ...apt, status: "Completada", notes } : apt
       )
     );
+    
+    // Actualizar en el servidor
+    const success = await updateAppointmentStatus(appointmentId, "Completada");
+    if (!success) {
+      // Revertir cambio si falla
+      setTodayAppointmentsState(prevState =>
+        prevState.map(apt =>
+          apt.id === appointmentId ? { ...apt, status: "Llegó", notes: undefined } : apt
+        )
+      );
+    }
+    
     // Cerrar el modal
     setIsConsultationModalOpen(false);
     setSelectedConsultationAppointment(null);

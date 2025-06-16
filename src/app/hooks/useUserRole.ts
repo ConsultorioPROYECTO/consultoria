@@ -7,7 +7,7 @@ export interface FetchRolUser {
   role: string;
 }
 
-export type UserRole = 'medico' | 'asistente' | 'admin' | null;
+export type UserRole = 'medico' | 'asistente' | 'admin' | 'N/A' | null;
 
 // Cache simple para el rol del usuario
 let roleCache: { userId: string; role: UserRole; timestamp: number } | null = null;
@@ -18,7 +18,9 @@ const fetchRolUser = async (): Promise<FetchRolUser | null> => {
     const token = await getFirebaseAuthToken();
 
     if (!token) {
-      console.error('No se pudo obtener el token de autenticación.');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('No se pudo obtener el token de autenticación.');
+      }
       return null;
     }
 
@@ -31,13 +33,21 @@ const fetchRolUser = async (): Promise<FetchRolUser | null> => {
     });
 
     if (!response.ok) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(`HTTP error! Status: ${response.status}`);
+      }
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
     const data: FetchRolUser = await response.json();
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Rol obtenido exitosamente:', data);
+    }
     return data;
   } catch (error) {
-    console.error('Error fetching user role:', error);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching user role:', error);
+    }
     return null;
   }
 };
@@ -71,6 +81,10 @@ export const useUserRole = () => {
         setIsLoadingRole(true);
         setError(null);
         
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Iniciando obtención de rol para usuario:', userId);
+        }
+        
         const roleData = await fetchRolUser();
         
         if (roleData?.role) {
@@ -83,12 +97,23 @@ export const useUserRole = () => {
             role,
             timestamp: now
           };
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Rol establecido exitosamente:', role);
+          }
         } else {
-          setError('No se pudo obtener el rol del usuario');
+          const errorMsg = 'No se pudo obtener el rol del usuario';
+          setError(errorMsg);
+          if (process.env.NODE_ENV === 'development') {
+            console.error(errorMsg, 'roleData:', roleData);
+          }
         }
       } catch (err) {
-        setError('Error al obtener el rol del usuario');
-        console.error('Error fetching user role:', err);
+        const errorMsg = 'Error al obtener el rol del usuario';
+        setError(errorMsg);
+        if (process.env.NODE_ENV === 'development') {
+          console.error(errorMsg, err);
+        }
       } finally {
         setIsLoadingRole(false);
       }

@@ -1,75 +1,56 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
-
-export interface FetchRolUser {
-  role: string;
-}
-
-const fetchRolUser = async (): Promise<FetchRolUser | null> => {
-  try {
-    const token = await getFirebaseAuthToken();
-
-    if (!token) {
-      console.error('No se pudo obtener el token de autenticación.');
-      return null;
-    }
-
-    const response = await fetch('/api/users/rol', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const data: FetchRolUser = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching user role:', error);
-    return null;
-  }
-};
+import { useUserRole } from './useUserRole';
 
 export const useAuthGuard = () => {
   const { user, loading } = useAuth();
+  const { userRole, isLoadingRole, error } = useUserRole();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      if (loading) return;
-
-      if (!user) {
-        router.push('/login');
+    const checkAuth = () => {
+      // Si aún está cargando la autenticación o el rol, esperar
+      if (loading || isLoadingRole) {
+        setIsLoading(true);
         return;
       }
 
-      try {
-        const roleData = await fetchRolUser();
-        
-        if (roleData?.role === 'N/A') {
-          router.push('/onboard');
-          return;
-        }
-
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Error during authentication check:', error);
+      // Si no hay usuario, redirigir al login
+      if (!user) {
         router.push('/login');
-      } finally {
+        setIsLoading(false);
+        return;
+      }
+
+      // Si hay error obteniendo el rol, redirigir al login
+      if (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error during authentication check:', error);
+        }
+        router.push('/login');
+        setIsLoading(false);
+        return;
+      }
+
+      // Si el rol es N/A, redirigir al onboarding
+      if (userRole === 'N/A') {
+        router.push('/onboard');
+        setIsLoading(false);
+        return;
+      }
+
+      // Si hay usuario y rol válido, autenticar
+      if (userRole) {
+        setIsAuthenticated(true);
         setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [user, loading, router]);
+  }, [user, loading, userRole, isLoadingRole, error, router]);
 
   return { isAuthenticated, isLoading };
 };

@@ -87,8 +87,11 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  console.log("Citas para hoy:", todayAppointments);
-  console.log("Estado de las citas:", todayAppointments.map(apt => apt.status));
+  // Debug logs solo en desarrollo
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Citas para hoy:", todayAppointments);
+    console.log("Estado de las citas:", todayAppointments.map(apt => apt.status));
+  }
   // Pendiente por debuggear
   console.debug("Variables sin usar \ncurrentTime:\t", currentTime,"onStartAppointment:\t", onStartAppointment);
 
@@ -107,13 +110,13 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
   /*
   const handleStartAppointment = (id: string) => {
     onStartAppointment?.(id);
-    console.log(`Iniciar consulta para cita: ${id}, estado cambiado a Llegó`);
+    // Log removido para producción
   };
   */
 
   const handleCompleteAppointment = (id: string) => {
     onCompleteAppointment?.(id);
-    console.log(`Cita ${id} marcada como completada.`);
+    // Log removido para producción
   };
 
   const handleResetAppointment = (id: string) => {

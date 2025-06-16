@@ -1,7 +1,6 @@
 'use client';
-import AdminDashboard from '../rol/Admin/page';
-import DoctorDashboard from '../rol/Doctor/page';
-import AssistantDashboard from '../rol/Assistant/page';
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 import { UserRole } from '@rutas/app/hooks/useUserRole';
 import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
@@ -27,6 +26,16 @@ const ErrorMessage = ({ message }: { message: string }) => (
   </div>
 );
 
+const AdminDashboard = dynamic(() => import('../rol/Admin/page'), {
+  loading: () => <LoadingSpinner />,
+});
+const DoctorDashboard = dynamic(() => import('../rol/Doctor/page'), {
+  loading: () => <LoadingSpinner />,
+});
+const AssistantDashboard = dynamic(() => import('../rol/Assistant/page'), {
+  loading: () => <LoadingSpinner />,
+});
+
 const RoleBasedRenderer: React.FC<RoleBasedRendererProps> = ({
   userRole,
   isLoading,
@@ -40,18 +49,32 @@ const RoleBasedRenderer: React.FC<RoleBasedRendererProps> = ({
     return <ErrorMessage message={error} />;
   }
 
-  switch (userRole) {
-    case 'medico':
-      return <DoctorDashboard />;
-    case 'asistente':
-      return <AssistantDashboard />;
-    case 'admin':
-      return <AdminDashboard />;
-    default:
-      return (
-        <ErrorMessage message="Rol de usuario no reconocido o no asignado" />
-      );
-  }
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      {(() => {
+        switch (userRole) {
+          case 'medico':
+            return <DoctorDashboard />;
+          case 'asistente':
+            return <AssistantDashboard />;
+          case 'admin':
+            return <AdminDashboard />;
+          case 'N/A':
+            return (
+              <ErrorMessage message="Por favor, completa tu proceso de registro para acceder al dashboard" />
+            );
+          case null:
+            return (
+              <ErrorMessage message="Cargando información del usuario..." />
+            );
+          default:
+            return (
+              <ErrorMessage message="Rol de usuario no reconocido" />
+            );
+        }
+      })()}
+    </Suspense>
+  );
 };
 
 export default RoleBasedRenderer;

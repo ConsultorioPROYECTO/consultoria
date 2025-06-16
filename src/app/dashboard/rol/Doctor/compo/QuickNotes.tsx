@@ -19,7 +19,7 @@ export function QuickNotes({ appointmentId, patientName }: QuickNotesProps) {
   const handleSaveNote = () => {
     if (!noteContent.trim()) return;
     // Lógica para guardar la nota (ej. enviar a API)
-    console.log(`Nota para ${patientName || 'cita seleccionada'} (${appointmentId}):`, noteContent);
+    // Nota guardada - log removido para producción
     setNoteContent(""); // Limpiar después de guardar
     alert("Nota guardada (simulación)");
   };
