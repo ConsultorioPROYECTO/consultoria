@@ -1,6 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 export type ViewType = 'dashboard' | 'calendar';
 
@@ -15,8 +16,23 @@ interface NavigationProviderProps {
   children: ReactNode;
 }
 
+// Helper function to determine view from pathname
+const getViewFromPathname = (pathname: string): ViewType => {
+  if (pathname.includes('/calender')) {
+    return 'calendar';
+  }
+  return 'dashboard';
+};
+
 export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children }) => {
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const pathname = usePathname();
+  const [currentView, setCurrentView] = useState<ViewType>(() => getViewFromPathname(pathname));
+
+  // Sync currentView with pathname changes
+  useEffect(() => {
+    const viewFromPath = getViewFromPathname(pathname);
+    setCurrentView(viewFromPath);
+  }, [pathname]);
 
   const value = {
     currentView,
