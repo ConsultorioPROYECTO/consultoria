@@ -1,14 +1,5 @@
 'use client';
-import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar";
-import { SiteHeader } from "@rutas/app/dashboard/com/site-header"; // Importación añadida
-import { useAuth } from "../../../context/AuthContext"; // Importación añadida
-import { useRouter } from "next/navigation"; // Importación añadida
-import { useEffect, useState } from "react"; // Importación añadida/modificada
-import { LoadingScreen } from '../../com/loadingScreen';
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@rutas/components/ui/sidebar";
+import { useAuth } from "../../../context/AuthContext";
 
 // Componentes específicos del Dashboard Master
 import { BusinessAnalytics } from "./compo/BusinessAnalytics";
@@ -18,9 +9,7 @@ import { AIPerformancePanel } from "./compo/AIPerformancePanel";
 
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  const [checkingRole, setCheckingRole] = useState(true);
+  const { user } = useAuth();
 
   // Obtener y formatear los dos primeros nombres del usuario (primera letra en mayúscula, resto en minúscula)
   const doctorNames = user?.displayName?.split(' ') || [];
@@ -29,73 +18,7 @@ export default function AdminDashboard() {
     return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
   });
   const displayTwoNames = formattedNames.join(' ');
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-      return;
-    }
-    async function checkRole() {
-      if (!loading && user) {
-        try {
-          const token = await user.getIdToken ? await user.getIdToken() : null;
-          if (!token) {
-            router.push('/login');
-            return;
-          }
-          const response = await fetch('/api/users/rol', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-          }
-          const data = await response.json();
-          if (!data || data.role !== 'admin') {
-            // Si no es admin, no renderiza y espera redirección
-            if (data && data.role === 'N/A') {
-              router.push('/onboard');
-            } else if (data && data.role === 'medico') {
-              router.push('/dashboard/2');
-            } else if (data && data.role === 'asistente') {
-              router.push('/dashboard/3');
-            } else {
-              router.push('/login');
-            }
-            return;
-          }
-        } catch (error) {
-          console.error('Error fetching role:', error);
-          // Si hay error, redirige a login
-          router.push('/login');
-          return;
-        }
-      }
-      setCheckingRole(false);
-    }
-    checkRole();
-  }, [user, loading, router]);
-
-  if (loading || !user || checkingRole) {
-    return (
-      <LoadingScreen />
-    );
-  }
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
           <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
             <div  className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6">
@@ -130,7 +53,5 @@ export default function AdminDashboard() {
             */}
           </main>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   );
 }

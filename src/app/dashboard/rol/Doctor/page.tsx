@@ -1,15 +1,7 @@
-'use client'
+'use client';
 
-import { LoadingScreen } from '../../com/loadingScreen';
-import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar";
-import { SiteHeader } from "@rutas/app/dashboard/com/site-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@rutas/components/ui/sidebar";
 import { useAuth } from "../../../context/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./compo/DailyAgendaView";
@@ -19,7 +11,6 @@ import { NextAppointment } from "./compo/NextAppointment";
 import { ConsultationModal } from "./compo/ConsultationModal";
 import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
-import { FetchRolUser } from "../../page";
 import { TodayIsDay } from "./compo/TodayIsDay";
 import { ImportantNotifications } from "./compo/ImportantNotifications";
 
@@ -82,14 +73,11 @@ const fetchAppointments = async () => {
 }
 
 export default function DoctorDashboard() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [, setSelectedAppointmentId] = useState<string | null>(null);
   const [todayAppointmentsState, setTodayAppointmentsState] = useState<Appointment[]>([]);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<Appointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
-  const [appointmentsLoaded, setAppointmentsLoaded] = useState(false);
-  const [checkingRole, setCheckingRole] = useState(true);
 
   const pendingAppointmentsCount = todayAppointmentsState.filter(apt => apt.status !== 'Completada').length;
 
@@ -164,87 +152,18 @@ export default function DoctorDashboard() {
     setSelectedConsultationAppointment(null);
   };
 
-  useEffect(() => {
-
-    if (!loading && !user) {
-      router.push('/login');
-      return;
-    }
-
-    const verifyRole = async () => {
-      if (!loading && user) {
-        try {
-          const token = await getFirebaseAuthToken();
-          if (!token) {
-            router.push('/login');
-            return;
-          }
-          const response = await fetch('/api/users/rol', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          if (!response.ok) {
-            throw new Error('Error al obtener el rol');
-          }
-          const data: FetchRolUser = await response.json();
-          const rol = data.role;
-          if (rol === 'medico') {
-            setCheckingRole(false);
-          } else if (rol === 'admin') {
-            router.push('/dashboard/1');
-            return;
-          } else if (rol === 'asistente') {
-            router.push('/dashboard/3');
-            return;
-          } else if (rol === 'N/A') {
-            router.push('/onboard');
-            return;
-          } else {
-            router.push('/login');
-            return;
-          }
-        } catch (error) {
-          console.error('Error al verificar el rol:', error);
-          // Solo redirigir si el usuario sigue autenticado
-          if (!loading && user) {
-            router.push('/login');
-          }
-        }
-      }
-    };
-    verifyRole();
-  }, [user, loading, router]);
-
+  // Cargar citas al montar el componente
   useEffect(() => {
     const loadAppointments = async () => {
-      if (user && !loading && !appointmentsLoaded && !checkingRole) {
+      if (user) {
         const appointments = await fetchAppointments();
         setTodayAppointmentsState(appointments);
-        setAppointmentsLoaded(true);
       }
     };
     loadAppointments();
-  }, [user, loading, appointmentsLoaded, checkingRole]);
-
-  if (loading || !user || !appointmentsLoaded || checkingRole) {
-    return <LoadingScreen />;
-  }
+  }, [user]);
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
           <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
             <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6">
@@ -291,7 +210,5 @@ export default function DoctorDashboard() {
             />
           </main>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

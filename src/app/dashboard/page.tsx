@@ -1,86 +1,47 @@
 'use client';
-import AdminDashboard from "./rol/Admin/page";
-import DoctorDashboard from "./rol/Doctor/page";
-import AssistantDashboard from "./rol/Assistant/page";
-import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
-import { useAuth } from "../context/AuthContext"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
 
-export interface FetchRolUser {
-  role: string;
-}
+import React from 'react';
+import { AppSidebar } from '@rutas/app/dashboard/com/app-sidebar';
+import { SiteHeader } from '@rutas/app/dashboard/com/site-header';
+import {
+  SidebarInset,
+  SidebarProvider,
+} from '@rutas/components/ui/sidebar';
+import { NavigationProvider } from '@rutas/app/context/NavigationContext';
+import { useAuthGuard } from '@rutas/app/hooks/useAuthGuard';
+import ViewRenderer from './components/ViewRenderer';
+import { LoadingScreen } from './com/loadingScreen';
 
-const fetchRolUser = async () => {
-  try {
-    const token = await getFirebaseAuthToken();
 
-    if (!token) {
-      console.error('No se pudo obtener el token de autenticación.');
-      return null;
-    }
-
-    const response = await fetch('/api/users/rol',{
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`, 
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data : FetchRolUser = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error fetching appointments:', error);
-    return null;
-  }
-}
+const DashboardLayout: React.FC = () => {
+  return (
+    <NavigationProvider>
+      <SidebarProvider
+        style={{
+          '--sidebar-width': 'calc(var(--spacing) * 72)',
+          '--header-height': 'calc(var(--spacing) * 12)',
+        } as React.CSSProperties}
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <ViewRenderer />
+        </SidebarInset>
+      </SidebarProvider>
+    </NavigationProvider>
+  );
+};
 
 export default function Page() {
-  const { user, loading } = useAuth(); 
-  const router = useRouter();
-  const [checkingRole, setCheckingRole] = useState(true);
-  const [UserDashboard, setUserDashboard] = useState<React.ComponentType | null>(null);
+  const { isAuthenticated, isLoading } = useAuthGuard();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-      return;
-    }
-
-    if (!loading && user) {
-      fetchRolUser().then((data) => {
-        if (data && 'role' in data) {
-          if (data.role === 'N/A') {
-            router.push('/onboard');
-            // No liberamos checkingRole aquí, así nunca se renderiza la página
-            return;
-          } else if (data.role === 'medico') {
-            setUserDashboard(() => DoctorDashboard);
-          } else if (data.role ==='asistente') {
-            setUserDashboard(() => AssistantDashboard);
-          } else if (data.role ==='admin') {
-            setUserDashboard(() => AdminDashboard);
-          }
-        }
-        setCheckingRole(false);
-      }).catch((error) => {
-        console.error('Error fetching rol:', error);
-        setCheckingRole(false);
-      });
-    } else if (!loading) {
-      setCheckingRole(false);
-    }
-  }, [user, loading, router]);
-  if (loading || !user || checkingRole || !UserDashboard) {
-    return null;
+  if (isLoading) {
+    return <LoadingScreen />;
   }
 
-  return (
+  if (!isAuthenticated) {
+    return null; // El hook useAuthGuard maneja la redirección
+  }
 
-        <UserDashboard />
-
-  )
+  return <DashboardLayout />;
 }

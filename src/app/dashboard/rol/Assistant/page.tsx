@@ -1,10 +1,8 @@
 'use client';
-import { LoadingScreen } from "@rutas/app/dashboard/com/loadingScreen";
-import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar"
+
 import { ChartAreaInteractive } from "@rutas/app/dashboard/com/chart-area-interactive"
 import { DataTable } from "@rutas/app/dashboard/com/data-table"
 import { SectionCards } from "@rutas/app/dashboard/com/section-cards"
-import { SiteHeader } from "@rutas/app/dashboard/com/site-header"
 import { UpcomingAppointments } from "@rutas/app/dashboard/com/UpcomingAppointments"
 import { PendingInteractions } from "@rutas/app/dashboard/com/PendingInteractions"
 import { AIStats } from "@rutas/app/dashboard/com/AIStats"
@@ -16,72 +14,10 @@ import { CommunicationTemplates } from "./compo/CommunicationTemplates";
 import { ScheduleChangeNotifications } from "./compo/ScheduleChangeNotifications";
 import { WaitingListManagement } from "./compo/WaitingListManagement";
 import { ConflictResolutionCenter } from "./compo/ConflictResolutionCenter";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@rutas/components/ui/sidebar"
-
-// import data from "../data.json" // Commented out - not currently used
-import { useAuth } from "../../../context/AuthContext"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { getFirebaseAuthToken } from "@lib/firebase/clientUtils"
 
 export default function AssistantDashboard() {
-  const { user, loading } = useAuth(); 
-  const router = useRouter();
-  const [checkingRole, setCheckingRole] = useState(true);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-      return;
-    }
-    if (!loading && user) {
-      (async () => {
-        try {
-          const token = await getFirebaseAuthToken();
-          const res = await fetch('/api/users/rol', {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (!res.ok) throw new Error('No se pudo obtener el rol');
-          const { role } = await res.json();
-          if (role === 'asistente') {
-            setCheckingRole(false);
-          } else if (role === 'admin') {
-            router.push('/dashboard/1');
-          } else if (role === 'medico') {
-            router.push('/dashboard/2');
-          } else if (role === 'N/A') {
-            router.push('/onboard');
-          } else {
-            router.push('/login');
-          }
-        } catch (err) {
-          console.error(err);
-          if (user) router.push('/login');
-        }
-      })();
-    }
-  }, [user, loading, router]);
-  if (loading || !user || checkingRole) {
-    return (
-      <LoadingScreen />
-    );
-  }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
@@ -118,7 +54,5 @@ export default function AssistantDashboard() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   )
 }

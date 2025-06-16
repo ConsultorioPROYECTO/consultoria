@@ -20,6 +20,7 @@ export function NavMain({
     title: string
     url: string
     icon?: LucideIcon
+    onClick?: () => void
   }[]
   currentPath: string
   hideIcons?: boolean
@@ -34,26 +35,26 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                asChild
-                tooltip={item.title}
-                className={cn(
-                  hideIcons ? (
-                    // Estilo minimalista
-                    cn(
-                      "text-muted-foreground hover:!bg-transparent focus:!bg-transparent active:!bg-transparent overflow-hidden",
-                      item.url === currentPath && "bg-transparent text-primary"
+              {item.onClick ? (
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  onClick={item.onClick}
+                  className={cn(
+                    hideIcons ? (
+                      // Estilo minimalista
+                      cn(
+                        "text-muted-foreground hover:!bg-transparent focus:!bg-transparent active:!bg-transparent overflow-hidden",
+                        item.url === currentPath && "bg-transparent text-primary"
+                      )
+                    ) : (
+                      // Estilo normal
+                      cn(
+                        "text-muted-foreground",
+                        item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                      )
                     )
-                  ) : (
-                    // Estilo normal
-                    cn(
-                      "text-muted-foreground",
-                      item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                    )
-                  )
-                )}
-              >
-                <Link href={item.url}>
+                  )}
+                >
                   {!hideIcons && item.icon && <item.icon />}
                   {hideIcons ? (
                     <span className="block font-semibold text-3xl" >
@@ -62,8 +63,58 @@ export function NavMain({
                   ) : (
                     <span className="font-medium text-2xl">{item.title}</span> 
                   )}
-                </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  className={cn(
+                    hideIcons ? (
+                      // Estilo minimalista
+                      cn(
+                        "text-muted-foreground hover:!bg-transparent focus:!bg-transparent active:!bg-transparent overflow-hidden",
+                        item.url === currentPath && "bg-transparent text-primary"
+                      )
+                    ) : (
+                      // Estilo normal
+                      cn(
+                        "text-muted-foreground",
+                        item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                      )
+                    )
+                  )}
+                >
+                {item.onClick ? (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      item.onClick?.();
+                    }}
+                    className="flex w-full items-center gap-2"
+                  >
+                    {!hideIcons && item.icon && <item.icon />}
+                    {hideIcons ? (
+                      <span className="block font-semibold text-3xl" >
+                        {item.title}
+                      </span>
+                    ) : (
+                      <span className="font-medium text-2xl">{item.title}</span> 
+                    )}
+                  </button>
+                ) : (
+                  <Link href={item.url}>
+                    {!hideIcons && item.icon && <item.icon />}
+                    {hideIcons ? (
+                      <span className="block font-semibold text-3xl" >
+                        {item.title}
+                      </span>
+                    ) : (
+                      <span className="font-medium text-2xl">{item.title}</span> 
+                    )}
+                  </Link>
+                )}
               </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

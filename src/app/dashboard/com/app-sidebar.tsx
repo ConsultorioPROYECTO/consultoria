@@ -23,6 +23,7 @@ import {
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 import { useUIStyle } from "../../context/UIStyleContext"
+import { useNavigation } from "@rutas/app/context/NavigationContext"
 import { geistFont } from "../../fonts"
 
 // Interfaz para las citas y datos de ejemplo
@@ -59,6 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
   const { user } = useAuth()
   const { uiStyle } = useUIStyle() // Obtener el estilo de interfaz
+  const { setCurrentView, currentView } = useNavigation()
   const pathname = usePathname();
 
   React.useEffect(() => {
@@ -85,6 +87,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Dashboard",
         url: "/dashboard",
         icon: House,
+        onClick: () => setCurrentView('dashboard'),
       },
       {
         title: "Org",
@@ -95,6 +98,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Calendario",
         url: "/dashboard/calender",
         icon: CalendarClock,
+        onClick: () => setCurrentView('calendar'),
       },
       {
         title: "Demo APIs",
