@@ -60,7 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
   const { user } = useAuth()
   const { uiStyle } = useUIStyle() // Obtener el estilo de interfaz
-  const { setCurrentView, currentView } = useNavigation()
+  const { setCurrentView, } = useNavigation()
   const pathname = usePathname();
 
   React.useEffect(() => {
