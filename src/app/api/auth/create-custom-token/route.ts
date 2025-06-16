@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createMedicalCustomToken } from '@/lib/firebase-auth';
+import { createMedicalCustomToken } from '@/app/lib/firebase/server/adminConfig';
 import { validateRequestBody } from '@/lib/api-helpers';
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
 import { db } from '@/db';

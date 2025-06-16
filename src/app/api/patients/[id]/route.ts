@@ -229,7 +229,7 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
     }
 
     const token = authHeader.substring(7);
-    return await auth().verifyIdToken(token);
+    return await auth.verifyIdToken(token);
   } catch (error) {
     console.error('Authentication error:', error);
     return null;

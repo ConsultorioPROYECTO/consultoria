@@ -5,7 +5,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { verifyAuthToken, CustomClaims, hasPermission, belongsToOrganization, UserPermissions } from './firebase-auth';
+import { verifyAuthToken, CustomClaims, hasPermission, belongsToOrganization, UserPermissions } from '../app/lib/firebase/server/adminConfig';
+import type { DecodedIdToken } from 'firebase-admin/auth';
 import { createErrorResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
 
 /**
@@ -70,7 +71,7 @@ export async function authenticateRequest(
   // Verificar token
   const authResult = await verifyAuthToken(authHeader);
   
-  if (!authResult.success || !authResult.customClaims) {
+  if (!authResult.success) {
     return {
       success: false,
       error: createErrorResponse(
@@ -81,7 +82,7 @@ export async function authenticateRequest(
     };
   }
 
-  const user = authResult.customClaims;
+  const user = (authResult as { success: true; customClaims: CustomClaims & { uid: string; email?: string }; decodedToken: DecodedIdToken }).customClaims;
 
   // Verificar roles permitidos
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
