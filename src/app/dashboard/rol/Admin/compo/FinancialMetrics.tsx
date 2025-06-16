@@ -1,6 +1,4 @@
 // src/app/dashboard/1/compo/FinancialMetrics.tsx
-'use client';
-
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
 
 export function FinancialMetrics() {

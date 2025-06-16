@@ -1,6 +1,4 @@
 // src/app/dashboard/1/compo/AIPerformancePanel.tsx
-'use client';
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { Progress } from "@rutas/components/ui/progress";
 

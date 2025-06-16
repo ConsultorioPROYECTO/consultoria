@@ -1,5 +1,3 @@
-'use client'
-
 import UiScreen from '@rutas/components/uiscreen';
 import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 

@@ -1,5 +1,3 @@
-'use client'
-
 import { Card, CardContent } from "@rutas/components/ui/card";
 
 export function TodayIsDay() {

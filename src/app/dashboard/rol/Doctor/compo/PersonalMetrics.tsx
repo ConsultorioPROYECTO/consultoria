@@ -1,6 +1,4 @@
 // src/app/dashboard/2/compo/PersonalMetrics.tsx
-'use client';
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { Progress } from "@rutas/components/ui/progress";
 import { TrendingUp, Users, Smile, Star } from "lucide-react"; // Asumiendo lucide-react
