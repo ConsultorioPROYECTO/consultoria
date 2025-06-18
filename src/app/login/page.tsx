@@ -46,15 +46,41 @@ export default function Login() {
                         const errorData = await response.json();
                         console.error('Error al sincronizar usuario:', errorData.details || response.statusText);
                         // Opcional: manejar el error en la UI, por ejemplo, no redirigir o mostrar un mensaje
+                        return;
                     } else {
                         const successData = await response.json();
                         console.log('Usuario sincronizado:', successData.message);
                     }
+
+                    // Verificar el rol del usuario después de la sincronización
+                    const token = await user.getIdToken();
+                    const roleResponse = await fetch('/api/users/rol', {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+
+                    if (roleResponse.ok) {
+                        const roleData = await roleResponse.json();
+                        // Si el rol es N/A, redirigir al onboard
+                        if (roleData.role === 'N/A') {
+                            router.push('/onboard');
+                        } else {
+                            // Si tiene un rol válido, redirigir al dashboard
+                            router.push('/dashboard');
+                        }
+                    } else {
+                        console.error('Error al obtener el rol del usuario');
+                        // En caso de error, redirigir al onboard por seguridad
+                        router.push('/onboard');
+                    }
                 } catch (error) {
                     console.error('Error en la llamada de sincronización:', error);
+                    // En caso de error, redirigir al onboard por seguridad
+                    router.push('/onboard');
                 }
-                // Redirigir independientemente del resultado de la sincronización (o decidir según el caso de uso)
-                router.push('/dashboard');
             };
 
             syncUser();

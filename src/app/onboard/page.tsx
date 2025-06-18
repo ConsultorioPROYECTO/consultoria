@@ -3,13 +3,13 @@
 import { Button } from "@rutas/components/ui/button"
 import { useEffect, useState, Suspense } from "react"
 import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react" // Zap y CheckCircle pueden ser removidos si no se usan directamente aquí
-import { plansData } from "./com/prices"; // NUEVA IMPORTACIÓN
 import { motion, AnimatePresence } from 'framer-motion';
 import { Step1RoleSelect } from "./com/Step1RoleSelect";
 import { Step2ConsultorioOrInvitacion } from "./com/Step2ConsultorioOrInvitacion";
 import { Step3PlanSelect } from "./com/Step3PlanSelect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useAuth } from "@rutas/app/context/AuthContext";
 
 function OnboardContent() {
     const roles = [
@@ -24,6 +24,7 @@ function OnboardContent() {
     const searchParams = useSearchParams();
     const initialInvitationCode = searchParams.get('invitacionCode');
     const initialRole = searchParams.get('role');
+    const { signOut } = useAuth();
 
     useEffect(() => {
         if (initialInvitationCode) {
@@ -123,22 +124,37 @@ function OnboardContent() {
     };
     const nextStep = () => setCurrentStep(prev => prev + 1);
     const prevStep = () => setCurrentStep(prev => prev - 1);
+    
+    const handleBackAction = async () => {
+      if (currentStep === 1) {
+        // Si estamos en el paso 1, cerrar sesión y borrar credenciales
+        try {
+          await signOut();
+          toast.success("Sesión cerrada correctamente");
+          router.push('/login'); // Redirigir al login después del logout
+        } catch (error) {
+          console.error('Error al cerrar sesión:', error);
+          toast.error("Error al cerrar sesión");
+        }
+      } else {
+        // Para otros pasos, simplemente retroceder
+        prevStep();
+      }
+    };
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-background p-6 md:p-10 text-foreground relative"> {/* Añadido 'relative' para posicionar el botón de atrás absoluto a este contenedor */}
       
       {/* Botón de Volver Atrás - Posicionado en la esquina superior izquierda de la PÁGINA */}
-      {currentStep > 1 && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-6 left-6 md:top-10 md:left-10 text-muted-foreground hover:text-foreground z-20"
-          onClick={prevStep}
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span className="sr-only">Anterior</span>
-        </Button>
-      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="absolute top-6 left-6 md:top-10 md:left-10 text-muted-foreground hover:text-foreground z-20"
+        onClick={handleBackAction}
+      >
+        <ArrowLeft className="w-5 h-5" />
+        <span className="sr-only">{currentStep === 1 ? "Cerrar sesión" : "Anterior"}</span>
+      </Button>
 
       {/* Contenedor principal con ancho fijo para evitar saltos */}
       <div className="max-w-4xl mx-auto flex flex-col gap-4">
