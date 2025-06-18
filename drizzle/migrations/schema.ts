@@ -1,0 +1,243 @@
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, foreignKey, primaryKey, unique, serial, int, varchar, date, timestamp, mysqlEnum, text, decimal, json } from "drizzle-orm/mysql-core"
+import { sql } from "drizzle-orm"
+
+export const appointments = mysqlTable("appointments", {
+	id: serial().notNull(),
+	doctorId: int("doctor_id").notNull().references(() => doctors.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	time: varchar({ length: 12 }).notNull(),
+	patientName: varchar("patient_name", { length: 255 }),
+	service: varchar({ length: 255 }),
+	// you can use { mode: 'date' }, if you want to have Date as type for this column
+	date: date({ mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+	status: mysqlEnum(['Confirmada','Completada','Pendiente','Llegó','Cancelada']).default('Pendiente').notNull(),
+	patientId: int("patient_id").references(() => patients.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	serviceId: int("service_id").references(() => medicalServices.id, { onDelete: "set null", onUpdate: "cascade" } ),
+	notes: text(),
+	cancelReason: text("cancel_reason"),
+	reminderSent: tinyint("reminder_sent").default(0).notNull(),
+	googleCalendarId: varchar("google_calendar_id", { length: 255 }),
+	syncStatus: mysqlEnum("sync_status", ['pending','synced','failed','not_synced']).default('pending').notNull(),
+	lastSyncAttempt: timestamp("last_sync_attempt", { mode: 'string' }),
+	syncError: text("sync_error"),
+	durationMinutes: int("duration_minutes").default(30).notNull(),
+	isVirtual: tinyint("is_virtual").default(0).notNull(),
+	meetingLink: varchar("meeting_link", { length: 500 }),
+},
+(table) => [
+	index("appointment_date_idx").on(table.date),
+	index("appointment_date_time_idx").on(table.date, table.time),
+	index("appointment_doctor_id_idx").on(table.doctorId),
+	index("appointment_google_calendar_id_idx").on(table.googleCalendarId),
+	index("appointment_patient_id_idx").on(table.patientId),
+	index("appointment_service_id_idx").on(table.serviceId),
+	index("appointment_status_idx").on(table.status),
+	index("appointment_sync_status_idx").on(table.syncStatus),
+	index("appointment_time_idx").on(table.time),
+	primaryKey({ columns: [table.id], name: "appointments_id"}),
+	unique("id_appointment").on(table.id),
+]);
+
+export const assistantDoctor = mysqlTable("assistant_doctor", {
+	assistantId: int("assistant_id").notNull().references(() => assistants.id, { onDelete: "cascade" } ),
+	doctorId: int("doctor_id").notNull().references(() => doctors.id, { onDelete: "cascade" } ),
+});
+
+export const assistants = mysqlTable("assistants", {
+	id: int().autoincrement().notNull(),
+	userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+},
+(table) => [
+	index("assistant_user_id_idx").on(table.userId),
+	primaryKey({ columns: [table.id], name: "assistants_id"}),
+]);
+
+export const doctorServices = mysqlTable("doctor_services", {
+	doctorId: int("doctor_id").notNull().references(() => doctors.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	serviceId: int("service_id").notNull().references(() => medicalServices.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	customPrice: decimal("custom_price", { precision: 10, scale: 2 }),
+	isAvailable: tinyint("is_available").default(1).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+},
+(table) => [
+	index("doctor_services_available_idx").on(table.isAvailable),
+	index("doctor_services_doctor_id_idx").on(table.doctorId),
+	index("doctor_services_doctor_service_idx").on(table.doctorId, table.serviceId),
+	index("doctor_services_service_id_idx").on(table.serviceId),
+]);
+
+export const doctors = mysqlTable("doctors", {
+	id: int().autoincrement().notNull(),
+	userId: int("user_id").notNull().references(() => users.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	speciality: varchar({ length: 255 }).notNull(),
+	calendarId: varchar("calendar_id", { length: 255 }).notNull(),
+	privatePhone: varchar("private_phone", { length: 255 }).notNull(),
+	nitId: varchar("nit_id", { length: 255 }).notNull(),
+	availability: varchar({ length: 255 }).notNull(),
+	tokenGoogleId: varchar("token_google_id", { length: 255 }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+	calendarColor: varchar("calendar_color", { length: 7 }).default('#1976D2').notNull(),
+	calendarSyncEnabled: tinyint("calendar_sync_enabled").default(1).notNull(),
+	lastCalendarSync: timestamp("last_calendar_sync", { mode: 'string' }),
+	calendarSettings: json("calendar_settings"),
+	workingHours: json("working_hours"),
+	breakTimes: json("break_times"),
+	appointmentDuration: int("appointment_duration").default(30).notNull(),
+},
+(table) => [
+	index("email_idx").on(table.userId),
+	index("firebase_uid_idx").on(table.userId),
+	index("phone_number_idx").on(table.userId),
+	primaryKey({ columns: [table.id], name: "doctors_id"}),
+]);
+
+export const medicalServices = mysqlTable("medical_services", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	code: varchar({ length: 50 }).notNull(),
+	durationMinutes: int("duration_minutes").default(30).notNull(),
+	basePrice: decimal("base_price", { precision: 10, scale: 2 }).default('0.00').notNull(),
+	category: varchar({ length: 100 }).notNull(),
+	requiresPreparation: tinyint("requires_preparation").default(0).notNull(),
+	preparationInstructions: text("preparation_instructions"),
+	organizationId: int("organization_id").notNull().references(() => organization.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	isActive: tinyint("is_active").default(1).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+},
+(table) => [
+	index("service_active_idx").on(table.isActive),
+	index("service_category_idx").on(table.category),
+	index("service_code_idx").on(table.code),
+	index("service_name_idx").on(table.name),
+	index("service_organization_id_idx").on(table.organizationId),
+	primaryKey({ columns: [table.id], name: "medical_services_id"}),
+	unique("medical_services_code_unique").on(table.code),
+]);
+
+export const organization = mysqlTable("organization", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	address: varchar({ length: 255 }),
+	phone: varchar({ length: 15 }),
+	email: varchar({ length: 255 }),
+	nit: varchar({ length: 45 }),
+	logo: varchar({ length: 255 }),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+	invitationCode: varchar("invitation_code", { length: 6 }),
+	planId: int("plan_id", { unsigned: true }).references(() => plans.id, { onUpdate: "cascade" } ),
+},
+(table) => [
+	index("organization_email_idx").on(table.email),
+	index("organization_invitation_code_idx").on(table.invitationCode),
+	index("organization_name_idx").on(table.name),
+	index("organization_nit_idx").on(table.nit),
+	index("organization_phone_idx").on(table.phone),
+	primaryKey({ columns: [table.id], name: "organization_id"}),
+	unique("invitation_code_UNIQUE").on(table.invitationCode),
+]);
+
+export const organizationInvitationsRequest = mysqlTable("organization_invitations_request", {
+	id: int().autoincrement().notNull(),
+	organizationId: int("organization_id").notNull().references(() => organization.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	userEmail: varchar("user_email", { length: 255 }).notNull(),
+	role: mysqlEnum(['admin','medico','asistente','N/A']).default('N/A').notNull(),
+	status: mysqlEnum(['pending','approved','rejected','cancelled','expired']).default('pending').notNull(),
+	message: varchar({ length: 500 }),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	approvedAt: timestamp("approved_at", { mode: 'string' }),
+	rejectedAt: timestamp("rejected_at", { mode: 'string' }),
+	cancelledAt: timestamp("cancelled_at", { mode: 'string' }),
+	isDeleted: tinyint("is_deleted").default(0).notNull(),
+	expiresAt: timestamp("expires_at", { mode: 'string' }),
+},
+(table) => [
+	index("approved_at_idx").on(table.approvedAt),
+	index("cancelled_at_idx").on(table.cancelledAt),
+	index("created_at_idx").on(table.createdAt),
+	index("organization_id_idx").on(table.organizationId),
+	index("rejected_at_idx").on(table.rejectedAt),
+	index("role_idx").on(table.role),
+	index("status_idx").on(table.status),
+	index("user_email_idx").on(table.userEmail),
+	primaryKey({ columns: [table.id], name: "organization_invitations_request_id"}),
+]);
+
+export const patients = mysqlTable("patients", {
+	id: int().autoincrement().notNull(),
+	firstName: varchar("first_name", { length: 100 }).notNull(),
+	lastName: varchar("last_name", { length: 100 }).notNull(),
+	identificationType: mysqlEnum("identification_type", ['CC','TI','CE','PP','RC','AS']).notNull(),
+	identificationNumber: varchar("identification_number", { length: 50 }).notNull(),
+	// you can use { mode: 'date' }, if you want to have Date as type for this column
+	birthDate: date("birth_date", { mode: 'string' }),
+	gender: mysqlEnum(['M','F','Other']).notNull(),
+	phone: varchar({ length: 20 }),
+	email: varchar({ length: 255 }),
+	address: text(),
+	emergencyContactName: varchar("emergency_contact_name", { length: 200 }),
+	emergencyContactPhone: varchar("emergency_contact_phone", { length: 20 }),
+	emergencyContactRelation: varchar("emergency_contact_relation", { length: 50 }),
+	medicalHistory: text("medical_history"),
+	allergies: text(),
+	currentMedications: text("current_medications"),
+	bloodType: mysqlEnum("blood_type", ['A+','A-','B+','B-','AB+','AB-','O+','O-']),
+	organizationId: int("organization_id").notNull().references(() => organization.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+	isActive: tinyint("is_active").default(1).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+},
+(table) => [
+	index("patient_email_idx").on(table.email),
+	index("patient_name_idx").on(table.firstName, table.lastName),
+	index("patient_organization_id_idx").on(table.organizationId),
+	index("patient_phone_idx").on(table.phone),
+	primaryKey({ columns: [table.id], name: "patients_id"}),
+	unique("patient_identification_unique").on(table.identificationType, table.identificationNumber),
+]);
+
+export const plans = mysqlTable("plans", {
+	id: int({ unsigned: true }).autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: varchar({ length: 255 }),
+	price: int().notNull(),
+	duration: int().notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("plan_name_idx").on(table.name),
+	primaryKey({ columns: [table.id], name: "plans_id"}),
+]);
+
+export const users = mysqlTable("users", {
+	id: int().autoincrement().notNull(),
+	firebaseUid: varchar("firebase_uid", { length: 255 }).notNull(),
+	email: varchar({ length: 255 }),
+	emailVerified: tinyint("email_verified").default(0),
+	phoneNumber: varchar("phone_number", { length: 50 }),
+	displayName: varchar("display_name", { length: 255 }),
+	photoUrl: text("photo_url"),
+	providerId: varchar("provider_id", { length: 50 }),
+	role: mysqlEnum(['admin','medico','asistente','N/A']).default('N/A').notNull(),
+	isActive: tinyint("is_active").default(1).notNull(),
+	lastLoginAt: timestamp("last_login_at", { mode: 'string' }),
+	createdAt: timestamp("created_at", { mode: 'string' }).default(sql`(now())`).notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).default(sql`(now())`).onUpdateNow().notNull(),
+	organizationId: int("organization_id").references(() => organization.id, { onDelete: "cascade", onUpdate: "cascade" } ),
+},
+(table) => [
+	index("email_idx").on(table.email),
+	index("firebase_uid_idx").on(table.firebaseUid),
+	index("phone_number_idx").on(table.phoneNumber),
+	index("role_idx").on(table.role),
+	primaryKey({ columns: [table.id], name: "users_id"}),
+	unique("users_firebase_uid_unique").on(table.firebaseUid),
+]);

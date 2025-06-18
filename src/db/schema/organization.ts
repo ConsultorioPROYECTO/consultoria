@@ -2,6 +2,7 @@
 
 import { mysqlTable, varchar, timestamp, index, int  } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { plans } from './plans';
 
 /**
  * @typedef AppointmentTableSchema
@@ -29,7 +30,7 @@ export const organization = mysqlTable('organization', {
   email: varchar('email', { length: 255 }),
   nit: varchar('nit', { length: 45 }),
   logo: varchar('logo', { length: 255 }),
-  planId: varchar('plan_id', { length: 255 }), 
+  planId: int('plan_id', {unsigned : true}).references(() => plans.id, {onDelete : "no action", onUpdate : "cascade"}),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (organization) => [

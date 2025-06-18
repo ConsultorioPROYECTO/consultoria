@@ -162,6 +162,13 @@
       "when": 1750223939560,
       "tag": "0022_groovy_blue_shield",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1750288396451,
+      "tag": "0023_wooden_kat_farrell",
+      "breakpoints": true
     }
   ]
 }
