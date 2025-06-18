@@ -22,7 +22,6 @@ import {
 } from '@/app/lib/google-calendar/calendar-utils';
 import {
   listAppointments,
-  getAppointment,
   searchAppointments
 } from '@/app/lib/google-calendar/appointment-service';
 import type { PaginatedResult, Appointment } from '@/app/lib/google-calendar/types';

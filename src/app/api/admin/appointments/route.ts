@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { appointments } from '@/db/schema/appointments';
+import { Appointment, appointments } from '@/db/schema/appointments';
 import { eq, and, gte, lte } from 'drizzle-orm';
 import {
-  createAppointmentWithCalendar,
   getAppointmentByGoogleEventId,
   updateAppointmentSyncStatus,
   getPendingSyncAppointments,
@@ -12,12 +11,8 @@ import {
   removeAppointmentCalendarInfo
 } from '@/db/utils/GCalendar/calendar-db-utils';
 import {
-  createAppointment,
   getAppointment,
   listAppointments,
-  updateAppointment,
-  cancelAppointment,
-  deleteAppointment,
   searchAppointments
 } from '@/app/lib/google-calendar/appointment-service';
 
@@ -167,7 +162,7 @@ async function getAppointmentByGoogleEvent(googleEventId: string) {
 // Función para obtener citas por estado de sincronización
 async function getAppointmentsBySyncStatus(syncStatus: string) {
   try {
-    let appointmentsResult: any[] = [];
+    let appointmentsResult: Appointment[] = [];
     
     switch (syncStatus) {
       case 'pending':
@@ -180,7 +175,7 @@ async function getAppointmentsBySyncStatus(syncStatus: string) {
         appointmentsResult = await db
           .select()
           .from(appointments)
-          .where(eq(appointments.sync_status, syncStatus as any));
+          .where(eq(appointments.sync_status, syncStatus as 'pending' | 'synced' | 'failed' | 'not_synced'));
     }
 
     return NextResponse.json({
@@ -240,7 +235,7 @@ async function getFilteredAppointments(filters: {
   pageSize: number;
 }) {
   try {
-    let appointmentsResult: any[] = [];
+    let appointmentsResult: Appointment[] = [];
     
     // Si se especifica doctor y rango de fechas, usar función específica
     if (filters.doctorId && filters.startDate && filters.endDate) {
