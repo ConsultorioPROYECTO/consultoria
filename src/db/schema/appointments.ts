@@ -23,6 +23,14 @@ import { medicalServices } from './medical_services'; // Importar el esquema de 
  * @property {boolean} reminderSent - Si se envió recordatorio.
  * @property {string} patientName - Nombre del paciente (TEMPORAL - mantener para compatibilidad).
  * @property {string} service - Descripción del servicio (TEMPORAL - mantener para compatibilidad).
+ * @property {string} google_event_id - ID del evento en Google Calendar.
+ * @property {string} google_calendar_id - ID del calendario donde está el evento.
+ * @property {enum} sync_status - Estado de sincronización con Google Calendar.
+ * @property {Date} last_sync_attempt - Último intento de sincronización.
+ * @property {text} sync_error - Detalles del error si falla la sincronización.
+ * @property {number} duration_minutes - Duración de la cita en minutos.
+ * @property {boolean} is_virtual - Si la cita es virtual.
+ * @property {string} meeting_link - Enlace de la reunión virtual.
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
@@ -48,6 +56,18 @@ export const appointments = mysqlTable('appointments', {
   patientName: varchar('patient_name', { length: 255 }), // TEMPORAL - usar patientId en su lugar
   service: varchar('service', { length: 255 }), // TEMPORAL - usar serviceId en su lugar
 
+  // --- Campos de sincronización con Google Calendar ---
+  google_event_id: varchar('google_event_id', { length: 255 }), // ID del evento en Google Calendar
+  google_calendar_id: varchar('google_calendar_id', { length: 255 }), // ID del calendario donde está el evento
+  sync_status: mysqlEnum('sync_status', ['pending', 'synced', 'failed', 'not_synced']).default('pending').notNull(),
+  last_sync_attempt: timestamp('last_sync_attempt'),
+  sync_error: text('sync_error'), // Detalles del error si falla la sincronización
+  
+  // --- Campos adicionales para mejor gestión ---
+  duration_minutes: int('duration_minutes').default(30).notNull(),
+  is_virtual: boolean('is_virtual').default(false).notNull(),
+  meeting_link: varchar('meeting_link', { length: 500 }),
+
   // --- Timestamps ---
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
@@ -60,6 +80,11 @@ export const appointments = mysqlTable('appointments', {
   index('appointment_date_idx').on(table.date),
   index('appointment_status_idx').on(table.status),
   index('appointment_date_time_idx').on(table.date, table.time), // Índice compuesto para búsquedas por fecha y hora
+  
+  // Índices para Google Calendar
+  index('appointment_google_event_id_idx').on(table.google_event_id),
+  index('appointment_google_calendar_id_idx').on(table.google_calendar_id),
+  index('appointment_sync_status_idx').on(table.sync_status),
 ]);
 
 

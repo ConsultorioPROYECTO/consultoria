@@ -19,7 +19,7 @@ import serviceAccountCredentials_json from '../../../../../etc/secrets/consultor
 /**
  * Roles disponibles en el sistema.
  */
-export type UserRole = 'admin' | 'doctor' | 'assistant' | 'patient';
+export type UserRole = 'admin' | 'doctor' | 'assistant' | 'patient'| "N/A";
 
 /**
  * Permisos específicos por funcionalidad.
@@ -96,7 +96,7 @@ export interface CustomClaims {
  */
 export const CreateCustomTokenSchema = z.object({
   uid: z.string().min(1, 'UID es requerido'),
-  role: z.enum(['admin', 'doctor', 'assistant', 'patient']),
+  role: z.enum(['admin', 'doctor', 'assistant', 'patient', 'N/A']),
   organizationId: z.string().min(1, 'ID de organización es requerido'),
   organizationName: z.string().min(1, 'Nombre de organización es requerido'),
   doctorInfo: z.object({

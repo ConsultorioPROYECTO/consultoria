@@ -1,6 +1,6 @@
 // src/db/schema/users.ts (o donde definas tus esquemas de Drizzle)
 
-import { mysqlTable, varchar, timestamp, index, int, json } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int, json, boolean } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
 import { users } from './users';
 import { appointments, type Appointment } from './appointments';
@@ -42,6 +42,18 @@ export const doctors = mysqlTable('doctors', {
   nitId: varchar('nit_id', { length: 255 }).notNull(), // NIT del doctor
   availability: json('availability').notNull(), // Horarios de trabajo del doctor (JSON)
   tokenGoogleId: varchar('token_google_id', { length: 255 }).notNull(), // Token de Google
+  
+  // --- Campos de Google Calendar ---
+  calendar_timezone: varchar('calendar_timezone', { length: 50 }).default('America/Bogota').notNull(),
+  calendar_color: varchar('calendar_color', { length: 7 }).default('#1976D2').notNull(), // Hex color
+  calendar_sync_enabled: boolean('calendar_sync_enabled').default(true).notNull(),
+  last_calendar_sync: timestamp('last_calendar_sync'),
+  calendar_settings: json('calendar_settings'), // Configuraciones específicas del calendario
+  
+  // --- Configuración de disponibilidad mejorada ---
+  working_hours: json('working_hours'), // Horarios detallados por día
+  break_times: json('break_times'), // Descansos durante el día
+  appointment_duration: int('appointment_duration').default(30).notNull(), // Duración por defecto en minutos
  
   // --- Timestamps ---
   createdAt: timestamp('created_at').defaultNow().notNull(),
