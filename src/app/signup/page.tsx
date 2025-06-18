@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { SignupImage } from './SignupImage';
+import { AuthImage } from '../auth-components/AuthImage';
 import { SignupContent } from './SignupContent';
 import { sendEmailVerification } from "firebase/auth";
 
@@ -67,7 +67,7 @@ function SignupPageContent() {
 
     return (
         <div className="bg-white flex flex-col lg:grid lg:grid-cols-2 gap-1 p-2 max-w-full h-screen">
-            <SignupImage />
+            <AuthImage />
             <SignupContent />
         </div>
     );

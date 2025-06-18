@@ -1,25 +1,21 @@
 import React from 'react';
 import { SignupForm } from '@/app/signup/signup-form/signup-form';
+import { AuthLogo } from '@/app/auth-components/AuthLogo';
+import { extractAuthParams, buildAuthRedirectUrl } from '@/app/auth-components/auth-utils';
+import type { AuthParams } from '@/app/auth-components/auth-types';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 export function SignupContent() {
   const searchParams = useSearchParams();
-  const invitacionCode = searchParams.get('invitacionCode');
-  const role = searchParams.get('role');
+  const { invitacionCode, role }: AuthParams = extractAuthParams(searchParams);
 
-  let loginHref = '/login';
-  if (invitacionCode || role) {
-    const params = new URLSearchParams();
-    if (invitacionCode) params.set('invitacionCode', invitacionCode);
-    if (role) params.set('role', role);
-    loginHref += `?${params.toString()}`;
-  }
+  const loginHref = buildAuthRedirectUrl('/login', invitacionCode, role);
 
   return (
     <div className="flex items-center h-auto min-h-[97vh] w-full py-6 ">
       <div className="flex flex-col h-full w-full items-center justify-between">
-        <h1 className="text-4xl font-light text-center text-gray-800 mb-8">Consultoria Logo</h1>
+        <AuthLogo />
         <SignupForm />
         <div className="flex flex-col items-center justify-center mt-8">
           <p className="text-base text-gray-600">

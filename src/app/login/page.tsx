@@ -3,14 +3,13 @@
 import { Suspense, useEffect, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { LoginImage } from './LoginImage';
+import { AuthImage } from '../auth-components/AuthImage';
 import { LoginContent } from './LoginContent';
 import { sendEmailVerification } from 'firebase/auth';
 
 function Login() {
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
     const router = useRouter();
-
     const syncUser = useCallback(async (currentUser: typeof user) => {
         if (!currentUser) return;
         
@@ -93,7 +92,7 @@ function Login() {
 
     return (
         <div className="bg-white flex flex-col lg:grid lg:grid-cols-2 gap-1 p-2 max-w-full h-screen">
-            <LoginImage />
+            <AuthImage />
             <Suspense fallback={null}>
                 <LoginContent />
             </Suspense>
