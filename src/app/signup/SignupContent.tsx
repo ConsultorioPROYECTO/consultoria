@@ -1,5 +1,5 @@
 import React from 'react';
-import { LoginForm } from '@rutas/app/components/login-form/login-form';
+import { SignupForm } from '@/app/signup/signup-form/signup-form';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -20,7 +20,7 @@ export function SignupContent() {
     <div className="flex items-center h-auto min-h-[97vh] w-full py-6 ">
       <div className="flex flex-col h-full w-full items-center justify-between">
         <h1 className="text-4xl font-light text-center text-gray-800 mb-8">Consultoria Logo</h1>
-        <LoginForm isSignup={true} />
+        <SignupForm />
         <div className="flex flex-col items-center justify-center mt-8">
           <p className="text-base text-gray-600">
             ¿Ya tienes cuenta?

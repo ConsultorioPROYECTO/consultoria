@@ -177,8 +177,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       console.error('Error al iniciar sesión con email:', authError);
       setError(authError);
       setUser(null);
+      setLoading(false); // Resetear loading en caso de error
+      throw authError; // Re-lanzar el error para que el componente pueda manejarlo
     }
-    // setLoading(false); // Se gestiona por onAuthStateChanged
   };
 
   /**
@@ -198,8 +199,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       console.error('Error al registrar con email:', authError);
       setError(authError);
       setUser(null);
+      setLoading(false); // Resetear loading en caso de error
+      throw authError; // Re-lanzar el error para que el componente pueda manejarlo
     }
-    // setLoading(false); // Se gestiona por onAuthStateChanged
   };
 
 
