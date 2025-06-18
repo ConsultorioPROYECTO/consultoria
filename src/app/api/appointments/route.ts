@@ -1,5 +1,5 @@
-import { calendarService } from '@/services/calendar-service';
 import { NextRequest } from 'next/server';
+import { calendarService, type ExtendedAppointmentData, type ExtendedUpdateData } from '@/services/calendar-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,10 +12,29 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const appointment = await calendarService.createAppointment(
+    // Crear cita usando el servicio unificado
+    const appointmentData: ExtendedAppointmentData = {
+      ...data.appointmentData,
+      doctorId: data.doctorId,
+      patientId: data.patientId,
+      serviceId: data.serviceId,
+      isVirtual: data.appointmentData.isVirtual
+    };
+    
+    const result = await calendarService.createAppointment(
       data.calendarId,
-      data.appointmentData
+      appointmentData
     );
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create appointment');
+    }
+    
+    const appointment = {
+      googleEvent: result.googleEvent,
+      dbAppointment: result.dbAppointment,
+      syncResult: result.syncResult
+    };
     
     return Response.json({ success: true, appointment });
   } catch (error) {
@@ -38,11 +57,26 @@ export async function PUT(request: NextRequest) {
       );
     }
     
-    const updated = await calendarService.updateAppointment(
+    // Actualizar cita usando el servicio unificado
+    const updateData: ExtendedUpdateData = {
+      ...data.updates,
+      appointmentId: data.appointmentId
+    };
+    
+    const result = await calendarService.updateAppointment(
       data.calendarId,
       data.eventId,
-      data.updates
+      updateData
     );
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update appointment');
+    }
+    
+    const updated = {
+      googleEvent: result.googleEvent,
+      syncResult: result.syncResult
+    };
     
     return Response.json({ success: true, updated });
   } catch (error) {
@@ -67,7 +101,19 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    await calendarService.deleteAppointment(calendarId, eventId);
+    // Eliminar cita usando el servicio unificado
+    const appointmentId = searchParams.get('appointmentId');
+    const appointmentIdNum = appointmentId ? parseInt(appointmentId) : undefined;
+    
+    const result = await calendarService.deleteAppointment(
+      calendarId,
+      eventId,
+      appointmentIdNum
+    );
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete appointment');
+    }
     
     return Response.json({ success: true });
   } catch (error) {
@@ -101,7 +147,14 @@ export async function GET(request: NextRequest) {
       end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 días desde hoy
     };
     
-    const events = await calendarService.getConsultorioEvents(calendarId, dateRange);
+    // Obtener eventos usando el servicio unificado
+    const result = await calendarService.getConsultorioEvents(calendarId, dateRange);
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get events');
+    }
+    
+    const events = result.googleEvent || [];
     
     return Response.json({ success: true, events });
   } catch (error) {

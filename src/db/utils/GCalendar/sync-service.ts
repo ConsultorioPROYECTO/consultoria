@@ -1,3 +1,13 @@
+/**
+ * @fileoverview Servicio de sincronización bidireccional entre Google Calendar y la base de datos
+ * @description Este módulo proporciona funciones para sincronizar citas médicas entre la base de datos local
+ * y Google Calendar. Incluye operaciones para crear, actualizar y eliminar eventos, así como verificar
+ * conflictos de horarios y manejar sincronizaciones masivas.
+ * @author Santiago Prada
+ * @version 1.0.0
+ * @Date 2025/06/17
+ */
+
 // src/db/utils/GCalendar/sync-service.ts
 
 import { z } from 'zod';
@@ -33,40 +43,89 @@ import { doctors, type Doctor } from '@/db/schema/doctors';
 
 // --- Schemas de validación ---
 
+/**
+ * Schema de validación para eventos de Google Calendar
+ * @description Define la estructura esperada de un evento de Google Calendar
+ */
 export const GoogleEventSchema = z.object({
+  /** ID único del evento en Google Calendar */
   id: z.string(),
+  /** Título o resumen del evento */
   summary: z.string(),
+  /** Descripción opcional del evento */
   description: z.string().optional(),
+  /** Información de fecha y hora de inicio */
   start: z.object({
+    /** Fecha y hora de inicio en formato ISO */
     dateTime: z.string(),
+    /** Zona horaria opcional */
     timeZone: z.string().optional(),
   }),
+  /** Información de fecha y hora de fin */
   end: z.object({
+    /** Fecha y hora de fin en formato ISO */
     dateTime: z.string(),
+    /** Zona horaria opcional */
     timeZone: z.string().optional(),
   }),
+  /** Ubicación opcional del evento */
   location: z.string().optional(),
+  /** Lista opcional de asistentes */
   attendees: z.array(z.object({
+    /** Email del asistente */
     email: z.string(),
+    /** Nombre para mostrar del asistente */
     displayName: z.string().optional(),
   })).optional(),
 });
 
+/**
+ * Schema de validación para resultados de sincronización
+ * @description Define la estructura del resultado de operaciones de sincronización
+ */
 export const SyncResultSchema = z.object({
+  /** Indica si la operación fue exitosa */
   success: z.boolean(),
+  /** ID de la cita en la base de datos (opcional) */
   appointmentId: z.number().optional(),
+  /** ID del evento en Google Calendar (opcional) */
   googleEventId: z.string().optional(),
+  /** Mensaje de error en caso de fallo (opcional) */
   error: z.string().optional(),
+  /** Acción realizada durante la sincronización */
   action: z.enum(['created', 'updated', 'deleted', 'skipped']),
+  /** Timestamp de cuando se realizó la operación */
+  timestamp: z.date(),
 });
 
+/**
+ * Tipo inferido del schema de eventos de Google Calendar
+ * @typedef {Object} GoogleEvent
+ */
 export type GoogleEvent = z.infer<typeof GoogleEventSchema>;
+
+/**
+ * Tipo inferido del schema de resultados de sincronización
+ * @typedef {Object} SyncResult
+ */
 export type SyncResult = z.infer<typeof SyncResultSchema>;
 
 // --- Funciones de sincronización ---
 
 /**
  * Sincroniza una cita local hacia Google Calendar
+ * @description Crea o actualiza un evento en Google Calendar basado en una cita de la base de datos
+ * @param {Appointment} appointment - La cita a sincronizar con Google Calendar
+ * @returns {Promise<SyncResult>} Resultado de la operación de sincronización
+ * @throws {Error} Si no se encuentra el doctor o hay errores en la API de Google Calendar
+ * @example
+ * ```typescript
+ * const appointment = await getAppointmentById(123);
+ * const result = await syncAppointmentToGoogle(appointment);
+ * if (result.success) {
+ *   console.log(`Evento creado/actualizado: ${result.googleEventId}`);
+ * }
+ * ```
  */
 export async function syncAppointmentToGoogle(
   appointment: Appointment
@@ -80,11 +139,12 @@ export async function syncAppointmentToGoogle(
 
     if (!doctor.calendar_sync_enabled) {
       return {
-        success: false,
-        appointmentId: appointment.id,
-        error: 'Sincronización deshabilitada para este doctor',
-        action: 'skipped',
-      };
+      success: false,
+      appointmentId: appointment.id,
+      error: 'Sincronización deshabilitada para este doctor',
+      action: 'skipped',
+      timestamp: new Date(),
+    };
     }
 
     // Preparar datos del evento
@@ -153,6 +213,7 @@ export async function syncAppointmentToGoogle(
       appointmentId: appointment.id,
       googleEventId,
       action,
+      timestamp: new Date(),
     };
   } catch (error) {
     console.error('Error al sincronizar cita a Google:', error);
@@ -168,12 +229,26 @@ export async function syncAppointmentToGoogle(
       appointmentId: appointment.id,
       error: error instanceof Error ? error.message : 'Error desconocido',
       action: 'skipped',
+      timestamp: new Date(),
     };
   }
 }
 
 /**
  * Sincroniza un evento de Google Calendar hacia la base de datos
+ * @description Crea una nueva cita en la base de datos basada en un evento de Google Calendar
+ * @param {GoogleEvent} googleEvent - El evento de Google Calendar a sincronizar
+ * @param {number} doctorId - ID del doctor al que pertenece el evento
+ * @returns {Promise<SyncResult>} Resultado de la operación de sincronización
+ * @throws {Error} Si hay errores al crear la cita en la base de datos
+ * @example
+ * ```typescript
+ * const googleEvent = await getGoogleEvent('event_id_123');
+ * const result = await syncGoogleEventToDatabase(googleEvent, 456);
+ * if (result.success) {
+ *   console.log(`Cita creada: ${result.appointmentId}`);
+ * }
+ * ```
  */
 export async function syncGoogleEventToDatabase(
   googleEvent: GoogleEvent,
@@ -190,6 +265,7 @@ export async function syncGoogleEventToDatabase(
         appointmentId: existingAppointment.id,
         googleEventId: googleEvent.id,
         action: 'skipped',
+        timestamp: new Date(),
       };
     }
 
@@ -206,8 +282,14 @@ export async function syncGoogleEventToDatabase(
       duration_minutes: duration,
       notes: googleEvent.description || 'Cita sincronizada desde Google Calendar',
       google_event_id: googleEvent.id,
-      sync_status: 'synced',
+      google_calendar_id: undefined,
+      sync_status: 'synced' as const,
+      last_sync_attempt: new Date(),
+      sync_error: undefined,
       is_virtual: googleEvent.location?.toLowerCase().includes('virtual') || false,
+      meeting_link: googleEvent.location?.toLowerCase().includes('virtual') ? googleEvent.location : undefined,
+      patientId: undefined,
+      serviceId: undefined
     };
 
     const createdAppointment = await createAppointmentWithCalendar(appointmentData);
@@ -217,6 +299,7 @@ export async function syncGoogleEventToDatabase(
       appointmentId: createdAppointment.id,
       googleEventId: googleEvent.id,
       action: 'created',
+      timestamp: new Date(),
     };
   } catch (error) {
     console.error('Error al sincronizar evento de Google:', error);
@@ -226,12 +309,25 @@ export async function syncGoogleEventToDatabase(
       googleEventId: googleEvent.id,
       error: error instanceof Error ? error.message : 'Error desconocido',
       action: 'skipped',
+      timestamp: new Date(),
     };
   }
 }
 
 /**
  * Elimina un evento de Google Calendar
+ * @description Elimina un evento de Google Calendar y actualiza el estado de sincronización en la base de datos
+ * @param {Appointment} appointment - La cita cuyo evento de Google Calendar se debe eliminar
+ * @returns {Promise<SyncResult>} Resultado de la operación de eliminación
+ * @throws {Error} Si hay errores al eliminar el evento de Google Calendar
+ * @example
+ * ```typescript
+ * const appointment = await getAppointmentById(123);
+ * const result = await deleteAppointmentFromGoogle(appointment);
+ * if (result.success) {
+ *   console.log(`Evento eliminado: ${result.googleEventId}`);
+ * }
+ * ```
  */
 export async function deleteAppointmentFromGoogle(
   appointment: Appointment
@@ -243,6 +339,7 @@ export async function deleteAppointmentFromGoogle(
         appointmentId: appointment.id,
         error: 'No hay información de Google Calendar para eliminar',
         action: 'skipped',
+        timestamp: new Date(),
       };
     }
 
@@ -261,6 +358,7 @@ export async function deleteAppointmentFromGoogle(
       appointmentId: appointment.id,
       googleEventId: appointment.google_event_id,
       action: 'deleted',
+      timestamp: new Date(),
     };
   } catch (error) {
     console.error('Error al eliminar evento de Google:', error);
@@ -270,12 +368,23 @@ export async function deleteAppointmentFromGoogle(
       appointmentId: appointment.id,
       error: error instanceof Error ? error.message : 'Error desconocido',
       action: 'skipped',
+      timestamp: new Date(),
     };
   }
 }
 
 /**
  * Sincroniza todas las citas pendientes de un doctor
+ * @description Obtiene todas las citas pendientes de sincronización de un doctor y las sincroniza con Google Calendar
+ * @param {number} doctorId - ID del doctor cuyas citas pendientes se van a sincronizar
+ * @returns {Promise<SyncResult[]>} Array de resultados de sincronización para cada cita procesada
+ * @throws {Error} Si hay errores durante el proceso de sincronización
+ * @example
+ * ```typescript
+ * const results = await syncDoctorPendingAppointments(123);
+ * const successful = results.filter(r => r.success);
+ * console.log(`${successful.length} citas sincronizadas exitosamente`);
+ * ```
  */
 export async function syncDoctorPendingAppointments(
   doctorId: number
@@ -313,6 +422,19 @@ export async function syncDoctorPendingAppointments(
 
 /**
  * Sincroniza eventos de Google Calendar hacia la base de datos
+ * @description Obtiene eventos de Google Calendar en un rango de fechas y los sincroniza con la base de datos
+ * @param {number} doctorId - ID del doctor cuyo calendario se va a sincronizar
+ * @param {Date} [startDate] - Fecha de inicio del rango de sincronización (opcional)
+ * @param {Date} [endDate] - Fecha de fin del rango de sincronización (opcional)
+ * @returns {Promise<SyncResult[]>} Array de resultados de sincronización para cada evento procesado
+ * @throws {Error} Si hay errores al obtener eventos de Google Calendar o al crear citas
+ * @example
+ * ```typescript
+ * const startDate = new Date('2024-01-01');
+ * const endDate = new Date('2024-01-31');
+ * const results = await syncGoogleCalendarToDatabase(123, startDate, endDate);
+ * console.log(`${results.length} eventos procesados`);
+ * ```
  */
 export async function syncGoogleCalendarToDatabase(
   doctorId: number,
@@ -353,6 +475,7 @@ export async function syncGoogleCalendarToDatabase(
           googleEventId: event.id ?? undefined,
           error: 'Formato de evento inválido',
           action: 'skipped',
+          timestamp: new Date(),
         });
       }
       
@@ -372,6 +495,20 @@ export async function syncGoogleCalendarToDatabase(
 
 /**
  * Verifica conflictos de horarios antes de crear una cita
+ * @description Verifica si existe algún conflicto de horarios en la base de datos local y en Google Calendar
+ * @param {number} doctorId - ID del doctor para verificar conflictos
+ * @param {Date} date - Fecha de la cita a verificar
+ * @param {string} time - Hora de la cita en formato "HH:MM AM/PM"
+ * @param {number} [duration=30] - Duración de la cita en minutos
+ * @returns {Promise<{hasConflict: boolean, conflicts: Appointment[], suggestions?: string[]}>} Objeto con información sobre conflictos encontrados
+ * @throws {Error} Si no se encuentra el doctor o hay errores al verificar disponibilidad
+ * @example
+ * ```typescript
+ * const result = await checkAppointmentConflicts(123, new Date('2024-01-15'), '10:00 AM', 60);
+ * if (result.hasConflict) {
+ *   console.log(`Se encontraron ${result.conflicts.length} conflictos`);
+ * }
+ * ```
  */
 export async function checkAppointmentConflicts(
   doctorId: number,
@@ -449,6 +586,16 @@ export async function checkAppointmentConflicts(
 
 /**
  * Combina fecha y hora en un string ISO
+ * @description Combina un objeto Date y una cadena de tiempo en formato AM/PM para crear un string ISO
+ * @param {Date} date - La fecha base
+ * @param {string} time - La hora en formato "HH:MM AM/PM"
+ * @returns {string} Fecha y hora combinadas en formato ISO string
+ * @private
+ * @example
+ * ```typescript
+ * const isoString = combineDateTime(new Date('2024-01-15'), '10:30 AM');
+ * // Returns: '2024-01-15T10:30:00.000Z'
+ * ```
  */
 function combineDateTime(date: Date, time: string): string {
   const [timePart, period] = time.split(' ');
@@ -469,6 +616,16 @@ function combineDateTime(date: Date, time: string): string {
 
 /**
  * Agrega minutos a un datetime ISO string
+ * @description Añade una cantidad específica de minutos a una fecha en formato ISO string
+ * @param {string} dateTimeString - Fecha y hora en formato ISO string
+ * @param {number} minutes - Número de minutos a agregar
+ * @returns {string} Nueva fecha y hora en formato ISO string
+ * @private
+ * @example
+ * ```typescript
+ * const newDateTime = addMinutesToDateTime('2024-01-15T10:30:00.000Z', 30);
+ * // Returns: '2024-01-15T11:00:00.000Z'
+ * ```
  */
 function addMinutesToDateTime(dateTimeString: string, minutes: number): string {
   const date = new Date(dateTimeString);
@@ -478,6 +635,15 @@ function addMinutesToDateTime(dateTimeString: string, minutes: number): string {
 
 /**
  * Formatea la hora desde un objeto Date
+ * @description Convierte un objeto Date a una cadena de tiempo en formato "HH:MM AM/PM"
+ * @param {Date} date - El objeto Date del cual extraer la hora
+ * @returns {string} Hora formateada en formato "HH:MM AM/PM"
+ * @private
+ * @example
+ * ```typescript
+ * const timeString = formatTimeFromDate(new Date('2024-01-15T14:30:00'));
+ * // Returns: '02:30 PM'
+ * ```
  */
 function formatTimeFromDate(date: Date): string {
   const hours = date.getHours();
@@ -490,6 +656,16 @@ function formatTimeFromDate(date: Date): string {
 
 /**
  * Reintenta sincronizaciones fallidas
+ * @description Obtiene las citas con sincronización fallida y reintenta sincronizarlas con Google Calendar
+ * @param {number} [limit=10] - Número máximo de citas a reintentar en esta ejecución
+ * @returns {Promise<SyncResult[]>} Array de resultados de los reintentos de sincronización
+ * @throws {Error} Si hay errores durante el proceso de reintento
+ * @example
+ * ```typescript
+ * const results = await retryFailedSyncs(5);
+ * const successful = results.filter(r => r.success);
+ * console.log(`${successful.length} reintentos exitosos de ${results.length} total`);
+ * ```
  */
 export async function retryFailedSyncs(limit: number = 10): Promise<SyncResult[]> {
   try {
