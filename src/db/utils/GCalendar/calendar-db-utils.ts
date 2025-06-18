@@ -1,9 +1,9 @@
 // src/db/utils/GCalendar/calendar-db-utils.ts
 
 import { eq, and, gte, lte, desc, asc, isNull, isNotNull, sql } from 'drizzle-orm';
-import { db } from '@/db';
-import { doctors, type Doctor, type NewDoctor } from '@/db/schema/doctors';
-import { appointments, type Appointment, type NewAppointment } from '@/db/schema/appointments';
+import { db } from '../../index';
+import { doctors, type Doctor, type NewDoctor } from '../../schema/doctors';
+import { appointments, type Appointment, type NewAppointment } from '../../schema/appointments';
 import { z } from 'zod';
 
 /**
@@ -385,6 +385,71 @@ export async function getGeneralSyncStats() {
   } catch (error) {
     console.error('Error al obtener estadísticas generales:', error);
     throw new Error('Error al obtener estadísticas generales de sincronización');
+  }
+}
+
+/**
+ * Obtiene estadísticas completas de citas con información adicional
+ */
+export async function getAppointmentStats(doctorId?: number) {
+  try {
+    const whereCondition = doctorId ? eq(appointments.doctorId, doctorId) : undefined;
+    
+    const stats = await db
+      .select({
+        total_appointments: sql<number>`count(*)`,
+        synced: sql<number>`sum(case when ${appointments.sync_status} = 'synced' then 1 else 0 end)`,
+        pending: sql<number>`sum(case when ${appointments.sync_status} = 'pending' then 1 else 0 end)`,
+        failed: sql<number>`sum(case when ${appointments.sync_status} = 'failed' then 1 else 0 end)`,
+        not_synced: sql<number>`sum(case when ${appointments.sync_status} = 'not_synced' then 1 else 0 end)`,
+        virtual_appointments: sql<number>`sum(case when ${appointments.is_virtual} = true then 1 else 0 end)`,
+        in_person_appointments: sql<number>`sum(case when ${appointments.is_virtual} = false then 1 else 0 end)`,
+        appointments_today: sql<number>`sum(case when date(${appointments.date}) = curdate() then 1 else 0 end)`,
+        appointments_this_week: sql<number>`sum(case when yearweek(${appointments.date}) = yearweek(curdate()) then 1 else 0 end)`,
+        appointments_this_month: sql<number>`sum(case when year(${appointments.date}) = year(curdate()) and month(${appointments.date}) = month(curdate()) then 1 else 0 end)`,
+        upcoming_appointments: sql<number>`sum(case when ${appointments.date} >= curdate() then 1 else 0 end)`,
+        past_appointments: sql<number>`sum(case when ${appointments.date} < curdate() then 1 else 0 end)`,
+        avg_duration: sql<number>`avg(${appointments.duration_minutes})`,
+        total_duration: sql<number>`sum(${appointments.duration_minutes})`,
+      })
+      .from(appointments)
+      .where(whereCondition);
+    
+    const result = stats[0] || {
+      total_appointments: 0,
+      synced: 0,
+      pending: 0,
+      failed: 0,
+      not_synced: 0,
+      virtual_appointments: 0,
+      in_person_appointments: 0,
+      appointments_today: 0,
+      appointments_this_week: 0,
+      appointments_this_month: 0,
+      upcoming_appointments: 0,
+      past_appointments: 0,
+      avg_duration: 0,
+      total_duration: 0,
+    };
+
+    // Calcular porcentajes de sincronización
+    const syncPercentage = result.total_appointments > 0 
+      ? Math.round((result.synced / result.total_appointments) * 100) 
+      : 0;
+    
+    const virtualPercentage = result.total_appointments > 0 
+      ? Math.round((result.virtual_appointments / result.total_appointments) * 100) 
+      : 0;
+
+    return {
+      ...result,
+      sync_percentage: syncPercentage,
+      virtual_percentage: virtualPercentage,
+      avg_duration: Math.round(result.avg_duration || 0),
+    };
+  } catch (error) {
+    console.error('Error al obtener estadísticas de citas:', error);
+    throw new Error('Error al obtener estadísticas de citas');
   }
 }
 

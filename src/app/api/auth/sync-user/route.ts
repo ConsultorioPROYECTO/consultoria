@@ -5,6 +5,7 @@ import { users, NewUser } from '@rutas/db/schema/users'; // Asegúrate que la ru
 import { eq } from 'drizzle-orm';
 import { assistants, doctors } from '@rutas/db/schema';
 import { sql } from 'drizzle-orm';
+import { createCalendar } from '@/app/lib/google-calendar/calendar-utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,7 +53,59 @@ export async function POST(request: NextRequest) {
       // Verifica si ya existe registro en doctors
       const doctorExists = await db.query.doctors.findFirst({ where: eq(doctors.userId, user.id) });
       if (!doctorExists) {
-        await db.insert(doctors).values({ userId: user.id, speciality: '', calendar_id: '', privatePhone: '', nitId: '', availability: '', tokenGoogleId: '' });
+        // Crear calendario de Google para el doctor
+        let calendarId = '';
+        try {
+          const calendarResult = await createCalendar({
+            summary: `Calendario - ${user.displayName || user.email}`,
+            description: `Calendario médico para ${user.displayName || user.email}`,
+            timeZone: 'America/Bogota'
+          });
+          
+          if (calendarResult.success && calendarResult.data?.id) {
+            calendarId = calendarResult.data.id;
+            console.log(`[Sync User] Calendario creado exitosamente: ${calendarId}`);
+          } else {
+            console.error('[Sync User] Error creando calendario:', calendarResult.error);
+            // Continuar sin calendar_id si falla la creación
+          }
+        } catch (error) {
+          console.error('[Sync User] Error al crear calendario de Google:', error);
+          // Continuar sin calendar_id si falla la creación
+        }
+        
+        await db.insert(doctors).values({ 
+          userId: user.id, 
+          speciality: '', 
+          calendar_id: calendarId, 
+          privatePhone: '', 
+          nitId: '', 
+          availability: '', 
+          tokenGoogleId: '' 
+        });
+      } else if (!doctorExists.calendar_id) {
+        // Si el doctor existe pero no tiene calendar_id, crear uno
+        try {
+          const calendarResult = await createCalendar({
+            summary: `Calendario - ${user.displayName || user.email}`,
+            description: `Calendario médico para ${user.displayName || user.email}`,
+            timeZone: 'America/Bogota'
+          });
+          
+          if (calendarResult.success && calendarResult.data?.id) {
+            await db.update(doctors)
+              .set({ 
+                calendar_id: calendarResult.data.id,
+                updatedAt: new Date()
+              })
+              .where(eq(doctors.userId, user.id));
+            console.log(`[Sync User] Calendario agregado a doctor existente: ${calendarResult.data.id}`);
+          } else {
+            console.error('[Sync User] Error creando calendario para doctor existente:', calendarResult.error);
+          }
+        } catch (error) {
+          console.error('[Sync User] Error al crear calendario para doctor existente:', error);
+        }
       }
     } else if (user?.role === 'asistente') {
       // Verifica si ya existe registro en assistants

@@ -540,3 +540,253 @@ export async function getAvailableSlots(
     };
   }
 }
+
+/**
+ * Obtiene información de disponibilidad (free/busy) de uno o más calendarios
+ */
+export async function getCalendarFreeBusy(
+  calendarIds: string[],
+  timeMin: string,
+  timeMax: string,
+  timeZone?: string
+): Promise<CalendarOperationResult<calendar_v3.Schema$FreeBusyResponse>> {
+  try {
+    const response = await googleCalendarClient.freebusy.query({
+      requestBody: {
+        timeMin,
+        timeMax,
+        timeZone: timeZone || calendarConfig.defaultTimezone,
+        items: calendarIds.map(id => ({ id })),
+      },
+    });
+
+    console.log(`[Calendar Utils] Información free/busy obtenida para ${calendarIds.length} calendario(s)`);
+    
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error(`[Calendar Utils] Error obteniendo información free/busy:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+/**
+ * Obtiene eventos de múltiples calendarios de forma optimizada
+ */
+export async function getCalendarEvents(
+  calendarIds: string[],
+  options: {
+    timeMin?: string;
+    timeMax?: string;
+    maxResults?: number;
+    singleEvents?: boolean;
+    orderBy?: 'startTime' | 'updated';
+    showDeleted?: boolean;
+    syncToken?: string;
+  } = {}
+): Promise<CalendarOperationResult<{
+  events: calendar_v3.Schema$Event[];
+  calendarId: string;
+}[]>> {
+  try {
+    const promises = calendarIds.map(async (calendarId) => {
+      const response = await googleCalendarClient.events.list({
+        calendarId,
+        timeMin: options.timeMin,
+        timeMax: options.timeMax,
+        maxResults: options.maxResults || 250,
+        singleEvents: options.singleEvents ?? true,
+        orderBy: options.orderBy || 'startTime',
+        showDeleted: options.showDeleted ?? false,
+        syncToken: options.syncToken,
+      });
+      
+      return {
+        events: response.data.items || [],
+        calendarId,
+      };
+    });
+
+    const results = await Promise.all(promises);
+    
+    console.log(`[Calendar Utils] Eventos obtenidos de ${calendarIds.length} calendario(s)`);
+    
+    return {
+      success: true,
+      data: results,
+    };
+  } catch (error) {
+    console.error(`[Calendar Utils] Error obteniendo eventos de múltiples calendarios:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+// === Funciones de Configuración y Permisos ===
+
+/**
+ * Obtiene la configuración de un calendario
+ */
+export async function getCalendarSettings(
+  calendarId: string
+): Promise<CalendarOperationResult<calendar_v3.Schema$CalendarListEntry>> {
+  try {
+    const response = await googleCalendarClient.calendarList.get({
+      calendarId,
+    });
+
+    console.log(`[Calendar Utils] Configuración obtenida para calendario: ${calendarId}`);
+    
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error(`[Calendar Utils] Error obteniendo configuración del calendario ${calendarId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+/**
+ * Actualiza la configuración de un calendario
+ */
+export async function updateCalendarSettings(
+  calendarId: string,
+  settings: {
+    backgroundColor?: string;
+    foregroundColor?: string;
+    colorId?: string;
+    defaultReminders?: calendar_v3.Schema$EventReminder[];
+    notificationSettings?: {
+      notifications?: calendar_v3.Schema$CalendarNotification[];
+    };
+    primary?: boolean;
+    selected?: boolean;
+    summaryOverride?: string;
+  }
+): Promise<CalendarOperationResult<calendar_v3.Schema$CalendarListEntry>> {
+  try {
+    const response = await googleCalendarClient.calendarList.patch({
+      calendarId,
+      requestBody: settings,
+    });
+
+    console.log(`[Calendar Utils] Configuración actualizada para calendario: ${calendarId}`);
+    
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error(`[Calendar Utils] Error actualizando configuración del calendario ${calendarId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+/**
+ * Obtiene la lista de control de acceso (ACL) de un calendario
+ */
+export async function getCalendarACL(
+  calendarId: string
+): Promise<CalendarOperationResult<calendar_v3.Schema$AclRule[]>> {
+  try {
+    const response = await googleCalendarClient.acl.list({
+      calendarId,
+    });
+
+    console.log(`[Calendar Utils] ACL obtenida para calendario: ${calendarId}`);
+    
+    return {
+      success: true,
+      data: response.data.items || [],
+    };
+  } catch (error) {
+    console.error(`[Calendar Utils] Error obteniendo ACL del calendario ${calendarId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+/**
+ * Actualiza o crea una regla de ACL para un calendario
+ */
+export async function updateCalendarACL(
+  calendarId: string,
+  aclRule: {
+    role: 'owner' | 'reader' | 'writer' | 'freeBusyReader';
+    scope: {
+      type: 'default' | 'user' | 'group' | 'domain';
+      value?: string;
+    };
+  },
+  ruleId?: string
+): Promise<CalendarOperationResult<calendar_v3.Schema$AclRule>> {
+  try {
+    let response;
+    
+    if (ruleId) {
+      // Actualizar regla existente
+      response = await googleCalendarClient.acl.patch({
+        calendarId,
+        ruleId,
+        requestBody: aclRule,
+      });
+      console.log(`[Calendar Utils] Regla ACL actualizada: ${ruleId} en calendario ${calendarId}`);
+    } else {
+      // Crear nueva regla
+      response = await googleCalendarClient.acl.insert({
+        calendarId,
+        requestBody: aclRule,
+      });
+      console.log(`[Calendar Utils] Nueva regla ACL creada en calendario: ${calendarId}`);
+    }
+    
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error(`[Calendar Utils] Error ${ruleId ? 'actualizando' : 'creando'} regla ACL en calendario ${calendarId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
+
+/**
+ * Obtiene los colores disponibles para calendarios y eventos
+ */
+export async function getCalendarColors(): Promise<CalendarOperationResult<calendar_v3.Schema$Colors>> {
+  try {
+    const response = await googleCalendarClient.colors.get();
+
+    console.log('[Calendar Utils] Colores de calendario obtenidos');
+    
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    console.error('[Calendar Utils] Error obteniendo colores de calendario:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
