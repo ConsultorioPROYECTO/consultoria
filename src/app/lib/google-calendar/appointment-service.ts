@@ -597,7 +597,7 @@ function parseEventToAppointment(calendarId: string, event: calendar_v3.Schema$E
     reasonForVisit: extractReasonForVisit(description),
     isTelemedicine: isTelemedicineEvent(event),
     meetingLink: extractMeetingLink(description),
-    reminderMinutes: [15, 60],
+    reminderMinutes: [15, 60] as number[],
     createdAt: event.created || new Date().toISOString(),
     updatedAt: event.updated || new Date().toISOString(),
     googleEvent: event,
