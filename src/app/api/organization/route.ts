@@ -89,9 +89,10 @@ const postUserRoleHandler = async (
         );
       }
       const body = await request.json();
-      if (!body || typeof body.organizationName !== 'string') {
+      // Actualizar la validación para incluir planId
+      if (!body || typeof body.organizationName !== 'string' || typeof body.planId !== 'string') {
         return NextResponse.json(
-          { error: 'Cuerpo de la solicitud inválido. Se requiere un campo "role".' },
+          { error: 'Cuerpo de la solicitud inválido. Se requieren los campos "organizationName" y "planId".' },
           { status: 400 }
         );
       }
@@ -105,9 +106,10 @@ const postUserRoleHandler = async (
         const organizationId = await db.insert(organization).values({
         name: body.organizationName,
         invitationCode: invitacionCode,
+        planId: body.planId, // Añadir planId al insertar la organización
       }).$returningId();
 
-      if (!organizationId) {
+      if (!organizationId || organizationId.length === 0) { // Comprobar si organizationId es undefined o vacío
         return NextResponse.json(
           { error: 'Error al crear la organización.' },
           { status: 500 }

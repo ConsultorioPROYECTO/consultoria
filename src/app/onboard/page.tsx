@@ -39,17 +39,17 @@ function OnboardContent() {
     }, [initialInvitationCode, initialRole]);
 
     // Toasts globales para mostrar mensajes de ejemplo
-    useEffect(() => {
-        toast.success("¡Bienvenido a bordo!", {
-            description: "Has sido añadido a la organización.",
-        });
-        toast.error("Error al unirse a la organización.", {
-            description: "Por favor, verifica el código de invitación o contacta al administrador.",
-        });
-        toast.error("Error al unirse a la organización.", {
-            description: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
-        });
-    }, []);
+    // useEffect(() => {
+    //     toast.success("¡Bienvenido a bordo!", {
+    //         description: "Has sido añadido a la organización.",
+    //     });
+    //     toast.error("Error al unirse a la organización.", {
+    //         description: "Por favor, verifica el código de invitación o contacta al administrador.",
+    //     });
+    //     toast.error("Error al unirse a la organización.", {
+    //         description: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+    //     });
+    // }, []);
 
     // const { toast } = useToast(); // Eliminamos esta línea
 
@@ -57,24 +57,70 @@ function OnboardContent() {
     const [currentStep, setCurrentStep] = useState(1);
 
     // Nuevos estados para la selección de plan
-    const [selectedPlanId, setSelectedPlanId] = useState<string | null>(plansData.find(p => p.isPopular)?.id || plansData[0]?.id || null);
+    const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null); // Inicializar como null
     const [isAnnualBilling, setIsAnnualBilling] = useState(false);
+    // const [isLoading, setIsLoading] = useState(false); // Eliminado isLoading
 
-    const handlePlanSelectionAndProceed = (planId: string) => {
+    const handlePlanSelectionAndProceed = async (planId: string) => {
+      if (!planId) {
+        toast.error('Por favor, selecciona un plan para continuar.');
+        return;
+      }
+      
+      // Actualizar el estado del plan seleccionado
       setSelectedPlanId(planId);
-      // En un escenario real, aquí se redirigiría a la pasarela de pago
-      // o se mostraría un modal de pago.
-      console.log(
-        "Plan seleccionado:", planId, 
-        "Facturación:", isAnnualBilling ? "Anual" : "Mensual",
-        "Consultorio:", nameConsultorio,
-        "Rol:", selectedRole
-      );
-      alert(`Has seleccionado el plan ${planId}. El siguiente paso sería el proceso de pago (no implementado en esta demo).`);
-      // Ejemplo: router.push('/checkout?planId=' + planId + '&billing=' + (isAnnualBilling ? 'annually' : 'monthly'));
-      router.push('/dashboard')
-    };
+      // La validación de consultorioName para Admin se movió a Step2ConsultorioOrInvitacion
+      // if (role === 'Admin' && !consultorioName.trim()) { 
+      //   toast.error('Por favor, ingresa el nombre del consultorio.');
+      //   return;
+      // }
 
+      // setIsLoading(true); // Eliminado
+      try {
+        let organizationResponse;
+        if (selectedRole === 'Admin') { // Asegúrate de usar selectedRole aquí
+          // Crear organización para el Admin
+          organizationResponse = await fetch('/api/organization', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              organizationName: nameConsultorio, // Asegúrate de usar nameConsultorio
+              planId: planId // Usar el planId recibido como parámetro
+            }), 
+          });
+        } else {
+          // Para otros roles, la unión a la organización ya se manejó en Step2ConsultorioOrInvitacion
+          // Simplemente redirigir al dashboard si ya seleccionaron un plan (aunque este flujo es más para Admin)
+          router.push('/dashboard');
+          // setIsLoading(false); // Eliminado
+          return;
+        }
+
+        if (!organizationResponse.ok) {
+          const contentType = organizationResponse.headers.get('content-type');
+          if (contentType && contentType.indexOf('application/json') !== -1) {
+            const errorData = await organizationResponse.json();
+            throw new Error(errorData.error || `Error del servidor: ${organizationResponse.status}`);
+          } else {
+            const errorText = await organizationResponse.text();
+            throw new Error(`Respuesta no JSON del servidor: ${errorText}`);
+          }
+        }
+
+        toast.success(
+          selectedRole === 'Admin' // Asegúrate de usar selectedRole aquí
+            ? '¡Organización creada y plan seleccionado!'
+            : '¡Plan seleccionado!'
+        );
+        router.push('/dashboard');
+      } catch (error) {
+        console.error('Error al procesar el plan y la organización:', error);
+        toast.error((error as Error).message || 'Ocurrió un error desconocido.');
+      } 
+      // finally { // Eliminado
+      //   setIsLoading(false);
+      // }
+    };
     const nextStep = () => setCurrentStep(prev => prev + 1);
     const prevStep = () => setCurrentStep(prev => prev - 1);
 
@@ -126,7 +172,14 @@ function OnboardContent() {
                 setInvitationCode={setInvitationCode}
                 nextStep={async () => {
                   if (selectedRole === "Admin") {
-                    nextStep();
+                    if (!nameConsultorio.trim()) {
+                      toast.error("Nombre del consultorio requerido", {
+                        description: "Por favor, ingresa un nombre para tu consultorio.",
+                      });
+                      return;
+                    }
+                    // Solo avanza al siguiente paso, la creación se hará después de seleccionar el plan
+                    nextStep(); 
                   } else {
                     // Lógica para Médico o Asistente: enviar código de invitación al backend
                     if (!invitationCode) {
@@ -145,22 +198,30 @@ function OnboardContent() {
                         body: JSON.stringify({ invitationCode: invitationCode, role : selectedRole }),
                       });
 
-                      const data = await response.json();
-
-                      if (response.ok) {
-                        toast.success("¡Bienvenido a bordo!", {
-                          description: data.message || "Te has unido a la organización exitosamente.",
-                        });
-                        router.push('/dashboard'); // Redirigir al dashboard en caso de éxito
+                      // Intentar parsear como JSON solo si la respuesta parece ser JSON
+                      if (response.headers.get("content-type")?.includes("application/json")) {
+                        const data = await response.json();
+                        if (response.ok) {
+                          toast.success("¡Bienvenido a bordo!", {
+                            description: data.message || "Te has unido a la organización exitosamente.",
+                          });
+                          router.push('/dashboard'); // Redirigir al dashboard en caso de éxito
+                        } else {
+                          toast.error("Error al unirse a la organización.", {
+                            description: data.message || "No se pudo unir a la organización. Inténtalo de nuevo.",
+                          });
+                        }
                       } else {
-                        toast.error("Error al unirse a la organización.", {
-                          description: data.message || "No se pudo unir a la organización. Inténtalo de nuevo.",
+                        const textError = await response.text();
+                        console.error("Respuesta no JSON del servidor (unión):", textError);
+                        toast.error("Error del servidor", {
+                            description: "El servidor devolvió una respuesta inesperada al intentar unirse. Por favor, inténtalo más tarde.",
                         });
                       }
                     } catch (error) {
                       console.error("Error al enviar la solicitud de unión:", error);
-                      toast.error("Error de conexión", {
-                        description: "No se pudo conectar con el servidor. Inténtalo de nuevo más tarde.",
+                      toast.error("Error de conexión o procesamiento", {
+                        description: "No se pudo conectar con el servidor o procesar la respuesta al unirse. Inténtalo de nuevo más tarde.",
                       });
                     }
                   }

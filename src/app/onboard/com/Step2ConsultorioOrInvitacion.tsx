@@ -3,7 +3,7 @@ import { Input } from "@rutas/components/ui/input";
 import { Label } from "@rutas/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@rutas/components/ui/input-otp";
 import React from "react";
-import { getFirebaseAuthToken, getAuthTokenAndEmail } from "@lib/firebase/clientUtils";
+import { getAuthTokenAndEmail } from "@lib/firebase/clientUtils";
 import { useRouter } from "next/navigation";
 
 interface AdminSetupProps {
@@ -20,31 +20,14 @@ interface JoinOrganizationProps {
 }
 
 function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetupProps) {
-  const handleCreateOrganization = async () => {
-    const token = await getFirebaseAuthToken();
-    if (!token) {
-      alert("No se pudo obtener el token de autenticación. Por favor, inicia sesión nuevamente.");
+  const handleValidateAndProceed = () => {
+    if (!nameConsultorio.trim()) {
+      alert("Por favor, ingresa el nombre del consultorio.");
       return;
     }
-    try {
-      const response = await fetch("/api/organization", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ organizationName: nameConsultorio})
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        alert(data.error || "Error al crear la organización.");
-        return;
-      }
-      nextStep();
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Error de red al crear la organización.");
-    }
+    // Solo validar y avanzar al siguiente paso
+    // La creación de la organización se hará en el paso 3 después de seleccionar el plan
+    nextStep();
   };
 
   return (
@@ -70,7 +53,7 @@ function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetu
         <Button
           type="button"
           className="w-full py-3 text-base"
-          onClick={handleCreateOrganization}
+          onClick={handleValidateAndProceed}
           disabled={!nameConsultorio}
         >
           Siguiente

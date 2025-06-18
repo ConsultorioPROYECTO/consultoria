@@ -29,6 +29,7 @@ export const organization = mysqlTable('organization', {
   email: varchar('email', { length: 255 }),
   nit: varchar('nit', { length: 45 }),
   logo: varchar('logo', { length: 255 }),
+  planId: varchar('plan_id', { length: 255 }), 
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (organization) => [
