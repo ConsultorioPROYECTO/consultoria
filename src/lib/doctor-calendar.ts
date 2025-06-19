@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { doctors, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { googleCalendarService } from './google-calendar';
+import type { calendar_v3 } from 'googleapis';
 
 export interface DoctorCalendarSetup {
   doctorId: number;
@@ -249,7 +250,7 @@ export class DoctorCalendarService {
   ): Promise<{
     success: boolean;
     isAvailable?: boolean;
-    conflictingEvents?: any[];
+    conflictingEvents?: calendar_v3.Schema$Event[];
     error?: string;
   }> {
     try {
@@ -291,7 +292,7 @@ export class DoctorCalendarService {
     endDate: string
   ): Promise<{
     success: boolean;
-    events?: any[];
+    events?: calendar_v3.Schema$Event[];
     error?: string;
   }> {
     try {

@@ -2,6 +2,9 @@
 
 import { doctorCalendarService } from '../doctor-calendar';
 import { appointmentSyncService } from '../appointment-sync';
+import { db } from '@/db';
+import { appointments, doctors } from '@/db/schema';
+import { eq, count, and, max } from 'drizzle-orm';
 
 /**
  * Hook que se ejecuta cuando se crea un nuevo doctor
@@ -205,18 +208,72 @@ export async function getDoctorSyncStats(doctorId: number): Promise<{
   error?: string;
 }> {
   try {
-    // Esta función requeriría consultas adicionales a la base de datos
-    // para obtener estadísticas detalladas de sincronización
-    // Por ahora, retornamos un placeholder
+    // Verificar que el doctor existe
+    const doctor = await db.select().from(doctors).where(eq(doctors.idDoctor, doctorId)).limit(1);
+    if (doctor.length === 0) {
+      return {
+        success: false,
+        error: 'Doctor not found',
+      };
+    }
+
+    // Obtener el total de citas del doctor
+    const totalAppointmentsResult = await db
+      .select({ count: count() })
+      .from(appointments)
+      .where(eq(appointments.doctorId, doctorId));
     
+    const totalAppointments = totalAppointmentsResult[0]?.count || 0;
+
+    // Obtener citas sincronizadas
+    const syncedAppointmentsResult = await db
+      .select({ count: count() })
+      .from(appointments)
+      .where(and(
+        eq(appointments.doctorId, doctorId),
+        eq(appointments.sync_status, 'synced')
+      ));
+    
+    const syncedAppointments = syncedAppointmentsResult[0]?.count || 0;
+
+    // Obtener citas pendientes de sincronización
+    const pendingAppointmentsResult = await db
+      .select({ count: count() })
+      .from(appointments)
+      .where(and(
+        eq(appointments.doctorId, doctorId),
+        eq(appointments.sync_status, 'pending')
+      ));
+    
+    const pendingAppointments = pendingAppointmentsResult[0]?.count || 0;
+
+    // Obtener citas con fallo en sincronización
+    const failedAppointmentsResult = await db
+      .select({ count: count() })
+      .from(appointments)
+      .where(and(
+        eq(appointments.doctorId, doctorId),
+        eq(appointments.sync_status, 'failed')
+      ));
+    
+    const failedAppointments = failedAppointmentsResult[0]?.count || 0;
+
+    // Obtener la fecha del último intento de sincronización
+    const lastSyncResult = await db
+      .select({ lastSync: max(appointments.last_sync_attempt) })
+      .from(appointments)
+      .where(eq(appointments.doctorId, doctorId));
+    
+    const lastSyncDate = lastSyncResult[0]?.lastSync || null;
+
     return {
       success: true,
       stats: {
-        totalAppointments: 0,
-        syncedAppointments: 0,
-        pendingAppointments: 0,
-        failedAppointments: 0,
-        lastSyncDate: null,
+        totalAppointments,
+        syncedAppointments,
+        pendingAppointments,
+        failedAppointments,
+        lastSyncDate,
       },
     };
   } catch (error) {
