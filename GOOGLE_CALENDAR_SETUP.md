@@ -1,158 +1,277 @@
-# Configuración Google Calendar SDK
+# Configuración de Google Calendar API
 
-## Estructura de Implementación Creada
+Esta guía te ayudará a configurar la integración con Google Calendar para tu aplicación de consultoría médica.
 
-### 📁 Archivos Creados
+## 📋 Requisitos Previos
 
-1. **`src/lib/google-calendar.ts`** - Configuración base del SDK
-2. **`src/types/calendar.ts`** - Interfaces TypeScript
-3. **`src/services/calendar-service.ts`** - Servicio principal con CRUD operations
-4. **`.env.example`** - Variables de entorno actualizadas
+- Cuenta de Google
+- Proyecto en Google Cloud Console
+- Node.js y npm instalados
 
-### 🔧 Configuración Requerida
+## 🚀 Configuración Inicial
 
-#### 1. Google Cloud Console Setup
+### 1. Crear Proyecto en Google Cloud Console
 
-1. Ir a [Google Cloud Console](https://console.cloud.google.com/)
-2. Crear un nuevo proyecto o seleccionar uno existente
-3. Habilitar **Google Calendar API**:
-   - Ir a "APIs & Services" > "Library"
-   - Buscar "Google Calendar API"
-   - Hacer clic en "Enable"
+1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
+2. Crea un nuevo proyecto o selecciona uno existente
+3. Anota el **Project ID** para uso posterior
 
-#### 2. Service Account Creation
+### 2. Habilitar Google Calendar API
 
-1. Ir a "APIs & Services" > "Credentials"
-2. Hacer clic en "Create Credentials" > "Service Account"
-3. Completar los detalles del Service Account
-4. Descargar el archivo JSON con las credenciales
+1. En el menú lateral, ve a **APIs & Services > Library**
+2. Busca "Google Calendar API"
+3. Haz clic en **Enable**
 
-#### 3. Variables de Entorno
+### 3. Crear Cuenta de Servicio
 
-Copiar `.env.example` a `.env.local` y completar:
+1. Ve a **APIs & Services > Credentials**
+2. Haz clic en **Create Credentials > Service Account**
+3. Completa los datos:
+   - **Service account name**: `calendar-service`
+   - **Service account ID**: `calendar-service`
+   - **Description**: `Service account for Google Calendar integration`
+4. Haz clic en **Create and Continue**
+5. En **Grant this service account access to project**:
+   - Rol: `Editor` (o crea un rol personalizado con permisos específicos)
+6. Haz clic en **Continue** y luego **Done**
+
+### 4. Generar Clave de Cuenta de Servicio
+
+1. En la lista de cuentas de servicio, haz clic en la que acabas de crear
+2. Ve a la pestaña **Keys**
+3. Haz clic en **Add Key > Create new key**
+4. Selecciona **JSON** y haz clic en **Create**
+5. Se descargará un archivo JSON con las credenciales
+
+## ⚙️ Configuración del Proyecto
+
+### 1. Variables de Entorno
+
+Crea o actualiza tu archivo `.env.local` con las siguientes variables:
 
 ```env
-GOOGLE_SERVICE_ACCOUNT_EMAIL="tu-service-account@tu-proyecto.iam.gserviceaccount.com"
-GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nTU_PRIVATE_KEY_AQUI\n-----END PRIVATE KEY-----\n"
-GOOGLE_MAIN_CALENDAR_ID="primary"
-DEFAULT_TIMEZONE="America/Mexico_City"
+# Opción 1: Ruta al archivo de credenciales JSON
+GOOGLE_SERVICE_ACCOUNT_KEY_PATH=/path/to/your/service-account-key.json
+
+# Opción 2: Contenido del archivo JSON como string (recomendado para producción)
+GOOGLE_SERVICE_ACCOUNT_KEY='{"type":"service_account","project_id":"your-project-id",...}'
 ```
 
-### 🏗️ Arquitectura del Sistema
+**Nota**: Usa solo una de las dos opciones. La opción 2 es más segura para despliegues en producción.
 
-```
-📦 Google Calendar Integration
-├── 🔧 lib/google-calendar.ts          # SDK Configuration
-├── 📋 types/calendar.ts               # TypeScript Interfaces
-├── ⚙️ services/calendar-service.ts    # Business Logic
-└── 🎯 Próximos pasos:
-    ├── 📡 API Routes (/api/calendar/*)
-    ├── 🎨 Frontend Integration
-    └── 🔄 Real-time Sync
+### 2. Instalación de Dependencias
+
+Las dependencias ya están incluidas en tu `package.json`:
+
+```bash
+npm install
 ```
 
-### 📋 Interfaces Principales
+### 3. Verificar Configuración
 
-#### `ConsultorioCalendar`
+Puedes verificar que la configuración es correcta ejecutando:
+
 ```typescript
-interface ConsultorioCalendar {
-  id: string;                    // ID del calendario en Google
-  consultorioId: string;         // ID interno del sistema
-  name: string;                  // "Consultorio Dr. García"
-  doctorId: string;              // ID del doctor
-  timezone: string;              // "America/Mexico_City"
+import { validateGoogleCalendarConfig } from '@/lib/config/google-calendar-config';
+
+const validation = validateGoogleCalendarConfig();
+console.log('Config valid:', validation.isValid);
+if (!validation.isValid) {
+  console.log('Missing vars:', validation.missingVars);
+  console.log('Errors:', validation.errors);
 }
 ```
 
-#### `AppointmentData`
+## 📚 Uso de la API
+
+### 1. Crear Calendario para un Doctor
+
 ```typescript
-interface AppointmentData {
-  patientName: string;
-  doctorName: string;
-  type: string;
-  startTime: Date;
-  endTime: Date;
-  status: string;
-  notes?: string;
-}
+import { doctorCalendarService } from '@/lib/doctor-calendar';
+
+const result = await doctorCalendarService.createDoctorCalendar({
+  doctorId: 1,
+  calendarName: 'Dr. Juan Pérez - Consultas',
+  timezone: 'America/Bogota',
+  syncEnabled: true,
+});
 ```
 
-### 🚀 Métodos Disponibles
+### 2. Sincronizar Cita con Google Calendar
 
-#### CalendarService
+```typescript
+import { appointmentSyncService } from '@/lib/appointment-sync';
 
-- `createConsultorioCalendar()` - Crear calendario para consultorio
-- `getConsultorioEvents()` - Obtener eventos de un período
-- `createAppointment()` - Crear nueva cita médica
-- `updateAppointment()` - Actualizar cita existente
-- `deleteAppointment()` - Eliminar cita
-
-### 🎨 Colores por Especialidad
-
-- **Consulta General**: Azul (`1`)
-- **Cardiología**: Verde (`2`)
-- **Dermatología**: Púrpura (`3`)
-- **Neurología**: Rosa (`4`)
-- **Ginecología**: Amarillo (`5`)
-- **Pediatría**: Naranja (`6`)
-- **Oftalmología**: Turquesa (`7`)
-
-## Implementación Completada
-
-### ✅ Archivos Creados y Configurados
-
-1. **Backend Google Calendar**:
-   - `src/lib/google-calendar.ts` - Configuración del SDK
-   - `src/types/calendar.ts` - Interfaces TypeScript
-   - `src/services/calendar-service.ts` - Lógica de negocio
-
-2. **API Routes**:
-   - `src/app/api/appointments/route.ts` - CRUD de citas (GET, POST, PUT, DELETE)
-   - `src/app/api/consultorios/[id]/route.ts` - Gestión de consultorios
-
-3. **Frontend Integration**:
-   - `src/app/dashboard/calender/com/calendar-view.tsx` - Integración completa con Google Calendar
-
-### ✅ Funcionalidades Implementadas
-
-- **Carga automática de eventos** desde Google Calendar
-- **Fallback a eventos mock** si Google Calendar no está disponible
-- **Indicador visual** de conexión con Google Calendar
-- **Loading states** durante la carga de eventos
-- **Función createNewAppointment** para crear citas
-- **Conversión automática** de formatos entre Google Calendar y la aplicación
-- **Gestión de errores** y recuperación automática
-
-### 🔧 Uso del Componente
-
-```tsx
-// Con Google Calendar (requiere consultorioId)
-<CalendarView consultorioId="1" />
-
-// Sin Google Calendar (usa eventos mock)
-<CalendarView />
+const result = await appointmentSyncService.syncAppointmentToCalendar(appointmentId);
 ```
 
-### 📝 Próximos Pasos
+### 3. Verificar Disponibilidad
 
-1. **Configurar variables de entorno** según `.env.example`
-2. **Crear Service Account** en Google Cloud Console
-3. **Implementar sincronización en tiempo real** (webhooks)
-4. **Crear interfaz de gestión de consultorios"
-5. **Agregar autenticación y autorización**
+```typescript
+import { doctorCalendarService } from '@/lib/doctor-calendar';
 
-### 🔒 Seguridad
+const result = await doctorCalendarService.checkDoctorAvailability(
+  doctorId,
+  '2024-01-15T10:00:00Z',
+  '2024-01-15T11:00:00Z'
+);
+```
 
-- ✅ Service Account configurado
-- ✅ Variables de entorno protegidas
-- ✅ Scopes mínimos necesarios
-- ✅ Validación de tipos TypeScript
+## 🔗 Endpoints de API
 
-### 📦 Dependencias Instaladas
+### Gestión de Calendarios de Doctores
 
-- `googleapis` - SDK oficial de Google APIs
+- `GET /api/doctors/[id]/calendar` - Obtener configuración del calendario
+- `POST /api/doctors/[id]/calendar` - Crear calendario para doctor
+- `PUT /api/doctors/[id]/calendar` - Actualizar configuración
+- `DELETE /api/doctors/[id]/calendar` - Eliminar calendario
 
----
+### Sincronización
 
-**Estado**: ✅ Estructura base completada (Pasos 1-3)
-**Siguiente**: Implementar API Routes y integración frontend
+- `POST /api/doctors/[id]/calendar/sync` - Sincronizar todas las citas pendientes
+- `PUT /api/doctors/[id]/calendar/toggle-sync` - Habilitar/deshabilitar sincronización
+
+### Disponibilidad y Eventos
+
+- `GET /api/doctors/[id]/calendar/availability` - Verificar disponibilidad
+- `GET /api/doctors/[id]/calendar/events` - Obtener eventos del calendario
+
+### Sincronización de Citas Individuales
+
+- `POST /api/appointments/[id]/sync` - Sincronizar cita específica
+- `PUT /api/appointments/[id]/sync` - Actualizar cita en calendario
+- `DELETE /api/appointments/[id]/sync` - Eliminar cita del calendario
+
+## 🔧 Hooks Automáticos
+
+La integración incluye hooks que se ejecutan automáticamente:
+
+### En tu código de creación de doctores:
+
+```typescript
+import { onDoctorCreated } from '@/lib/hooks/calendar-hooks';
+
+// Después de crear un doctor en la base de datos
+const calendarResult = await onDoctorCreated(doctorId, {
+  firstName: 'Juan',
+  lastName: 'Pérez',
+  email: 'juan.perez@example.com',
+  timezone: 'America/Bogota',
+});
+```
+
+### En tu código de gestión de citas:
+
+```typescript
+import { 
+  onAppointmentCreated, 
+  onAppointmentUpdated, 
+  onAppointmentDeleted 
+} from '@/lib/hooks/calendar-hooks';
+
+// Después de crear una cita
+await onAppointmentCreated(appointmentId);
+
+// Después de actualizar una cita
+await onAppointmentUpdated(appointmentId);
+
+// Después de eliminar una cita
+await onAppointmentDeleted(appointmentId);
+```
+
+## 🛡️ Seguridad
+
+### Mejores Prácticas
+
+1. **Nunca commits las credenciales** al repositorio
+2. **Usa variables de entorno** para las credenciales
+3. **Restringe los permisos** de la cuenta de servicio
+4. **Rota las claves** periódicamente
+5. **Monitorea el uso** de la API
+
+### Configuración de Permisos
+
+Para mayor seguridad, puedes crear un rol personalizado con solo los permisos necesarios:
+
+1. Ve a **IAM & Admin > Roles**
+2. Haz clic en **Create Role**
+3. Agrega estos permisos:
+   - `calendar.calendars.create`
+   - `calendar.calendars.get`
+   - `calendar.calendars.update`
+   - `calendar.events.create`
+   - `calendar.events.get`
+   - `calendar.events.update`
+   - `calendar.events.delete`
+
+## 🐛 Solución de Problemas
+
+### Error: "Calendar API has not been used"
+
+- Asegúrate de haber habilitado la Google Calendar API en tu proyecto
+- Verifica que estés usando el proyecto correcto
+
+### Error: "Invalid credentials"
+
+- Verifica que el archivo JSON de credenciales sea válido
+- Asegúrate de que las variables de entorno estén configuradas correctamente
+- Verifica que la cuenta de servicio tenga los permisos necesarios
+
+### Error: "Quota exceeded"
+
+- Verifica los límites de tu proyecto en Google Cloud Console
+- Considera implementar rate limiting en tu aplicación
+
+### Citas no se sincronizan automáticamente
+
+- Verifica que `calendar_sync_enabled` esté en `true` para el doctor
+- Revisa los logs para errores de sincronización
+- Verifica que el doctor tenga un `calendar_id` asignado
+
+## 📊 Monitoreo
+
+### Logs Importantes
+
+La integración registra eventos importantes:
+
+```typescript
+// Éxito en sincronización
+console.log(`Appointment ${appointmentId} synced successfully: ${googleEventId}`);
+
+// Errores de sincronización
+console.error(`Failed to sync appointment ${appointmentId}: ${error}`);
+
+// Creación de calendarios
+console.log(`Calendar created successfully for doctor ${doctorId}: ${calendarId}`);
+```
+
+### Métricas Recomendadas
+
+- Número de citas sincronizadas exitosamente
+- Número de errores de sincronización
+- Tiempo de respuesta de la API de Google Calendar
+- Uso de cuota de la API
+
+## 🔄 Mantenimiento
+
+### Tareas Periódicas
+
+1. **Revisar logs de errores** semanalmente
+2. **Verificar cuotas de API** mensualmente
+3. **Rotar credenciales** cada 6 meses
+4. **Actualizar dependencias** regularmente
+
+### Backup y Recuperación
+
+- Los calendarios se crean en la cuenta de servicio de Google
+- Los datos de sincronización se almacenan en tu base de datos
+- Implementa backups regulares de tu base de datos
+
+## 📞 Soporte
+
+Si encuentras problemas:
+
+1. Revisa esta documentación
+2. Verifica los logs de la aplicación
+3. Consulta la [documentación oficial de Google Calendar API](https://developers.google.com/calendar/api)
+4. Revisa el estado de los servicios de Google en [Google Cloud Status](https://status.cloud.google.com/)
