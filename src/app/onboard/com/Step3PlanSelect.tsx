@@ -8,14 +8,16 @@ export function Step3PlanSelect({
   isAnnualBilling,
   setIsAnnualBilling,
   selectedPlanId,
-  handlePlanSelectionAndProceed
-}: {
+  handlePlanSelectionAndProceed,
+    isLoading
+  }: {
   nameConsultorio: string;
   isAnnualBilling: boolean;
   setIsAnnualBilling: (v: boolean) => void;
   selectedPlanId: string | null;
   handlePlanSelectionAndProceed: (planId: string) => void;
-}) {
+    isLoading: boolean;
+  }) {
   return (
     <div key="step3_plans" className="animate-subtle-fade-in flex flex-col gap-4 w-full">
       <div className="flex flex-col items-center text-center gap-2 mt-10 md:mt-12">
@@ -59,10 +61,11 @@ export function Step3PlanSelect({
         </ToggleGroup>
       </div>
       <SubscriptionCards
-        selectedPlanId={selectedPlanId}
-        onSelectPlan={handlePlanSelectionAndProceed}
-        isAnnualBilling={isAnnualBilling}
-      />
+          selectedPlanId={selectedPlanId}
+          onSelectPlan={handlePlanSelectionAndProceed}
+          isAnnualBilling={isAnnualBilling}
+          isLoading={isLoading} // Pasar isLoading a SubscriptionCards
+        />
     </div>
   );
-} 
+}

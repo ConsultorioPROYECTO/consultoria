@@ -10,10 +10,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface SubscriptionCardsProps {
   selectedPlanId: string | null;
   onSelectPlan: (planId: string) => void;
-  isAnnualBilling: boolean; // Para mostrar precio anual o mensual
+  isAnnualBilling: boolean;
+  isLoading: boolean; // Añadir isLoading a las props
 }
 
-export function SubscriptionCards({ selectedPlanId, onSelectPlan, isAnnualBilling }: SubscriptionCardsProps) {
+
+export const SubscriptionCards: React.FC<SubscriptionCardsProps> = ({ selectedPlanId, onSelectPlan, isAnnualBilling, isLoading }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {plansData.map((plan: Plan) => {
@@ -89,13 +91,14 @@ export function SubscriptionCards({ selectedPlanId, onSelectPlan, isAnnualBillin
               </div>
             </CardContent>
             <CardFooter className="px-3 pb-2 pt-1"> {/* Reducido pb a 2 */}
-              <Button 
-                className="w-full py-1.5 text-xs h-auto"
-                variant={selectedPlanId === plan.id ? "default" : "outline"}
-                onClick={() => onSelectPlan(plan.id)}
-              >
-                {selectedPlanId === plan.id ? "Seleccionado" : "Seleccionar"}
-              </Button>
+                  <Button 
+                    className="w-full mt-auto"
+                    onClick={() => onSelectPlan(plan.id)}
+                    variant={selectedPlanId === plan.id ? "default" : "outline"}
+                    disabled={isLoading} // Deshabilitar el botón si isLoading es true
+                  >
+                    {isLoading && selectedPlanId === plan.id ? 'Procesando...' : selectedPlanId === plan.id ? 'Plan Seleccionado' : 'Seleccionar Plan'}
+                  </Button>
             </CardFooter>
           </Card>
         );

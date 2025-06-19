@@ -61,7 +61,7 @@ function OnboardContent() {
     // Nuevos estados para la selección de plan
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null); // Inicializar como null
     const [isAnnualBilling, setIsAnnualBilling] = useState(false);
-    // const [isLoading, setIsLoading] = useState(false); // Eliminado isLoading
+    const [isLoading, setIsLoading] = useState(false); // Reintroducido isLoading
 
     const handlePlanSelectionAndProceed = async (planId: string) => {
       if (!planId) {
@@ -76,6 +76,7 @@ function OnboardContent() {
       //   toast.error('Por favor, ingresa el nombre del consultorio.');
       //   return;
       // }
+      setIsLoading(true);
 
       // setIsLoading(true); // Eliminado
       try {
@@ -120,9 +121,9 @@ function OnboardContent() {
         console.error('Error al procesar el plan y la organización:', error);
         toast.error((error as Error).message || 'Ocurrió un error desconocido.');
       } 
-      // finally { // Eliminado
-      //   setIsLoading(false);
-      // }
+      finally {
+        setIsLoading(false);
+      }
     };
     const nextStep = () => setCurrentStep(prev => prev + 1);
     const prevStep = () => setCurrentStep(prev => prev - 1);
@@ -254,6 +255,7 @@ function OnboardContent() {
                 setIsAnnualBilling={setIsAnnualBilling}
                 selectedPlanId={selectedPlanId}
                 handlePlanSelectionAndProceed={handlePlanSelectionAndProceed}
+                isLoading={isLoading} // Pasar isLoading al componente Step3PlanSelect
               />
             )}
             {currentStep > 1 && (
