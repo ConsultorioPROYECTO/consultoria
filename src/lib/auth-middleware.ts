@@ -153,7 +153,7 @@ export async function requireDoctor(request: NextRequest): Promise<AuthResult> {
  */
 export async function requireAssistant(request: NextRequest): Promise<AuthResult> {
   return authenticateRequest(request, {
-    allowedRoles: ['admin', 'doctor', 'assistant'],
+    allowedRoles: ['admin', 'assistant'],
     requiredPermissions: ['manageAppointments'],
   });
 }

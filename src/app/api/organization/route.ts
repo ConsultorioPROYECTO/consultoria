@@ -43,6 +43,25 @@ import { withAuthentication } from '@lib/firebase/server/middleware/authMiddlewa
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { users } from '@rutas/db/schema/users';
 import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+
+/**
+ * Esquema de validación para la creación de organización
+ */
+const createOrganizationSchema = z.object({
+  organizationName: z.string()
+    .min(1, 'El nombre de la organización es requerido')
+    .max(255, 'El nombre de la organización no puede exceder 255 caracteres')
+    .trim(),
+  planId: z.coerce.number()
+    .int('El ID del plan debe ser un número entero')
+    .positive('El ID del plan debe ser un número positivo')
+});
+
+/**
+ * Tipo inferido del esquema de validación
+ */
+type CreateOrganizationRequest = z.infer<typeof createOrganizationSchema>;
 
 /**
  * Funcion axiliar para la creacion del codigo de invitacion aleatorio de 6 caracteres
@@ -89,13 +108,26 @@ const postUserRoleHandler = async (
         );
       }
       const body = await request.json();
-      // Actualizar la validación para incluir planId
-      if (!body || typeof body.organizationName !== 'string' || typeof body.planId !== 'string') {
+      
+      // Validar el cuerpo de la solicitud con Zod
+      const validationResult = createOrganizationSchema.safeParse(body);
+      
+      if (!validationResult.success) {
+        const errorMessages = validationResult.error.errors.map(err => 
+          `${err.path.join('.')}: ${err.message}`
+        ).join(', ');
+        
         return NextResponse.json(
-          { error: 'Cuerpo de la solicitud inválido. Se requieren los campos "organizationName" y "planId".' },
+          { 
+            error: 'Datos de entrada inválidos', 
+            details: errorMessages,
+            issues: validationResult.error.errors
+          },
           { status: 400 }
         );
       }
+      
+      const { organizationName, planId } = validationResult.data;
 
       await db.update(users)
       .set({ role: "admin" })
@@ -104,9 +136,9 @@ const postUserRoleHandler = async (
       const invitacionCode = await generateRandomInvitationCode();
       
         const organizationId = await db.insert(organization).values({
-        name: body.organizationName,
+        name: organizationName,
         invitationCode: invitacionCode,
-        planId: body.planId, // Añadir planId al insertar la organización
+        planId: planId,
       }).$returningId();
 
       if (!organizationId || organizationId.length === 0) { // Comprobar si organizationId es undefined o vacío
@@ -121,7 +153,11 @@ const postUserRoleHandler = async (
       .set({ organizationId: organizationId[0].id })
       .where(eq(users.id, user.id));
 
-      return NextResponse.json({ message: 'Rol actualizado correctamente.', role: body.role });
+      return NextResponse.json({ 
+        message: 'Organización creada correctamente.',
+        organizationId: organizationId[0].id,
+        invitationCode: invitacionCode
+      });
     } catch (error) {
       console.error('Error en el servidor:', error);
       return NextResponse.json(

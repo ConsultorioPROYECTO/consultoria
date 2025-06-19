@@ -10,6 +10,7 @@ import { Step3PlanSelect } from "./com/Step3PlanSelect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@rutas/app/context/AuthContext";
+import { getFirebaseAuthToken } from "../lib/firebase/clientUtils";
 
 function OnboardContent() {
     const roles = [
@@ -78,12 +79,13 @@ function OnboardContent() {
 
       // setIsLoading(true); // Eliminado
       try {
+        const token = await getFirebaseAuthToken();
         let organizationResponse;
         if (selectedRole === 'Admin') { // Asegúrate de usar selectedRole aquí
           // Crear organización para el Admin
           organizationResponse = await fetch('/api/organization', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ 
               organizationName: nameConsultorio, // Asegúrate de usar nameConsultorio
               planId: planId // Usar el planId recibido como parámetro
