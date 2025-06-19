@@ -10,10 +10,11 @@ import { doctorCalendarService } from '@/lib/doctor-calendar';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const doctorId = parseInt(params.id);
+    const { id } = await params;
+    const doctorId = parseInt(id);
     
     if (isNaN(doctorId)) {
       return NextResponse.json(

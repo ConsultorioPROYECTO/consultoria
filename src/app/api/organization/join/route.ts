@@ -40,7 +40,7 @@ import { assistants } from '@rutas/db/schema/assistants';
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import {z} from 'zod';
-import { generateRandomInvitationCode } from '../route';
+import { generateRandomInvitationCode } from '@/lib/organization-utils';
 import { organizationInvitationRequest } from '@rutas/db/schema/organization_invitations_request';
 
 // Credenciales para autenticación básica del webhook

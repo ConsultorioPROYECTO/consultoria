@@ -12,7 +12,7 @@ import type { NewPatient } from "@/db/schema";
 const getPatientByIdHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse | Response> => {
   try {
     const requestingUser = await db.query.users.findFirst({
@@ -29,7 +29,8 @@ const getPatientByIdHandler = async (
       return roleValidationError;
     }
 
-    const patientId = parseInt(params.id);
+    const { id } = await params;
+    const patientId = parseInt(id);
     if (isNaN(patientId)) {
       return createErrorResponse("ID de paciente inválido", undefined, HTTP_STATUS.BAD_REQUEST);
     }
@@ -69,7 +70,7 @@ const getPatientByIdHandler = async (
 const updatePatientHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse | Response> => {
   try {
     const requestingUser = await db.query.users.findFirst({
@@ -87,7 +88,8 @@ const updatePatientHandler = async (
       return roleValidationError;
     }
 
-    const patientId = parseInt(params.id);
+    const { id } = await params;
+    const patientId = parseInt(id);
     if (isNaN(patientId)) {
       return createErrorResponse("ID de paciente inválido", undefined, HTTP_STATUS.BAD_REQUEST);
     }
@@ -171,7 +173,7 @@ const updatePatientHandler = async (
 const deletePatientHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse | Response> => {
   try {
     const requestingUser = await db.query.users.findFirst({
@@ -189,7 +191,8 @@ const deletePatientHandler = async (
       return roleValidationError;
     }
 
-    const patientId = parseInt(params.id);
+    const { id } = await params;
+    const patientId = parseInt(id);
     if (isNaN(patientId)) {
       return createErrorResponse("ID de paciente inválido", undefined, HTTP_STATUS.BAD_REQUEST);
     }
@@ -246,8 +249,7 @@ export async function GET(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  const resolvedParams = await params;
-  return getPatientByIdHandler(request, decodedToken, { params: resolvedParams });
+  return getPatientByIdHandler(request, decodedToken, { params });
 }
 
 export async function PUT(
@@ -260,8 +262,7 @@ export async function PUT(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  const resolvedParams = await params;
-  return updatePatientHandler(request, decodedToken, { params: resolvedParams });
+  return updatePatientHandler(request, decodedToken, { params });
 }
 
 export async function DELETE(
@@ -274,6 +275,5 @@ export async function DELETE(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  const resolvedParams = await params;
-  return deletePatientHandler(request, decodedToken, { params: resolvedParams });
+  return deletePatientHandler(request, decodedToken, { params });
 }

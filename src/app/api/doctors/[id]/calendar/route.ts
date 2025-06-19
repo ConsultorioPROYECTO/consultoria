@@ -10,10 +10,11 @@ import { onCalendarSyncEnabled } from '@/lib/hooks/calendar-hooks';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const doctorId = parseInt(params.id);
+    const { id } = await params;
+    const doctorId = parseInt(id);
     
     if (isNaN(doctorId)) {
       return NextResponse.json(
@@ -53,10 +54,11 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const doctorId = parseInt(params.id);
+    const { id } = await params;
+    const doctorId = parseInt(id);
     
     if (isNaN(doctorId)) {
       return NextResponse.json(
@@ -109,10 +111,11 @@ export async function POST(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const doctorId = parseInt(params.id);
+    const { id } = await params;
+    const doctorId = parseInt(id);
     
     if (isNaN(doctorId)) {
       return NextResponse.json(
@@ -155,10 +158,11 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const doctorId = parseInt(params.id);
+    const { id } = await params;
+    const doctorId = parseInt(id);
     
     if (isNaN(doctorId)) {
       return NextResponse.json(

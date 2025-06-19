@@ -12,7 +12,7 @@ import type { NewMedicalService } from "@/db/schema";
 const getMedicalServiceByIdHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse | Response> => {
   try {
     const requestingUser = await db.query.users.findFirst({
@@ -29,7 +29,8 @@ const getMedicalServiceByIdHandler = async (
       return roleValidationError;
     }
 
-    const serviceId = parseInt(params.id);
+    const { id } = await params;
+    const serviceId = parseInt(id);
     if (isNaN(serviceId)) {
       return createErrorResponse("ID de servicio inválido", undefined, HTTP_STATUS.BAD_REQUEST);
     }
@@ -81,7 +82,7 @@ const getMedicalServiceByIdHandler = async (
 const updateMedicalServiceHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse | Response> => {
   try {
     const requestingUser = await db.query.users.findFirst({
@@ -99,7 +100,8 @@ const updateMedicalServiceHandler = async (
       return roleValidationError;
     }
 
-    const serviceId = parseInt(params.id);
+    const { id } = await params;
+    const serviceId = parseInt(id);
     if (isNaN(serviceId)) {
       return createErrorResponse("ID de servicio inválido", undefined, HTTP_STATUS.BAD_REQUEST);
     }
@@ -173,7 +175,7 @@ const updateMedicalServiceHandler = async (
 const deleteMedicalServiceHandler = async (
   request: NextRequest,
   decodedToken: DecodedIdToken,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse | Response> => {
   try {
     const requestingUser = await db.query.users.findFirst({
@@ -191,7 +193,8 @@ const deleteMedicalServiceHandler = async (
       return roleValidationError;
     }
 
-    const serviceId = parseInt(params.id);
+    const { id } = await params;
+    const serviceId = parseInt(id);
     if (isNaN(serviceId)) {
       return createErrorResponse("ID de servicio inválido", undefined, HTTP_STATUS.BAD_REQUEST);
     }
@@ -259,8 +262,7 @@ export async function GET(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  const resolvedParams = await params;
-  return getMedicalServiceByIdHandler(request, decodedToken, { params: resolvedParams });
+  return getMedicalServiceByIdHandler(request, decodedToken, { params });
 }
 
 export async function PUT(
@@ -273,8 +275,7 @@ export async function PUT(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  const resolvedParams = await params;
-  return updateMedicalServiceHandler(request, decodedToken, { params: resolvedParams });
+  return updateMedicalServiceHandler(request, decodedToken, { params });
 }
 
 export async function DELETE(
@@ -287,6 +288,5 @@ export async function DELETE(
     return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
   }
 
-  const resolvedParams = await params;
-  return deleteMedicalServiceHandler(request, decodedToken, { params: resolvedParams });
+  return deleteMedicalServiceHandler(request, decodedToken, { params });
 }

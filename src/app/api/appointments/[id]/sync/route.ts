@@ -9,10 +9,11 @@ import { appointmentSyncService } from '@/lib/appointment-sync';
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const appointmentId = parseInt(params.id);
+    const { id } = await params;
+    const appointmentId = parseInt(id);
     
     if (isNaN(appointmentId)) {
       return NextResponse.json(
@@ -51,11 +52,14 @@ export async function POST(
  * Actualizar una cita sincronizada en Google Calendar
  */
 export async function PUT(
+
+
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const appointmentId = parseInt(params.id);
+    const { id } = await params;
+    const appointmentId = parseInt(id);
     
     if (isNaN(appointmentId)) {
       return NextResponse.json(
@@ -92,10 +96,11 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const appointmentId = parseInt(params.id);
+    const { id } = await params;
+    const appointmentId = parseInt(id);
     
     if (isNaN(appointmentId)) {
       return NextResponse.json(
