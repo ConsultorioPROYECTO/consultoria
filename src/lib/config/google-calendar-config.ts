@@ -85,11 +85,12 @@ export function validateGoogleCalendarConfig(): {
 /**
  * Obtener las credenciales de la cuenta de servicio
  */
-export function getServiceAccountCredentials(): any {
+export function getServiceAccountCredentials(): GoogleCalendarCredentials | null {
   if (googleCalendarConfig.serviceAccountKey) {
     try {
       return JSON.parse(googleCalendarConfig.serviceAccountKey);
     } catch (error) {
+      console.log(error)
       throw new Error('Invalid GOOGLE_SERVICE_ACCOUNT_KEY format');
     }
   }

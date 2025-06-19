@@ -1,7 +1,7 @@
 // src/lib/google-calendar.ts
 
 import { google } from 'googleapis';
-import { JWT } from 'google-auth-library';
+import { JWT } from 'googleapis-common';
 import type { calendar_v3 } from 'googleapis';
 
 /**
@@ -23,7 +23,7 @@ export class GoogleCalendarService {
     // Inicializar el cliente de calendar con autenticación
     this.calendar = google.calendar({
       version: 'v3',
-      auth: this.auth as any,
+      auth: this.auth,
     });
   }
 
