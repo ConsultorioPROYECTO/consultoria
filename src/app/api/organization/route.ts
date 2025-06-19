@@ -59,11 +59,6 @@ const createOrganizationSchema = z.object({
 });
 
 /**
- * Tipo inferido del esquema de validación
- */
-type CreateOrganizationRequest = z.infer<typeof createOrganizationSchema>;
-
-/**
  * Funcion axiliar para la creacion del codigo de invitacion aleatorio de 6 caracteres
  * no solo crea el codigo, tambien verifica que no exista en la base de datos
  * @returns {string} - Codigo de invitacion aleatorio de 6 caracteres

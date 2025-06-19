@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { appointments, doctors, patients, medicalServices } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { googleCalendarService } from './google-calendar';
-import { format, addMinutes, parseISO } from 'date-fns';
+import { addMinutes, parseISO } from 'date-fns';
 
 export interface AppointmentSyncData {
   id: number;
@@ -28,6 +28,61 @@ export interface DoctorCalendarData {
   calendar_timezone: string;
   calendar_sync_enabled: boolean;
   userId: number;
+}
+
+export interface PatientData {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+export interface MedicalServiceData {
+  id: number;
+  name: string;
+  durationMinutes: number;
+}
+
+export interface AppointmentWithDetails {
+  id: number;
+  doctorId: number;
+  patientId: number | null;
+  serviceId: number | null;
+  date: Date;
+  time: string;
+  status: string;
+  durationMinutes: number;
+  isVirtual: boolean;
+  meetingLink: string | null;
+  notes: string | null;
+  patientName: string | null;
+  service: string | null;
+  google_event_id: string | null;
+  google_calendar_id: string | null;
+  doctor: DoctorCalendarData | null;
+  patient: PatientData | null;
+  medicalService: MedicalServiceData | null;
+}
+
+export interface CalendarEventData {
+  calendarId: string;
+  summary: string;
+  description: string;
+  startDateTime: string;
+  endDateTime: string;
+  timezone: string;
+  attendees: string[];
+  meetingLink?: string;
+}
+
+export interface CalendarEventUpdateData {
+  summary: string;
+  description: string;
+  startDateTime: string;
+  endDateTime: string;
+  timezone: string;
+  attendees: string[];
 }
 
 /**
@@ -255,7 +310,7 @@ export class AppointmentSyncService {
   /**
    * Obtener datos completos de una cita con relaciones
    */
-  private async getAppointmentWithDetails(appointmentId: number) {
+  private async getAppointmentWithDetails(appointmentId: number): Promise<AppointmentWithDetails | null> {
     const result = await db.select({
       // Appointment data
       id: appointments.id,
@@ -316,25 +371,29 @@ export class AppointmentSyncService {
       durationMinutes: appointment.durationMinutes,
       isVirtual: appointment.isVirtual,
       meetingLink: appointment.meetingLink,
-    };
+    } as AppointmentWithDetails;
   }
 
   /**
    * Construir datos del evento para Google Calendar
    */
-  private buildEventData(appointmentData: any) {
+  private buildEventData(appointmentData: AppointmentWithDetails): CalendarEventData {
     const patientName = appointmentData.patient 
       ? `${appointmentData.patient.firstName} ${appointmentData.patient.lastName}`
       : appointmentData.patientName || 'Paciente';
     
     const serviceName = appointmentData.medicalService?.name || appointmentData.service || 'Consulta';
     
-    const startDateTime = this.buildDateTime(appointmentData.date, appointmentData.time);
+    const startDateTime = this.buildDateTime(appointmentData.date.toISOString().split('T')[0], appointmentData.time);
     const endDateTime = addMinutes(parseISO(startDateTime), appointmentData.durationMinutes);
     
     const attendees = [];
     if (appointmentData.patient?.email) {
       attendees.push(appointmentData.patient.email);
+    }
+
+    if (!appointmentData.doctor) {
+      throw new Error('Doctor data is required for calendar event creation');
     }
 
     return {
@@ -345,26 +404,30 @@ export class AppointmentSyncService {
       endDateTime: endDateTime.toISOString(),
       timezone: appointmentData.doctor.calendar_timezone,
       attendees,
-      meetingLink: appointmentData.isVirtual ? appointmentData.meetingLink : undefined,
+      meetingLink: appointmentData.isVirtual ? appointmentData.meetingLink || undefined : undefined,
     };
   }
 
   /**
    * Construir datos de actualización del evento
    */
-  private buildEventUpdateData(appointmentData: any) {
+  private buildEventUpdateData(appointmentData: AppointmentWithDetails): CalendarEventUpdateData {
     const patientName = appointmentData.patient 
       ? `${appointmentData.patient.firstName} ${appointmentData.patient.lastName}`
       : appointmentData.patientName || 'Paciente';
     
     const serviceName = appointmentData.medicalService?.name || appointmentData.service || 'Consulta';
     
-    const startDateTime = this.buildDateTime(appointmentData.date, appointmentData.time);
+    const startDateTime = this.buildDateTime(appointmentData.date.toISOString().split('T')[0], appointmentData.time);
     const endDateTime = addMinutes(parseISO(startDateTime), appointmentData.durationMinutes);
     
     const attendees = [];
     if (appointmentData.patient?.email) {
       attendees.push(appointmentData.patient.email);
+    }
+
+    if (!appointmentData.doctor) {
+      throw new Error('Doctor data is required for calendar event update');
     }
 
     return {
@@ -380,7 +443,7 @@ export class AppointmentSyncService {
   /**
    * Construir descripción del evento
    */
-  private buildEventDescription(appointmentData: any): string {
+  private buildEventDescription(appointmentData: AppointmentWithDetails): string {
     const lines = [];
     
     const patientName = appointmentData.patient 

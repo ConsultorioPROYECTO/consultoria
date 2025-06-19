@@ -77,7 +77,7 @@ export interface AuthRedirectConfig {
 export interface AuthComponentProps {
   invitacionCode?: string | null;
   role?: string | null;
-  onSuccess?: (user: any) => void;
+  onSuccess?: (user: AuthUser) => void;
   onError?: (error: AuthError) => void;
 }
 

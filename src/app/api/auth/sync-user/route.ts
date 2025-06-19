@@ -5,6 +5,7 @@ import { users, NewUser } from '@rutas/db/schema/users'; // Asegúrate que la ru
 import { eq } from 'drizzle-orm';
 import { assistants, doctors } from '@rutas/db/schema';
 import { sql } from 'drizzle-orm';
+import { onDoctorCreated } from '@/lib/hooks/calendar-hooks';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,7 +53,39 @@ export async function POST(request: NextRequest) {
       // Verifica si ya existe registro en doctors
       const doctorExists = await db.query.doctors.findFirst({ where: eq(doctors.userId, user.id) });
       if (!doctorExists) {
-        await db.insert(doctors).values({ userId: user.id, speciality: '', calendar_id: '', privatePhone: '', nitId: '', availability: '', tokenGoogleId: '' });
+        // Crear el registro del doctor
+        await db.insert(doctors).values({ 
+          userId: user.id, 
+          speciality: '', 
+          calendar_id: '', 
+          privatePhone: '', 
+          nitId: '', 
+          availability: '', 
+          tokenGoogleId: '' 
+        });
+        
+        // Obtener el ID del doctor recién creado
+        const newDoctor = await db.query.doctors.findFirst({ where: eq(doctors.userId, user.id) });
+        
+        if (newDoctor && user.displayName) {
+          // Crear calendario automáticamente para el nuevo doctor
+          try {
+            const calendarResult = await onDoctorCreated(newDoctor.idDoctor, {
+              firstName: user.displayName.split(' ')[0] || 'Doctor',
+              lastName: user.displayName.split(' ').slice(1).join(' ') || '',
+              email: user.email || undefined,
+              timezone: 'America/Bogota'
+            });
+            
+            if (calendarResult.success) {
+              console.log(`Calendar created successfully for doctor ${newDoctor.idDoctor}: ${calendarResult.calendarId}`);
+            } else {
+              console.error(`Failed to create calendar for doctor ${newDoctor.idDoctor}: ${calendarResult.error}`);
+            }
+          } catch (calendarError) {
+            console.error('Error creating calendar for new doctor:', calendarError);
+          }
+        }
       }
     } else if (user?.role === 'asistente') {
       // Verifica si ya existe registro en assistants
