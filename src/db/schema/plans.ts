@@ -1,6 +1,6 @@
-// src/db/schema/organization.ts 
+// src/db/schema/plans.ts 
 
-import { mysqlTable, varchar, timestamp, index, int  } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int, json, boolean } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 /**
@@ -11,8 +11,13 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
  * @property {string} name - Nombre del plan.
  * @property {string} description - Descripción del plan.
- * @property {number} price - Precio del plan.
- * @property {number} duration - Duración del plan.
+ * @property {number} priceMonthly - Precio mensual del plan.
+ * @property {number} priceAnnually - Precio anual total del plan.
+ * @property {string[]} features - Lista de características principales del plan.
+ * @property {string} tokenLimit - Límite de tokens del plan.
+ * @property {string} medicosLimit - Límite de médicos del plan.
+ * @property {string} asistentesLimit - Límite de asistentes del plan.
+ * @property {boolean} isPopular - Indica si el plan es popular (destacado).
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
@@ -20,9 +25,14 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 export const plans = mysqlTable('plans', {
     id: int('id', { unsigned : true}).autoincrement().primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
-    description: varchar('description', { length: 255 }),
-    price: int('price').notNull(),
-    duration: int('duration').notNull(),
+    description: varchar('description', { length: 500 }),
+    priceMonthly: int('price_monthly').notNull(),
+    priceAnnually: int('price_annually').notNull(),
+    features: json('features').$type<string[]>().notNull(),
+    tokenLimit: varchar('token_limit', { length: 100 }).notNull(),
+    medicosLimit: varchar('medicos_limit', { length: 100 }).notNull(),
+    asistentesLimit: varchar('asistentes_limit', { length: 100 }).notNull(),
+    isPopular: boolean('is_popular').default(false),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (plan) => [

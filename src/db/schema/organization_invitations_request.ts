@@ -1,6 +1,6 @@
 // @app/src/db/schema/organization_invitations_request.ts
 
-import { boolean, index, int, mysqlEnum, mysqlTable, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, mysqlEnum, mysqlTable, timestamp, varchar, foreignKey } from "drizzle-orm/mysql-core";
 import { organization } from "./organization";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
@@ -26,7 +26,6 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 export const organizationInvitationRequest = mysqlTable('organization_invitations_request', {
   id: int('id').autoincrement().primaryKey(),
   organizationId: int('organization_id')
-    .references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' })
     .notNull(),
   userEmail: varchar('user_email', {length: 255})
     .notNull(),
@@ -43,6 +42,13 @@ export const organizationInvitationRequest = mysqlTable('organization_invitation
   isDeleted: boolean('is_deleted').default(false).notNull(),
   expiresAt: timestamp('expires_at')
 }, (table) => [
+  foreignKey({
+    columns: [table.organizationId],
+    foreignColumns: [organization.id],
+    name: 'org_inv_req_org_id_fk'
+  })
+    .onDelete('cascade')
+    .onUpdate('cascade'),
   index('organization_id_idx').on(table.organizationId),
   index('status_idx').on(table.status),
   index('created_at_idx').on(table.createdAt),
