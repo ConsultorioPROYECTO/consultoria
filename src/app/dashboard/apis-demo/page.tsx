@@ -22,6 +22,7 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@rutas/components/ui/sidebar"
+import { NavigationProvider } from "@/app/context/NavigationContext"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs"
 
 export interface FetchRolUser {
@@ -76,8 +77,9 @@ export default function APIDemoPage() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
+    <NavigationProvider>
+      <SidebarProvider>
+        <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
@@ -178,5 +180,6 @@ export default function APIDemoPage() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </NavigationProvider>
   )
 }

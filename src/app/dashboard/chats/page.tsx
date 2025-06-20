@@ -1,6 +1,7 @@
 'use client';
 import { AppSidebar } from "@rutas/app/dashboard/com/app-sidebar"
 import { SiteHeader } from "@rutas/app/dashboard/chats/compo/site-header"
+import { NavigationProvider } from "@rutas/app/context/NavigationContext"
 
 import {
   SidebarInset,
@@ -26,7 +27,8 @@ export default function Page() {
   }
 
   return (
-    <SidebarProvider
+    <NavigationProvider>
+      <SidebarProvider
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -60,5 +62,6 @@ export default function Page() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </NavigationProvider>
   )
 }

@@ -9,6 +9,7 @@ import { PendingInteractions } from "@rutas/app/dashboard/com/PendingInteraction
 import { AIStats } from "@rutas/app/dashboard/com/AIStats"
 import { QuickActions } from "@rutas/app/dashboard/com/QuickActions"
 import { getFirebaseAuthToken } from "@rutas/app/lib/firebase/clientUtils";
+import { NavigationProvider } from "@rutas/app/context/NavigationContext";
 
 import {
   SidebarInset,
@@ -91,7 +92,8 @@ export default function Page() {
   }
 
   return (
-    <SidebarProvider
+    <NavigationProvider>
+      <SidebarProvider
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -122,5 +124,6 @@ export default function Page() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </NavigationProvider>
   )
 }

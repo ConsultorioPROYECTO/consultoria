@@ -5,6 +5,7 @@ import { useAuth } from "../../../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LoadingScreen } from '../../../com/loadingScreen';
+import { NavigationProvider } from "../../../../context/NavigationContext";
 import {
   SidebarInset,
   SidebarProvider,
@@ -84,7 +85,8 @@ export default function Page() {
     );
   }
   return (
-    <SidebarProvider
+    <NavigationProvider>
+      <SidebarProvider
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -143,5 +145,6 @@ export default function Page() {
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </NavigationProvider>
   );
 }
