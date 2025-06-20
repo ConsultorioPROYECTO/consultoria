@@ -267,10 +267,19 @@ export class DoctorCalendarService {
         throw new Error('Doctor not found or calendar not configured');
       }
 
+      // Asegurar formato RFC3339 con zona horaria
+      const formatToRFC3339 = (dateStr: string): string => {
+        const date = new Date(dateStr);
+        return date.toISOString();
+      };
+
+      const formattedStartDateTime = formatToRFC3339(startDateTime);
+      const formattedEndDateTime = formatToRFC3339(endDateTime);
+
       const result = await googleCalendarService.checkAvailability(
         doctor[0].calendar_id,
-        startDateTime,
-        endDateTime
+        formattedStartDateTime,
+        formattedEndDateTime
       );
 
       return {
@@ -309,10 +318,14 @@ export class DoctorCalendarService {
         throw new Error('Doctor not found or calendar not configured');
       }
 
+      // Convertir fechas YYYY-MM-DD a formato RFC3339 con zona horaria
+      const timeMin = `${startDate}T00:00:00Z`;
+      const timeMax = `${endDate}T23:59:59Z`;
+
       const events = await googleCalendarService.getCalendarEvents(
         doctor[0].calendar_id,
-        startDate,
-        endDate
+        timeMin,
+        timeMax
       );
 
       return {
