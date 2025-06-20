@@ -63,11 +63,11 @@ function Login() {
 
             if (roleResponse.ok) {
                 const roleData = await roleResponse.json();
-                // Si el rol es N/A, redirigir al onboard
-                if (roleData.role === 'N/A') {
+                // Si el rol es N/A o no tiene organización, redirigir al onboard
+                if (roleData.role === 'N/A' || roleData.organizationId === null) {
                     router.push('/onboard');
                 } else {
-                    // Si tiene un rol válido, redirigir al dashboard
+                    // Si tiene un rol válido y organización, redirigir al dashboard
                     router.push('/dashboard');
                 }
             } else {

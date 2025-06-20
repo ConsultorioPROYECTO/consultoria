@@ -75,7 +75,7 @@ const getUserRoleHandler = async (
   try {
     const user = await db.query.users.findFirst({
       where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true }
+      columns: { role: true, organizationId: true }
     });
     if (!user) {
       return NextResponse.json(
@@ -83,7 +83,10 @@ const getUserRoleHandler = async (
         { status: 404 }
       );
     }
-    return NextResponse.json({ role: user.role });
+    return NextResponse.json({ 
+      role: user.role, 
+      organizationId: user.organizationId 
+    });
   } catch (error) {
     console.error('Error en el servidor:', error);
     return NextResponse.json(
