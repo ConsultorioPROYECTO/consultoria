@@ -68,7 +68,7 @@ const getUsersHandler = async (
   try {
     const requestingUser = await db.query.users.findFirst({
       where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true }, // Solo necesitamos el rol para la autorización
+      columns: { role: true, organizationId: true }, // Solo necesitamos el rol y la organizacion para la autorización
     });
 
     if (!requestingUser) {
@@ -95,6 +95,7 @@ const getUsersHandler = async (
     console.log('[API /api/users] Consultando la base de datos para obtener todos los usuarios...');
 
     const allUsers = await db.query.users.findMany({
+      where: requestingUser.organizationId ? eq(users.organizationId, requestingUser.organizationId) : undefined,
       orderBy: [desc(users.createdAt)], // Ordenar por fecha de creación, más recientes primero
       limit: 100, // Limitar resultados para evitar sobrecarga (implementar paginación para más)
       // Opcional: Excluir campos sensibles si no son necesarios para el admin en esta vista
