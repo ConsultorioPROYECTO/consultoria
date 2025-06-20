@@ -1,25 +1,34 @@
 'use client'
 
-import * as React from 'react';
+import { memo, useCallback, useMemo, useTransition } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useNavigation } from "@rutas/app/context/NavigationContext"
-import { Home, CalendarClock } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
-const MobileNavbar = React.memo(() => {
-  const [isPending, startTransition] = React.useTransition();
+// Importación dinámica de iconos para reducir el bundle inicial
+const Home = dynamic(() => import('lucide-react').then(mod => mod.Home));
+const CalendarClock = dynamic(() => import('lucide-react').then(mod => mod.CalendarClock));
+
+// Importación dinámica de componentes de UI
+const Tabs = dynamic(() => import('@/components/ui/tabs').then(mod => mod.Tabs));
+const TabsList = dynamic(() => import('@/components/ui/tabs').then(mod => mod.TabsList));
+const TabsTrigger = dynamic(() => import('@/components/ui/tabs').then(mod => mod.TabsTrigger));
+
+const MobileNavbar = memo(() => {
+  const [isPending, startTransition] = useTransition();
   const { setCurrentView, currentView } = useNavigation()
   const currentPath = usePathname();
 
   // Memoize function to handle view changes with useTransition
-  const handleViewChange = React.useCallback((view: 'dashboard' | 'calendar') => {
+  const handleViewChange = useCallback((view: 'dashboard' | 'calendar') => {
     startTransition(() => {
       setCurrentView(view);
     });
   }, [setCurrentView]);
 
   // Memoize navItems to prevent recreation on every render
-  const navItems = React.useMemo(() => [
+  const navItems = useMemo(() => [
     { 
       title: 'Dashboard', 
       icon: Home, 
@@ -35,7 +44,7 @@ const MobileNavbar = React.memo(() => {
   ], [handleViewChange]);
 
   // Memoize helper function to determine if an item is active
-  const isItemActive = React.useCallback((item: { title: string; url: string }) => {
+  const isItemActive = useCallback((item: { title: string; url: string }) => {
     // For calendar, check both URL and currentView
     if (item.title === 'Calendario') {
       return currentView === 'calendar';
@@ -49,13 +58,13 @@ const MobileNavbar = React.memo(() => {
   }, [currentView, currentPath]);
 
   // Memoize active index calculation
-  const activeIndex = React.useMemo(() => 
+  const activeIndex = useMemo(() => 
     navItems.findIndex(item => isItemActive(item)),
     [navItems, isItemActive]
   );
 
   // Memoize handle item click function
-  const handleItemClick = React.useCallback((index: number) => {
+  const handleItemClick = useCallback((index: number) => {
     const item = navItems[index];
     if (item.onClick) {
       item.onClick();
@@ -63,7 +72,7 @@ const MobileNavbar = React.memo(() => {
   }, [navItems]);
 
   // Memoize motion animation props
-  const motionProps = React.useMemo(() => ({
+  const motionProps = useMemo(() => ({
     className: "absolute top-0 left-0 h-full bg-primary rounded-full z-0",
     style: { width: `${100 / navItems.length}%` },
     initial: false,
@@ -77,28 +86,36 @@ const MobileNavbar = React.memo(() => {
     }`}>
       <div className="relative flex items-center">
         <motion.div {...motionProps} />
-        {navItems.map((item, index) => {
-          const isActive = index === activeIndex;
-          return (
-            <div key={item.title} className="relative z-10 flex-1">
-              <button
-                onClick={() => handleItemClick(index)}
-                disabled={isPending}
-                className={`w-full flex justify-center items-center gap-2 py-2 rounded-full text-foreground transition-colors duration-300 ease-in-out ${
-                  isActive ? '' : 'hover:bg-muted'
-                } ${
-                  isPending ? 'cursor-wait' : ''
-                }`}>
-                <item.icon className={`h-5 w-5 ${
-                  isActive ? 'text-primary-foreground' : 'text-foreground'
-                } ${
-                  isPending ? 'animate-pulse' : ''
-                }`} />
-                {isActive && <span className="text-sm font-semibold text-primary-foreground">{item.title}</span>}
-              </button>
-            </div>
-          );
-        })}
+        <Tabs 
+          value={navItems[activeIndex]?.title.toLowerCase() || 'dashboard'} 
+          className="w-full relative z-10"
+        >
+          <TabsList className="w-full h-auto p-0 bg-transparent grid grid-cols-2 gap-0">
+            {navItems.map((item, index) => {
+              const isActive = index === activeIndex;
+              return (
+                <TabsTrigger
+                  key={item.title}
+                  value={item.title.toLowerCase()}
+                  onClick={() => handleItemClick(index)}
+                  disabled={isPending}
+                  className={`flex-1 flex justify-center items-center gap-2 py-2 rounded-full text-foreground transition-colors duration-300 ease-in-out border-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none ${
+                    isActive ? '' : 'hover:bg-muted'
+                  } ${
+                    isPending ? 'cursor-wait' : ''
+                  }`}
+                >
+                  <item.icon className={`h-5 w-5 ${
+                    isActive ? 'text-primary-foreground' : 'text-foreground'
+                  } ${
+                    isPending ? 'animate-pulse' : ''
+                  }`} />
+                  {isActive && <span className="text-sm font-semibold text-primary-foreground">{item.title}</span>}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+        </Tabs>
       </div>
     </nav>
   );
