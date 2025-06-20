@@ -36,7 +36,7 @@ export const useAuthGuard = () => {
       }
 
       // Si el rol es N/A o no tiene organización, redirigir al onboarding
-      if (userRole === 'N/A' || userOrganizationId === null) {
+      if (userRole === 'N/A') {
         router.push('/onboard');
         setIsLoading(false);
         return;

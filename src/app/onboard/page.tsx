@@ -28,14 +28,16 @@ function OnboardContent() {
     const { signOut } = useAuth();
 
     useEffect(() => {
-        if (initialInvitationCode) {
+        // Verificar que los parámetros no sean null ni la cadena "null"
+        if (initialInvitationCode && initialInvitationCode !== 'null') {
             setInvitationCode(initialInvitationCode);
         }
-        if (initialRole) {
+        if (initialRole && initialRole !== 'null') {
             setSelectedRole(initialRole);
         }
-        // Si ambos parámetros existen, saltar al paso 2 automáticamente
-        if (initialInvitationCode && initialRole) {
+        // Si ambos parámetros existen y son válidos, saltar al paso 2 automáticamente
+        if (initialInvitationCode && initialInvitationCode !== 'null' && 
+            initialRole && initialRole !== 'null') {
             setCurrentStep(2);
         }
     }, [initialInvitationCode, initialRole]);
