@@ -1,8 +1,8 @@
 // src/lib/google-calendar.ts
 
 import { google } from 'googleapis';
-import { JWT } from 'googleapis-common';
 import type { calendar_v3 } from 'googleapis';
+import { getServiceAccountCredentials, googleCalendarConfig } from './config/google-calendar-config';
 
 /**
  * Configuración del cliente de Google Calendar
@@ -10,13 +10,15 @@ import type { calendar_v3 } from 'googleapis';
  */
 export class GoogleCalendarService {
   private calendar: calendar_v3.Calendar;
-  private auth: JWT;
+  private auth: InstanceType<typeof google.auth.GoogleAuth>;
 
   constructor() {
-    // Configurar autenticación con cuenta de servicio
-    this.auth = new JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    // Configurar autenticación con cuenta de servicio usando GoogleAuth
+    const credentials = getServiceAccountCredentials();
+    
+    this.auth = new google.auth.GoogleAuth({
+      credentials: credentials || undefined,
+      keyFile: credentials ? undefined : googleCalendarConfig.serviceAccountKeyPath,
       scopes: ['https://www.googleapis.com/auth/calendar'],
     });
 
