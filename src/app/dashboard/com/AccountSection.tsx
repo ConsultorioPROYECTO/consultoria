@@ -23,6 +23,8 @@ export function AccountSection({ user, userRole }: AccountSectionProps) {
               <Image 
                 src={user?.photoURL || "/avatars/shadcn.jpg"} 
                 alt="Foto de perfil" 
+                width={64}
+                height={64}
                 className="h-full w-full object-cover"
               />
             </div>

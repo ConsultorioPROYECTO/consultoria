@@ -100,11 +100,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: CalendarClock,
         onClick: () => setCurrentView('calendar'),
       },
-      {
-        title: "Demo APIs",
-        url: "/dashboard/apis-demo",
-        icon: Layers,
-      },
     ],
     navSecondary: [
       {
