@@ -100,7 +100,7 @@ const postOrganizationRequestHandler  = async (
                 );
             }*/
 
-            const messageToSend = `Hola, soy ${user.email} y quiero que te unas a mi organización ${organizacion.name} como ${role}.\ningresa con el codigo ${organizacion.invitationCode} para aceptar la invitación.\n\n\thttp://localhost:3000/signup?invitacionCode=${organizacion.invitationCode}&role=${role}`;
+            const messageToSend = `Hola, soy ${user.email} y quiero que te unas a mi organización ${organizacion.name} como ${role}.\ningresa con el codigo ${organizacion.invitationCode} para aceptar la invitación.\n\n\thttp://irina.makilacloud.com:3000/signup?invitacionCode=${organizacion.invitationCode}&role=${role}`;
 
             const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, "Invitacion",messageToSend);
             
