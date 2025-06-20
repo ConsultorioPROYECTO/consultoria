@@ -38,7 +38,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db';
-import { organization } from '@rutas/db/schema/organization';
+import { organization, plans } from '@rutas/db/schema';
 import { withAuthentication } from '@lib/firebase/server/middleware/authMiddleware';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { users } from '@rutas/db/schema/users';
@@ -54,9 +54,7 @@ const createOrganizationSchema = z.object({
     .min(1, 'El nombre de la organización es requerido')
     .max(255, 'El nombre de la organización no puede exceder 255 caracteres')
     .trim(),
-  planId: z.coerce.number()
-    .int('El ID del plan debe ser un número entero')
-    .positive('El ID del plan debe ser un número positivo')
+  planId: z.string().min(1, 'El ID del plan es requerido') // Cambiado a string
 });
 
 
@@ -103,35 +101,68 @@ const postUserRoleHandler = async (
         );
       }
       
-      const { organizationName, planId } = validationResult.data;
+      const { organizationName, planId: planIdentifier } = validationResult.data;
 
+      // Mapeo de identificadores de plan del frontend a nombres en la BD
+      const planIdentifierMap: { [key: string]: string } = {
+        'basico': 'Básico',
+        'profesional': 'Profesional',
+        'empresarial': 'Empresarial'
+      };
+
+      const planName = planIdentifierMap[planIdentifier];
+
+      if (!planName) {
+        return NextResponse.json(
+          { error: `El identificador de plan '${planIdentifier}' es inválido.` },
+          { status: 400 }
+        );
+      }
+
+      // 1. Buscar el plan por su nombre
+      const plan = await db.query.plans.findFirst({
+        where: eq(plans.name, planName)
+      });
+
+      if (!plan) {
+        return NextResponse.json(
+          { error: `El plan con el nombre '${planName}' no fue encontrado.` },
+          { status: 404 }
+        );
+      }
+
+      // 2. Actualizar el rol del usuario a 'admin'
       await db.update(users)
-      .set({ role: "admin" })
-      .where(eq(users.id, user.id));
+        .set({ role: "admin" })
+        .where(eq(users.id, user.id));
 
+      // 3. Generar código de invitación
       const invitacionCode = await generateRandomInvitationCode();
       
-        const organizationId = await db.insert(organization).values({
+      // 4. Crear la organización usando el ID numérico del plan encontrado
+      const insertResult = await db.insert(organization).values({
         name: organizationName,
         invitationCode: invitacionCode,
-        planId: planId,
-      }).$returningId();
+        planId: plan.id, // Usar el ID numérico del plan
+      });
 
-      if (!organizationId || organizationId.length === 0) { // Comprobar si organizationId es undefined o vacío
+      const newOrganizationId = insertResult[0].insertId;
+
+      if (!newOrganizationId) {
         return NextResponse.json(
           { error: 'Error al crear la organización.' },
           { status: 500 }
         );
       }
 
-      // Asociar el usuario a la organización
+      // 5. Asociar el usuario a la organización
       await db.update(users)
-      .set({ organizationId: organizationId[0].id })
+      .set({ organizationId: newOrganizationId })
       .where(eq(users.id, user.id));
 
       return NextResponse.json({ 
         message: 'Organización creada correctamente.',
-        organizationId: organizationId[0].id,
+        organizationId: newOrganizationId,
         invitationCode: invitacionCode
       });
     } catch (error) {

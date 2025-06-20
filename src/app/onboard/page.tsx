@@ -68,35 +68,36 @@ function OnboardContent() {
         toast.error('Por favor, selecciona un plan para continuar.');
         return;
       }
-      
+
       // Actualizar el estado del plan seleccionado
       setSelectedPlanId(planId);
-      // La validación de consultorioName para Admin se movió a Step2ConsultorioOrInvitacion
-      // if (role === 'Admin' && !consultorioName.trim()) { 
-      //   toast.error('Por favor, ingresa el nombre del consultorio.');
-      //   return;
-      // }
-      setIsLoading(true);
 
-      // setIsLoading(true); // Eliminado
+      // La validación de consultorioName para Admin se movió a Step2ConsultorioOrInvitacion
+      if (selectedRole === 'Admin' && !nameConsultorio.trim()) { 
+        toast.error('Por favor, ingresa el nombre del consultorio.');
+        return;
+      }
+      
+      setIsLoading(true);
+      
       try {
         const token = await getFirebaseAuthToken();
         let organizationResponse;
-        if (selectedRole === 'Admin') { // Asegúrate de usar selectedRole aquí
+
+        if (selectedRole === 'Admin') {
           // Crear organización para el Admin
           organizationResponse = await fetch('/api/organization', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ 
-              organizationName: nameConsultorio, // Asegúrate de usar nameConsultorio
+              organizationName: nameConsultorio, // Usar nameConsultorio del estado
               planId: planId // Usar el planId recibido como parámetro
             }), 
           });
         } else {
           // Para otros roles, la unión a la organización ya se manejó en Step2ConsultorioOrInvitacion
-          // Simplemente redirigir al dashboard si ya seleccionaron un plan (aunque este flujo es más para Admin)
+          // Este flujo es principalmente para el Admin, pero en caso de llegar aquí, redirigir.
           router.push('/dashboard');
-          // setIsLoading(false); // Eliminado
           return;
         }
 
