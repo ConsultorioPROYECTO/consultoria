@@ -230,6 +230,20 @@ const postOrganizationJoinHandler = async (
         nitId: '', // Se puede configurar después
         availability: 'Disponible', // Valor por defecto
         tokenGoogleId: '', // Se puede configurar después
+        calendar_settings: {
+          notifications: {
+            email: true,
+            popup: true,
+            minutesBefore: [15, 60],
+          },
+          workingHours: {
+            start: '08:00',
+            end: '18:00',
+            days: [1, 2, 3, 4, 5],
+          },
+          autoAcceptMeetings: false,
+          defaultMeetingDuration: 30,
+        }
       });
       console.log(`Registro de doctor creado para usuario ${existingUser.id}`);
     } catch (doctorError) {

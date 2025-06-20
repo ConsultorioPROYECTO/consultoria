@@ -61,7 +61,21 @@ export async function POST(request: NextRequest) {
           privatePhone: '', 
           nitId: '', 
           availability: '', 
-          tokenGoogleId: '' 
+          tokenGoogleId: '',
+          calendar_settings: {
+            notifications: {
+              email: true,
+              popup: true,
+              minutesBefore: [15, 60],
+            },
+            workingHours: {
+              start: '08:00',
+              end: '18:00',
+              days: [1, 2, 3, 4, 5],
+            },
+            autoAcceptMeetings: false,
+            defaultMeetingDuration: 30,
+          }
         });
         
         // Obtener el ID del doctor recién creado

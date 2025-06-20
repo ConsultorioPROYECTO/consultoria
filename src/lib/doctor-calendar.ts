@@ -129,7 +129,9 @@ export class DoctorCalendarService {
       }
 
       const currentSettings = doctor[0].calendar_settings 
-        ? JSON.parse(doctor[0].calendar_settings as string) as CalendarSettings
+        ? (typeof doctor[0].calendar_settings === 'string' 
+           ? JSON.parse(doctor[0].calendar_settings) as CalendarSettings
+           : doctor[0].calendar_settings as CalendarSettings)
         : this.getDefaultCalendarSettings();
 
       const updatedSettings = {
@@ -139,7 +141,7 @@ export class DoctorCalendarService {
 
       await db.update(doctors)
         .set({
-          calendar_settings: JSON.stringify(updatedSettings),
+          calendar_settings: updatedSettings, // Drizzle maneja la serialización JSON automáticamente
           last_calendar_sync: new Date(),
         })
         .where(eq(doctors.idDoctor, doctorId));
@@ -217,7 +219,9 @@ export class DoctorCalendarService {
       }
 
       const settings = doctorData.calendar_settings 
-        ? JSON.parse(doctorData.calendar_settings as string) as CalendarSettings
+        ? (typeof doctorData.calendar_settings === 'string' 
+           ? JSON.parse(doctorData.calendar_settings) as CalendarSettings
+           : doctorData.calendar_settings as CalendarSettings)
         : this.getDefaultCalendarSettings();
 
       return {
