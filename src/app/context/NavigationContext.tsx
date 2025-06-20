@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 
-export type ViewType = 'dashboard' | 'calendar';
+export type ViewType = 'dashboard' | 'calendar' | 'organization-config' | 'org-config' | 'organization';
 
 interface NavigationContextType {
   currentView: ViewType;

@@ -8,7 +8,12 @@ import { useUserRole } from '@rutas/app/hooks/useUserRole';
 import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
 // Lazy load CalendarView solo cuando sea necesario
-const CalendarView = dynamic(() => import('../calender/com/calendar-view'), {
+const CalendarView = dynamic(() => import('../calender/calendar-view'), {
+  loading: () => <WaveformLoader className="w-16 h-auto text-muted-foreground" />,
+  ssr: false,
+});
+
+const OrganizationConfigView = dynamic(() => import('../organization/configorganization-view'), {
   loading: () => <WaveformLoader className="w-16 h-auto text-muted-foreground" />,
   ssr: false,
 });
@@ -31,23 +36,41 @@ const CalendarWrapper = () => (
   </div>
 );
 
+const OrganizationConfigWrapper = () => (
+  <div className="flex flex-1 flex-col overflow-hidden">
+    <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+      <div className="h-full w-full flex flex-col">
+        <Suspense fallback={<LoadingSpinner />}>
+          <OrganizationConfigView />
+        </Suspense>
+      </div>
+    </main>
+  </div>
+);
+
 const ViewRenderer: React.FC = () => {
   const { currentView } = useNavigation();
   const { userRole, isLoadingRole, error } = useUserRole();
 
-  // Renderizado condicional real - solo renderiza el componente activo
-  if (currentView === 'calendar') {
-    return <CalendarWrapper />;
+  // Manejo por casos usando switch para mejor escalabilidad
+  switch (currentView) {
+    case 'calendar':
+      return <CalendarWrapper />;
+    
+    case 'organization':
+      return <OrganizationConfigWrapper />;
+    
+    case 'dashboard':
+    default:
+      // Vista dashboard por defecto
+      return (
+        <RoleBasedRenderer 
+          userRole={userRole} 
+          isLoading={isLoadingRole} 
+          error={error} 
+        />
+      );
   }
-
-  // Vista dashboard por defecto
-  return (
-    <RoleBasedRenderer 
-      userRole={userRole} 
-      isLoading={isLoadingRole} 
-      error={error} 
-    />
-  );
 };
 
 export default ViewRenderer;

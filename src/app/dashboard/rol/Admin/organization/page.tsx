@@ -1,20 +1,20 @@
 'use client';
-import { AppSidebar } from "../../../com/app-sidebar";
-import { SiteHeader } from "../../../com/site-header";
-import { useAuth } from "../../../../context/AuthContext";
+import { AppSidebar } from "../dashboard/com/app-sidebar";
+import { SiteHeader } from "../dashboard/com/site-header";
+import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LoadingScreen } from '../../../com/loadingScreen';
-import { NavigationProvider } from "../../../../context/NavigationContext";
+import { LoadingScreen } from '../dashboard/com/loadingScreen';
+import { NavigationProvider } from "../context/NavigationContext";
 import {
   SidebarInset,
   SidebarProvider,
 } from "@rutas/components/ui/sidebar";
 
 // Componentes específicos del Dashboard Master
-import { StaffManagement } from "../compo/StaffManagement";
-import { ServiceSpecialtyConfig } from "../compo/ServiceSpecialtyConfig";
-import { AddStaffForm } from "../compo/AddStaffForm";
+import { StaffManagement } from "../dashboard/rol/Admin/compo/StaffManagement";
+import { ServiceSpecialtyConfig } from "../dashboard/rol/Admin/compo/ServiceSpecialtyConfig";
+import { AddStaffForm } from "../dashboard/rol/Admin/compo/AddStaffForm";
 
 
 export default function Page() {

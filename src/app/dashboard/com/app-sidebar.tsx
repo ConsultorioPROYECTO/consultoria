@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Layers,
   CalendarClock,
+  Factory,
 } from "lucide-react"
 
 import { NavMain } from "@rutas/app/dashboard/com/nav-main"
@@ -90,9 +91,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         onClick: () => setCurrentView('dashboard'),
       },
       {
-        title: "Org",
-        url: "/dashboard/Admin/org",
-        icon: House,
+        title: "Organización",
+        url: "/dashboard/",
+        icon: Factory,
+        onClick: () => setCurrentView('organization'),
       },
       {
         title: "Calendario",
