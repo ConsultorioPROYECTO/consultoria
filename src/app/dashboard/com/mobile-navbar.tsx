@@ -16,6 +16,7 @@ const Ellipsis = dynamic(() => import('lucide-react').then(mod => mod.Ellipsis))
 const Tabs = dynamic(() => import('@/components/ui/tabs').then(mod => mod.Tabs));
 const TabsList = dynamic(() => import('@/components/ui/tabs').then(mod => mod.TabsList));
 const TabsTrigger = dynamic(() => import('@/components/ui/tabs').then(mod => mod.TabsTrigger));
+const Button = dynamic(() => import('@/components/ui/button').then(mod => mod.Button));
 
 const MobileNavbar = memo(() => {
   const [isPending, startTransition] = useTransition();
@@ -131,17 +132,19 @@ const MobileNavbar = memo(() => {
         </Tabs>
         
         {/* Config button positioned separately */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={configButton.onClick}
           disabled={isPending}
-          className={`w-10 h-10 rounded-full flex justify-center items-center ml-2 text-foreground transition-colors duration-300 ease-in-out hover:bg-muted ${
+          className={`w-10 h-10 rounded-full ml-2 ${
             isPending ? 'cursor-wait' : ''
           }`}
         >
           <configButton.icon className={`h-5 w-5 ${
             isPending ? 'animate-pulse' : ''
           }`} />
-        </button>
+        </Button>
       </div>
       
       <ConfigDrawer 
