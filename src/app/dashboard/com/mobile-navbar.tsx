@@ -1,14 +1,16 @@
 'use client'
 
-import { memo, useCallback, useMemo, useTransition } from 'react';
+import { memo, useCallback, useMemo, useTransition, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useNavigation } from "@rutas/app/context/NavigationContext"
 import dynamic from 'next/dynamic';
+import { ConfigDrawer } from './config-drawer';
 
 // Importación dinámica de iconos para reducir el bundle inicial
 const Home = dynamic(() => import('lucide-react').then(mod => mod.Home));
 const CalendarClock = dynamic(() => import('lucide-react').then(mod => mod.CalendarClock));
+const Ellipsis = dynamic(() => import('lucide-react').then(mod => mod.Ellipsis));
 
 // Importación dinámica de componentes de UI
 const Tabs = dynamic(() => import('@/components/ui/tabs').then(mod => mod.Tabs));
@@ -17,6 +19,7 @@ const TabsTrigger = dynamic(() => import('@/components/ui/tabs').then(mod => mod
 
 const MobileNavbar = memo(() => {
   const [isPending, startTransition] = useTransition();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { setCurrentView, currentView } = useNavigation()
   const currentPath = usePathname();
 
@@ -27,7 +30,7 @@ const MobileNavbar = memo(() => {
     });
   }, [setCurrentView]);
 
-  // Memoize navItems to prevent recreation on every render
+  // Memoize navItems to prevent recreation on every render (only main navigation items)
   const navItems = useMemo(() => [
     { 
       title: 'Dashboard', 
@@ -42,6 +45,14 @@ const MobileNavbar = memo(() => {
       onClick: () => handleViewChange('calendar')
     },
   ], [handleViewChange]);
+
+  // Separate config button
+  const configButton = useMemo(() => ({
+    title: '',
+    icon: Ellipsis,
+    url: '/dashboard/config',
+    onClick: () => setIsDrawerOpen(true)
+  }), []);
 
   // Memoize helper function to determine if an item is active
   const isItemActive = useCallback((item: { title: string; url: string }) => {
@@ -85,12 +96,13 @@ const MobileNavbar = memo(() => {
       isPending ? 'opacity-90' : ''
     }`}>
       <div className="relative flex items-center">
-        <motion.div {...motionProps} />
         <Tabs 
           value={navItems[activeIndex]?.title.toLowerCase() || 'dashboard'} 
-          className="w-full relative z-10"
+          className="flex-1 relative z-10"
         >
-          <TabsList className="w-full h-auto p-0 bg-transparent grid grid-cols-2 gap-0">
+          <div className="relative">
+            <motion.div {...motionProps} />
+            <TabsList className="w-full h-auto p-0 bg-transparent grid grid-cols-2 gap-0 relative z-10">
             {navItems.map((item, index) => {
               const isActive = index === activeIndex;
               return (
@@ -114,9 +126,28 @@ const MobileNavbar = memo(() => {
                 </TabsTrigger>
               );
             })}
-          </TabsList>
+            </TabsList>
+          </div>
         </Tabs>
+        
+        {/* Config button positioned separately */}
+        <button
+          onClick={configButton.onClick}
+          disabled={isPending}
+          className={`w-10 h-10 rounded-full flex justify-center items-center ml-2 text-foreground transition-colors duration-300 ease-in-out hover:bg-muted ${
+            isPending ? 'cursor-wait' : ''
+          }`}
+        >
+          <configButton.icon className={`h-5 w-5 ${
+            isPending ? 'animate-pulse' : ''
+          }`} />
+        </button>
       </div>
+      
+      <ConfigDrawer 
+        isOpen={isDrawerOpen} 
+        onOpenChange={setIsDrawerOpen}
+      />
     </nav>
   );
 });
