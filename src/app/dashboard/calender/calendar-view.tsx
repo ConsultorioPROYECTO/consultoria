@@ -10,6 +10,19 @@ import { cn } from "@/lib/utils";
 import { EventModal } from "./event-modal";
 // Removed direct import of calendarService to avoid client-side Node.js module issues
 import { CalendarEvent } from "@/types/calendar";
+import dynamic from "next/dynamic";
+
+// Importación dinámica del DatePicker
+const DatePicker = dynamic(() => import("./date-picker"), {
+  ssr: false,
+  loading: () => <div className="w-[120px] h-8 bg-muted animate-pulse rounded-md" />
+});
+
+// Importación dinámica del DateRangePicker
+const DateRangePicker = dynamic(() => import("./date-range-picker"), {
+  ssr: false,
+  loading: () => <div className="w-[200px] h-8 bg-muted animate-pulse rounded-md" />
+});
 
 // Mock data for events with more realistic medical appointment data
 const events = [
@@ -512,6 +525,27 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           >
             Hoy
           </Button>
+          {viewMode === "day" ? (
+            <DatePicker 
+              selectedDate={currentDate}
+              onDateSelect={(date) => {
+                if (date) {
+                  setCurrentDate(date);
+                  setSelectedDate(date);
+                }
+              }}
+            />
+          ) : (
+            <DateRangePicker 
+              currentDate={currentDate}
+              onRangeSelect={(range) => {
+                setCurrentDate(range.start);
+                setSelectedDate(range.start);
+              }}
+            />
+          )}
+
+          
         </div>
         
         <div className="flex items-center justify-between gap-4">
