@@ -285,6 +285,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     }
   };
 
+  // Función para obtener solo el mes y año para el título principal
+  const getMonthTitle = () => {
+    return format(currentDate, "MMMM yyyy", { locale: es });
+  };
+
   // Función para abrir el modal con los eventos del día seleccionado
   const openEventModal = (dayDate: Date, dayEvents: Event[]) => {
     setSelectedEventDate(dayDate);
@@ -491,9 +496,9 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   return (
     <div className="flex flex-col h-full w-full bg-transparent text-card-foreground rounded-lg">
       {/* Header con controles */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between lg:items-center mb-4 gap-4">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Calendario</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">{getMonthTitle()}</h1>
           {useGoogleCalendar && (
             <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
               Google Calendar
@@ -509,7 +514,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           </Button>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between gap-4">
           {/* Navegación */}
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={goToPrevious}>
