@@ -17,9 +17,18 @@ interface DatePickerProps {
   selectedDate?: Date;
   onDateSelect: (date: Date | undefined) => void;
   className?: string;
+  // Props para sincronización
+  displayMonth?: Date;
+  onMonthChange?: (month: Date) => void;
 }
 
-export function DatePicker({ selectedDate, onDateSelect, className }: DatePickerProps) {
+export function DatePicker({ 
+  selectedDate, 
+  onDateSelect, 
+  className,
+  displayMonth,
+  onMonthChange 
+}: DatePickerProps) {
   const [open, setOpen] = React.useState(false);
 
   const handleDateSelect = (date: Date | undefined) => {
@@ -52,6 +61,8 @@ export function DatePicker({ selectedDate, onDateSelect, className }: DatePicker
           mode="single"
           selected={selectedDate}
           onSelect={handleDateSelect}
+          month={displayMonth}
+          onMonthChange={onMonthChange}
           initialFocus
           locale={es}
           weekStartsOn={0}

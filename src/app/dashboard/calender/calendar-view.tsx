@@ -122,8 +122,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   const [selectedEventDate, setSelectedEventDate] = React.useState<Date | null>(null);
   
   // Estado para la fecha actual y navegación
-  const [currentDate, setCurrentDate] = React.useState(new Date(2025, 0, 17)); // Enero 17, 2025
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date(2025, 0, 17));
+  const [currentDate, setCurrentDate] = React.useState(new Date()); // Fecha actual
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(new Date());
+  
+  // Estado para el mes mostrado en los componentes (sincronización)
+  const [sharedDisplayMonth, setSharedDisplayMonth] = React.useState(new Date());
   
   // Estado para Google Calendar
   const [googleEvents, setGoogleEvents] = React.useState<CalendarEvent[]>([]);
@@ -202,6 +205,18 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
 
     loadEvents();
   }, [calendarId, currentDate, viewMode, useGoogleCalendar]);
+
+  // Sincronizar sharedDisplayMonth cuando currentDate cambie
+  React.useEffect(() => {
+    setSharedDisplayMonth(currentDate);
+  }, [currentDate]);
+
+  // Manejar cambios de mes desde los componentes
+  const handleSharedMonthChange = (newMonth: Date) => {
+    setSharedDisplayMonth(newMonth);
+    // Opcionalmente actualizar currentDate también para mantener sincronización
+    setCurrentDate(newMonth);
+  };
 
   // Funciones de navegación
   const goToPrevious = () => {
@@ -287,12 +302,12 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     if (viewMode === "week") {
       const { start, end } = getDateRange();
       if (start.getMonth() === end.getMonth()) {
-        return format(start, "d", { locale: es }) + " - " + format(end, "d 'de' MMMM yyyy", { locale: es });
+        return format(start, "d", { locale: es }) + " - " + format(end, "d MMM yyyy", { locale: es });
       } else {
-        return format(start, "d 'de' MMM", { locale: es }) + " - " + format(end, "d 'de' MMM yyyy", { locale: es });
+        return format(start, "d MMM", { locale: es }) + " - " + format(end, "d MMM yyyy", { locale: es });
       }
     } else if (viewMode === "day") {
-      return format(currentDate, "EEEE d 'de' MMMM yyyy", { locale: es });
+      return format(currentDate, "EEEE d MMM yyyy", { locale: es });
     } else {
       return format(currentDate, "MMMM yyyy", { locale: es });
     }
@@ -534,14 +549,17 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                   setSelectedDate(date);
                 }
               }}
+              displayMonth={sharedDisplayMonth}
+              onMonthChange={handleSharedMonthChange}
             />
           ) : (
             <DateRangePicker 
               currentDate={currentDate}
               onRangeSelect={(range) => {
                 setCurrentDate(range.start);
-                setSelectedDate(range.start);
               }}
+              displayMonth={sharedDisplayMonth}
+              onMonthChange={handleSharedMonthChange}
             />
           )}
 

@@ -26,14 +26,20 @@ import { DateRange } from "react-day-picker";
 export interface DateRangePickerProps {
   currentDate: Date;
   onRangeSelect?: (range: { start: Date; end: Date }) => void;
+  // Props para sincronización
+  displayMonth?: Date;
+  onMonthChange?: (month: Date) => void;
 }
 
 export function DateRangePicker({
   currentDate,
   onRangeSelect,
+  displayMonth: externalDisplayMonth,
+  onMonthChange,
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [displayMonth, setDisplayMonth] = useState(currentDate);
+  const [internalDisplayMonth, setInternalDisplayMonth] = useState(currentDate);
+  const displayMonth = externalDisplayMonth || internalDisplayMonth;
   
   // Calcular el rango de semana basado en currentDate
   const getWeekRange = (): DateRange => {
@@ -103,7 +109,7 @@ export function DateRangePicker({
           <Calendar
             mode="range"
             month={displayMonth}
-            onMonthChange={setDisplayMonth}
+            onMonthChange={onMonthChange || setInternalDisplayMonth}
             selected={selectedRange}
             onSelect={handleRangeSelect}
             initialFocus
@@ -119,7 +125,11 @@ export function DateRangePicker({
                       value={displayMonth.getMonth().toString()}
                       onValueChange={(value) => {
                         const newMonth = new Date(displayMonth.getFullYear(), parseInt(value), 1);
-                        setDisplayMonth(newMonth);
+                        if (onMonthChange) {
+                          onMonthChange(newMonth);
+                        } else {
+                          setInternalDisplayMonth(newMonth);
+                        }
                       }}
                     >
                       <SelectTrigger className="w-[120px] h-8">
@@ -137,10 +147,14 @@ export function DateRangePicker({
                       value={displayMonth.getFullYear().toString()}
                       onValueChange={(value) => {
                         const newMonth = new Date(parseInt(value), displayMonth.getMonth(), 1);
-                        setDisplayMonth(newMonth);
+                        if (onMonthChange) {
+                          onMonthChange(newMonth);
+                        } else {
+                          setInternalDisplayMonth(newMonth);
+                        }
                       }}
                     >
-                      <SelectTrigger className="w-[100px] h-8">
+                      <SelectTrigger className="w-[100px] h-8 capitalize">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
