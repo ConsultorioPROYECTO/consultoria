@@ -85,7 +85,7 @@ const MobileNavbar = memo(() => {
 
   // Memoize motion animation props
   const motionProps = useMemo(() => ({
-    className: "absolute top-0 left-0 h-full bg-primary rounded-full z-0",
+    className: "absolute inset-0 bg-primary rounded-full z-0",
     style: { width: `${100 / navItems.length}%` },
     initial: false,
     animate: { x: `${activeIndex * 100}%` },
@@ -103,7 +103,7 @@ const MobileNavbar = memo(() => {
         >
           <div className="relative">
             <motion.div {...motionProps} />
-            <TabsList className="w-full h-auto p-0 bg-transparent grid grid-cols-2 gap-0 relative z-10">
+            <TabsList className="w-full h-10 p-0 bg-transparent grid grid-cols-2 gap-0 relative z-10">
             {navItems.map((item, index) => {
               const isActive = index === activeIndex;
               return (
@@ -112,7 +112,7 @@ const MobileNavbar = memo(() => {
                   value={item.title.toLowerCase()}
                   onClick={() => handleItemClick(index)}
                   disabled={isPending}
-                  className={`flex-1 flex justify-center items-center gap-2 py-2 rounded-full text-foreground transition-colors duration-300 ease-in-out border-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none ${
+                  className={`flex-1 flex justify-center items-center gap-2 h-10 rounded-full text-foreground transition-colors duration-300 ease-in-out border-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none ${
                     isActive ? '' : 'hover:bg-muted'
                   } ${
                     isPending ? 'cursor-wait' : ''
