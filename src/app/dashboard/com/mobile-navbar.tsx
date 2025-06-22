@@ -61,19 +61,21 @@ const MobileNavbar = memo(() => {
     if (item.title === 'Calendario') {
       return currentView === 'calendar';
     }
-    // For dashboard, check if we're on dashboard view and not on calendar
+    // For dashboard, check if we're on dashboard view
     if (item.title === 'Dashboard') {
-      return currentView === 'dashboard' && currentPath === '/dashboard';
+      return currentView === 'dashboard';
     }
     // For other items, use URL comparison
     return item.url === currentPath;
   }, [currentView, currentPath]);
 
   // Memoize active index calculation
-  const activeIndex = useMemo(() => 
-    navItems.findIndex(item => isItemActive(item)),
-    [navItems, isItemActive]
-  );
+  const activeIndex = useMemo(() => {
+    if (currentView === 'configuration') {
+      return 2; // No active index when in configuration
+    }
+    return navItems.findIndex(item => isItemActive(item));
+  }, [navItems, isItemActive, currentView]);
 
   // Memoize handle item click function
   const handleItemClick = useCallback((index: number) => {
@@ -84,13 +86,36 @@ const MobileNavbar = memo(() => {
   }, [navItems]);
 
   // Memoize motion animation props
-  const motionProps = useMemo(() => ({
-    className: "absolute inset-0 bg-primary rounded-full z-0",
-    style: { width: `${100 / navItems.length}%` },
-    initial: false,
-    animate: { x: `${activeIndex * 100}%` },
-    transition: { type: 'spring', stiffness: 300, damping: 30 }
-  }), [navItems.length, activeIndex]);
+  const motionProps = useMemo(() => {
+    const tabsWidth = `${100 / navItems.length}%`;
+    
+    if (currentView === 'configuration') {
+      // Hide motion completely when in configuration view
+      return {
+        className: "absolute inset-0 bg-primary rounded-full z-0",
+        style: { width: tabsWidth, opacity: 0 },
+        initial: false,
+        animate: { 
+          opacity: 0
+        },
+        transition: { type: 'spring', stiffness: 300, damping: 30 }
+      };
+    } else {
+      // Normal position for nav items
+      const xPosition = `${activeIndex * 100}%`;
+      
+      return {
+        className: "absolute inset-0 bg-primary rounded-full z-0",
+        style: { width: tabsWidth, opacity: 0 },
+        initial: false,
+        animate: { 
+          x: xPosition,
+          opacity: 1
+        },
+        transition: { type: 'spring', stiffness: 300, damping: 30 }
+      };
+    }
+  }, [navItems.length, activeIndex, currentView]);
 
   return (
     <nav className={`fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md mx-auto bg-card border border-border rounded-full p-2 shadow-lg transition-opacity duration-200 z-50 ${
@@ -137,11 +162,15 @@ const MobileNavbar = memo(() => {
           size="icon"
           onClick={configButton.onClick}
           disabled={isPending}
-          className={`w-10 h-10 rounded-full ml-2 ${
+          className={`w-10 h-10 rounded-full ml-2 transition-colors duration-300 ${
+            currentView === 'configuration' ? 'bg-primary text-primary-foreground' : ''
+          } ${
             isPending ? 'cursor-wait' : ''
           }`}
         >
           <configButton.icon className={`h-5 w-5 ${
+            currentView === 'configuration' ? 'text-primary-foreground' : ''
+          } ${
             isPending ? 'animate-pulse' : ''
           }`} />
         </Button>

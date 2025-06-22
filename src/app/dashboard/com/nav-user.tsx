@@ -33,6 +33,7 @@ import {
   useSidebar,
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
+import { useNavigation } from "../../context/NavigationContext"
 
 import { SettingsModal2 } from "./SettingsModal2"
 import { SettingsDialog } from "./SettingsModal"
@@ -52,6 +53,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { signOut } = useAuth()
+  const { setCurrentView } = useNavigation()
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSettingsModalOpen2, setIsSettingsModalOpen2] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -59,7 +61,7 @@ export function NavUser({
 
   const handleOpenSettingsModal = () => {
     setIsDropdownOpen(false); // Cerrar dropdown explícitamente
-    setIsSettingsModalOpen(true);
+    setCurrentView('configuration');
   };
 
   const handleCloseSettingsModal = (open: boolean) => {

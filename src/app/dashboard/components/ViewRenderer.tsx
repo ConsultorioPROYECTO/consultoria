@@ -18,6 +18,11 @@ const OrganizationConfigView = dynamic(() => import('../organization/configorgan
   ssr: false,
 });
 
+const ConfigurationView = dynamic(() => import('../configurations/config-view'), {
+  loading: () => <WaveformLoader className="w-16 h-auto text-muted-foreground" />,
+  ssr: false,
+});
+
 const LoadingSpinner = () => (
   <div className="flex h-screen flex-col items-center justify-center">
     <WaveformLoader className="w-24 h-auto text-muted-foreground" />
@@ -48,6 +53,18 @@ const OrganizationConfigWrapper = () => (
   </div>
 );
 
+const ConfigurationWrapper = () => (
+  <div className="flex flex-1 flex-col overflow-hidden">
+    <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+      <div className="h-full w-full flex flex-col">
+        <Suspense fallback={<LoadingSpinner />}>
+          <ConfigurationView />
+        </Suspense>
+      </div>
+    </main>
+  </div>
+);
+
 const ViewRenderer: React.FC = () => {
   const { currentView } = useNavigation();
   const { userRole, isLoadingRole, error } = useUserRole();
@@ -59,6 +76,9 @@ const ViewRenderer: React.FC = () => {
     
     case 'organization':
       return <OrganizationConfigWrapper />;
+    
+    case 'configuration':
+      return <ConfigurationWrapper />;
     
     case 'dashboard':
     default:
