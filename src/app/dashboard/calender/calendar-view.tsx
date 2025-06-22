@@ -2,8 +2,14 @@
 
 import * as React from "react";
 import { Calendar } from "@rutas/components/ui/calendar";
-import { ChevronLeftIcon, ChevronRightIcon, LayoutGrid, CalendarDays, Clock } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, LayoutGrid, CalendarDays, Clock, ChevronDown } from "lucide-react";
 import { Button } from "@rutas/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@rutas/components/ui/dropdown-menu";
 import { es } from "date-fns/locale";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -112,10 +118,15 @@ type ViewMode = "month" | "week" | "day";
 type Event = typeof events[0];
 
 export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
-  // Estado para controlar la vista (mes, semana, día)
-  const [viewMode, setViewMode] = React.useState<ViewMode>("week");
   // Determinar si es vista móvil para ajustar la altura de las celdas
   const [isMobile, setIsMobile] = React.useState(false);
+  // Estado para controlar la vista (mes, semana, día) - día en móvil, semana en desktop
+  const [viewMode, setViewMode] = React.useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768 ? "day" : "week";
+    }
+    return "week";
+  });
   // Estado para el modal de eventos
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = React.useState<Event[]>([]);
@@ -566,47 +577,48 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           
         </div>
         
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* Navegación */}
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={goToPrevious}>
+          <div className="flex items-center gap-1 md:gap-2 flex-1">
+            <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={goToPrevious}>
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
-            <div className="min-w-[200px] text-center">
-              <h2 className="text-lg font-medium capitalize text-muted-foreground">{getViewTitle()}</h2>
+            <div className="flex-1 min-w-0 text-center px-1 md:min-w-[200px] md:px-0">
+              <h2 className="text-sm md:text-lg font-medium capitalize text-muted-foreground truncate">{getViewTitle()}</h2>
             </div>
-            <Button variant="outline" size="icon" onClick={goToNext}>
+            <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={goToNext}>
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
           </div>
           
           {/* Selector de vista */}
-          <div className="flex border rounded-md overflow-hidden">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setViewMode("month")} 
-              className={cn("rounded-none px-3", viewMode === "month" ? "bg-primary text-primary-foreground" : "")}>
-              <LayoutGrid className="h-4 w-4 mr-1" />
-              {!isMobile && "Mes"}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setViewMode("week")} 
-              className={cn("rounded-none px-3", viewMode === "week" ? "bg-primary text-primary-foreground" : "")}>
-              <CalendarDays className="h-4 w-4 mr-1" />
-              {!isMobile && "Semana"}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setViewMode("day")} 
-              className={cn("rounded-none px-3", viewMode === "day" ? "bg-primary text-primary-foreground" : "")}>
-              <Clock className="h-4 w-4 mr-1" />
-              {!isMobile && "Día"}
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1 md:gap-2 flex-shrink-0">
+                {viewMode === "month" && <LayoutGrid className="h-4 w-4" />}
+                {viewMode === "week" && <CalendarDays className="h-4 w-4" />}
+                {viewMode === "day" && <Clock className="h-4 w-4" />}
+                {!isMobile && viewMode === "month" && "Mes"}
+                {!isMobile && viewMode === "week" && "Semana"}
+                {!isMobile && viewMode === "day" && "Día"}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setViewMode("day")}>
+                <Clock className="h-4 w-4 mr-2" />
+                Día
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setViewMode("week")}>
+                <CalendarDays className="h-4 w-4 mr-2" />
+                Semana
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setViewMode("month")}>
+                <LayoutGrid className="h-4 w-4 mr-2" />
+                Mes
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
