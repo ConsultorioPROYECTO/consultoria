@@ -100,49 +100,6 @@ export function DateRangePicker({
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <div className="flex flex-col">
-          <div className="flex p-3 ">
-            <div className="flex flex-1 items-center justify-between">
-              <Select
-                value={displayMonth.getMonth().toString()}
-                onValueChange={(value) => {
-                  const newMonth = new Date(displayMonth.getFullYear(), parseInt(value), 1);
-                  setDisplayMonth(newMonth);
-                }}
-              >
-                <SelectTrigger className="w-[120px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 12 }, (_, i) => (
-                    <SelectItem key={i} value={i.toString()}>
-                      {format(new Date(2024, i, 1), "MMMM", { locale: es })}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={displayMonth.getFullYear().toString()}
-                onValueChange={(value) => {
-                  const newMonth = new Date(parseInt(value), displayMonth.getMonth(), 1);
-                  setDisplayMonth(newMonth);
-                }}
-              >
-                <SelectTrigger className="w-[100px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 11 }, (_, i) => {
-                    const year = 2020 + i;
-                    return (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
           <Calendar
             mode="range"
             month={displayMonth}
@@ -156,26 +113,69 @@ export function DateRangePicker({
             hideNavigation
             components={{
               MonthCaption: () => (
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePreviousWeek}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm font-medium capitalize">
-                    {format(selectedRange.from!, "d MMM", { locale: es })} - {format(selectedRange.to!, "d MMM", { locale: es })}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleNextWeek}
-                    className="h-8 w-8 p-0"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <Select
+                      value={displayMonth.getMonth().toString()}
+                      onValueChange={(value) => {
+                        const newMonth = new Date(displayMonth.getFullYear(), parseInt(value), 1);
+                        setDisplayMonth(newMonth);
+                      }}
+                    >
+                      <SelectTrigger className="w-[120px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <SelectItem key={i} value={i.toString()}>
+                            {format(new Date(2024, i, 1), "MMMM", { locale: es })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={displayMonth.getFullYear().toString()}
+                      onValueChange={(value) => {
+                        const newMonth = new Date(parseInt(value), displayMonth.getMonth(), 1);
+                        setDisplayMonth(newMonth);
+                      }}
+                    >
+                      <SelectTrigger className="w-[100px] h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 11 }, (_, i) => {
+                          const year = 2020 + i;
+                          return (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePreviousWeek}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm font-medium capitalize">
+                      {format(selectedRange.from!, "d MMM", { locale: es })} - {format(selectedRange.to!, "d MMM", { locale: es })}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleNextWeek}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )
             }}
