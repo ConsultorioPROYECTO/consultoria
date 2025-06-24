@@ -3,13 +3,10 @@
 import { useState } from 'react';
 
 import {
-  IconCreditCard,
   IconDotsVertical,
   IconLogout,
-  IconMail,
   IconNotification,
   IconSettings,
-  IconUserCircle,
 } from "@tabler/icons-react"
 
 import {
@@ -35,9 +32,8 @@ import {
 import { useAuth } from "../../context/AuthContext"
 import { useNavigation } from "../../context/NavigationContext"
 
-import { SettingsModal2 } from "./SettingsModal2"
 import { SettingsDialog } from "./SettingsModal"
-import { InviteModal } from "./InviteModal"
+
 
 
 export function NavUser({
@@ -55,8 +51,6 @@ export function NavUser({
   const { signOut } = useAuth()
   const { setCurrentView } = useNavigation()
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isSettingsModalOpen2, setIsSettingsModalOpen2] = useState(false);
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleOpenSettingsModal = () => {
@@ -68,23 +62,6 @@ export function NavUser({
     setIsSettingsModalOpen(open);
   };
 
-  const handleOpenInviteModal = () => {
-    setIsDropdownOpen(false); // Cerrar dropdown explícitamente
-    setIsInviteModalOpen(true);
-  };
-
-  const handleCloseInviteModal = (open: boolean) => {
-    setIsInviteModalOpen(open);
-  };
-
-  const handleOpenSettingsModal2 = () => {
-    setIsDropdownOpen(false); // Cerrar dropdown explícitamente
-    setIsSettingsModalOpen2(true);
-  };
-
-  const handleCloseSettingsModal2 = (open: boolean) => {
-    setIsSettingsModalOpen2(open);
-  };
 
   return (
     <>
@@ -163,15 +140,6 @@ export function NavUser({
       <SettingsDialog
         isOpen={isSettingsModalOpen}
         onOpenChange={handleCloseSettingsModal}
-      />
-      <SettingsModal2
-        isOpen={isSettingsModalOpen2}
-        onOpenChange={handleCloseSettingsModal2}
-      />
-
-      <InviteModal
-        isOpen={isInviteModalOpen}
-        onOpenChange={handleCloseInviteModal}
       />
     </>
   )
