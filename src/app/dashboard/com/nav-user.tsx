@@ -3,11 +3,11 @@
 import { useState } from 'react';
 
 import {
-  IconDotsVertical,
-  IconLogout,
-  IconNotification,
-  IconSettings,
-} from "@tabler/icons-react"
+  EllipsisVertical,
+  LogOut,
+  Bell,
+  Settings,
+} from "lucide-react";
 
 import {
   Avatar,
@@ -88,7 +88,7 @@ export function NavUser({
                         {user.email}
                       </span>
                     </div>
-                    <IconDotsVertical className="ml-auto size-4" />
+                    <EllipsisVertical className="ml-auto size-4" />
                   </>
                 )}
               </SidebarMenuButton>
@@ -118,18 +118,18 @@ export function NavUser({
               
                 
                 <DropdownMenuItem onClick={handleOpenSettingsModal}>
-                  <IconSettings />
+                  <Settings />
                   Configuracion
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <IconNotification />
+                  <Bell />
                   Notificaciones
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={signOut}>
-                <IconLogout />
+                <LogOut />
                 Cerrar sesión
               </DropdownMenuItem>
             </DropdownMenuContent>
