@@ -536,43 +536,50 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     <div className="flex flex-col h-full w-full bg-transparent text-card-foreground rounded-lg">
       {/* Header con controles */}
       <div className="flex flex-col sm:flex-row justify-between lg:items-center mb-4 gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between s">
           <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">{getMonthTitle()}</h1>
           {useGoogleCalendar && (
             <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
               Google Calendar
             </span>
           )}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={goToToday}
-            className="text-sm text-muted-foreground"
-          >
-            Hoy
-          </Button>
-          {viewMode === "day" ? (
-            <DatePicker 
-              selectedDate={currentDate}
-              onDateSelect={(date) => {
-                if (date) {
-                  setCurrentDate(date);
-                  setSelectedDate(date);
-                }
-              }}
-              displayMonth={sharedDisplayMonth}
-              onMonthChange={handleSharedMonthChange}
-            />
-          ) : (
-            <DateRangePicker 
-              currentDate={currentDate}
-              onRangeSelect={(range) => {
-                setCurrentDate(range.start);
-              }}
-              displayMonth={sharedDisplayMonth}
-              onMonthChange={handleSharedMonthChange}
-            />
-          )}
+          <div className="flex gap-2 md:gap-4">
+            <Button 
+              variant={isToday(currentDate) ? "default" : "outline"} 
+              size="sm" 
+              onClick={goToToday}
+              className={cn(
+                "text-sm",
+                isToday(currentDate) 
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-muted-foreground"
+              )}
+            >
+              Hoy
+            </Button>
+            {viewMode === "day" ? (
+              <DatePicker 
+                selectedDate={currentDate}
+                onDateSelect={(date) => {
+                  if (date) {
+                    setCurrentDate(date);
+                    setSelectedDate(date);
+                  }
+                }}
+                displayMonth={sharedDisplayMonth}
+                onMonthChange={handleSharedMonthChange}
+              />
+            ) : (
+              <DateRangePicker 
+                currentDate={currentDate}
+                onRangeSelect={(range) => {
+                  setCurrentDate(range.start);
+                }}
+                displayMonth={sharedDisplayMonth}
+                onMonthChange={handleSharedMonthChange}
+              />
+            )}
+          </div>
 
           
         </div>

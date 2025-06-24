@@ -10,8 +10,9 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Settings, Bell, HelpCircle } from 'lucide-react';
+import { Settings, Bell, Building, LogOut } from 'lucide-react';
 import { useNavigation } from '@/app/context/NavigationContext';
+import { useAuth } from '@/app/context/AuthContext';
 
 interface ConfigDrawerProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ interface ConfigDrawerProps {
 
 const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
   const { setCurrentView } = useNavigation();
+  const { signOut } = useAuth();
 
   const configOptions = [
     {
@@ -28,14 +30,19 @@ const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
       action: () => setCurrentView('configuration'),
     },
     {
-      icon: HelpCircle,
+      icon: Building,
       title: 'Organizacion',
-      action: () => console.log('Abrir ayuda'),
+      action: () => setCurrentView('organization'),
     },
     {
       icon: Bell,
       title: 'Notificaciones',
       action: () => console.log('Abrir perfil'),
+    },
+    {
+      icon: LogOut,
+      title: 'Cerrar seccion',
+      action: () => signOut(),
     },
   ];
 
