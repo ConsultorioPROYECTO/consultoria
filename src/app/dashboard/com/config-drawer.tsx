@@ -41,7 +41,7 @@ const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
     },
     {
       icon: LogOut,
-      title: 'Cerrar seccion',
+      title: 'Cerrar sesión',
       action: () => signOut(),
     },
   ];

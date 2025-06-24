@@ -138,38 +138,22 @@ export function NavUser({
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={handleOpenInviteModal}>
-                  <IconMail />
-                  Invitaciones
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <IconUserCircle />
-                  Account
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <IconCreditCard />
-                  Billing
+              
+                
+                <DropdownMenuItem onClick={handleOpenSettingsModal}>
+                  <IconSettings />
+                  Configuracion
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <IconNotification />
-                  Notifications
+                  Notificaciones
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleOpenSettingsModal}>
-                  <IconSettings />
-                  Configuraciones
-                </DropdownMenuItem>
-
-                <DropdownMenuItem onClick={handleOpenSettingsModal2}>
-                  <IconSettings />
-                  Configuraciones 2
-                </DropdownMenuItem>
-
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={signOut}>
                 <IconLogout />
-                Log out
+                Cerrar sesión
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
