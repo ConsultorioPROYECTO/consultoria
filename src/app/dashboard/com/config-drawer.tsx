@@ -6,6 +6,8 @@ import {
   DrawerClose,
   DrawerContent,
   DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { Settings, Bell, HelpCircle } from 'lucide-react';
@@ -40,6 +42,9 @@ const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh]">
+        <DrawerHeader>
+          <DrawerTitle className="flex justify-center text-xl sr-only">Más</DrawerTitle>
+        </DrawerHeader>
         <div className="px-4 pt-4 pb-4 space-y-2 overflow-y-auto">
           {configOptions.map((option, index) => {
             const IconComponent = option.icon;

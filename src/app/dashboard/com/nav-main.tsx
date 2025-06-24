@@ -34,6 +34,10 @@ export function NavMain({
     if (item.title === 'Calendario') {
       return currentView === 'calendar';
     }
+    // For organization, check currentView
+    if (item.title === 'Organización') {
+      return currentView === 'organization';
+    }
     // For dashboard, check if we're on dashboard view and not on calendar
     if (item.title === 'Dashboard') {
       return currentView === 'dashboard' && currentPath === '/dashboard';
