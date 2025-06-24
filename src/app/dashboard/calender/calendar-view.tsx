@@ -536,7 +536,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     <div className="flex flex-col h-full w-full bg-transparent text-card-foreground rounded-lg">
       {/* Header con controles */}
       <div className="flex flex-col sm:flex-row justify-between lg:items-center mb-6 gap-2 md:gap-4">
-        <div className="flex items-center justify-between s">
+        <div className="flex items-center justify-between md:gap-4">
           <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">{getMonthTitle()}</h1>
           {useGoogleCalendar && (
             <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">

@@ -9,6 +9,7 @@ import { Badge } from "@rutas/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Edit, Trash2, Clock, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@rutas/components/ui/dialog";
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
+import { StaffDetailModal } from "./StaffDetailModal";
 import { WorkingHours } from "@rutas/types/working-hours";
 import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
 import type { User } from '@rutas/db/schema/users';
@@ -30,6 +31,8 @@ interface StaffMember {
 export function StaffManagement() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [selectedDoctorForSchedule, setSelectedDoctorForSchedule] = useState<StaffMember | null>(null);
+  const [selectedStaffForDetail, setSelectedStaffForDetail] = useState<StaffMember | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +97,30 @@ export function StaffManagement() {
   const handleDeleteStaff = (id: number) => {
     // En una implementación real, esto haría una llamada a la API para eliminar el usuario
     setStaffMembers(prev => prev.filter(member => member.id !== id));
+  };
+
+  const handleViewMore = (member: StaffMember) => {
+    setSelectedStaffForDetail(member);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedStaffForDetail(null);
+  };
+
+  const handleConfigureScheduleFromModal = (member: StaffMember) => {
+    setSelectedDoctorForSchedule(member);
+  };
+
+  const handleEditStaffFromModal = (member: StaffMember) => {
+    // Aquí puedes implementar la lógica de edición
+    console.log('Editar personal:', member);
+    // Por ejemplo, abrir un modal de edición o navegar a una página de edición
+  };
+
+  const handleDeleteStaffFromModal = (id: number) => {
+    handleDeleteStaff(id);
   };
 
   const handleSaveWorkingHours = async (doctorId: number, workingHours: WorkingHours) => {
@@ -201,7 +228,6 @@ export function StaffManagement() {
                      <TableRow>
                        <TableHead className="min-w-[120px] sm:min-w-[200px]">Personal</TableHead>
                        <TableHead className="min-w-[80px] sm:min-w-[100px]">Rol</TableHead>
-                       <TableHead className="min-w-[100px] sm:min-w-[150px] hidden sm:table-cell">Detalles</TableHead>
                        <TableHead className="min-w-[120px] sm:min-w-[200px] hidden md:table-cell">Email</TableHead>
                        <TableHead className="text-right min-w-[100px] sm:min-w-[150px]">Acciones</TableHead>
                      </TableRow>
@@ -209,7 +235,7 @@ export function StaffManagement() {
                 <TableBody>
                   {staffMembers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         No se encontraron miembros del personal
                       </TableCell>
                     </TableRow>
@@ -230,74 +256,20 @@ export function StaffManagement() {
                         {member.role}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {member.role === "medico" && member.specialty && (
-                          <p className="text-sm font-medium">{member.specialty}</p>
-                        )}
-                        {member.role === "asistente" && member.assignedDoctor && (
-                          <p className="text-sm text-muted-foreground">
-                            Asignado a: {member.assignedDoctor}
-                          </p>
-                        )}
-                        {!member.specialty && !member.assignedDoctor && (
-                          <p className="text-sm text-muted-foreground">-</p>
-                        )}
-                      </div>
-                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground hidden md:table-cell">
                       <div className="truncate max-w-[120px] sm:max-w-none">{member.email}</div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end space-x-1 sm:space-x-2">
-                        {member.role === 'medico' && (
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                title="Configurar Horarios"
-                                onClick={() => setSelectedDoctorForSchedule(member)}
-                                className="px-2 sm:px-3"
-                              >
-                                <Clock className="h-4 w-4 sm:mr-2" />
-                                <span className="hidden sm:inline">Horarios</span>
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="w-full h-full max-w-none max-h-none sm:max-w-5xl sm:max-h-[95vh] lg:max-w-7xl xl:max-w-[90vw] flex flex-col p-4 sm:p-6">
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2 text-xl">
-                                  <Clock className="h-6 w-6 text-primary" />
-                                  Horarios de Trabajo - {selectedDoctorForSchedule?.name}
-                                </DialogTitle>
-                                <DialogDescription className="text-base">
-                                  Configure los días y horarios de atención del doctor. Los horarios se mostrarán en el calendario.
-                                </DialogDescription>
-                              </DialogHeader>
-                              {selectedDoctorForSchedule && (
-                                <DoctorWorkingHours
-                                  doctorId={selectedDoctorForSchedule.id}
-                                  doctorName={selectedDoctorForSchedule.name}
-                                  initialWorkingHours={selectedDoctorForSchedule.workingHours}
-                                  onSave={handleSaveWorkingHours}
-                                />
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                        )}
-                        <Button variant="outline" size="sm" title="Editar" className="px-2 sm:px-3">
-                          <Edit className="h-4 w-4 sm:mr-2" />
-                          <span className="hidden sm:inline">Editar</span>
-                        </Button>
+                      <div className="flex justify-end">
                         <Button 
-                          variant="destructive" 
+                          variant="outline" 
                           size="sm" 
-                          onClick={() => handleDeleteStaff(member.id)}
-                          title="Eliminar"
-                          className="px-2 sm:px-3"
+                          onClick={() => handleViewMore(member)}
+                          title="Ver más información"
+                          className="px-3 sm:px-4"
                         >
-                          <Trash2 className="h-4 w-4 sm:mr-2" />
-                          <span className="hidden sm:inline">Eliminar</span>
+                          <Users className="h-4 w-4 sm:mr-2" />
+                          <span className="sm:inline">Ver más</span>
                         </Button>
                       </div>
                     </TableCell>
@@ -310,6 +282,39 @@ export function StaffManagement() {
           )}
         </div>
       </CardContent>
+
+      {/* Modal para mostrar detalles del personal */}
+      <StaffDetailModal 
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        staffMember={selectedStaffForDetail}
+        onConfigureSchedule={handleConfigureScheduleFromModal}
+        onEditStaff={handleEditStaffFromModal}
+        onDeleteStaff={handleDeleteStaffFromModal}
+      />
+
+      {/* Modal para horarios de médicos */}
+      {selectedDoctorForSchedule && (
+        <Dialog open={!!selectedDoctorForSchedule} onOpenChange={() => setSelectedDoctorForSchedule(null)}>
+          <DialogContent className="w-full h-full max-w-none max-h-none sm:max-w-5xl sm:max-h-[95vh] lg:max-w-7xl xl:max-w-[90vw] flex flex-col p-4 sm:p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Clock className="h-6 w-6 text-primary" />
+                Horarios de Trabajo - {selectedDoctorForSchedule?.name}
+              </DialogTitle>
+              <DialogDescription className="text-base">
+                Configure los días y horarios de atención del doctor. Los horarios se mostrarán en el calendario.
+              </DialogDescription>
+            </DialogHeader>
+            <DoctorWorkingHours
+              doctorId={selectedDoctorForSchedule.id}
+              doctorName={selectedDoctorForSchedule.name}
+              initialWorkingHours={selectedDoctorForSchedule.workingHours}
+              onSave={handleSaveWorkingHours}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
     </Card>
   );
