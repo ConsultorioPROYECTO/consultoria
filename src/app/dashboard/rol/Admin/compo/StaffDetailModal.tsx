@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@rutas/compone
 import { Badge } from "@rutas/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
 import { Button } from "@rutas/components/ui/button";
-import { User, Mail, Shield, Stethoscope, Building, Clock, Edit, Trash2 } from "lucide-react";
+import { User, Mail, Shield, Stethoscope, Building, Clock, Edit, Trash2, PencilLine } from "lucide-react";
 // import defaultImage from './default.jpeg'; // La imagen ahora está en /public
 // import Image from 'next/image';
 
@@ -95,37 +95,42 @@ export function StaffDetailModal({
           {/* Información básica */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
+              <CardTitle className="flex items-center gap-4 text-lg">
                 <User className="h-5 w-5" />
                 Información Personal
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Mostrar nombre e ID solo en desktop */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-sm:hidden">
+            <div className="flex flex-col gap-4">
+              {/* Mostrar nombre*/}
+              <div className="flex items-center gap-4">
+                <PencilLine className="h-4 w-4 text-muted-foreground"/>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Nombre Completo</label>
-                  <p className="text-lg font-semibold">{staffMember.name}</p>
+                  <p className="text-base">{staffMember.name}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">ID de Usuario</label>
-                  <p className="text-lg">{staffMember.id}</p>
-                </div>
+                {staffMember.role === 'medico' && staffMember.specialty && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Especialidad</label>
+                    <p className="text-lg">{staffMember.specialty}</p>
+                  </div>
+                )}
+                {staffMember.role === 'asistente' && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Servicio</label>
+                    <p className="text-lg">Administración y Soporte</p>
+                  </div>
+                )}
               </div>
-              
-              {/* ID solo para móviles */}
-              <div className="sm:hidden">
-                <label className="text-sm font-medium text-muted-foreground">ID de Usuario</label>
-                <p className="text-lg">{staffMember.id}</p>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
+
+              <div className="flex items-center gap-4">
+                <Mail className="h-4 w-4 text-muted-foreground"/>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Correo Electrónico</label>
                   <p className="text-base">{staffMember.email}</p>
                 </div>
               </div>
+            </div>
             </CardContent>
           </Card>
 
@@ -138,8 +143,8 @@ export function StaffDetailModal({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Mostrar rol completo en desktop */}
-              <div className="flex items-center gap-3 max-sm:hidden">
+              {/* Mostrar rol  */}
+              <div className="flex items-center gap-3">
                 <Badge variant={getRoleBadgeVariant(staffMember.role)} className="text-sm px-3 py-1">
                   {getRoleDisplayName(staffMember.role)}
                 </Badge>
@@ -149,12 +154,6 @@ export function StaffDetailModal({
                 </span>
               </div>
               
-              {/* Solo estado en móviles */}
-              <div className="sm:hidden">
-                <span className="text-sm text-muted-foreground">
-                  Estado: <span className="font-medium text-green-600">Activo</span>
-                </span>
-              </div>
             </CardContent>
           </Card>
 
