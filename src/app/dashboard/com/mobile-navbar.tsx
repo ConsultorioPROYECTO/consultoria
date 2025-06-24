@@ -71,7 +71,7 @@ const MobileNavbar = memo(() => {
 
   // Memoize active index calculation
   const activeIndex = useMemo(() => {
-    if (currentView === 'configuration') {
+    if (currentView === 'configuration' || currentView === 'organization') {
       return 2; // No active index when in configuration
     }
     return navItems.findIndex(item => isItemActive(item));
@@ -89,7 +89,7 @@ const MobileNavbar = memo(() => {
   const motionProps = useMemo(() => {
     const tabsWidth = `${100 / navItems.length}%`;
     
-    if (currentView === 'configuration') {
+    if (currentView === 'configuration' || currentView === 'organization') {
       // Hide motion completely when in configuration view
       return {
         className: "absolute inset-0 bg-primary rounded-full z-0",
@@ -163,13 +163,13 @@ const MobileNavbar = memo(() => {
           onClick={configButton.onClick}
           disabled={isPending}
           className={`w-10 h-10 rounded-full ml-2 transition-colors duration-300 ${
-            currentView === 'configuration' ? 'bg-primary text-primary-foreground' : ''
+            currentView === 'configuration' || currentView === 'organization' ? 'bg-primary text-primary-foreground' : ''
           } ${
             isPending ? 'cursor-wait' : ''
           }`}
         >
           <configButton.icon className={`h-5 w-5 ${
-            currentView === 'configuration' ? 'text-primary-foreground' : ''
+            currentView === 'configuration' || currentView === 'organization' ? 'text-primary-foreground' : ''
           } ${
             isPending ? 'animate-pulse' : ''
           }`} />
