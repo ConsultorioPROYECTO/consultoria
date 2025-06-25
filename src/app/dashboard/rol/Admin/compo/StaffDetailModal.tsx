@@ -69,8 +69,8 @@ export function StaffDetailModal({
       showSuccessToast('Rol actualizado correctamente.');
       setCurrentRole(newRole);
       onUpdate();
-    } catch (error: any) {
-      showErrorToast(error.message);
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : "Ocurrió un error desconocido.");
     } finally {
       setIsChangingRole(false);
     }
@@ -96,8 +96,8 @@ export function StaffDetailModal({
       showSuccessToast('Miembro eliminado de la organización.');
       onUpdate();
       onClose();
-    } catch (error: any) {
-      showErrorToast(error.message);
+    } catch (error) {
+      showErrorToast(error instanceof Error ? error.message : "Ocurrió un error desconocido.");
     } finally {
       setIsDeleting(false);
     }
@@ -162,7 +162,7 @@ export function StaffDetailModal({
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Shield className="h-5 w-5" />Rol en la Organización</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
-                <Select value={currentRole} onValueChange={(newRole) => handleChangeRole(newRole as any)} disabled={isChangingRole}>
+                <Select value={currentRole} onValueChange={(newRole: 'admin' | 'medico' | 'asistente') => handleChangeRole(newRole)} disabled={isChangingRole}>
                     <SelectTrigger className="w-[200px]">
                         <SelectValue placeholder="Seleccionar rol" />
                     </SelectTrigger>

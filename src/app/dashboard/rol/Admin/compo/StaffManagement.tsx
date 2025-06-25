@@ -94,11 +94,6 @@ export function StaffManagement() {
     fetchStaffMembers();
   }, [fetchStaffMembers]);
 
-  const handleDeleteStaff = (id: number) => {
-    // En una implementación real, esto haría una llamada a la API para eliminar el usuario
-    setStaffMembers(prev => prev.filter(member => member.id !== id));
-  };
-
   const handleViewMore = (member: StaffMember) => {
     setSelectedStaffForDetail(member);
     setIsDetailModalOpen(true);
