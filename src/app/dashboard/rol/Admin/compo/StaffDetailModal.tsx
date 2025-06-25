@@ -115,9 +115,9 @@ export function StaffDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl overflow-y-auto sm:max-w-2xl sm:max-h-[90vh] max-sm:w-screen max-sm:h-dvh max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:p-0 max-sm:top-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0">
+      <DialogContent className="max-w-2xl sm:max-w-2xl sm:max-h-[90vh] max-sm:w-screen max-sm:h-dvh max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:p-0 max-sm:top-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex max-sm:flex-col">
         {/* Header con imagen de perfil para móviles */}
-        <div className="max-sm:h-[300px] max-sm:relative sm:hidden">
+        <div className="max-sm:h-[300px] max-sm:relative sm:hidden flex-shrink-0">
           {/* Usamos una etiqueta <img> para mayor fiabilidad */}
           <Image 
             src="/img/default.jpeg" 
@@ -141,14 +141,14 @@ export function StaffDetailModal({
         </div>
 
         {/* Header tradicional para desktop (DISEÑO ORIGINAL RESTAURADO) */}
-        <DialogHeader className="max-sm:hidden p-6">
+        <DialogHeader className="max-sm:hidden p-6 flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <User className="h-6 w-6 text-primary" />
             Información del Personal
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 p-6 max-sm:p-4">
+        <div className="space-y-6 p-6 max-sm:p-4 overflow-y-auto flex-grow">
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-4 text-lg"><User className="h-5 w-5" />Información Personal</CardTitle></CardHeader>
             <CardContent className="space-y-4">
