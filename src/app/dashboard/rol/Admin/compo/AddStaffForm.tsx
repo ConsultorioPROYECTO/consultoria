@@ -9,6 +9,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from "@rutas/lib/utils";
 import { useState } from "react";
 import { useAuth } from "../../../../context/AuthContext";
+import { showSuccessToast, showErrorToast } from "./toaster";
 
 interface StaffMember {
   id: string;
@@ -32,37 +33,34 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
     specialty: '',
     email: ''
   });
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (email: string) => {
-    // Expresión regular simple para validar formato de correo electrónico
     const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return re.test(String(email).toLowerCase());
   };
 
   const handleAddStaff = async () => {
     if (!validateEmail(newStaff.email)) {
-      setError('Por favor, introduce un correo electrónico válido.');
+      showErrorToast('Por favor, introduce un correo electrónico válido.');
       return;
     }
     
     if (!newStaff.role) {
-      setError('Por favor, selecciona un rol.');
+      showErrorToast('Por favor, selecciona un rol.');
       return;
     }
     
     if (newStaff.role === 'Médico' && !newStaff.specialty.trim()) {
-      setError('Por favor, introduce una especialidad para el médico.');
+      showErrorToast('Por favor, introduce una especialidad para el médico.');
       return;
     }
     
-    setError(null);
     setIsLoading(true);
     
     try {
       if (!user) {
-        setError('Usuario no autenticado.');
+        showErrorToast('Usuario no autenticado.');
         return;
       }
       
@@ -82,11 +80,10 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Error al enviar la invitación.');
+        showErrorToast(data.error || 'Error al enviar la invitación.');
         return;
       }
       
-      // Crear el miembro para la UI local
       const newMember: StaffMember = {
         id: `staff_${Date.now()}`,
         name: 'Pendiente de asignación',
@@ -98,10 +95,11 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       
       onAddStaff(newMember);
       setNewStaff({ role: '', specialty: '', email: '' });
+      showSuccessToast("Invitación enviada correctamente.");
       
     } catch (err) {
       console.error('Error sending invite:', err);
-      setError('Error de red o del servidor.');
+      showErrorToast('Error de red o del servidor.');
     } finally {
       setIsLoading(false);
     }
@@ -124,11 +122,8 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
               value={newStaff.email}
               onChange={(e) => {
                 setNewStaff({...newStaff, email: e.target.value});
-                if (error) {
-                  setError(null); // Limpiar el error cuando el usuario empieza a escribir
-                }
               }}
-              className={`w-full sm:flex-1 min-w-0 ${error ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+              className={'w-full sm:flex-1 min-w-0'}
             />
             <Popover open={roleOpen} onOpenChange={setRoleOpen}>
               <PopoverTrigger asChild>
@@ -184,7 +179,6 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
               </PopoverContent>
             </Popover>
           </div>
-          {error && <p className="text-red-500 text-xs italic mt-1">{error}</p>}
         </div>
        
        <div className="space-y-2">
