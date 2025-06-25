@@ -143,13 +143,7 @@ const changeUserRole = async (
       );
     }
 
-    if (parsedRol.rol === authenticatedUser.role) {
-      return createErrorResponse(
-        API_ERRORS.INVALID_REQUEST,
-        'El rol del usuario no ha cambiado.',
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
+    
 
     const roleValidationError = validateUserRole(authenticatedUser.role, ["admin"]);
     if (roleValidationError) {
@@ -167,6 +161,14 @@ const changeUserRole = async (
         API_ERRORS.USER_NOT_FOUND,
         'Usuario objetivo no encontrado en la base de datos.',
         HTTP_STATUS.NOT_FOUND
+      );
+    }
+
+    if (parsedRol.rol === targetUser.role) {
+      return createErrorResponse(
+        API_ERRORS.INVALID_REQUEST,
+        'El rol del usuario no ha cambiado.',
+        HTTP_STATUS.BAD_REQUEST
       );
     }
 
