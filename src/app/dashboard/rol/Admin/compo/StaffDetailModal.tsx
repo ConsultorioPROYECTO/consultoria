@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Shield, Stethoscope, Building, Clock, Edit, Trash2, PencilLine, Loader2 } from "lucide-react";
+import { User, Mail, Shield, Stethoscope, Building, PencilLine, Trash2, Loader2 } from "lucide-react";
 import { showSuccessToast, showErrorToast } from './toaster';
 import { useAuth } from '@/app/context/AuthContext';
 
@@ -68,7 +68,7 @@ export function StaffDetailModal({
 
       showSuccessToast('Rol actualizado correctamente.');
       setCurrentRole(newRole);
-      onUpdate(); // Refrescar la lista de personal en la vista principal
+      onUpdate();
     } catch (error: any) {
       showErrorToast(error.message);
     } finally {
@@ -81,8 +81,7 @@ export function StaffDetailModal({
     setIsDeleting(true);
     try {
       const idToken = await user.getIdToken();
-      const response = await fetch(`/api/users/unlik-organization/${staffMember.id}`,
-      {
+      const response = await fetch(`/api/users/unlik-organization/${staffMember.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${idToken}`,
@@ -115,72 +114,113 @@ export function StaffDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-2xl sm:max-h-[90vh] max-sm:max-w-none max-sm:max-h-none max-sm:h-screen max-sm:w-screen max-sm:rounded-none max-sm:border-0 max-sm:m-0 max-sm:p-0">
+        {/* Header con imagen de perfil para móviles (DISEÑO ORIGINAL RESTAURADO) */}
+        <div className="max-sm:h-[300px] max-sm:relative max-sm:flex max-sm:items-end max-sm:justify-center max-sm:pb-6 sm:hidden bg-[url('/img/default.jpeg')] bg-cover bg-center">
+          <div className="absolute inset-0 bg-gradient-to-t from-background/100 to-transparent"></div>
+          <div className="relative z-10 text-center text-white">
+            <div className="w-[80px] h-[80px] mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border-white/30">
+              <User className="w-[40px] h-[40px] text-white" />
+            </div>
+            <h2 className="text-xl font-bold">{staffMember.name}</h2>
+            <Badge variant="secondary" className="mt-2 bg-white/20 text-white border-white/30">
+              {getRoleDisplayName(staffMember.role)}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Header tradicional para desktop (DISEÑO ORIGINAL RESTAURADO) */}
+        <DialogHeader className="max-sm:hidden">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <User className="h-6 w-6 text-primary" />
             Información del Personal
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-6 max-sm:p-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">Información Personal</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-4 text-lg"><User className="h-5 w-5" />Información Personal</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <p><strong>Nombre:</strong> {staffMember.name}</p>
-              <p><strong>Email:</strong> {staffMember.email}</p>
-              {staffMember.specialty && <p><strong>Especialidad:</strong> {staffMember.specialty}</p>}
+              <div className="flex items-center gap-4">
+                <PencilLine className="h-4 w-4 text-muted-foreground"/>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Nombre Completo</label>
+                  <p className="text-base">{staffMember.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Mail className="h-4 w-4 text-muted-foreground"/>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Correo Electrónico</label>
+                  <p className="text-base">{staffMember.email}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
+          {/* Información del rol con SELECT (FUNCIONALIDAD AÑADIDA) */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">Rol en la Organización</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Shield className="h-5 w-5" />Rol en la Organización</CardTitle></CardHeader>
             <CardContent className="flex items-center gap-4">
-              <Select value={currentRole} onValueChange={handleChangeRole} disabled={isChangingRole}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Seleccionar rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="medico">Médico</SelectItem>
-                  <SelectItem value="asistente">Asistente</SelectItem>
-                </SelectContent>
-              </Select>
-              {isChangingRole && <Loader2 className="h-5 w-5 animate-spin" />}
+                <Select value={currentRole} onValueChange={(newRole) => handleChangeRole(newRole as any)} disabled={isChangingRole}>
+                    <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Seleccionar rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="medico">Médico</SelectItem>
+                        <SelectItem value="asistente">Asistente</SelectItem>
+                    </SelectContent>
+                </Select>
+                {isChangingRole && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
             </CardContent>
           </Card>
 
-        </div>
+          {/* Información específica del rol (DISEÑO ORIGINAL RESTAURADO) */}
+          {staffMember.role === 'medico' && (
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Stethoscope className="h-5 w-5" />Información Médica</CardTitle></CardHeader>
+              <CardContent>
+                <p><strong>Especialidad:</strong> {staffMember.specialty || 'N/A'}</p>
+              </CardContent>
+            </Card>
+          )}
+          {staffMember.role === 'asistente' && (
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Building className="h-5 w-5" />Información del Asistente</CardTitle></CardHeader>
+              <CardContent>
+                <p><strong>Médico Asignado:</strong> {staffMember.assignedDoctor || 'N/A'}</p>
+              </CardContent>
+            </Card>
+          )}
 
-        <DialogFooter className="sm:justify-between">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={isDeleting}>
-                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                Eliminar de la Organización
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta acción es permanente y no se puede deshacer. El usuario será desvinculado de la organización.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteStaff}>Confirmar</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-          <DialogClose asChild>
-            <Button type="button" variant="secondary">Cerrar</Button>
-          </DialogClose>
-        </DialogFooter>
+          {/* Acciones con AlertDialog (FUNCIONALIDAD MEJORADA) */}
+          <Card>
+            <CardHeader><CardTitle className="text-lg">Acciones</CardTitle></CardHeader>
+            <CardContent>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={isDeleting}>
+                            {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            Eliminar de la Organización
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Estás realmente seguro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta acción desvinculará permanentemente a <strong>{staffMember.name}</strong> de la organización. No se puede deshacer.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteStaff} className="bg-destructive hover:bg-destructive/90">Confirmar Eliminación</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardContent>
+          </Card>
+        </div>
       </DialogContent>
     </Dialog>
   );
