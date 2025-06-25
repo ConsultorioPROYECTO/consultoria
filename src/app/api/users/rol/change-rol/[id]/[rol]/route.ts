@@ -3,9 +3,9 @@
  * @fileoverview API endpoint para cambiar roles de usuarios.
  * Este endpoint permite a administradores cambiar el rol de usuarios de su organización.
  * 
- * @author Sistema de Consultoría
+ * @author Santiago Prada - Backend Developer
  * @version 1.0.0
- * @since 2024
+ * @since 2025 - 06 - 24
  */
 
 import { db } from "@/db";

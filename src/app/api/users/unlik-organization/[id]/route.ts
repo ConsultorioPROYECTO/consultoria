@@ -3,9 +3,9 @@ import { db } from "@/db";
  * @fileoverview API endpoint para desvincular usuarios de organizaciones.
  * Este endpoint permite a administradores desvincular usuarios de su organización.
  * 
- * @author Sistema de Consultoría
+ * @author Santiago Prada - Backend Developer
  * @version 1.0.0
- * @since 2024
+ * @since 2025 - 06 - 24
  */
 
 import { users } from "@/db/schema/users";
