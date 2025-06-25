@@ -66,6 +66,8 @@ export interface EmailPasswordCredentials {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  userRole: string | null;
+  isLoadingRole: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>; // Nuevo
   signUpWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>; // Nuevo
@@ -98,32 +100,52 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<AuthError | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isLoadingRole, setIsLoadingRole] = useState<boolean>(true);
 
   useEffect(() => {
-    /**
-     * Observador del estado de autenticación de Firebase.
-     * Se ejecuta cuando el componente se monta y cada vez que el estado de autenticación cambia.
-     * Actualiza el estado `user` y `loading`.
-     * @returns {() => void} Una función de limpieza para desuscribirse del observador cuando el componente se desmonta.
-     */
     const unsubscribe = onAuthStateChanged(
       auth,
-      (currentUser) => {
+      async (currentUser) => {
         setUser(currentUser);
+        if (currentUser) {
+          setIsLoadingRole(true);
+          try {
+            const token = await currentUser.getIdToken();
+            const response = await fetch('/api/users/rol', {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              setUserRole(data.role);
+            } else {
+              setUserRole(null);
+            }
+          } catch (error) {
+            console.error("Error fetching user role:", error);
+            setUserRole(null);
+          } finally {
+            setIsLoadingRole(false);
+          }
+        } else {
+          setUserRole(null);
+          setIsLoadingRole(false);
+        }
         setLoading(false);
-        setError(null); // Limpiar errores en cambio de estado exitoso
+        setError(null);
       },
       (authError) => {
-        // Este callback de error en onAuthStateChanged es menos común para errores de login/logout directos,
-        // pero es bueno tenerlo para errores de inicialización o persistencia del estado.
         console.error('Error en onAuthStateChanged:', authError);
         setError(authError as AuthError);
         setUser(null);
+        setUserRole(null);
         setLoading(false);
+        setIsLoadingRole(false);
       },
     );
 
-    // Limpieza al desmontar el componente
     return () => unsubscribe();
   }, []); // El array vacío asegura que useEffect se ejecute solo una vez (al montar y desmontar)
 
@@ -236,6 +258,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const contextValue: AuthContextType = {
     user,
     loading,
+    userRole,
+    isLoadingRole,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail, 

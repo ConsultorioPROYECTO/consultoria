@@ -11,6 +11,8 @@ import { LoadingScreen } from './com/loadingScreen';
 import { useIsMobile } from '@rutas/hooks/use-mobile'; // Importar el hook
 import { MobileNavbar } from './com/mobile-navbar'; // Importar el componente de navbar móvil
 
+import { useAuth } from '@/app/context/AuthContext';
+
 const DashboardLayout: React.FC = () => {
   const isMobile = useIsMobile(); // Usar el hook para detectar si es móvil
 
@@ -43,8 +45,9 @@ const DashboardLayout: React.FC = () => {
 
 export function ClientDashboard() {
   const { isAuthenticated, isLoading } = useAuthGuard();
+  const { isLoadingRole } = useAuth();
 
-  if (isLoading) {
+  if (isLoading || isLoadingRole) {
     return <LoadingScreen />;
   }
 

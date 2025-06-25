@@ -59,11 +59,10 @@ const MOCK_APPOINTMENTS: { [key: string]: Appointment[] } = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [date] = React.useState<Date | undefined>(undefined) // Estado inicial sin fecha seleccionada
   const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
-  const { user } = useAuth()
+  const { user, userRole } = useAuth()
   const { uiStyle } = useUIStyle() // Obtener el estilo de interfaz
   const { setCurrentView, } = useNavigation()
   const pathname = usePathname();
-  const [userRole, setUserRole] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (date) {
@@ -73,24 +72,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setSelectedDayAppointments([]);
     }
   }, [date]);
-
-  React.useEffect(() => {
-    const fetchUserRole = async () => {
-      if (user) {
-        const token = await user.getIdToken();
-        const response = await fetch('/api/users/rol', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setUserRole(data.role);
-        }
-      }
-    };
-    fetchUserRole();
-  }, [user]);
 
   if (!user) {
     return null
