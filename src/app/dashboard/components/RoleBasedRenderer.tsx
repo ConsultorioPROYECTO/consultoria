@@ -1,8 +1,9 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import { UserRole } from '@rutas/app/hooks/useUserRole';
 import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+
+export type UserRole = 'medico' | 'asistente' | 'admin' | 'N/A' | null;
 
 interface RoleBasedRendererProps {
   userRole: UserRole;

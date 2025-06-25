@@ -2,9 +2,9 @@
 
 import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import RoleBasedRenderer from './RoleBasedRenderer';
+import RoleBasedRenderer, { UserRole } from './RoleBasedRenderer';
 import { useNavigation } from '@rutas/app/context/NavigationContext';
-import { useUserRole } from '@rutas/app/hooks/useUserRole';
+import { useAuth } from '@/app/context/AuthContext';
 import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
 // Lazy load CalendarView solo cuando sea necesario
@@ -67,7 +67,7 @@ const ConfigurationWrapper = () => (
 
 const ViewRenderer: React.FC = () => {
   const { currentView } = useNavigation();
-  const { userRole, isLoadingRole, error } = useUserRole();
+  const { userRole, isLoadingRole, error } = useAuth();
 
   // Manejo por casos usando switch para mejor escalabilidad
   switch (currentView) {
@@ -85,9 +85,9 @@ const ViewRenderer: React.FC = () => {
       // Vista dashboard por defecto
       return (
         <RoleBasedRenderer 
-          userRole={userRole} 
+          userRole={userRole as UserRole} 
           isLoading={isLoadingRole} 
-          error={error} 
+          error={error?.message || null} 
         />
       );
   }
