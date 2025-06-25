@@ -25,15 +25,20 @@ export function useStaffActions() {
     try {
       const idToken = await user.getIdToken();
       const response = await fetch(`/api/users/rol/change-rol/${staffMember.id}/${newRole}`, {
-        method: 'PUT',
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${idToken}`,
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al cambiar el rol.');
+        const errorText = await response.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || 'Error al cambiar el rol.');
+        } catch (e) {
+          throw new Error(errorText || 'Error al cambiar el rol.');
+        }
       }
 
       showSuccessToast('Rol actualizado correctamente.');
@@ -58,8 +63,13 @@ export function useStaffActions() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al eliminar el miembro.');
+        const errorText = await response.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || 'Error al eliminar el miembro.');
+        } catch (e) {
+          throw new Error(errorText || 'Error al eliminar el miembro.');
+        }
       }
 
       showSuccessToast('Miembro eliminado de la organización.');
