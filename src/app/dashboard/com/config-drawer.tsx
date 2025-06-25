@@ -21,19 +21,21 @@ interface ConfigDrawerProps {
 
 const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
   const { setCurrentView } = useNavigation();
-  const { signOut } = useAuth();
+  const { signOut, userRole } = useAuth(); // Obtener userRole del contexto
 
+  // Filtrar las opciones de configuración basadas en el rol del usuario
   const configOptions = [
     {
       icon: Settings,
       title: 'Configuración',
       action: () => setCurrentView('configuration'),
     },
-    {
+    // Solo mostrar 'Organizacion' si el rol es 'admin'
+    ...(userRole === 'admin' ? [{
       icon: Building,
       title: 'Organizacion',
       action: () => setCurrentView('organization'),
-    },
+    }] : []),
     {
       icon: Bell,
       title: 'Notificaciones',
