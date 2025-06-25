@@ -77,55 +77,55 @@ const projectData: ProjectInfo = {
  */
 export default function HomePage(): React.ReactElement<ReactElement> {
   return (
-    <div style={{ fontFamily: 'Arial, sans-serif', color: '#333' }}>
+    <div className="font-sans text-gray-800">
       {/* Header */}
-      <header style={{ backgroundColor: '#f8f9fa', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e7e7e7' }}>
-        <h1 style={{ fontSize: '1.8em', margin: 0, color: '#007bff' }}>{projectData.projectName}</h1>
+      <header className="bg-gray-50 py-5 px-10 flex justify-between items-center border-b border-gray-200">
+        <h1 className="text-2xl font-bold text-blue-600">{projectData.projectName}</h1>
         <nav>
-          <Link href="/login" style={{ marginRight: '15px', textDecoration: 'none', color: '#007bff' }}>Login</Link>
-          <Link href="/signup" style={{ textDecoration: 'none', color: '#007bff' }}>Registro</Link>
+          <Link href="/login" className="mr-4 text-blue-600 hover:underline">Login</Link>
+          <Link href="/signup" className="text-blue-600 hover:underline">Registro</Link>
         </nav>
       </header>
 
       {/* Hero Section */}
       <main>
-        <section style={{ backgroundColor: '#007bff', color: 'white', textAlign: 'center', padding: '80px 20px' }}>
-          <h2 style={{ fontSize: '2.8em', margin: '0 0 20px 0' }}>{projectData.heroTitle}</h2>
-          <p style={{ fontSize: '1.2em', marginBottom: '30px', maxWidth: '700px', margin: '0 auto 30px auto' }}>
+        <section className="bg-blue-600 text-white text-center py-20 px-5">
+          <h2 className="text-5xl font-bold mb-5">{projectData.heroTitle}</h2>
+          <p className="text-xl mb-8 max-w-3xl mx-auto">
             {projectData.heroSubtitle}
           </p>
-          <Link href={projectData.ctaLink} style={{ backgroundColor: 'white', color: '#007bff', padding: '15px 30px', textDecoration: 'none', borderRadius: '5px', fontSize: '1.1em', fontWeight: 'bold' }}>
+          <Link href={projectData.ctaLink} className="bg-white text-blue-600 py-4 px-8 rounded-md text-lg font-bold hover:bg-gray-100 transition-colors">
             {projectData.ctaText}
           </Link>
         </section>
 
         {/* Services Section */}
-        <section style={{ padding: '60px 20px', textAlign: 'center' }}>
-          <h3 style={{ fontSize: '2.2em', marginBottom: '40px', color: '#343a40' }}>{projectData.servicesTitle}</h3>
-          <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '20px' }}>
+        <section className="py-16 px-5 text-center">
+          <h3 className="text-4xl font-bold mb-10 text-gray-800">{projectData.servicesTitle}</h3>
+          <div className="flex justify-center flex-wrap gap-8">
             {projectData.services.map(service => (
-              <div key={service.id} style={{ backgroundColor: '#f8f9fa', border: '1px solid #dee2e6', borderRadius: '8px', padding: '30px', width: '300px', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-                {service.icon && <span style={{ fontSize: '2.5em', display: 'block', marginBottom: '15px' }}>{service.icon}</span>}
-                <h4 style={{ fontSize: '1.5em', margin: '0 0 10px 0', color: '#007bff' }}>{service.title}</h4>
-                <p style={{ fontSize: '1em', lineHeight: '1.6' }}>{service.description}</p>
+              <div key={service.id} className="bg-gray-50 border border-gray-200 rounded-lg p-8 w-80 shadow-md hover:shadow-lg transition-shadow">
+                {service.icon && <span className="text-4xl block mb-4">{service.icon}</span>}
+                <h4 className="text-2xl font-bold mb-2 text-blue-600">{service.title}</h4>
+                <p className="text-base leading-relaxed">{service.description}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* About Section */}
-        <section style={{ backgroundColor: '#e9ecef', padding: '60px 20px', textAlign: 'center' }}>
-          <h3 style={{ fontSize: '2.2em', marginBottom: '20px', color: '#343a40' }}>{projectData.aboutTitle}</h3>
-          <p style={{ fontSize: '1.1em', lineHeight: '1.7', maxWidth: '800px', margin: '0 auto', color: '#495057' }}>
+        <section className="bg-gray-100 py-16 px-5 text-center">
+          <h3 className="text-4xl font-bold mb-5 text-gray-800">{projectData.aboutTitle}</h3>
+          <p className="text-lg leading-relaxed max-w-4xl mx-auto text-gray-600">
             {projectData.aboutText}
           </p>
         </section>
       </main>
 
       {/* Footer */}
-      <footer style={{ backgroundColor: '#343a40', color: 'white', textAlign: 'center', padding: '30px 20px', marginTop:'auto' }}>
-        <p style={{ margin: '0 0 10px 0' }}>Contáctanos: <a href={`mailto:${projectData.contactEmail}`} style={{ color: '#00bfff', textDecoration: 'none' }}>{projectData.contactEmail}</a></p>
-        <p style={{ margin: 0, fontSize: '0.9em' }}>{projectData.footerText}</p>
+      <footer className="bg-gray-800 text-white text-center py-8 px-5">
+        <p className="mb-2">Contáctanos: <a href={`mailto:${projectData.contactEmail}`} className="text-cyan-400 hover:underline">{projectData.contactEmail}</a></p>
+        <p className="text-sm">{projectData.footerText}</p>
       </footer>
     </div>
   );
