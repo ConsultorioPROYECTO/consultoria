@@ -1,4 +1,4 @@
-import { db } from "@/db";
+
 /**
  * @fileoverview API endpoint para cambiar roles de usuarios.
  * Este endpoint permite a administradores cambiar el rol de usuarios de su organización.
@@ -8,6 +8,7 @@ import { db } from "@/db";
  * @since 2024
  */
 
+import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { doctors } from "@/db/schema/doctors";
 import { assistants } from "@/db/schema/assistants";
@@ -104,7 +105,7 @@ const changeRolSchema = z.object({
 const changeUserRole = async (
   request: NextRequest,
   decodedToken: DecodedIdToken,
-  context: { params: { id: string, rol: string } }
+  context: { params: { rol: string; id: string } }
 ): Promise<NextResponse | Response> => {
   try {
     const { id, rol } = context.params;

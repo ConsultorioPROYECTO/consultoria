@@ -156,17 +156,17 @@ export function withAuthentication(
 // This signature is chosen when P is inferred as something other than {}.
 export function withAuthentication<P extends Record<string, string | string[] | undefined>>(
   handler: AuthenticatedHandler<P>
-): (request: NextRequest, context: { params: P }) => Promise<NextResponse | Response>;
+): (request: NextRequest, context: { params: Promise<P> }) => Promise<NextResponse | Response>;
 
 // Implementation
 // The return type is a union of the possible handler signatures based on P.
 // This makes the implementation signature more precise than 'any'.
 export function withAuthentication<P extends Record<string, string | string[] | undefined>>(
   handler: AuthenticatedHandler<P>
-): ((request: NextRequest) => Promise<NextResponse | Response>) | ((request: NextRequest, context: { params: P }) => Promise<NextResponse | Response>) {
+): ((request: NextRequest) => Promise<NextResponse | Response>) | ((request: NextRequest, context: { params: Promise<P> }) => Promise<NextResponse | Response>) {
   // This inner async function is the actual handler Next.js will call.
   // Its 'context' parameter is optional to be compatible with both dynamic and non-dynamic route calls.
-  const routeHandler = async (request: NextRequest, context?: { params: P }): Promise<NextResponse | Response> => {
+  const routeHandler = async (request: NextRequest, context?: { params: Promise<P> | P }): Promise<NextResponse | Response> => {
     const authResult = await authenticateRequest(request);
 
     if (authResult.errorResponse) {
@@ -177,7 +177,13 @@ export function withAuthentication<P extends Record<string, string | string[] | 
     // decodedToken está garantizado aquí por la lógica anterior y el tipo de unión discriminada
     // The original handler always expects a context. If Next.js doesn't pass one (non-dynamic route),
     // we synthesize it based on P (which would be {} by default).
-    const effectiveContext = context || ({ params: {} as P });
+    let params: P;
+    if (context?.params) {
+      params = context.params instanceof Promise ? await context.params : context.params;
+    } else {
+      params = {} as P;
+    }
+    const effectiveContext = { params };
     return handler(request, authResult.decodedToken, effectiveContext);
   };
   return routeHandler;
