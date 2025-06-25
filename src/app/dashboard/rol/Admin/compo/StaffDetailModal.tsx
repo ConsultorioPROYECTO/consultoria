@@ -115,17 +115,25 @@ export function StaffDetailModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-2xl sm:max-h-[90vh] max-sm:max-w-none max-sm:max-h-none max-sm:h-screen max-sm:w-screen max-sm:rounded-none max-sm:border-0 max-sm:m-0 max-sm:p-0">
-        {/* Header con imagen de perfil para móviles (DISEÑO ORIGINAL RESTAURADO) */}
-        <div className="max-sm:h-[300px] max-sm:relative max-sm:flex max-sm:items-end max-sm:justify-center max-sm:pb-6 sm:hidden bg-[url('/img/default.jpeg')] bg-cover bg-center">
-          <div className="absolute inset-0 bg-gradient-to-t from-background/100 to-transparent"></div>
-          <div className="relative z-10 text-center text-white">
-            <div className="w-[80px] h-[80px] mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border-white/30">
-              <User className="w-[40px] h-[40px] text-white" />
+        {/* Header con imagen de perfil para móviles */}
+        <div className="max-sm:h-[300px] max-sm:relative sm:hidden">
+          {/* Usamos una etiqueta <img> para mayor fiabilidad */}
+          <img 
+            src="/img/default.jpeg" 
+            alt="Perfil" 
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/100 to-transparent" />
+          <div className="absolute inset-0 flex items-end justify-center pb-6">
+            <div className="text-center text-white">
+              <div className="w-[80px] h-[80px] mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
+                <User className="w-[40px] h-[40px] text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-primary">{staffMember.name}</h2>
+              <Badge variant="secondary" className="mt-2 bg-white/20 text-primary border-white/30">
+                {getRoleDisplayName(staffMember.role)}
+              </Badge>
             </div>
-            <h2 className="text-xl font-bold">{staffMember.name}</h2>
-            <Badge variant="secondary" className="mt-2 bg-white/20 text-white border-white/30">
-              {getRoleDisplayName(staffMember.role)}
-            </Badge>
           </div>
         </div>
 
