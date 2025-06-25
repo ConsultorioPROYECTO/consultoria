@@ -219,9 +219,10 @@ const postOrganizationJoinHandler = async (
     invitationCode: code,
   }).where(eq(organization.id, existingOrganization.id));
 
-  // Crear registro en tabla específica según el rol
+  // Crear o actualizar registro en tabla específica según el rol
   if (invitation.role === 'medico') {
     try {
+      // Usar upsert para crear o actualizar completamente el registro de doctor
       await db.insert(doctors).values({
         userId: existingUser.id,
         speciality: 'General', // Valor por defecto, se puede actualizar después
@@ -244,19 +245,48 @@ const postOrganizationJoinHandler = async (
           autoAcceptMeetings: false,
           defaultMeetingDuration: 30,
         }
+      }).onDuplicateKeyUpdate({
+        set: {
+          speciality: 'General',
+          calendar_id: '',
+          privatePhone: '',
+          nitId: '',
+          availability: 'Disponible',
+          tokenGoogleId: '',
+          calendar_settings: {
+            notifications: {
+              email: true,
+              popup: true,
+              minutesBefore: [15, 60],
+            },
+            workingHours: {
+              start: '08:00',
+              end: '18:00',
+              days: [1, 2, 3, 4, 5],
+            },
+            autoAcceptMeetings: false,
+            defaultMeetingDuration: 30,
+          },
+          updatedAt: new Date()
+        }
       });
-      console.log(`Registro de doctor creado para usuario ${existingUser.id}`);
+      console.log(`Registro de doctor creado/actualizado para usuario ${existingUser.id}`);
     } catch (doctorError) {
-      console.error('Error creando registro de doctor:', doctorError);
+      console.error('Error creando/actualizando registro de doctor:', doctorError);
     }
   } else if (invitation.role === 'asistente') {
     try {
+      // Usar upsert para crear o actualizar completamente el registro de asistente
       await db.insert(assistants).values({
         userId: existingUser.id,
+      }).onDuplicateKeyUpdate({
+        set: {
+          updatedAt: new Date()
+        }
       });
-      console.log(`Registro de asistente creado para usuario ${existingUser.id}`);
+      console.log(`Registro de asistente creado/actualizado para usuario ${existingUser.id}`);
     } catch (assistantError) {
-      console.error('Error creando registro de asistente:', assistantError);
+      console.error('Error creando/actualizando registro de asistente:', assistantError);
     }
   }
 

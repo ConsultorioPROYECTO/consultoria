@@ -17,7 +17,11 @@ const sendInvitacionEmail = async (
     organizationName: string,
     role: string,
     subject: string,
-    message: string
+    url: string,
+    invitacionCode: string,
+    emailFrom: string,
+    displayName: string,
+    imgFrom : string
   ): Promise<boolean> => {
     try {
       const response = await fetch('https://n8n.srv828784.hstgr.cloud/webhook/a91c2a89-22d3-495b-8455-42ad2c5ea860', {
@@ -31,7 +35,11 @@ const sendInvitacionEmail = async (
           organizationName: organizationName,
           role: role,
           subject: subject,
-          message: message
+          url: url,
+          invitacionCode : invitacionCode,
+          emailFrom : emailFrom,
+          displayName : displayName,
+          imgFrom : imgFrom
         }),
       });
   
@@ -67,7 +75,7 @@ const postOrganizationRequestHandler  = async (
             // roles el hacer una solicitud de unirse a una organizacion
             const user = await db.query.users.findFirst({
                 where: eq(users.firebaseUid, decodedToken.uid),
-                columns: { id: true, organizationId: true, email: true },
+                columns: { id: true, organizationId: true, email: true, displayName: true, photoURL: true },
             });
             if (!user) {
                 return NextResponse.json(
@@ -100,9 +108,10 @@ const postOrganizationRequestHandler  = async (
                 );
             }*/
 
-            const messageToSend = `Hola, soy ${user.email} y quiero que te unas a mi organización ${organizacion.name} como ${role}.\ningresa con el codigo ${organizacion.invitationCode} para aceptar la invitación.\n\n\thttp://irina.makilacloud.com:3000/signup?invitacionCode=${organizacion.invitationCode}&role=${role}`;
+            const subject = `invitacion al grupo de ${organizacion.name}`
+            const url = `http://irina.makilacloud.com:3000/signup?invitacionCode=${organizacion.invitationCode}&role=${role}`;
 
-            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, "Invitacion",messageToSend);
+            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, subject,url,organizacion.invitationCode, user.email as string, user.displayName as string, user.photoURL as string );
             
             if (!invitacionEmail) {
                 return NextResponse.json(

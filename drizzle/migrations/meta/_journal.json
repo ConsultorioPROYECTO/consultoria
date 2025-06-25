@@ -183,6 +183,13 @@
       "when": 1750308516173,
       "tag": "0025_white_stellaris",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1750826388599,
+      "tag": "0026_free_cannonball",
+      "breakpoints": true
     }
   ]
 }

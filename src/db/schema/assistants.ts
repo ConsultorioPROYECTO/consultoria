@@ -3,7 +3,7 @@ import { users } from './users';
 
 export const assistants = mysqlTable('assistants', {
   idAssistant: int('id').autoincrement().primaryKey(),
-  userId: int('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
+  userId: int('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull().unique(),
   // Puedes agregar más campos relevantes aquí, como organización, contacto, etc.
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),

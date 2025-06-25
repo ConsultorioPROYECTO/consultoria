@@ -33,7 +33,7 @@ export const doctors = mysqlTable('doctors', {
   idDoctor: int('id').autoincrement().primaryKey(),
 
   // ----- Referencia a la tabla users -----
-  userId: int('user_id').references(() => users.id,{onDelete: "cascade", onUpdate: "cascade"}).notNull(), // Clave foránea a la tabla users,
+  userId: int('user_id').references(() => users.id,{onDelete: "cascade", onUpdate: "cascade"}).notNull().unique(), // Clave foránea a la tabla users,
 
   // --- Campos específicos de tu doctor ---
   speciality: varchar('speciality', { length: 255 }).notNull(), // Especialidad del doctor
