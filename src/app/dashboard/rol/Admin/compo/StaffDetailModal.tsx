@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { User, Mail, Shield, Stethoscope, Building, PencilLine, Trash2, Loader2 } from "lucide-react";
 import { showSuccessToast, showErrorToast } from './toaster';
 import { useAuth } from '@/app/context/AuthContext';
+import Image from 'next/image';
 
 interface StaffMember {
   id: number;
@@ -118,9 +119,11 @@ export function StaffDetailModal({
         {/* Header con imagen de perfil para móviles */}
         <div className="max-sm:h-[300px] max-sm:relative sm:hidden">
           {/* Usamos una etiqueta <img> para mayor fiabilidad */}
-          <img 
+          <Image 
             src="/img/default.jpeg" 
             alt="Perfil" 
+            width={500}
+            height={500}
             className="absolute inset-0 w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/100 to-transparent" />
