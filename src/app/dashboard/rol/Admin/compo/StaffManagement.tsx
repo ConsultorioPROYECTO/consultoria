@@ -109,20 +109,6 @@ export function StaffManagement() {
     setSelectedStaffForDetail(null);
   };
 
-  const handleConfigureScheduleFromModal = (member: StaffMember) => {
-    setSelectedDoctorForSchedule(member);
-  };
-
-  const handleEditStaffFromModal = (member: StaffMember) => {
-    // Aquí puedes implementar la lógica de edición
-    console.log('Editar personal:', member);
-    // Por ejemplo, abrir un modal de edición o navegar a una página de edición
-  };
-
-  const handleDeleteStaffFromModal = (id: number) => {
-    handleDeleteStaff(id);
-  };
-
   const handleSaveWorkingHours = async (doctorId: number, workingHours: WorkingHours) => {
     try {
       const response = await fetch(`/api/doctors/${doctorId}/working-hours`, {
@@ -173,7 +159,7 @@ export function StaffManagement() {
   return (
     <Card className="w-full max-w-full overflow-hidden">
       <CardContent className="space-y-6 p-4 sm:p-6">
-        {/* Lista de personal actual */}
+        {/* Lista de personal activo */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -288,9 +274,7 @@ export function StaffManagement() {
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetailModal}
         staffMember={selectedStaffForDetail}
-        onConfigureSchedule={handleConfigureScheduleFromModal}
-        onEditStaff={handleEditStaffFromModal}
-        onDeleteStaff={handleDeleteStaffFromModal}
+        onUpdate={fetchStaffMembers}
       />
 
       {/* Modal para horarios de médicos */}
