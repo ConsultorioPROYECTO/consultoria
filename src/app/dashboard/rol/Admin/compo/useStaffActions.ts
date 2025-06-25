@@ -36,7 +36,7 @@ export function useStaffActions() {
         try {
           const errorData = JSON.parse(errorText);
           throw new Error(errorData.error || 'Error al cambiar el rol.');
-        } catch (e) {
+        } catch {
           throw new Error(errorText || 'Error al cambiar el rol.');
         }
       }
@@ -67,7 +67,7 @@ export function useStaffActions() {
         try {
           const errorData = JSON.parse(errorText);
           throw new Error(errorData.error || 'Error al eliminar el miembro.');
-        } catch (e) {
+        } catch {
           throw new Error(errorText || 'Error al eliminar el miembro.');
         }
       }
