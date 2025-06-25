@@ -63,6 +63,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { uiStyle } = useUIStyle() // Obtener el estilo de interfaz
   const { setCurrentView, } = useNavigation()
   const pathname = usePathname();
+  const [userRole, setUserRole] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (date) {
@@ -73,8 +74,50 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [date]);
 
+  React.useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/users/rol', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUserRole(data.role);
+        }
+      }
+    };
+    fetchUserRole();
+  }, [user]);
+
   if (!user) {
     return null
+  }
+
+  const navMain = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: House,
+      onClick: () => setCurrentView('dashboard'),
+    },
+    {
+      title: "Calendario",
+      url: "/dashboard/calender",
+      icon: CalendarClock,
+      onClick: () => setCurrentView('calendar'),
+    },
+  ];
+
+  if (userRole === 'admin') {
+    navMain.splice(1, 0, {
+      title: "Organización",
+      url: "/dashboard/",
+      icon: Factory,
+      onClick: () => setCurrentView('organization'),
+    });
   }
 
   const data = {
@@ -83,26 +126,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       email: user.email || "m@example.com",
       avatar: user.photoURL || "/avatars/shadcn.jpg",
     },
-    navMain: [
-      {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: House,
-        onClick: () => setCurrentView('dashboard'),
-      },
-      {
-        title: "Organización",
-        url: "/dashboard/",
-        icon: Factory,
-        onClick: () => setCurrentView('organization'),
-      },
-      {
-        title: "Calendario",
-        url: "/dashboard/calender",
-        icon: CalendarClock,
-        onClick: () => setCurrentView('calendar'),
-      },
-    ],
+    navMain: navMain,
     navSecondary: [
       {
         title: "Get Help",
