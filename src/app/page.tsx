@@ -1,4 +1,6 @@
 
+'use client';
+
 /**
  * @fileoverview Landing Page principal para Irina.
  * @version 2.1.0
@@ -16,6 +18,7 @@ import Link from 'next/link';
 import { ArrowDown, CalendarDays, User, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
+import { motion } from 'framer-motion';
 
 // Datos para la sección de beneficios
 const benefits = [
@@ -71,13 +74,18 @@ export default function HomePage() {
 
         {/* Botón para Bajar */}
         <div className="flex justify-end items-end">
-          <Link 
-            href="#producto"
+          <motion.button
+            onClick={() => {
+              document.getElementById('producto')?.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
           >
             Más información
             <ArrowDown className="h-4 w-4 animate-bounce" />
-          </Link>
+          </motion.button>
         </div>
       </section>
 
@@ -140,6 +148,57 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Sección 4: Call to Action Final */}
+      <section
+        id="cta"
+        className="py-20 md:py-32 px-4 md:px-6 bg-primary text-primary-foreground text-center"
+      >
+        <motion.div
+          className="max-w-4xl mx-auto"
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0 },
+            show: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.2,
+              },
+            },
+          }}
+        >
+          <motion.h2
+            className="text-3xl md:text-4xl font-bold tracking-tight"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+          >
+            ¿Listo para transformar tu clínica?
+          </motion.h2>
+          <motion.p
+            className="mt-4 max-w-2xl mx-auto text-lg"
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+          >
+            Solicita acceso a la beta de Irina y descubre cómo podemos simplificar tu día a día con una gestión inteligente y eficiente.
+          </motion.p>
+          <motion.div
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+            }}
+          >
+            <Button asChild size="lg" className="mt-8 bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+              <Link href="/signup">Solicitar Acceso Beta</Link>
+            </Button>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Footer */}
