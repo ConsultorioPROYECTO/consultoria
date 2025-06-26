@@ -272,100 +272,52 @@ export default function ConfigView() {
           )}
         </div>
       ) : (
-        // Vista desktop con sidebar
-        <SidebarProvider className="items-start flex-1 flex h-full">
-          <Sidebar collapsible="none" className="hidden md:flex">
-            <SidebarContent>
-              {/* Cuenta y Preferencias - Visible para todos */}
-              <SidebarGroup>
-              <SidebarGroupLabel>Cuenta</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {navAccount.map((item) => (
-                      <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton
-                          asChild
-                          onClick={() => handleSectionChange(item.name)}
-                          className={cn(
-                            uiStyle === 'minimal' ? (
-                               // Estilo minimalista
-                               cn(
-                                 "text-muted-foreground overflow-hidden",
-                                 item.name === activeSection 
-                                    ? "!bg-transparent text-primary hover:!bg-transparent focus:!bg-transparent active:!bg-transparent data-[active=true]:!bg-transparent" 
-                                    : "hover:!bg-transparent focus:!bg-transparent active:!bg-transparent"
-                               )
-                             ) : (
-                               // Estilo normal
-                               cn(
-                                 "text-muted-foreground",
-                                 item.name === activeSection 
-                                    ? "bg-primary text-primary-foreground" 
-                                    : "hover:bg-accent hover:text-accent-foreground"
-                               )
-                             )
-                          )}
-                        >
-                          <a href="#">
-                            {uiStyle !== 'minimal' && <item.icon />}
-                            <span>{item.name}</span>
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-              
-              {/* Configuración de organización e Integraciones - Solo para rol master */}
-              {userRole === 'admin' && (
-                <SidebarGroup>
-                  <SidebarGroupLabel>Organizacion</SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {navWorkspace.map((item) => (
-                        <SidebarMenuItem key={item.name}>
-                          <SidebarMenuButton
-                            asChild
-                            onClick={() => handleSectionChange(item.name)}
-                            className={cn(
-                              uiStyle === 'minimal' ? (
-                                 // Estilo minimalista
-                                 cn(
-                                   "text-muted-foreground overflow-hidden",
-                                   item.name === activeSection 
-                                      ? "!bg-transparent text-primary hover:!bg-transparent focus:!bg-transparent active:!bg-transparent data-[active=true]:!bg-transparent" 
-                                      : "hover:!bg-transparent focus:!bg-transparent active:!bg-transparent"
-                                 )
-                               ) : (
-                                 // Estilo normal
-                                 cn(
-                                   "text-muted-foreground",
-                                   item.name === activeSection 
-                                      ? "bg-primary text-primary-foreground" 
-                                      : "hover:bg-accent hover:text-accent-foreground"
-                                 )
-                               )
-                            )}
-                          >
-                            <a href="#">
-                              {uiStyle !== 'minimal' && <item.icon />}
-                              <span>{item.name}</span>
-                            </a>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              )}
-            </SidebarContent>
-          </Sidebar>
-          <main className="flex-1 flex-col p-6">
-            {/* Contenido de la sección */}
+        // Vista desktop con menú de navegación en lugar de sidebar
+        <div className="grid md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] gap-10 h-full p-6">
+          <aside className="flex flex-col gap-8">
+            {/* Grupo de Cuenta */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-2">Cuenta</h3>
+              <div className="flex flex-col space-y-1">
+                {navAccount.map((item) => (
+                  <Button
+                    key={item.name}
+                    variant={item.name === activeSection ? "secondary" : "ghost"}
+                    onClick={() => handleSectionChange(item.name)}
+                    className="w-full justify-start gap-3 px-3"
+                  >
+                    <item.icon className="h-4 w-4 text-muted-foreground" />
+                    {item.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Grupo de Organización (condicional) */}
+            {userRole === 'admin' && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground mb-3 px-2">Organización</h3>
+                <div className="flex flex-col space-y-1">
+                  {navWorkspace.map((item) => (
+                    <Button
+                      key={item.name}
+                      variant={item.name === activeSection ? "secondary" : "ghost"}
+                      onClick={() => handleSectionChange(item.name)}
+                      className="w-full justify-start gap-3 px-3"
+                    >
+                      <item.icon className="h-4 w-4 text-muted-foreground" />
+                      {item.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </aside>
+
+          <main className="overflow-y-auto">
             {renderSectionContent()}
           </main>
-        </SidebarProvider>
+        </div>
       )}
     </div>
   )
