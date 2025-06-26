@@ -15,7 +15,7 @@
  */
 
 import Link from 'next/link';
-import { ArrowDown, CalendarDays, User, MessageSquare } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
 import { motion } from 'framer-motion';
@@ -124,8 +124,71 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Sección 2.5: Características Detalladas */}
+      <section
+        id="caracteristicas"
+        className="py-20 md:py-32 px-4 md:px-6 bg-background"
+      >
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Funcionalidades que Impulsan tu Práctica
+          </h2>
+          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+            Irina está diseñada con herramientas potentes y fáciles de usar para cada aspecto de tu clínica.
+          </p>
+        </div>
+
+        <div className="mt-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+          {[ /* Placeholder para tus mockups */
+            {
+              icon: CalendarDays,
+              title: "Gestión Integral de Citas",
+              description: "Organiza y visualiza tu agenda diaria, semanal y mensual. Gestiona citas, reprogramaciones, cancelaciones y listas de espera con facilidad, y recibe notificaciones en tiempo real sobre cambios.",
+            },
+            {
+              icon: FileText,
+              title: "Historial Clínico y AI-Care",
+              description: "Accede al historial médico completo de tus pacientes, registra notas de consulta detalladas (incluyendo voz a texto con AI-Care) y adjunta documentos de forma segura.",
+            },
+            {
+              icon: MessageSquare,
+              title: "Comunicación Unificada",
+              description: "Comunícate directamente con pacientes y personal vía chat, gestiona mensajes automatizados, utiliza plantillas personalizables y centraliza las solicitudes que requieren intervención humana.",
+            },
+            {
+              icon: BarChart2,
+              title: "Análisis y Rendimiento de Clínica",
+              description: "Obtén una visión clara del rendimiento de tu clínica con métricas financieras, análisis de carga de trabajo, seguimiento de la IA, y sugerencias inteligentes para optimizar la atención al paciente.",
+            },
+          ].map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              className="flex flex-col items-center text-center p-4 shadow-sm"
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+            >
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
+                <feature.icon className="w-8 h-8" />
+              </div>
+              <div className="flex-grow flex flex-col justify-start">
+                <h3 className="text-xl font-semibold">{feature.title}</h3>
+                <p className="mt-2 text-muted-foreground text-sm">
+                  {feature.description}
+                </p>
+              </div>
+              {/* Aquí puedes agregar tu mockup */}
+              <div className="mt-4 w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center text-muted-foreground text-xs">
+                [Mockup con relación de aspecto 16:9]
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
       {/* Sección 3: Beneficios Clave */}
-      <section id="beneficios" className="py-20 md:py-32 px-4 md:px-6">
+      <section id="beneficios" className="py-20 md:py-32 px-4 md:px-6 bg-secondary/50">
         <div className="max-w-5xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
             Diseñado para devolverte el tiempo
