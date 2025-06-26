@@ -272,7 +272,7 @@ export default function ConfigView() {
           )}
         </div>
       ) : (
-        // Vista desktop con menú de navegación en lugar de sidebar
+        // Vista desktop con menú de navegación que respeta el uiStyle
         <div className="grid md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] gap-10 h-full p-6">
           <aside className="flex flex-col gap-8">
             {/* Grupo de Cuenta */}
@@ -282,12 +282,21 @@ export default function ConfigView() {
                 {navAccount.map((item) => (
                   <Button
                     key={item.name}
-                    variant={item.name === activeSection ? "secondary" : "ghost"}
+                    variant="ghost"
                     onClick={() => handleSectionChange(item.name)}
-                    className="w-full justify-start gap-3 px-3"
+                    className={cn(
+                      "w-full justify-start gap-3 px-3",
+                      uiStyle === 'minimal'
+                        ? item.name === activeSection
+                          ? "bg-transparent hover:bg-transparent text-primary" // Minimal Activo
+                          : "bg-transparent hover:bg-transparent hover:text-primary text-muted-foreground" // Minimal Inactivo
+                        : item.name === activeSection
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90" // Normal Activo
+                          : "hover:bg-accent hover:text-accent-foreground text-muted-foreground" // Normal Inactivo
+                    )}
                   >
-                    <item.icon className="h-4 w-4 text-muted-foreground" />
-                    {item.name}
+                    {uiStyle !== 'minimal' && <item.icon className="h-4 w-4" />}
+                    <span>{item.name}</span>
                   </Button>
                 ))}
               </div>
@@ -301,12 +310,21 @@ export default function ConfigView() {
                   {navWorkspace.map((item) => (
                     <Button
                       key={item.name}
-                      variant={item.name === activeSection ? "secondary" : "ghost"}
+                      variant="ghost"
                       onClick={() => handleSectionChange(item.name)}
-                      className="w-full justify-start gap-3 px-3"
+                      className={cn(
+                        "w-full justify-start gap-3 px-3",
+                        uiStyle === 'minimal'
+                          ? item.name === activeSection
+                            ? "bg-transparent hover:bg-transparent text-primary"
+                            : "bg-transparent hover:bg-transparent hover:text-primary text-muted-foreground"
+                          : item.name === activeSection
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                            : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                      )}
                     >
-                      <item.icon className="h-4 w-4 text-muted-foreground" />
-                      {item.name}
+                      {uiStyle !== 'minimal' && <item.icon className="h-4 w-4" />}
+                      <span>{item.name}</span>
                     </Button>
                   ))}
                 </div>
