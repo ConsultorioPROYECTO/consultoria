@@ -15,7 +15,7 @@
  */
 
 import Link from 'next/link';
-import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Settings, Lightbulb, Facebook, Twitter, Instagram, Linkedin, Moon, Sun, Laptop } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Facebook, Twitter, Instagram, Linkedin, Moon, Sun, Laptop } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
