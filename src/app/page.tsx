@@ -4,7 +4,7 @@
 /**
  * @fileoverview Landing Page principal para Irina.
  * @version 2.1.0
- * @author Gemini, como diseñador de Vercel
+ * @author 
  * @date 2025-06-25
  *
  * @description
@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { ThemeProvider } from 'next-themes';
 
 // Datos para la sección de beneficios
 const benefits = [
@@ -48,7 +49,6 @@ const benefits = [
  * @returns {JSX.Element} El elemento JSX de la página de inicio.
  */
 export default function HomePage() {
-  const { setTheme, theme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -521,19 +521,9 @@ export default function HomePage() {
           {/* Nueva Fila para el Selector de Tema */}
           <div className="col-span-full flex justify-end md:justify-center">
             <div className="flex flex-col items-end">
-              <Tabs defaultValue={theme || 'system'} onValueChange={setTheme} className="w-[200px]">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="light" aria-label="Cambiar a tema claro">
-                    <Sun className="h-4 w-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="dark" aria-label="Cambiar a tema oscuro">
-                    <Moon className="h-4 w-4" />
-                  </TabsTrigger>
-                  <TabsTrigger value="system" aria-label="Cambiar a tema del sistema">
-                    <Laptop className="h-4 w-4" />
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+              <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+                <ThemeSwitcher />
+              </ThemeProvider>
             </div>
           </div>
 
@@ -547,5 +537,34 @@ export default function HomePage() {
         </div>
       </footer>
     </main>
+  );
+}
+
+function ThemeSwitcher() {
+  const [mounted, setMounted] = useState(false);
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  return (
+    <Tabs defaultValue={theme} onValueChange={setTheme} className="w-[200px]">
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="light" aria-label="Cambiar a tema claro">
+          <Sun className="h-4 w-4" />
+        </TabsTrigger>
+        <TabsTrigger value="dark" aria-label="Cambiar a tema oscuro">
+          <Moon className="h-4 w-4" />
+        </TabsTrigger>
+        <TabsTrigger value="system" aria-label="Cambiar a tema del sistema">
+          <Laptop className="h-4 w-4" />
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
   );
 }
