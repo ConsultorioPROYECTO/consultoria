@@ -1,132 +1,109 @@
-// src/app/page.tsx
+'use client'
+
 /**
- * @fileoverview Página principal (Landing Page) de la aplicación de consultoría.
- * @version 
- * @author Santiago Prada
- * @date 2025-05-12
+ * @fileoverview Landing Page principal para Irina.
+ * @version 2.0.0
+ * @author Gemini, como diseñador de Vercel
+ * @date 2025-06-25
  *
  * @description
- * Esta es la página de inicio que se muestra por defecto. Presenta información sobre
- * la consultoría, sus servicios y un llamado a la acción.
- * 
- * La hice solo para que no tener la pagina principal vacia, y que se vea bien el menú de navegación
- *
- * @requires next/link - Para la navegación interna.
+ * Página principal minimalista y moderna diseñada con un enfoque mobile-first.
+ * Utiliza un diseño de pantalla completa (hero section) para un impacto visual inmediato
+ * y un desplazamiento suave hacia la sección de producto.
+ * Construido con las mejores prácticas de Next.js y Tailwind CSS.
  */
 
-import Link from "next/link";
-import { ReactElement } from "react";
-
-/**
- * Interfaz para la información del proyecto que se mostrará en la landing page.
- */
-interface ProjectInfo {
-  projectName: string;
-  tagline: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  ctaText: string;
-  ctaLink: string;
-  servicesTitle: string;
-  services: Array<{ id: string; title: string; description: string; icon?: string }>;
-  aboutTitle: string;
-  aboutText: string;
-  contactEmail: string;
-  footerText: string;
-}
-
-// Objeto con la información personalizada de la página
-const projectData: ProjectInfo = {
-  projectName: "Consultoría Innovadora",
-  tagline: "Soluciones Estratégicas para un Futuro Digital",
-  heroTitle: "Transforma Tu Negocio Hoy",
-  heroSubtitle: "Descubre cómo nuestras estrategias de consultoría pueden impulsar tu crecimiento y eficiencia en el mercado actual.",
-  ctaText: "Conoce Nuestros Planes",
-  ctaLink: "/login", //  Puedes cambiar esto a una sección específica o página de contacto
-  servicesTitle: "Nuestros Servicios Destacados",
-  services: [
-    {
-      id: "s1",
-      title: "Consultoría Estratégica",
-      description: "Análisis profundo y planificación para optimizar tus operaciones y estrategias de mercado.",
-      icon: "📊" // Ejemplo de icono
-    },
-    {
-      id: "s2",
-      title: "Desarrollo Tecnológico",
-      description: "Soluciones de software a medida, desde aplicaciones web hasta integraciones complejas.",
-      icon: "💻"
-    },
-    {
-      id: "s3",
-      title: "Marketing Digital Avanzado",
-      description: "Campañas efectivas para aumentar tu visibilidad y conectar con tu audiencia objetivo.",
-      icon: "🚀"
-    }
-  ],
-  aboutTitle: "Sobre Nosotros",
-  aboutText: "Somos un equipo de expertos apasionados por la innovación y la tecnología, dedicados a ofrecer resultados tangibles y valor a nuestros clientes. Creemos en la colaboración y la transparencia para construir relaciones a largo plazo.",
-  contactEmail: "info@consultoriainnovadora.com",
-  footerText: `© ${new Date().getFullYear()} Consultoría Innovadora. Todos los derechos reservados.`
-};
+import Link from 'next/link';
+import { ArrowDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
 
 /**
  * Componente HomePage.
  * Renderiza la landing page principal de la aplicación.
- * @returns {React.ReactElement} El elemento JSX de la página de inicio.
+ * @returns {JSX.Element} El elemento JSX de la página de inicio.
  */
-export default function HomePage(): React.ReactElement<ReactElement> {
+export default function HomePage() {
   return (
-    <div className="font-sans text-gray-800">
-      {/* Header */}
-      <header className="bg-gray-50 py-5 px-10 flex justify-between items-center border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-blue-600">{projectData.projectName}</h1>
-        <nav>
-          <Link href="/login" className="mr-4 text-blue-600 hover:underline">Login</Link>
-          <Link href="/signup" className="text-blue-600 hover:underline">Registro</Link>
-        </nav>
-      </header>
-
-      {/* Hero Section */}
-      <main>
-        <section className="bg-blue-600 text-white text-center py-20 px-5">
-          <h2 className="text-5xl font-bold mb-5">{projectData.heroTitle}</h2>
-          <p className="text-xl mb-8 max-w-3xl mx-auto">
-            {projectData.heroSubtitle}
-          </p>
-          <Link href={projectData.ctaLink} className="bg-white text-blue-600 py-4 px-8 rounded-md text-lg font-bold hover:bg-gray-100 transition-colors">
-            {projectData.ctaText}
+    <main className={`bg-background text-foreground ${geistFont.className}`}>
+      {/* Sección 1: Hero de Pantalla Completa */}
+      <section 
+        id="hero"
+        className="h-dvh min-h-[600px] w-full grid grid-rows-[auto_1fr_auto] p-4 md:p-6"
+      >
+        {/* Navegación Superior */}
+        <nav className="flex justify-end items-center gap-4">
+          <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            Iniciar sesión
           </Link>
-        </section>
+          <Button asChild size="sm">
+            <Link href="/signup">Registro</Link>
+          </Button>
+        </nav>
 
-        {/* Services Section */}
-        <section className="py-16 px-5 text-center">
-          <h3 className="text-4xl font-bold mb-10 text-gray-800">{projectData.servicesTitle}</h3>
-          <div className="flex justify-center flex-wrap gap-8">
-            {projectData.services.map(service => (
-              <div key={service.id} className="bg-gray-50 border border-gray-200 rounded-lg p-8 w-80 shadow-md hover:shadow-lg transition-shadow">
-                {service.icon && <span className="text-4xl block mb-4">{service.icon}</span>}
-                <h4 className="text-2xl font-bold mb-2 text-blue-600">{service.title}</h4>
-                <p className="text-base leading-relaxed">{service.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* About Section */}
-        <section className="bg-gray-100 py-16 px-5 text-center">
-          <h3 className="text-4xl font-bold mb-5 text-gray-800">{projectData.aboutTitle}</h3>
-          <p className="text-lg leading-relaxed max-w-4xl mx-auto text-gray-600">
-            {projectData.aboutText}
+        {/* Contenido Principal del Hero */}
+        <div className="flex flex-col items-center justify-center text-center p-4">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter">
+            Irina
+          </h1>
+          <p className="mt-4 max-w-md md:max-w-xl text-muted-foreground md:text-lg">
+            Tu asistente inteligente para la gestión de clínicas. Simplifica la agenda, centraliza expedientes y optimiza la comunicación.
           </p>
-        </section>
-      </main>
+        </div>
+
+        {/* Botón para Bajar */}
+        <div className="flex justify-end items-end">
+          <Link 
+            href="#producto"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          >
+            Más información
+            <ArrowDown className="h-4 w-4 animate-bounce" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Sección 2: Muestra del Producto */}
+      <section 
+        id="producto"
+        className="py-20 md:py-32 px-4 md:px-6 bg-secondary/50"
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Un vistazo a la simplicidad</h2>
+          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+            Diseñamos una interfaz que se siente familiar desde el primer día. Menos clics, más cuidado del paciente.
+          </p>
+        </div>
+
+        {/* Representación visual de la UI */}
+        <div className="mt-12 max-w-4xl mx-auto h-[400px] md:h-[500px] rounded-xl border bg-card p-4 shadow-sm">
+          <div className="w-full h-full rounded-md bg-background/50 flex flex-col">
+            {/* Header Falso */}
+            <div className="h-12 flex-shrink-0 border-b flex items-center px-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-muted"></div>
+                <div className="w-3 h-3 rounded-full bg-muted"></div>
+                <div className="w-3 h-3 rounded-full bg-muted"></div>
+              </div>
+            </div>
+            {/* Contenido Falso */}
+            <div className="flex-grow p-4 grid grid-cols-3 gap-4">
+              <div className="col-span-1 bg-muted/60 rounded-lg"></div>
+              <div className="col-span-2 bg-muted/60 rounded-lg"></div>
+              <div className="col-span-3 bg-muted/60 rounded-lg"></div>
+              <div className="col-span-2 bg-muted/60 rounded-lg"></div>
+              <div className="col-span-1 bg-muted/60 rounded-lg"></div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-gray-800 text-white text-center py-8 px-5">
-        <p className="mb-2">Contáctanos: <a href={`mailto:${projectData.contactEmail}`} className="text-cyan-400 hover:underline">{projectData.contactEmail}</a></p>
-        <p className="text-sm">{projectData.footerText}</p>
+      <footer className="py-8 px-4 md:px-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Irina. Todos los derechos reservados.
+        </p>
       </footer>
-    </div>
+    </main>
   );
 }
