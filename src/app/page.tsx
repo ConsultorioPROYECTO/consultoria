@@ -1,22 +1,40 @@
-'use client'
 
 /**
  * @fileoverview Landing Page principal para Irina.
- * @version 2.0.0
+ * @version 2.1.0
  * @author Gemini, como diseñador de Vercel
  * @date 2025-06-25
  *
  * @description
  * Página principal minimalista y moderna diseñada con un enfoque mobile-first.
  * Utiliza un diseño de pantalla completa (hero section) para un impacto visual inmediato
- * y un desplazamiento suave hacia la sección de producto.
+ * y un desplazamiento suave hacia las secciones de producto y beneficios.
  * Construido con las mejores prácticas de Next.js y Tailwind CSS.
  */
 
 import Link from 'next/link';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
+
+// Datos para la sección de beneficios
+const benefits = [
+  {
+    icon: CalendarDays,
+    title: "Agenda Inteligente",
+    description: "Visualiza tu día completo, reduce los huecos y gestiona las citas con un solo clic.",
+  },
+  {
+    icon: User,
+    title: "Expedientes Centralizados",
+    description: "Accede al historial completo del paciente al instante, desde cualquier dispositivo.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Comunicación Fluida",
+    description: "Centraliza la comunicación con pacientes y personal, sin perder el contexto.",
+  },
+];
 
 /**
  * Componente HomePage.
@@ -34,7 +52,7 @@ export default function HomePage() {
         {/* Navegación Superior */}
         <nav className="flex justify-end items-center gap-4">
           <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Iniciar sesión
+            Login
           </Link>
           <Button asChild size="sm">
             <Link href="/signup">Registro</Link>
@@ -95,6 +113,32 @@ export default function HomePage() {
               <div className="col-span-1 bg-muted/60 rounded-lg"></div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Sección 3: Beneficios Clave */}
+      <section id="beneficios" className="py-20 md:py-32 px-4 md:px-6">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Diseñado para devolverte el tiempo
+          </h2>
+          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+            Nos enfocamos en tres pilares que eliminan la fricción de tu día a día, permitiéndote concentrarte en tus pacientes.
+          </p>
+        </div>
+
+        <div className="mt-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+          {benefits.map((benefit) => (
+            <div key={benefit.title} className="flex flex-col items-center text-center p-4">
+              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4">
+                <benefit.icon className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-semibold">{benefit.title}</h3>
+              <p className="mt-2 text-muted-foreground text-sm">
+                {benefit.description}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
