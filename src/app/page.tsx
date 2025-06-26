@@ -15,7 +15,9 @@
  */
 
 import Link from 'next/link';
-import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2 } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Settings, Lightbulb, Facebook, Twitter, Instagram, Linkedin, Moon, Sun, Laptop } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
 import { motion } from 'framer-motion';
@@ -24,18 +26,18 @@ import { motion } from 'framer-motion';
 const benefits = [
   {
     icon: CalendarDays,
-    title: "Agenda Inteligente",
-    description: "Visualiza tu día completo, reduce los huecos y gestiona las citas con un solo clic.",
+    title: "Optimización del Tiempo",
+    description: "Recupera horas valiosas cada semana al automatizar tareas repetitivas y simplificar la gestión diaria de tu clínica.",
   },
   {
     icon: User,
-    title: "Expedientes Centralizados",
-    description: "Accede al historial completo del paciente al instante, desde cualquier dispositivo.",
+    title: "Decisiones Informadas",
+    description: "Ten toda la información del paciente al alcance de tu mano, en cualquier momento y lugar, para diagnósticos precisos y tratamientos efectivos.",
   },
   {
     icon: MessageSquare,
-    title: "Comunicación Fluida",
-    description: "Centraliza la comunicación con pacientes y personal, sin perder el contexto.",
+    title: "Conexión sin Esfuerzo",
+    description: "Mejora la relación con tus pacientes y la coordinación interna con herramientas de comunicación integradas y eficientes.",
   },
 ];
 
@@ -45,6 +47,8 @@ const benefits = [
  * @returns {JSX.Element} El elemento JSX de la página de inicio.
  */
 export default function HomePage() {
+  const { setTheme, theme } = useTheme();
+
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
       {/* Sección 1: Hero de Pantalla Completa */}
@@ -55,7 +59,7 @@ export default function HomePage() {
         {/* Navegación Superior */}
         <nav className="flex justify-end items-center gap-4">
           <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Login
+            Iniciar sesión
           </Link>
           <Button asChild size="sm">
             <Link href="/signup">Registro</Link>
@@ -213,7 +217,77 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Sección 4: Call to Action Final */}
+      {/* Sección 4: Preguntas Frecuentes (FAQ) */}
+      <section
+        id="faq"
+        className="py-20 md:py-32 px-4 md:px-6 bg-background"
+      >
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Preguntas Frecuentes
+          </h2>
+          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+            Encuentra respuestas a las preguntas más comunes sobre Irina.
+          </p>
+        </div>
+
+        <div className="mt-12 max-w-3xl mx-auto space-y-4">
+          {[ /* Datos de las FAQs */
+            {
+              question: "¿Qué es Irina y para quién está diseñada?",
+              answer: "Irina es una plataforma inteligente de gestión de clínicas diseñada para médicos, asistentes y administradores que buscan optimizar sus operaciones diarias, desde la agenda de citas hasta la comunicación con pacientes.",
+            },
+            {
+              question: "¿Cómo ayuda Irina a optimizar la gestión de citas?",
+              answer: "Irina centraliza la agenda, permite la gestión de citas, reprogramaciones y cancelaciones con facilidad, y envía recordatorios automáticos, reduciendo ausencias y optimizando el tiempo del personal.",
+            },
+            {
+              question: "¿Es seguro el historial clínico de mis pacientes en Irina?",
+              answer: "Sí, la seguridad de los datos es nuestra máxima prioridad. Irina utiliza cifrado avanzado y cumple con las normativas de privacidad de datos para proteger la información sensible de tus pacientes.",
+            },
+            {
+              question: "¿Puedo comunicarme con mis pacientes directamente desde la plataforma?",
+              answer: "Absolutamente. Irina integra herramientas de mensajería directa, plantillas de comunicación personalizables y seguimiento de mensajes automatizados para una comunicación fluida y eficiente.",
+            },
+            {
+              question: "¿Irina ofrece análisis sobre el rendimiento de mi clínica?",
+              answer: "Sí, Irina proporciona métricas detalladas sobre el rendimiento financiero, la carga de trabajo del personal, la efectividad de la IA y sugerencias inteligentes para ayudarte a tomar decisiones informadas y mejorar la eficiencia.",
+            },
+          ].map((item, index) => (
+            <motion.details
+              key={index}
+              className="group rounded-lg border bg-card p-4 shadow-sm transition-all duration-300 ease-in-out open:bg-card-foreground/5"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+            >
+              <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground group-open:text-primary">
+                {item.question}
+                <svg
+                  className="h-5 w-5 transform transition-transform duration-300 group-open:rotate-180"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </summary>
+              <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
+                {item.answer}
+              </p>
+            </motion.details>
+          ))}
+        </div>
+      </section>
+
+      {/* Sección 5: Call to Action Final */}
       <section
         id="cta"
         className="py-20 md:py-32 px-4 md:px-6 bg-primary text-primary-foreground text-center"
@@ -265,10 +339,67 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 md:px-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Irina. Todos los derechos reservados.
-        </p>
+      <footer className="bg-secondary/50 py-12 px-4 md:px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
+          {/* Columna 1: Logo y Derechos */} 
+          <div className="flex flex-col items-center md:items-start">
+            <h3 className="text-2xl font-bold text-foreground mb-4">Irina</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              © {new Date().getFullYear()} Irina. Todos los derechos reservados.
+            </p>
+            <h4 className="text-lg font-semibold text-foreground mb-4">Tema</h4>
+            <Tabs defaultValue={theme || 'system'} onValueChange={setTheme} className="w-[200px]">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="light" aria-label="Cambiar a tema claro">
+                  <Sun className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="dark" aria-label="Cambiar a tema oscuro">
+                  <Moon className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="system" aria-label="Cambiar a tema del sistema">
+                  <Laptop className="h-4 w-4" />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
+          {/* Columna 2: Producto */} 
+          <div>
+            <h4 className="text-lg font-semibold text-foreground mb-4">Producto</h4>
+            <ul className="space-y-2 text-muted-foreground text-sm">
+              <li><Link href="#caracteristicas" className="hover:text-primary transition-colors">Características</Link></li>
+              <li><Link href="#beneficios" className="hover:text-primary transition-colors">Beneficios</Link></li>
+              <li><Link href="/signup" className="hover:text-primary transition-colors">Solicitar Beta</Link></li>
+            </ul>
+          </div>
+
+          {/* Columna 3: Empresa */} 
+          <div>
+            <h4 className="text-lg font-semibold text-foreground mb-4">Empresa</h4>
+            <ul className="space-y-2 text-muted-foreground text-sm">
+              <li><Link href="/about" className="hover:text-primary transition-colors">Sobre Nosotros</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Contacto</Link></li>
+              <li><Link href="/careers" className="hover:text-primary transition-colors">Carreras</Link></li>
+            </ul>
+          </div>
+
+          {/* Columna 4: Legal y Redes Sociales */}
+          <div className="flex flex-col items-center md:items-start">
+            <h4 className="text-lg font-semibold text-foreground mb-4">Legal</h4>
+            <ul className="space-y-2 text-muted-foreground text-sm mb-6">
+              <li><Link href="/privacy" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
+              <li><Link href="/terms" className="hover:text-primary transition-colors">Términos de Servicio</Link></li>
+            </ul>
+            <h4 className="text-lg font-semibold text-foreground mb-4">Síguenos</h4>
+            <div className="flex space-x-4 mb-6">
+              <a href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors"><Facebook className="h-6 w-6" /></a>
+              <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors"><Twitter className="h-6 w-6" /></a>
+              <a href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors"><Instagram className="h-6 w-6" /></a>
+              <a href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors"><Linkedin className="h-6 w-6" /></a>
+            </div>
+            
+          </div>
+        </div>
       </footer>
     </main>
   );
