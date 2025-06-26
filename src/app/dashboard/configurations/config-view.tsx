@@ -12,17 +12,6 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AppearanceSection } from "../com/AppearanceSection"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useTheme } from "next-themes"
 import { useUIStyle } from "@/app/context/UIStyleContext"
