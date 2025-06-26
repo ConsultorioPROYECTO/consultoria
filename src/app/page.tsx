@@ -15,7 +15,7 @@
  */
 
 import Link from 'next/link';
-import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Facebook, Twitter, Instagram, Linkedin, Moon, Sun, Laptop, Menu, X } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Moon, Sun, Laptop, Menu, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,7 @@ export default function HomePage() {
       {/* Sección 1: Hero de Pantalla Completa */}
       <section 
         id="hero"
-        className="h-dvh min-h-[600px] w-full grid grid-rows-[auto_1fr_auto] p-4 md:p-6"
+        className="relative h-dvh min-h-[600px] w-full grid grid-rows-[auto_1fr_auto] p-4 md:pt-6 md:px-6 md:pb-64 overflow-hidden"
       >
         {/* Navegación Superior */}
         <nav className="relative flex justify-between items-center gap-4">
@@ -187,20 +187,47 @@ export default function HomePage() {
         </motion.div>
 
         {/* Botón para Bajar */}
-        <div className="flex justify-end items-end">
-          <motion.button
-            onClick={() => {
-              document.getElementById('producto')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
-            Más información
-            <ArrowDown className="h-4 w-4 animate-bounce" />
-          </motion.button>
-        </div>
+        <motion.button
+          onClick={() => {
+            document.getElementById('producto')?.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="absolute bottom-4 right-4 z-10 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+        >
+          Más información
+          <ArrowDown className="h-4 w-4 animate-bounce" />
+        </motion.button>
+
+        {/* Mockup de la aplicación (visible solo en desktop, cortado) */}
+        <motion.div
+          className="hidden md:block absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[80%] max-w-4xl aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-t-xl shadow-2xl border border-b-0 border-primary/30 overflow-hidden"
+          initial={{ opacity: 0, y: 100, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ delay: 0.8, duration: 0.7, ease: "easeOut" }}
+        >
+          {/* Contenido del Mockup - Placeholder */}
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-semibold">
+            [Espacio para Mockup de la Aplicación]
+          </div>
+        </motion.div>
+
+        {/* Mockup de la aplicación (visible solo en móvil, 3D flat y rotado) */}
+        <motion.div
+          className="md:hidden absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[150%] aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg shadow-xl border border-primary/30 z-0"
+          style={{ transform: 'translateX(-50%) rotateX(45deg) rotateZ(-15deg) translateY(20px)' }}
+          initial={{ opacity: 0, y: 50, rotateX: 0, rotateZ: 0 }}
+          animate={{ opacity: 1, y: 0, rotateX: 45, rotateZ: -15 }}
+          transition={{ delay: 0.8, duration: 0.7, ease: "easeOut" }}
+        >
+          {/* Contenido del Mockup - Placeholder */}
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-semibold">
+            [Mockup Móvil 3D]
+          </div>
+          {/* Degradado inferior para fusionarse con el fondo */}
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background to-transparent"></div>
+        </motion.div>
       </section>
 
       {/* Sección 2: Muestra del Producto */}
@@ -400,7 +427,7 @@ export default function HomePage() {
       {/* Sección 5: Call to Action Final */}
       <section
         id="cta"
-        className="py-20 md:py-32 px-4 md:px-6 bg-primary text-primary-foreground text-center"
+        className="py-20 md:py-32 px-4 md:px-6 bg-secondary/50 text-foreground text-center"
       >
         <motion.div
           className="max-w-4xl mx-auto"
@@ -441,7 +468,7 @@ export default function HomePage() {
               show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
             }}
           >
-            <Button asChild size="lg" className="mt-8 bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+            <Button asChild size="lg" className="mt-8">
               <Link href="/signup">Solicitar Acceso Beta</Link>
             </Button>
           </motion.div>
@@ -449,29 +476,8 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-secondary/50 py-12 px-4 md:px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
-          {/* Columna 1: Logo y Derechos */} 
-          <div className="flex flex-col items-center md:items-start">
-            <h3 className="text-2xl font-bold text-foreground mb-4">Irina</h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              © {new Date().getFullYear()} Irina. Todos los derechos reservados.
-            </p>
-            <h4 className="text-lg font-semibold text-foreground mb-4">Tema</h4>
-            <Tabs defaultValue={theme || 'system'} onValueChange={setTheme} className="w-[200px]">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="light" aria-label="Cambiar a tema claro">
-                  <Sun className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="dark" aria-label="Cambiar a tema oscuro">
-                  <Moon className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="system" aria-label="Cambiar a tema del sistema">
-                  <Laptop className="h-4 w-4" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+      <footer className="bg-background py-12 px-4 md:px-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
 
           {/* Columna 2: Producto */} 
           <div>
@@ -493,21 +499,50 @@ export default function HomePage() {
             </ul>
           </div>
 
-          {/* Columna 4: Legal y Redes Sociales */}
-          <div className="flex flex-col items-center md:items-start">
+          {/* Columna 4: Legal */}
+          <div className="flex flex-col items-start md:items-start">
             <h4 className="text-lg font-semibold text-foreground mb-4">Legal</h4>
             <ul className="space-y-2 text-muted-foreground text-sm mb-6">
               <li><Link href="/privacy" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
               <li><Link href="/terms" className="hover:text-primary transition-colors">Términos de Servicio</Link></li>
             </ul>
-            <h4 className="text-lg font-semibold text-foreground mb-4">Síguenos</h4>
-            <div className="flex space-x-4 mb-6">
-              <a href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors"><Facebook className="h-6 w-6" /></a>
-              <a href="#" aria-label="Twitter" className="text-muted-foreground hover:text-primary transition-colors"><Twitter className="h-6 w-6" /></a>
-              <a href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors"><Instagram className="h-6 w-6" /></a>
-              <a href="#" aria-label="LinkedIn" className="text-muted-foreground hover:text-primary transition-colors"><Linkedin className="h-6 w-6" /></a>
+          </div>
+
+          {/* Columna 4 (real): Contacto */}
+          <div className="flex flex-col items-start md:items-start">
+            <h4 className="text-lg font-semibold text-foreground mb-4">Contacto</h4>
+            <ul className="space-y-2 text-muted-foreground text-sm mb-6">
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Email</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Teléfono</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Soporte</Link></li>
+            </ul>
+          </div>
+
+          {/* Nueva Fila para el Selector de Tema */}
+          <div className="col-span-full flex justify-end md:justify-center">
+            <div className="flex flex-col items-end">
+              <Tabs defaultValue={theme || 'system'} onValueChange={setTheme} className="w-[200px]">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="light" aria-label="Cambiar a tema claro">
+                    <Sun className="h-4 w-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="dark" aria-label="Cambiar a tema oscuro">
+                    <Moon className="h-4 w-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="system" aria-label="Cambiar a tema del sistema">
+                    <Laptop className="h-4 w-4" />
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-            
+          </div>
+
+          {/* Nueva Fila para Irina (Logo y Derechos) */}
+          <div className="col-span-full flex flex-col items-end md:items-center">
+            <h3 className="text-2xl font-bold text-foreground mb-2">Irina</h3>
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Irina. Todos los derechos reservados.
+            </p>
           </div>
         </div>
       </footer>
