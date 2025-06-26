@@ -15,12 +15,13 @@
  */
 
 import Link from 'next/link';
-import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Facebook, Twitter, Instagram, Linkedin, Moon, Sun, Laptop } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Facebook, Twitter, Instagram, Linkedin, Moon, Sun, Laptop, Menu, X } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 
 // Datos para la sección de beneficios
 const benefits = [
@@ -48,6 +49,30 @@ const benefits = [
  */
 export default function HomePage() {
   const { setTheme, theme } = useTheme();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isMenuOpen]);
+
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    // Cierra el menú si está en vista móvil
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  };
 
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
@@ -57,24 +82,109 @@ export default function HomePage() {
         className="h-dvh min-h-[600px] w-full grid grid-rows-[auto_1fr_auto] p-4 md:p-6"
       >
         {/* Navegación Superior */}
-        <nav className="flex justify-end items-center gap-4">
-          <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Iniciar sesión
+        <nav className="relative flex justify-between items-center gap-4">
+          {/* Logo o Título */}
+          <Link href="/" className="text-xl font-bold z-50">
+            Irina
           </Link>
-          <Button asChild size="sm">
-            <Link href="/signup">Registro</Link>
-          </Button>
+          
+          {/* Enlaces Centrales para Escritorio */}
+          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-6">
+            <a href="#caracteristicas" onClick={(e) => handleScroll(e, 'caracteristicas')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Características
+            </a>
+            <a href="#faq" onClick={(e) => handleScroll(e, 'faq')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              FAQ
+            </a>
+          </div>
+
+          {/* Botones de Auth para Escritorio */}
+          <div className="hidden md:flex items-center gap-4">
+            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Iniciar sesión
+            </Link>
+            <Button asChild size="sm">
+              <Link href="/signup">Registro</Link>
+            </Button>
+          </div>
+
+          {/* Botón de Menú para Móvil */}
+          <div className="md:hidden z-50">
+            <Button onClick={() => setIsMenuOpen(!isMenuOpen)} variant="ghost" size="icon">
+              <AnimatePresence initial={false} mode="wait">
+                <motion.div
+                  key={isMenuOpen ? "x" : "menu"}
+                  initial={{ rotate: 45, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -45, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </motion.div>
+              </AnimatePresence>
+            </Button>
+          </div>
         </nav>
 
+        {/* Drawer para Móvil */}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 flex flex-col items-end justify-end p-8"
+            >
+              <div className="flex flex-col items-end gap-8 text-right">
+                <a href="#caracteristicas" className="text-2xl font-medium" onClick={(e) => handleScroll(e, 'caracteristicas')}>
+                  Características
+                </a>
+                <a href="#faq" className="text-2xl font-medium" onClick={(e) => handleScroll(e, 'faq')}>
+                  FAQ
+                </a>
+                <Link href="/login" className="text-2xl font-medium" onClick={() => setIsMenuOpen(false)}>
+                  Iniciar sesión
+                </Link>
+                <Link href="/signup" className="text-2xl font-medium" onClick={() => setIsMenuOpen(false)}>
+                  Registro
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Contenido Principal del Hero */}
-        <div className="flex flex-col items-center justify-center text-center p-4">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter">
+        <motion.div 
+          className="flex flex-col items-center justify-center text-center p-4"
+          initial="hidden"
+          animate="show"
+          variants={{ 
+            hidden: { opacity: 0 }, 
+            show: { opacity: 1, transition: { staggerChildren: 0.2 } } 
+          }}
+        >
+          <motion.h1 
+            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter"
+            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+          >
             Irina
-          </h1>
-          <p className="mt-4 max-w-md md:max-w-xl text-muted-foreground md:text-lg">
+          </motion.h1>
+          <motion.p 
+            className="mt-4 max-w-md md:max-w-xl text-muted-foreground md:text-lg"
+            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+          >
             Tu asistente inteligente para la gestión de clínicas. Simplifica la agenda, centraliza expedientes y optimiza la comunicación.
-          </p>
-        </div>
+          </motion.p>
+          <motion.div 
+            className="mt-8"
+            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+          >
+            <Button asChild size="lg">
+              <Link href="/signup">Solicitar Acceso Beta</Link>
+            </Button>
+          </motion.div>
+        </motion.div>
 
         {/* Botón para Bajar */}
         <div className="flex justify-end items-end">
