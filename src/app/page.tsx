@@ -15,7 +15,7 @@
  */
 
 import Link from 'next/link';
-import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Moon, Sun, Laptop, Menu, X } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Moon, Sun, Laptop, Menu, X, ArrowUpRight } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -85,16 +85,16 @@ export default function HomePage() {
         <nav className="relative flex justify-between items-center gap-4">
           {/* Logo o Título */}
           <Link href="/" className="text-xl font-bold z-50">
-            Irina
+            Irina 
           </Link>
           
           {/* Enlaces Centrales para Escritorio */}
           <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-6">
-            <a href="#caracteristicas" onClick={(e) => handleScroll(e, 'caracteristicas')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              Características
+            <a href="#caracteristicas" onClick={(e) => handleScroll(e, 'caracteristicas')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+              <ArrowUpRight className="h-4 w-4" /> Características
             </a>
-            <a href="#faq" onClick={(e) => handleScroll(e, 'faq')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              FAQ
+            <a href="#faq" onClick={(e) => handleScroll(e, 'faq')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+              <ArrowUpRight className="h-4 w-4" /> FAQ
             </a>
           </div>
 
