@@ -5,6 +5,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { doctors } from './doctors'; // Importar el esquema de doctors
 import { patients } from './patients'; // Importar el esquema de patients
 import { medicalServices } from './medical_services'; // Importar el esquema de medical_services
+import { organization } from './organization'; // Importar el esquema de organization
 
 /**
  * @typedef AppointmentTableSchema
@@ -15,6 +16,7 @@ import { medicalServices } from './medical_services'; // Importar el esquema de 
  * @property {number} doctorId - Clave foránea a la tabla 'doctors'.
  * @property {number} patientId - Clave foránea a la tabla 'patients'.
  * @property {number} serviceId - Clave foránea a la tabla 'medical_services'.
+ * @property {number} organizationId - Clave foránea a la tabla 'organization'.
  * @property {string} time - Tiempo en formato hora HH:MM (ej. 14:30).
  * @property {enum} status - Estado de la cita enum("Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada"). 
  * @property {Date} date - Fecha de la cita.
@@ -41,6 +43,8 @@ export const appointments = mysqlTable('appointments', {
   doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade' , onUpdate : 'cascade'}).notNull(),
   patientId: int('patient_id').references(() => patients.id, { onDelete: 'cascade', onUpdate: 'cascade' }), // Opcional por compatibilidad
   serviceId: int('service_id').references(() => medicalServices.id, { onDelete: 'set null', onUpdate: 'cascade' }), // Opcional por compatibilidad
+  organizationId: int('organization_id').references(()=> organization.id, {onDelete: "cascade", onUpdate: "cascade"}).notNull(),
+
 
   // --- Campos específicos de la cita ---
   time: varchar('time', { length: 12 }).notNull(), // Formato HH:MM AM/PM
@@ -76,6 +80,7 @@ export const appointments = mysqlTable('appointments', {
   index('appointment_doctor_id_idx').on(table.doctorId),
   index('appointment_patient_id_idx').on(table.patientId),
   index('appointment_service_id_idx').on(table.serviceId),
+  index('appointment_organization_id_idx').on(table.organizationId),
   index('appointment_time_idx').on(table.time),
   index('appointment_date_idx').on(table.date),
   index('appointment_status_idx').on(table.status),
@@ -113,5 +118,10 @@ export const appointmentRelations = relations(appointments, ({ one }) => ({
   service: one(medicalServices, {
     fields: [appointments.serviceId],
     references: [medicalServices.id],
+  }),
+  // Relación con organización
+  organization: one(organization, {
+    fields: [appointments.organizationId],
+    references: [organization.id],
   }),
 }));

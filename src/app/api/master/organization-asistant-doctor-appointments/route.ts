@@ -50,7 +50,7 @@ import { NextRequest } from 'next/server';
 import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
 import { db } from '@/db';
 import { users, assistants, assistantDoctor, doctors, appointments, patients } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
 import { validateUserRole, handleDatabaseError } from '@/lib/api-helpers';
 import type { DecodedIdToken } from 'firebase-admin/auth';
@@ -326,7 +326,12 @@ async function handleGetRequest(
           .select()
           .from(appointments)
           .leftJoin(patients, eq(appointments.patientId, patients.id))
-          .where(eq(appointments.doctorId, doctor.doctors.idDoctor));
+          .where(
+            and(
+              eq(appointments.doctorId, doctor.doctors.idDoctor),
+              eq(appointments.organizationId, user.organizationId)
+            )
+          );
 
         // Formatear las citas con información del paciente usando tipos inferidos
         const formattedAppointments = appointmentsResult.map(result => ({
