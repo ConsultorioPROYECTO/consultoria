@@ -61,7 +61,7 @@ export const syncUserSchema = z.object({
   firebaseUid: z.string().min(1, 'Firebase UID is required'),
   email: z.string().email().optional(),
   emailVerified: z.boolean().optional(),
-  phoneNumber: z.string().optional(),
+  phoneNumber: z.string().nullable().optional(),
   displayName: z.string().optional(),
   photoURL: z.string().url().optional(),
   providerId: z.string().optional(),
@@ -76,3 +76,94 @@ export const updateUserRoleSchema = z.object({
     errorMap: () => ({ message: 'Role must be one of: admin, medico, asistente, N/A' })
   }),
 });
+
+// === Doctor Calendar Management Helpers ===
+
+/**
+ * Valida y crea un calendario para un doctor si no tiene uno asignado.
+ * Esta función centraliza la lógica de validación y creación de calendarios.
+ * 
+ * @param doctorId - ID del doctor
+ * @param doctorData - Datos del doctor para crear el calendario
+ * @returns Promise con el resultado de la operación
+ */
+export async function ensureDoctorHasCalendar(
+  doctorId: number,
+  doctorData: {
+    firstName: string;
+    lastName: string;
+    email?: string;
+    timezone?: string;
+  }
+): Promise<{
+  success: boolean;
+  calendarId?: string;
+  error?: string;
+  created?: boolean;
+}> {
+  try {
+    const { doctorCalendarService } = await import('@/lib/doctor-calendar');
+    
+    // Verificar si el doctor ya tiene un calendario
+    const calendarSettings = await doctorCalendarService.getDoctorCalendarSettings(doctorId);
+    
+    if (calendarSettings.success && calendarSettings.calendarInfo?.calendarId) {
+      // El doctor ya tiene un calendario
+      return {
+        success: true,
+        calendarId: calendarSettings.calendarInfo.calendarId,
+        created: false
+      };
+    }
+    
+    // El doctor no tiene calendario, crear uno nuevo
+    const calendarName = `Dr. ${doctorData.firstName} ${doctorData.lastName} - Consultas`;
+    
+    const createResult = await doctorCalendarService.createDoctorCalendar({
+      doctorId,
+      calendarName,
+      timezone: doctorData.timezone || 'America/Bogota',
+      syncEnabled: true
+    });
+    
+    if (createResult.success) {
+      return {
+        success: true,
+        calendarId: createResult.calendarId,
+        created: true
+      };
+    } else {
+      return {
+        success: false,
+        error: createResult.error || 'Failed to create calendar'
+      };
+    }
+  } catch (error) {
+    console.error('Error ensuring doctor has calendar:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error creating calendar'
+    };
+  }
+}
+
+/**
+ * Valida que un doctor tenga un calendario asignado y lo crea si es necesario.
+ * Función de conveniencia que maneja errores de forma más simple.
+ * 
+ * @param doctorId - ID del doctor
+ * @param doctorData - Datos del doctor
+ * @returns Promise<boolean> - true si el doctor tiene calendario (existente o creado)
+ */
+export async function validateDoctorCalendar(
+  doctorId: number,
+  doctorData: {
+    firstName: string;
+    lastName: string;
+    email?: string;
+    timezone?: string;
+  }
+): Promise<boolean> {
+  const result = await ensureDoctorHasCalendar(doctorId, doctorData);
+  return result.success;
+}

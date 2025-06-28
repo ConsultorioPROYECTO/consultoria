@@ -190,7 +190,7 @@ async function handlePostRequest(
     const user = userResult[0];
 
     // 2. Validar que el usuario tenga rol de "medico" o "asistente"
-    if (user.role !== 'medico' && user.role !== 'asistente') {
+    if (user.role !== 'admin' && user.role !== 'asistente') {
       return createErrorResponse(
         API_ERRORS.FORBIDDEN,
         'Usuario no tiene permisos para crear citas. Se requiere rol de médico o asistente',
