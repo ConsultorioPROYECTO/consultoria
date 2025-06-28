@@ -95,12 +95,7 @@ export class GoogleCalendarService {
         },
         attendees: eventData.attendees?.map(email => ({ email })),
         location: eventData.location,
-        conferenceData: eventData.meetingLink ? {
-          createRequest: {
-            requestId: `meet-${Date.now()}`,
-            conferenceSolutionKey: { type: 'hangoutsMeet' },
-          },
-        } : undefined,
+        // Eliminamos la lógica de conferencias para evitar errores
         reminders: {
           useDefault: false,
           overrides: [
@@ -110,16 +105,17 @@ export class GoogleCalendarService {
         },
       };
 
-      const response = await this.calendar.events.insert({
+      const insertParams = {
         calendarId: eventData.calendarId,
         requestBody: event,
-        conferenceDataVersion: eventData.meetingLink ? 1 : 0,
-      });
+      };
+
+      const response = await this.calendar.events.insert(insertParams);
 
       return {
         eventId: response.data.id,
         eventData: response.data,
-        meetingLink: response.data.conferenceData?.entryPoints?.[0]?.uri,
+        meetingLink: eventData.meetingLink || null, // Devolvemos el meetingLink original si se proporcionó
       };
     } catch (error) {
       console.error('Error creating appointment event:', error);

@@ -408,7 +408,16 @@ export class AppointmentSyncService {
       throw new Error('Doctor does not have a valid calendar ID. Please ensure the doctor has a calendar configured.');
     }
 
-    return {
+    const eventData: {
+      calendarId: string;
+      summary: string;
+      description: string;
+      startDateTime: string;
+      endDateTime: string;
+      timezone: string;
+      attendees: string[];
+      meetingLink?: string;
+    } = {
       calendarId: appointmentData.doctor.calendar_id,
       summary: `${serviceName} - ${patientName}`,
       description: this.buildEventDescription(appointmentData),
@@ -416,8 +425,14 @@ export class AppointmentSyncService {
       endDateTime: endDateTime.toISOString(),
       timezone: appointmentData.doctor.calendar_timezone,
       attendees,
-      meetingLink: appointmentData.isVirtual ? appointmentData.meetingLink || undefined : undefined,
     };
+
+    // Solo incluir meetingLink si es una cita virtual
+    if (appointmentData.isVirtual && appointmentData.meetingLink) {
+      eventData.meetingLink = appointmentData.meetingLink;
+    }
+
+    return eventData;
   }
 
   /**

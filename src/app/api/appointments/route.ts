@@ -160,11 +160,11 @@ export type CreateAppointmentApiResponse = APIResponse<CreateAppointmentResponse
  * // Error response
  * {
  *   "error": "Usuario no tiene permisos para crear citas",
- *   "details": "Se requiere rol de médico o asistente"
+ *   "details": "Se requiere rol de admin o asistente"
  * }
  * ```
  * 
- * @security Requires Firebase authentication with 'medico' or 'asistente' role
+ * @security Requires Firebase authentication with 'admin' or 'asistente' role
  * @rateLimit Subject to organization-level rate limiting
  */
 async function handlePostRequest(
@@ -193,7 +193,7 @@ async function handlePostRequest(
     if (user.role !== 'admin' && user.role !== 'asistente') {
       return createErrorResponse(
         API_ERRORS.FORBIDDEN,
-        'Usuario no tiene permisos para crear citas. Se requiere rol de médico o asistente',
+        'Usuario no tiene permisos para crear citas. Se requiere rol de admin o asistente',
         HTTP_STATUS.FORBIDDEN
       );
     }
@@ -433,7 +433,7 @@ async function handlePostRequest(
  * 
  * This endpoint handles the creation of medical appointments with the following features:
  * - **Authentication**: Firebase token validation
- * - **Authorization**: Role-based access control (medico/asistente)
+ * - **Authorization**: Role-based access control (admin/asistente)
  * - **Organization Isolation**: Multi-tenant data isolation
  * - **Calendar Integration**: Google Calendar synchronization
  * - **Data Validation**: Comprehensive input validation
@@ -441,7 +441,7 @@ async function handlePostRequest(
  * 
  * @route POST /api/appointments
  * @access Protected - Requires Firebase authentication
- * @roles medico, asistente
+ * @roles admin, asistente
  * 
  * @param {CreateAppointmentRequest} request.body - Appointment creation data
  * @param {string} request.body.doctorId - Doctor's unique identifier
