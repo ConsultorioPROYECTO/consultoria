@@ -63,18 +63,21 @@ export function handleAuthError(error: unknown, context?: string): void {
     
     if (errorInfo) {
       toast.error(errorInfo.title, {
-        description: errorInfo.description
+        description: errorInfo.description,
+        descriptionClassName: 'text-foreground'
       });
     } else {
       // Error no mapeado
       toast.error('Error de autenticación', {
-        description: 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo más tarde.'
+        description: 'Ocurrió un error inesperado. Por favor, inténtalo de nuevo más tarde.',
+        descriptionClassName: 'text-foreground'
       });
     }
   } else {
     // Error de conexión u otro tipo
     toast.error('Error de conexión', {
-      description: 'No se pudo conectar con el servidor. Verifica tu conexión a internet.'
+      description: 'No se pudo conectar con el servidor. Verifica tu conexión a internet.',
+      descriptionClassName: 'text-foreground'
     });
   }
   
