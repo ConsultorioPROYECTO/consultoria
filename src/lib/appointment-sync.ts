@@ -113,6 +113,14 @@ export class AppointmentSyncService {
         };
       }
 
+      // Verificar que el doctor tenga un calendar_id válido
+      if (!appointmentData.doctor?.calendar_id) {
+        return {
+          success: false,
+          error: `Doctor does not have a valid calendar ID. Please configure the doctor calendar first. ID: ${JSON.stringify( appointmentData)}`
+        };
+      }
+
       // Crear el evento en Google Calendar
       const eventData = this.buildEventData(appointmentData);
       const result = await googleCalendarService.createAppointmentEvent(eventData);
@@ -394,6 +402,10 @@ export class AppointmentSyncService {
 
     if (!appointmentData.doctor) {
       throw new Error('Doctor data is required for calendar event creation');
+    }
+
+    if (!appointmentData.doctor.calendar_id) {
+      throw new Error('Doctor does not have a valid calendar ID. Please ensure the doctor has a calendar configured.');
     }
 
     return {

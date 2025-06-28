@@ -37,7 +37,7 @@ export const doctors = mysqlTable('doctors', {
 
   // --- Campos específicos de tu doctor ---
   speciality: varchar('speciality', { length: 255 }).notNull(), // Especialidad del doctor
-  calendar_id: varchar('calendar_id', { length: 255 }).notNull(), // ID del calendario del doctor
+  calendar_id: varchar('calendar_id', { length: 255 }), // ID del calendario del doctor
   privatePhone: varchar('private_phone', { length: 255 }).notNull(), // Número de teléfono privado del doctor
   nitId: varchar('nit_id', { length: 255 }).notNull(), // NIT del doctor
   availability: json('availability').notNull(), // Horarios de trabajo del doctor (JSON)

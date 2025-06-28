@@ -1,0 +1,1 @@
+ALTER TABLE `doctors` MODIFY COLUMN `calendar_id` varchar(255);

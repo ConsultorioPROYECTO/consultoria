@@ -197,6 +197,13 @@
       "when": 1751130401550,
       "tag": "0027_blue_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1751150818408,
+      "tag": "0028_grey_strong_guy",
+      "breakpoints": true
     }
   ]
 }

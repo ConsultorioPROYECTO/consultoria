@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
         await db.insert(doctors).values({ 
           userId: user.id, 
           speciality: '', 
-          calendar_id: '', 
+          calendar_id: null, 
           privatePhone: '', 
           nitId: '', 
           availability: '', 
