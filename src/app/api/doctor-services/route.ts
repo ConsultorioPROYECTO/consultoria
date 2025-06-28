@@ -1,12 +1,20 @@
-// @app/api/doctor-services/route.ts
-
 /**
- *  @fileoverview doctor-services/route.ts
- *  @description API para manejar relaciones entre doctores y servicios médicos.
- *  Permite obtener, crear y eliminar asignaciones de servicios a doctores.
- *  @author Santiago Prada - Backend Developer
- *  @version 1.0.0
- *  @date 2025-05-26
+ * @fileoverview API endpoints for managing doctor-service relationships
+ * 
+ * This module provides REST API endpoints to handle the relationships between doctors
+ * and medical services within an organization. It supports operations for retrieving,
+ * creating, and managing service assignments to doctors with proper authentication
+ * and authorization controls.
+ * 
+ * @author Santiago Prada - Backend Developer
+ * @version 1.0.0
+ * @since 2025-05-26
+ * 
+ * @example
+ * ```typescript
+ * // GET /api/doctor-services?doctorId=123&available=true
+ * // POST /api/doctor-services { doctorId: 123, serviceId: 456 }
+ * ```
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
@@ -19,16 +27,19 @@ import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
 import type {  NewDoctorService } from "@/db/schema";
 
 /**
- * @description Autentica la solicitud verificando el token de Firebase.
- * Si el token es válido, devuelve el token decodificado; de lo contrario, devuelve null.
- * @author Santiago Prada - Backend Developer
- * @version 1.0.0
- * @date 2025-05-26
- * @throws {Error} Si ocurre un error al verificar el token.
- * @see https://firebase.google.com/docs/auth/admin/verify-id-tokens
- * @param {NextRequest} request - La solicitud entrante de Next.js.
- * @returns {Promise<DecodedIdToken | null>} El token decodificado si la autenticación es exitosa, o null si falla.
- * @returns 
+ * Authenticates incoming requests by verifying Firebase ID tokens.
+ * 
+ * Extracts the Bearer token from the Authorization header and validates it
+ * using Firebase Admin SDK. Returns the decoded token if valid, null otherwise.
+ * 
+ * @param request - The incoming Next.js request object
+ * @returns Promise resolving to decoded token on success, null on failure
+ * 
+ * @throws {Error} When token verification fails due to network or Firebase errors
+ * 
+ * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase ID Token Verification}
+ * 
+ * @internal
  */
 async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken | null> {
   try {
@@ -46,18 +57,35 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
 }
 
 /**
- * @description Manejador para obtener servicios médicos asignados a doctores en la organización del usuario autenticado.
- * Permite filtrar por doctor, servicio y disponibilidad.
- * @author Santiago Prada - Backend Developer
- * @version 1.0.0
- * @date 2025-05-26
- * @throws {Error} Si ocurre un error al consultar la base de datos.
- * @param {NextRequest} request - La solicitud entrante de Next.js.
- * @param {DecodedIdToken} decodedToken - El token decodificado del usuario autenticado.
- * @URLParams 'doctorId' (opcional) - Filtra por ID del doctor.
- * @URLParams 'serviceId' (opcional) - Filtra por ID del servicio médico.
- * @URLParams 'available' (opcional) - Filtra por servicios disponibles (true por defecto).
- * @returns {Promise<NextResponse | Response>} Respuesta con los servicios médicos asignados o error.
+ * Retrieves doctor-service relationships for the authenticated user's organization.
+ * 
+ * Supports filtering by doctor ID, service ID, and availability status. Access control
+ * is enforced based on user roles: doctors can only view their own services, while
+ * admins and assistants can view all organization services.
+ * 
+ * @param request - The incoming Next.js request with optional query parameters
+ * @param decodedToken - Decoded Firebase authentication token
+ * 
+ * @returns Promise resolving to API response with doctor-service relationships
+ * 
+ * @throws {Error} When database queries fail or user validation errors occur
+ * 
+ * @remarks
+ * Query parameters:
+ * - `doctorId` (optional) - Filter by specific doctor ID
+ * - `serviceId` (optional) - Filter by specific service ID  
+ * - `available` (optional) - Filter by availability status (default: true)
+ * 
+ * @example
+ * ```typescript
+ * // Get all available services for doctor 123
+ * GET /api/doctor-services?doctorId=123&available=true
+ * 
+ * // Get all services (available and unavailable) for organization
+ * GET /api/doctor-services?available=false
+ * ```
+ * 
+ * @internal
  */
 const getDoctorServicesHandler = async (
   request: NextRequest,
@@ -137,16 +165,41 @@ const getDoctorServicesHandler = async (
 };
 
 /**
- * @description Manejador para crear una nueva relación entre un doctor y un servicio médico.
- * Permite asignar un servicio a un doctor en la organización del usuario autenticado.
- * @author Santiago Prada - Backend Developer
- * @version 1.0.0
- * @date 2025-05-26
- * @throws {Error} Si ocurre un error al consultar la base de datos o al insertar el nuevo registro.
- * @param {NextRequest} request - La solicitud entrante de Next.js.
- * @param {DecodedIdToken} decodedToken - El token decodificado del usuario autenticado.
- * @returns {Promise<NextResponse | Response>} Respuesta con el nuevo servicio asignado al doctor o error.
- * @see https://firebase.google.com/docs/auth/admin/verify-id-tokens
+ * Creates a new doctor-service relationship within the authenticated user's organization.
+ * 
+ * Validates that both the doctor and service exist within the organization, checks for
+ * existing relationships to prevent duplicates, and creates the assignment with optional
+ * custom pricing. Only admin users can create these relationships.
+ * 
+ * @param request - The incoming Next.js request containing assignment data
+ * @param decodedToken - Decoded Firebase authentication token
+ * 
+ * @returns Promise resolving to API response with created relationship details
+ * 
+ * @throws {Error} When database operations fail or validation errors occur
+ * 
+ * @remarks
+ * Required request body fields:
+ * - `doctorId` (number) - ID of the doctor to assign service to
+ * - `serviceId` (number) - ID of the medical service to assign
+ * 
+ * Optional request body fields:
+ * - `customPrice` (number) - Custom price override for this doctor-service combination
+ * - `isAvailable` (boolean) - Availability status (default: true)
+ * 
+ * @example
+ * ```typescript
+ * // Assign service 456 to doctor 123 with custom pricing
+ * POST /api/doctor-services
+ * {
+ *   "doctorId": 123,
+ *   "serviceId": 456,
+ *   "customPrice": 150.00,
+ *   "isAvailable": true
+ * }
+ * ```
+ * 
+ * @internal
  */
 const createDoctorServiceHandler = async (
   request: NextRequest,
@@ -241,16 +294,21 @@ const createDoctorServiceHandler = async (
 };
 
 /**
- * @description Manejador para las solicitudes GET.
- *  Permite obtener servicios médicos asignados a doctores.
- * @author Santiago Prada - Backend Developer
- * @version 1.0.0
- * @date 2025-05-26
- * @throws {Error} Si ocurre un error al autenticar la solicitud o al obtener los servicios.
- * @param {NextRequest} request - La solicitud entrante de Next.js.
- * @returns {Promise<NextResponse | Response>} Respuesta con los servicios médicos asignados o error.
- * @see https://firebase.google.com/docs/auth/admin/verify-id-tokens
- * @see https://nextjs.org/docs/app/building-your-application/routing/route-handlers
+ * Handles GET requests to retrieve doctor-service relationships.
+ * 
+ * Authenticates the request and delegates to the appropriate handler function.
+ * Supports filtering by doctor ID, service ID, and availability status through
+ * query parameters.
+ * 
+ * @param request - The incoming Next.js GET request
+ * @returns Promise resolving to HTTP response with doctor-service data or error
+ * 
+ * @throws {Error} When authentication fails or handler execution encounters errors
+ * 
+ * @see {@link https://nextjs.org/docs/app/building-your-application/routing/route-handlers | Next.js Route Handlers}
+ * @see {@link getDoctorServicesHandler} for detailed parameter documentation
+ * 
+ * @public
  */
 export async function GET(request: NextRequest) {
   const decodedToken = await authenticateRequest(request);
@@ -263,16 +321,21 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * @description Manejador para las solicitudes POST.
- *  Permite crear una nueva relación entre un doctor y un servicio médico.
- * @author Santiago Prada - Backend Developer
- * @version 1.0.0
- * @date 2025-05-26
- * @throws {Error} Si ocurre un error al autenticar la solicitud o al crear la relación.
- * @param {NextRequest} request - La solicitud entrante de Next.js.
- * @returns {Promise<NextResponse | Response>} Respuesta con el nuevo servicio asignado al doctor o error.
- * @see https://firebase.google.com/docs/auth/admin/verify-id-tokens
- * @see https://nextjs.org/docs/app/building-your-application/routing/route-handlers
+ * Handles POST requests to create new doctor-service relationships.
+ * 
+ * Authenticates the request and delegates to the creation handler function.
+ * Requires admin privileges and validates all input data before creating
+ * the relationship in the database.
+ * 
+ * @param request - The incoming Next.js POST request with relationship data
+ * @returns Promise resolving to HTTP response with created relationship or error
+ * 
+ * @throws {Error} When authentication fails or creation process encounters errors
+ * 
+ * @see {@link https://nextjs.org/docs/app/building-your-application/routing/route-handlers | Next.js Route Handlers}
+ * @see {@link createDoctorServiceHandler} for detailed request body documentation
+ * 
+ * @public
  */
 export async function POST(request: NextRequest) {
   const decodedToken = await authenticateRequest(request);
