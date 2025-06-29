@@ -62,8 +62,8 @@ export const syncUserSchema = z.object({
   email: z.string().email().optional(),
   emailVerified: z.boolean().optional(),
   phoneNumber: z.string().nullable().optional(),
-  displayName: z.string().optional(),
-  photoURL: z.string().url().optional(),
+  displayName: z.string().nullable().optional(),
+  photoURL: z.string().url().nullable().optional(),
   providerId: z.string().optional(),
 });
 

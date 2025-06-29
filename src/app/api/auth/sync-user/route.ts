@@ -168,12 +168,13 @@ export async function POST(request: NextRequest) {
         where: eq(doctors.userId, user.id) 
       });
       
-      if (doctor && user.displayName) {
+      if (doctor) {
         // Validar y crear calendario si es necesario usando la función centralizada
         try {
+          const displayName = user.displayName || 'Doctor';
           const calendarResult = await ensureDoctorHasCalendar(doctor.idDoctor, {
-            firstName: user.displayName.split(' ')[0] || 'Doctor',
-            lastName: user.displayName.split(' ').slice(1).join(' ') || '',
+            firstName: displayName.split(' ')[0] || 'Doctor',
+            lastName: displayName.split(' ').slice(1).join(' ') || '',
             email: user.email || undefined,
             timezone: 'America/Bogota'
           });
