@@ -1,18 +1,131 @@
 /**
- * @fileoverview Individual doctor-service relationship management API.
+ * @fileoverview Individual Doctor-Service Relationship API
  * 
- * This module provides REST API endpoints for managing specific doctor-service
- * relationships within an organization. It supports retrieving, updating, and
- * deleting individual service assignments with proper authentication and
- * authorization controls.
+ * This module provides granular REST API endpoints for managing individual
+ * doctor-service relationships within healthcare organizations. It implements
+ * fine-grained control over specific service assignments, allowing detailed
+ * customization of the many-to-many relationship between doctors and medical services.
+ * 
+ * ## Endpoint Operations
+ * 
+ * ### GET /api/doctor-services/[doctorId]/[serviceId]
+ * Retrieves detailed information about a specific doctor-service relationship,
+ * including custom pricing, availability status, and complete service metadata.
+ * 
+ * ### PUT /api/doctor-services/[doctorId]/[serviceId]
+ * Updates specific properties of an individual doctor-service relationship,
+ * primarily used for setting custom pricing overrides.
+ * 
+ * ### DELETE /api/doctor-services/[doctorId]/[serviceId]
+ * Performs soft deletion of a specific doctor-service relationship by setting
+ * `isAvailable` to false, preserving audit trails while removing the service
+ * from the doctor's active offerings.
+ * 
+ * ## Relationship Granularity
+ * 
+ * This API provides the most granular level of control over doctor-service
+ * relationships, operating on individual records in the junction table:
+ * 
+ * ```typescript
+ * // Drizzle ORM relationship structure
+ * export const doctorServiceRelations = relations(doctorServices, ({ one }) => ({
+ *   doctor: one(doctors, {
+ *     fields: [doctorServices.doctorId],
+ *     references: [doctors.idDoctor],
+ *   }),
+ *   service: one(medicalServices, {
+ *     fields: [doctorServices.serviceId],
+ *     references: [medicalServices.id],
+ *   }),
+ * }));
+ * ```
+ * 
+ * ## Custom Pricing Logic
+ * 
+ * The system supports sophisticated pricing strategies:
+ * 
+ * 1. **Base Pricing**: Default price from `medical_services.basePrice`
+ * 2. **Custom Pricing**: Doctor-specific override in `doctor_services.customPrice`
+ * 3. **Pricing Hierarchy**: Custom price takes precedence when set
+ * 
+ * ```typescript
+ * // Pricing resolution logic
+ * const effectivePrice = doctorService.customPrice || service.basePrice;
+ * ```
+ * 
+ * ## Data Integrity & Constraints
+ * 
+ * The API enforces several data integrity rules:
+ * 
+ * - **Composite Primary Key**: (doctorId, serviceId) prevents duplicate assignments
+ * - **Foreign Key Constraints**: Ensures referential integrity with CASCADE operations
+ * - **Organization Boundaries**: All operations respect organizational isolation
+ * - **Soft Delete Pattern**: Maintains historical data for audit purposes
+ * 
+ * ## Business Logic Validation
+ * 
+ * Before any operation, the system validates:
+ * - Doctor exists and belongs to the requesting user's organization
+ * - Service exists and is active within the organization
+ * - User has appropriate permissions for the requested operation
+ * - Relationship exists for update/delete operations
  * 
  * @author Santiago Prada - Backend Developer
  * @version 1.0.0
  * @since 2025-05-26
  * 
+ * @see {@link https://orm.drizzle.team/docs/rqb#many-to-many | Drizzle ORM Many-to-Many Relations}
  * @see {@link https://nextjs.org/docs/app/building-your-application/routing/route-handlers | Next.js Route Handlers}
  * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase Auth Verification}
- * @see {@link https://orm.drizzle.team/docs/overview | Drizzle ORM Documentation}
+ * 
+ * @example Retrieve Specific Relationship
+ * ```typescript
+ * // Get relationship between doctor 123 and service 456
+ * GET /api/doctor-services/123/456
+ * 
+ * // Response with complete relationship details
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "doctorId": 123,
+ *     "serviceId": 456,
+ *     "customPrice": "175.00",
+ *     "isAvailable": true,
+ *     "createdAt": "2025-01-15T10:30:00Z",
+ *     "updatedAt": "2025-01-20T14:45:00Z",
+ *     "doctor": {
+ *       "idDoctor": 123,
+ *       "speciality": "Cardiología",
+ *       "user": { "displayName": "Dr. Juan Pérez" }
+ *     },
+ *     "service": {
+ *       "id": 456,
+ *       "name": "Electrocardiograma",
+ *       "basePrice": "150.00",
+ *       "category": "Examen"
+ *     }
+ *   }
+ * }
+ * ```
+ * 
+ * @example Update Custom Pricing
+ * ```typescript
+ * // Set custom price for doctor's specific service
+ * PUT /api/doctor-services/123/456
+ * {
+ *   "customPrice": 200.00
+ * }
+ * 
+ * // This overrides the base service price for this doctor only
+ * ```
+ * 
+ * @example Remove Service Assignment
+ * ```typescript
+ * // Soft delete the relationship (preserves audit trail)
+ * DELETE /api/doctor-services/123/456
+ * 
+ * // Sets isAvailable = false, maintains historical data
+ * ```
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -67,32 +180,167 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
 }
 
 /**
- * Retrieves a specific doctor-service relationship.
+ * Retrieves a specific doctor-service relationship with comprehensive metadata and validation.
  * 
- * Fetches detailed information about a specific service assignment to a doctor,
- * including service details, custom pricing, availability status, and assignment
- * metadata. Validates that both doctor and service belong to the user's organization.
+ * This function implements a precise lookup strategy for individual doctor-service
+ * assignments, providing complete relationship details with nested service information.
+ * It enforces strict organizational boundaries and validates all access permissions
+ * before returning sensitive pricing and availability data.
  * 
- * @param request - The incoming Next.js request
- * @param decodedToken - Decoded Firebase authentication token
- * @param doctorId - The unique identifier of the doctor
- * @param serviceId - The unique identifier of the medical service
+ * ## Query Strategy & Performance
  * 
- * @returns Promise resolving to API response with relationship details
+ * Uses Drizzle ORM's optimized relational query with eager loading:
  * 
- * @throws {Error} When database queries fail or relationship doesn't exist
+ * ```typescript
+ * const relationship = await db.query.doctorServices.findFirst({
+ *   where: and(
+ *     eq(doctorServices.doctorId, doctorId),
+ *     eq(doctorServices.serviceId, serviceId)
+ *   ),
+ *   with: {
+ *     service: true,  // Complete service metadata
+ *     doctor: {
+ *       with: { 
+ *         user: true,           // Doctor's user information
+ *         organization: true    // Organization validation
+ *       }
+ *     }
+ *   }
+ * });
+ * ```
+ * 
+ * ## Security & Validation Framework
+ * 
+ * - **Parameter Validation**: Ensures doctor and service IDs are valid integers
+ * - **Organization Isolation**: Validates doctor belongs to user's organization
+ * - **Relationship Existence**: Confirms the specific assignment exists
+ * - **Access Control**: Enforces role-based permissions for data access
+ * 
+ * ## Data Enrichment
+ * 
+ * The response includes enriched data for comprehensive relationship understanding:
+ * - **Service Details**: Complete service metadata including pricing and categories
+ * - **Custom Pricing**: Doctor-specific pricing overrides and calculations
+ * - **Availability Status**: Current assignment status and historical changes
+ * - **Audit Information**: Creation and modification timestamps
+ * 
+ * @param request - The incoming Next.js request for relationship lookup
+ * @param decodedToken - Decoded Firebase authentication token for authorization
+ * @param params - Route parameters containing doctor and service ID identifiers
+ * 
+ * @returns Promise resolving to API response with detailed relationship information
+ * 
+ * @throws {Error} When relationship not found, validation fails, or database errors occur
  * 
  * @remarks
- * Response includes:
- * - Complete service information (name, description, category, base price)
- * - Doctor information (name, specialization)
- * - Custom pricing for this doctor-service combination (if set)
- * - Availability status and assignment timestamps
+ * ### Parameter Validation Rules:
+ * - `doctorId` must be a valid positive integer
+ * - `serviceId` must be a valid positive integer
+ * - Both entities must exist within the user's organization
  * 
- * @example
+ * ### Access Control Matrix:
+ * | Role | Own Doctor | Other Doctor |
+ * |------|------------|-------------|
+ * | Admin | ✅ Full Access | ✅ Full Access |
+ * | Assistant | ✅ Full Access | ✅ Full Access |
+ * | Doctor | ✅ Full Access | ❌ Forbidden |
+ * 
+ * ### Response Data Structure:
+ * ```typescript
+ * {
+ *   success: true,
+ *   data: {
+ *     doctorService: {
+ *       id: number,
+ *       doctorId: number,
+ *       serviceId: number,
+ *       customPrice: number | null,
+ *       isAvailable: boolean,
+ *       createdAt: string,
+ *       updatedAt: string,
+ *       service: {
+ *         id: number,
+ *         name: string,
+ *         description: string,
+ *         basePrice: number,
+ *         category: string,
+ *         duration: number,
+ *         organizationId: number
+ *       },
+ *       doctor: {
+ *         id: number,
+ *         userId: string,
+ *         specialization: string,
+ *         user: {
+ *           name: string,
+ *           email: string
+ *         }
+ *       }
+ *     }
+ *   },
+ *   message: string
+ * }
+ * ```
+ * 
+ * ### Error Response Scenarios:
+ * - **400**: Invalid doctor or service ID format
+ * - **403**: Insufficient permissions to access relationship
+ * - **404**: Doctor, service, or relationship not found
+ * - **500**: Database query failures or system errors
+ * 
+ * @example Basic Relationship Lookup
  * ```typescript
  * // Get relationship between doctor 123 and service 456
  * GET /api/doctor-services/123/456
+ * Authorization: Bearer <valid-token>
+ * 
+ * // Successful Response:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "doctorService": {
+ *       "id": 789,
+ *       "doctorId": 123,
+ *       "serviceId": 456,
+ *       "customPrice": 150.00,
+ *       "isAvailable": true,
+ *       "createdAt": "2024-01-15T10:30:00Z",
+ *       "updatedAt": "2024-01-20T14:45:00Z",
+ *       "service": {
+ *         "id": 456,
+ *         "name": "General Consultation",
+ *         "description": "Comprehensive medical consultation",
+ *         "basePrice": 100.00,
+ *         "category": "Primary Care",
+ *         "duration": 30
+ *       },
+ *       "doctor": {
+ *         "id": 123,
+ *         "specialization": "Internal Medicine",
+ *         "user": {
+ *           "name": "Dr. John Smith",
+ *           "email": "dr.smith@clinic.com"
+ *         }
+ *       }
+ *     }
+ *   },
+ *   "message": "Doctor service relationship retrieved successfully"
+ * }
+ * ```
+ * 
+ * @example Pricing Analysis Use Case
+ * ```typescript
+ * // Compare custom pricing vs base pricing
+ * const response = await fetch('/api/doctor-services/123/456');
+ * const { doctorService } = response.data;
+ * 
+ * const effectivePrice = doctorService.customPrice || doctorService.service.basePrice;
+ * const priceVariance = doctorService.customPrice 
+ *   ? ((doctorService.customPrice - doctorService.service.basePrice) / doctorService.service.basePrice) * 100
+ *   : 0;
+ * 
+ * console.log(`Effective price: $${effectivePrice}`);
+ * console.log(`Price variance: ${priceVariance.toFixed(1)}%`);
  * ```
  * 
  * @internal

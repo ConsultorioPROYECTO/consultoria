@@ -1,17 +1,102 @@
 /**
- * @fileoverview Doctor-specific medical services API endpoints.
+ * @fileoverview Doctor-Specific Service Management API
  * 
- * This module provides REST API endpoints for managing medical services assigned to
- * a specific doctor within an organization. It supports retrieving and updating
- * service assignments with proper authentication and authorization controls.
+ * This module provides specialized REST API endpoints for managing medical services
+ * assigned to individual doctors within healthcare organizations. It implements
+ * doctor-centric operations for the many-to-many relationship between doctors
+ * and medical services.
+ * 
+ * ## Endpoint Functionality
+ * 
+ * ### GET /api/doctor-services/[doctorId]
+ * Retrieves all medical services currently assigned to a specific doctor,
+ * including custom pricing overrides and availability status.
+ * 
+ * ### PUT /api/doctor-services/[doctorId]
+ * Performs bulk update of service assignments for a doctor. This operation:
+ * - Deactivates all current service assignments (soft delete)
+ * - Creates new assignments for the provided service IDs
+ * - Maintains audit trail through timestamps
+ * 
+ * ## Database Operations
+ * 
+ * The endpoints interact with the `doctor_services` junction table using
+ * Drizzle ORM queries that respect the following relationship constraints:
+ * 
+ * ```sql
+ * -- Relationship structure
+ * doctor_services (
+ *   doctor_id INT REFERENCES doctors(id_doctor) ON DELETE CASCADE,
+ *   service_id INT REFERENCES medical_services(id) ON DELETE CASCADE,
+ *   custom_price DECIMAL(10,2) NULL,
+ *   is_available BOOLEAN DEFAULT TRUE,
+ *   created_at TIMESTAMP DEFAULT NOW(),
+ *   updated_at TIMESTAMP DEFAULT NOW() ON UPDATE NOW(),
+ *   PRIMARY KEY (doctor_id, service_id)
+ * )
+ * ```
+ * 
+ * ## Access Control & Security
+ * 
+ * - **Organization Isolation**: All operations are scoped to the requesting user's organization
+ * - **Role-based Permissions**: Different access levels based on user roles
+ * - **Doctor Ownership**: Doctors can only view their own service assignments
+ * - **Admin Privileges**: Only admins can modify service assignments
+ * 
+ * ## Data Consistency
+ * 
+ * The API ensures data consistency through:
+ * - Transactional operations for bulk updates
+ * - Foreign key constraints validation
+ * - Soft delete pattern for audit trails
+ * - Automatic timestamp management
  * 
  * @author Santiago Prada - Backend Developer
  * @version 1.0.0
  * @since 2025-05-26
  * 
+ * @see {@link https://orm.drizzle.team/docs/rqb#many-to-many | Drizzle ORM Many-to-Many Relations}
  * @see {@link https://nextjs.org/docs/app/building-your-application/routing/route-handlers | Next.js Route Handlers}
  * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase Auth Verification}
- * @see {@link https://orm.drizzle.team/docs/overview | Drizzle ORM Documentation}
+ * 
+ * @example Retrieve Doctor Services
+ * ```typescript
+ * // Get all services for doctor ID 123
+ * GET /api/doctor-services/123
+ * 
+ * // Response includes service details and custom pricing
+ * {
+ *   "success": true,
+ *   "data": [
+ *     {
+ *       "doctorId": 123,
+ *       "serviceId": 456,
+ *       "customPrice": "150.00",
+ *       "isAvailable": true,
+ *       "service": {
+ *         "id": 456,
+ *         "name": "Consulta General",
+ *         "basePrice": "100.00",
+ *         "category": "Consulta"
+ *       }
+ *     }
+ *   ]
+ * }
+ * ```
+ * 
+ * @example Bulk Update Doctor Services
+ * ```typescript
+ * // Replace all services for doctor 123
+ * PUT /api/doctor-services/123
+ * {
+ *   "serviceIds": [456, 789, 101]
+ * }
+ * 
+ * // This will:
+ * // 1. Deactivate all current assignments
+ * // 2. Create new assignments for services 456, 789, 101
+ * // 3. Return updated service list
+ * ```
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -65,37 +150,123 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
 }
 
 /**
- * Retrieves medical services assigned to a specific doctor.
+ * Retrieves comprehensive medical service assignments for a specific doctor with advanced filtering.
  * 
- * Fetches all services assigned to the specified doctor within the authenticated
- * user's organization. Includes detailed service information, custom pricing,
- * and availability status. Supports optional filtering by availability.
+ * This function implements an optimized query strategy using Drizzle ORM's relational
+ * queries to fetch complete doctor-service relationships with nested service details.
+ * The system enforces strict organizational boundaries and provides detailed metadata
+ * for each service assignment.
  * 
- * @param request - The incoming Next.js request with optional query parameters
- * @param decodedToken - Decoded Firebase authentication token
- * @param doctorId - The unique identifier of the doctor
+ * ## Query Optimization Strategy
  * 
- * @returns Promise resolving to API response with doctor's assigned services
+ * Uses Drizzle ORM's `findMany` with eager loading to minimize database round trips:
  * 
- * @throws {Error} When database queries fail or doctor doesn't belong to organization
+ * ```typescript
+ * await db.query.doctorServices.findMany({
+ *   where: and(
+ *     eq(doctorServices.doctorId, doctorId),
+ *     eq(doctorServices.isAvailable, available)
+ *   ),
+ *   with: {
+ *     service: true,  // Eager load complete service details
+ *     doctor: {
+ *       with: { user: true }  // Include doctor and user information
+ *     }
+ *   }
+ * });
+ * ```
+ * 
+ * ## Data Security & Validation
+ * 
+ * - **Organization Isolation**: Validates doctor belongs to user's organization
+ * - **Role-based Access**: Doctors can only access their own data
+ * - **Data Integrity**: Ensures all returned relationships are valid and current
+ * 
+ * ## Response Data Structure
+ * 
+ * Each returned service assignment includes:
+ * - Complete service metadata (name, description, base price)
+ * - Custom pricing overrides (if applicable)
+ * - Availability status and timestamps
+ * - Doctor information for verification
+ * 
+ * @param request - The incoming Next.js request with optional filtering parameters
+ * @param decodedToken - Decoded Firebase authentication token for authorization
+ * @param params - Route parameters containing the target doctor ID
+ * 
+ * @returns Promise resolving to API response with filtered doctor service assignments
+ * 
+ * @throws {Error} When doctor validation fails or database queries encounter errors
  * 
  * @remarks
- * Supported query parameters:
- * - `available` (boolean) - Filter services by availability status
+ * ### Supported Query Parameters:
+ * - `available` (boolean, optional) - Filter by availability status (default: true)
  * 
- * Response includes:
- * - Service details (name, description, base price)
- * - Custom pricing for this doctor (if set)
- * - Availability status
- * - Assignment metadata (created/updated dates)
+ * ### Access Control Rules:
+ * - **Admin/Assistant**: Can view any doctor's services within their organization
+ * - **Doctor**: Can only view their own service assignments
+ * - **Organization Boundary**: All results are filtered by organization membership
  * 
- * @example
+ * ### Response Structure:
  * ```typescript
- * // Get all services for doctor 123
- * GET /api/doctor-services/123
+ * {
+ *   success: true,
+ *   data: {
+ *     doctorServices: Array<{
+ *       id: number,
+ *       doctorId: number,
+ *       serviceId: number,
+ *       customPrice: number | null,
+ *       isAvailable: boolean,
+ *       createdAt: string,
+ *       updatedAt: string,
+ *       service: {
+ *         id: number,
+ *         name: string,
+ *         description: string,
+ *         basePrice: number,
+ *         category: string
+ *       }
+ *     }>,
+ *     doctor: DoctorInfo,
+ *     total: number
+ *   },
+ *   message: string
+ * }
+ * ```
  * 
- * // Get only available services for doctor 123
+ * @example Basic Service Retrieval
+ * ```typescript
+ * // Get all available services for doctor 123
  * GET /api/doctor-services/123?available=true
+ * 
+ * // Response includes complete service details with custom pricing
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "doctorServices": [
+ *       {
+ *         "id": 1,
+ *         "customPrice": 150.00,
+ *         "isAvailable": true,
+ *         "service": {
+ *           "name": "General Consultation",
+ *           "basePrice": 100.00,
+ *           "category": "Primary Care"
+ *         }
+ *       }
+ *     ],
+ *     "total": 1
+ *   }
+ * }
+ * ```
+ * 
+ * @example Administrative Access
+ * ```typescript
+ * // Admin viewing all services (available and unavailable) for doctor 123
+ * GET /api/doctor-services/123?available=false
+ * 
+ * // Returns comprehensive service history including inactive assignments
  * ```
  * 
  * @internal
@@ -161,37 +332,106 @@ const getDoctorServicesHandler = async (
 };
 
 /**
- * Updates the medical services assigned to a specific doctor.
+ * Performs atomic bulk updates of medical service assignments for a specific doctor.
  * 
- * Replaces all current service assignments for the specified doctor with a new set
- * of services. This operation requires admin privileges and validates that all
- * services belong to the same organization as the requesting user.
+ * This function implements a sophisticated transaction-based approach to completely
+ * replace a doctor's service assignments while maintaining data integrity and
+ * audit trails. It uses Drizzle ORM's transaction capabilities to ensure
+ * atomicity across multiple database operations.
  * 
- * @param request - The incoming Next.js request with service assignment data
- * @param decodedToken - Decoded Firebase authentication token
- * @param params - Route parameters containing the doctor ID
+ * ## Transaction Strategy
  * 
- * @returns Promise resolving to API response with updated service assignments
+ * The bulk update operation follows a three-phase approach within a single transaction:
  * 
- * @throws {Error} When database operations fail or validation errors occur
+ * ```typescript
+ * await db.transaction(async (tx) => {
+ *   // Phase 1: Soft delete existing assignments
+ *   await tx.update(doctorServices)
+ *     .set({ isAvailable: false, updatedAt: new Date() })
+ *     .where(eq(doctorServices.doctorId, doctorId));
+ * 
+ *   // Phase 2: Validate all new services exist in organization
+ *   const validServices = await tx.query.medicalServices.findMany({
+ *     where: and(
+ *       inArray(medicalServices.id, serviceIds),
+ *       eq(medicalServices.organizationId, userOrgId)
+ *     )
+ *   });
+ * 
+ *   // Phase 3: Insert new assignments
+ *   await tx.insert(doctorServices).values(newAssignments);
+ * });
+ * ```
+ * 
+ * ## Data Integrity Features
+ * 
+ * - **Atomic Operations**: All changes occur within a single database transaction
+ * - **Audit Trail Preservation**: Existing assignments are soft-deleted, not removed
+ * - **Service Validation**: Ensures all services exist within the organization
+ * - **Duplicate Prevention**: Handles edge cases with existing active assignments
+ * - **Rollback Safety**: Transaction automatically rolls back on any failure
+ * 
+ * ## Business Logic Implementation
+ * 
+ * - **Admin-Only Access**: Restricts bulk operations to administrative users
+ * - **Organization Isolation**: Validates all services belong to user's organization
+ * - **Custom Pricing Support**: Allows per-assignment pricing overrides
+ * - **Availability Control**: Supports granular availability management
+ * 
+ * @param request - The incoming Next.js request containing bulk assignment data
+ * @param decodedToken - Decoded Firebase authentication token with admin privileges
+ * @param params - Route parameters containing the target doctor ID
+ * 
+ * @returns Promise resolving to API response with complete updated service assignments
+ * 
+ * @throws {Error} When validation fails, services don't exist, or transaction errors occur
  * 
  * @remarks
- * Required request body fields:
+ * ### Required Request Body Fields:
  * - `serviceIds` (number[]) - Array of service IDs to assign to the doctor
  * 
- * The operation performs the following steps:
- * 1. Validates admin privileges and doctor ownership
- * 2. Verifies all service IDs exist and belong to the organization
- * 3. Deactivates all current service assignments
- * 4. Creates new assignments for the provided service IDs
- * 5. Returns the updated list of active assignments
+ * ### Transaction Guarantees:
+ * - **Atomicity**: All operations succeed or all fail
+ * - **Consistency**: Database constraints are maintained
+ * - **Isolation**: Concurrent operations don't interfere
+ * - **Durability**: Changes are permanently committed
  * 
- * @example
+ * ### Error Scenarios:
+ * - **403**: Non-admin user attempting bulk update
+ * - **404**: Doctor not found in organization
+ * - **400**: Invalid service IDs or malformed request
+ * - **409**: Transaction conflicts or constraint violations
+ * - **500**: Database transaction failures
+ * 
+ * @example Complete Service Replacement
  * ```typescript
- * // Update doctor 123 to have services 456 and 789
+ * PUT /api/doctor-services/123
+ * Content-Type: application/json
+ * Authorization: Bearer <admin-token>
+ * 
+ * {
+ *   "serviceIds": [456, 789, 101]
+ * }
+ * 
+ * // Response includes all new assignments with complete service details
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "doctorServices": [...],  // Complete updated assignments
+ *     "replacedCount": 5,       // Number of previous assignments replaced
+ *     "newCount": 3,           // Number of new assignments created
+ *     "doctor": {...}          // Doctor information
+ *   },
+ *   "message": "Doctor services updated successfully"
+ * }
+ * ```
+ * 
+ * @example Clearing All Services
+ * ```typescript
+ * // Remove all service assignments (soft delete)
  * PUT /api/doctor-services/123
  * {
- *   "serviceIds": [456, 789]
+ *   "serviceIds": []
  * }
  * ```
  * 

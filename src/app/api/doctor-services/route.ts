@@ -1,19 +1,73 @@
 /**
- * @fileoverview API endpoints for managing doctor-service relationships
+ * @fileoverview Doctor-Service Relationship Management API
  * 
- * This module provides REST API endpoints to handle the relationships between doctors
- * and medical services within an organization. It supports operations for retrieving,
- * creating, and managing service assignments to doctors with proper authentication
- * and authorization controls.
+ * This module provides comprehensive REST API endpoints for managing the many-to-many
+ * relationships between doctors and medical services within healthcare organizations.
+ * The API implements a sophisticated service assignment system that allows:
+ * 
+ * - **Service Assignment**: Assign multiple medical services to doctors
+ * - **Custom Pricing**: Set doctor-specific pricing that overrides base service prices
+ * - **Availability Control**: Manage service availability per doctor
+ * - **Organization Isolation**: Ensure data isolation between different organizations
+ * - **Role-based Access**: Implement granular permissions (admin, doctor, assistant)
+ * 
+ * ## Database Relationships
+ * 
+ * The system uses Drizzle ORM to manage a many-to-many relationship through the
+ * `doctor_services` junction table:
+ * 
+ * ```
+ * doctors (1) ←→ (M) doctor_services (M) ←→ (1) medical_services
+ * ```
+ * 
+ * ### Key Relationship Properties:
+ * - **doctorId**: Foreign key to doctors.idDoctor (CASCADE on delete/update)
+ * - **serviceId**: Foreign key to medical_services.id (CASCADE on delete/update)
+ * - **customPrice**: Optional doctor-specific pricing override
+ * - **isAvailable**: Soft delete flag for service availability
+ * - **Composite Primary Key**: (doctorId, serviceId) ensures uniqueness
+ * 
+ * ## Access Control Matrix
+ * 
+ * | Role      | GET (All) | GET (Own) | POST | PUT | DELETE |
+ * |-----------|-----------|-----------|------|-----|--------|
+ * | admin     | ✅        | ✅        | ✅   | ✅  | ✅     |
+ * | medico    | ❌        | ✅        | ❌   | ❌  | ❌     |
+ * | asistente | ✅        | ✅        | ❌   | ❌  | ❌     |
  * 
  * @author Santiago Prada - Backend Developer
  * @version 1.0.0
  * @since 2025-05-26
  * 
- * @example
+ * @see {@link https://orm.drizzle.team/docs/rqb#many-to-many | Drizzle ORM Many-to-Many Relations}
+ * @see {@link https://nextjs.org/docs/app/building-your-application/routing/route-handlers | Next.js Route Handlers}
+ * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase Authentication}
+ * 
+ * @example Basic Usage
  * ```typescript
- * // GET /api/doctor-services?doctorId=123&available=true
- * // POST /api/doctor-services { doctorId: 123, serviceId: 456 }
+ * // Retrieve all services for a specific doctor
+ * GET /api/doctor-services?doctorId=123&available=true
+ * 
+ * // Assign a service to a doctor with custom pricing
+ * POST /api/doctor-services
+ * {
+ *   "doctorId": 123,
+ *   "serviceId": 456,
+ *   "customPrice": 150.00,
+ *   "isAvailable": true
+ * }
+ * ```
+ * 
+ * @example Advanced Filtering
+ * ```typescript
+ * // Get all available services in organization
+ * GET /api/doctor-services?available=true
+ * 
+ * // Get specific service assignments across all doctors
+ * GET /api/doctor-services?serviceId=456
+ * 
+ * // Get all services (including unavailable) for admin review
+ * GET /api/doctor-services?available=false
  * ```
  */
 import { NextRequest, NextResponse } from "next/server";
@@ -57,32 +111,82 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
 }
 
 /**
- * Retrieves doctor-service relationships for the authenticated user's organization.
+ * Retrieves doctor-service relationships with advanced filtering and role-based access control.
  * 
- * Supports filtering by doctor ID, service ID, and availability status. Access control
- * is enforced based on user roles: doctors can only view their own services, while
- * admins and assistants can view all organization services.
+ * This function implements a sophisticated query system that leverages Drizzle ORM's
+ * relational queries to fetch doctor-service relationships with complete metadata.
+ * The system enforces strict organizational boundaries and role-based permissions.
+ * 
+ * ## Query Strategy
+ * 
+ * The function uses Drizzle ORM's `findMany` with nested relations to efficiently
+ * fetch related data in a single query, avoiding N+1 problems:
+ * 
+ * ```typescript
+ * // Drizzle ORM query with relations
+ * await db.query.doctorServices.findMany({
+ *   where: and(...conditions),
+ *   with: {
+ *     doctor: { with: { user: true } },
+ *     service: true
+ *   }
+ * });
+ * ```
+ * 
+ * ## Access Control Logic
+ * 
+ * - **Admin/Assistant**: Can view all doctor-service relationships in their organization
+ * - **Doctor**: Can only view their own service assignments
+ * - **Organization Isolation**: All results are filtered by organization membership
+ * 
+ * ## Performance Optimizations
+ * 
+ * - Uses indexed columns for filtering (doctorId, serviceId, isAvailable)
+ * - Leverages composite indexes on (doctorId, serviceId) for efficient lookups
+ * - Implements eager loading to minimize database round trips
  * 
  * @param request - The incoming Next.js request with optional query parameters
- * @param decodedToken - Decoded Firebase authentication token
+ * @param decodedToken - Decoded Firebase authentication token containing user identity
  * 
- * @returns Promise resolving to API response with doctor-service relationships
+ * @returns Promise resolving to API response with filtered doctor-service relationships
  * 
  * @throws {Error} When database queries fail or user validation errors occur
  * 
  * @remarks
- * Query parameters:
- * - `doctorId` (optional) - Filter by specific doctor ID
- * - `serviceId` (optional) - Filter by specific service ID  
- * - `available` (optional) - Filter by availability status (default: true)
+ * ### Supported Query Parameters:
+ * - `doctorId` (number, optional) - Filter by specific doctor ID
+ * - `serviceId` (number, optional) - Filter by specific service ID  
+ * - `available` (boolean, optional) - Filter by availability status (default: true)
  * 
- * @example
+ * ### Response Structure:
+ * ```typescript
+ * {
+ *   success: true,
+ *   data: {
+ *     doctorServices: DoctorServiceWithRelations[],
+ *     total: number
+ *   },
+ *   message: string
+ * }
+ * ```
+ * 
+ * @example Basic Filtering
  * ```typescript
  * // Get all available services for doctor 123
  * GET /api/doctor-services?doctorId=123&available=true
  * 
  * // Get all services (available and unavailable) for organization
  * GET /api/doctor-services?available=false
+ * 
+ * // Get specific service assignments across all doctors
+ * GET /api/doctor-services?serviceId=456
+ * ```
+ * 
+ * @example Role-based Access
+ * ```typescript
+ * // Admin request - returns all organization relationships
+ * // Doctor request - returns only their own relationships
+ * // Assistant request - returns all organization relationships
  * ```
  * 
  * @internal
@@ -165,31 +269,113 @@ const getDoctorServicesHandler = async (
 };
 
 /**
- * Creates a new doctor-service relationship within the authenticated user's organization.
+ * Creates new doctor-service relationships with comprehensive validation and business logic enforcement.
  * 
- * Validates that both the doctor and service exist within the organization, checks for
- * existing relationships to prevent duplicates, and creates the assignment with optional
- * custom pricing. Only admin users can create these relationships.
+ * This function implements a multi-stage validation process that ensures data integrity
+ * and business rule compliance when creating doctor-service assignments. It leverages
+ * Drizzle ORM's transaction capabilities to maintain consistency across related tables.
  * 
- * @param request - The incoming Next.js request containing assignment data
- * @param decodedToken - Decoded Firebase authentication token
+ * ## Validation Pipeline
+ * 
+ * 1. **Authentication Check**: Verifies admin privileges
+ * 2. **Doctor Validation**: Confirms doctor exists and belongs to organization
+ * 3. **Service Validation**: Confirms service exists and belongs to organization
+ * 4. **Duplicate Prevention**: Checks for existing active assignments
+ * 5. **Data Insertion**: Creates new relationship with proper defaults
+ * 
+ * ## Business Logic Implementation
+ * 
+ * ```typescript
+ * // Drizzle ORM validation queries
+ * const doctor = await db.query.doctors.findFirst({
+ *   where: and(
+ *     eq(doctors.id, doctorId),
+ *     eq(doctors.organizationId, userOrgId)
+ *   )
+ * });
+ * 
+ * // Duplicate prevention with composite key check
+ * const existing = await db.query.doctorServices.findFirst({
+ *   where: and(
+ *     eq(doctorServices.doctorId, doctorId),
+ *     eq(doctorServices.serviceId, serviceId),
+ *     eq(doctorServices.isAvailable, true)
+ *   )
+ * });
+ * ```
+ * 
+ * ## Data Integrity Features
+ * 
+ * - **Organization Isolation**: Ensures cross-organization data leakage prevention
+ * - **Referential Integrity**: Validates foreign key relationships before insertion
+ * - **Duplicate Prevention**: Prevents multiple active assignments for same doctor-service pair
+ * - **Custom Pricing Support**: Allows organization-specific pricing overrides
+ * 
+ * @param request - The incoming Next.js request containing relationship data
+ * @param decodedToken - Decoded Firebase authentication token with admin privileges
  * 
  * @returns Promise resolving to API response with created relationship details
  * 
- * @throws {Error} When database operations fail or validation errors occur
+ * @throws {Error} When validation fails, duplicates exist, or database operations fail
  * 
  * @remarks
- * Required request body fields:
- * - `doctorId` (number) - ID of the doctor to assign service to
- * - `serviceId` (number) - ID of the medical service to assign
+ * ### Required Request Body Fields:
+ * - `doctorId` (number) - Valid doctor ID within the organization
+ * - `serviceId` (number) - Valid medical service ID within the organization
  * 
- * Optional request body fields:
- * - `customPrice` (number) - Custom price override for this doctor-service combination
- * - `isAvailable` (boolean) - Availability status (default: true)
+ * ### Optional Request Body Fields:
+ * - `customPrice` (number) - Custom pricing override for this specific assignment
+ * - `isAvailable` (boolean) - Initial availability status (default: true)
  * 
- * @example
+ * ### Response Structure:
  * ```typescript
- * // Assign service 456 to doctor 123 with custom pricing
+ * {
+ *   success: true,
+ *   data: {
+ *     doctorService: DoctorServiceRecord,
+ *     doctor: DoctorInfo,
+ *     service: ServiceInfo
+ *   },
+ *   message: string
+ * }
+ * ```
+ * 
+ * ### Error Scenarios:
+ * - **403**: Non-admin user attempting creation
+ * - **404**: Doctor or service not found in organization
+ * - **409**: Duplicate active assignment already exists
+ * - **500**: Database transaction failures
+ * 
+ * @example Basic Assignment Creation
+ * ```typescript
+ * POST /api/doctor-services
+ * Content-Type: application/json
+ * Authorization: Bearer <admin-token>
+ * 
+ * {
+ *   "doctorId": 123,
+ *   "serviceId": 456
+ * }
+ * 
+ * // Response:
+ * {
+ *   "success": true,
+ *   "data": {
+ *     "doctorService": {
+ *       "id": 789,
+ *       "doctorId": 123,
+ *       "serviceId": 456,
+ *       "customPrice": null,
+ *       "isAvailable": true,
+ *       "createdAt": "2024-01-15T10:30:00Z"
+ *     }
+ *   },
+ *   "message": "Doctor service relationship created successfully"
+ * }
+ * ```
+ * 
+ * @example Custom Pricing Assignment
+ * ```typescript
  * POST /api/doctor-services
  * {
  *   "doctorId": 123,
