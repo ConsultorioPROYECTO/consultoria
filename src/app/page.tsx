@@ -137,11 +137,11 @@ export default function HomePage() {
               className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 flex flex-col items-end justify-end p-8"
             >
               <div className="flex flex-col items-end gap-8 text-right">
-                <a href="#caracteristicas" className="text-2xl font-medium" onClick={(e) => handleScroll(e, 'caracteristicas')}>
-                  Características
+                <a href="#caracteristicas" className="text-2xl font-medium flex items-center gap-2" onClick={(e) => handleScroll(e, 'caracteristicas')}>
+                  <ArrowUpRight className="h-6 w-6" /> Características
                 </a>
-                <a href="#faq" className="text-2xl font-medium" onClick={(e) => handleScroll(e, 'faq')}>
-                  FAQ
+                <a href="#faq" className="text-2xl font-medium flex items-center gap-2" onClick={(e) => handleScroll(e, 'faq')}>
+                  <ArrowUpRight className="h-6 w-6" /> FAQ
                 </a>
                 <Link href="/login" className="text-2xl font-medium" onClick={() => setIsMenuOpen(false)}>
                   Iniciar sesión
