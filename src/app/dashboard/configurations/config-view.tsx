@@ -1,14 +1,18 @@
 'use client'
 
-import { useState, useEffect} from "react"
 import { Button } from "@/components/ui/button"
+import { useState, useEffect} from "react"
+import { Input } from "@/components/ui/input" // Added
+import { Label } from "@/components/ui/label" // Added
+import Image from "next/image" // Added
 import {
   ChevronLeft,
   User,
   Palette,
   Building,
   Phone,
-  Plug
+  Plug,
+  Loader2 // Added for loading spinner
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AppearanceSection } from "../com/AppearanceSection"
@@ -54,6 +58,11 @@ export default function ConfigView() {
   const [userRole, setUserRole] = useState<string>("")
   const isMobile = useIsMobile()
   const [showMobileNav, setShowMobileNav] = useState(true)
+  // New states for WhatsApp integration
+  const [instanceId, setInstanceId] = useState<string>("")
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null)
+  const [isLoadingQR, setIsLoadingQR] = useState<boolean>(false)
+  const [qrError, setQrError] = useState<string | null>(null)
 
   useEffect(() => {
     if (theme) {
@@ -174,6 +183,56 @@ export default function ConfigView() {
           </div>
         );
       
+      case "Integraciones":
+        return (
+          <div className="grid gap-6 py-4">
+            <div>
+              <h3 className="text-lg font-medium mb-4">Integración de WhatsApp</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Genera un código QR para conectar tu instancia de WhatsApp.
+              </p>
+              <div className="grid gap-4 max-w-md">
+                <div className="space-y-2">
+                  <Label htmlFor="instanceId">ID de Instancia</Label>
+                  <Input
+                    id="instanceId"
+                    placeholder="ej. mi-instancia-whatsapp"
+                    value={instanceId}
+                    onChange={(e) => setInstanceId(e.target.value)}
+                    disabled={isLoadingQR}
+                  />
+                </div>
+                <Button onClick={handleGenerateQR} disabled={isLoadingQR || !instanceId}>
+                  {isLoadingQR ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generando QR...
+                    </>
+                  ) : (
+                    "Generar QR"
+                  )}
+                </Button>
+                {qrError && (
+                  <p className="text-sm text-red-500">{qrError}</p>
+                )}
+                {qrCodeData && (
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Escanea este código QR con tu teléfono:</p>
+                    <Image
+                      src={qrCodeData}
+                      alt="Código QR de WhatsApp"
+                      width={256}
+                      height={256}
+                      className="mx-auto border rounded-lg"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">El código se actualizará automáticamente.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      
       default:
         return (
           <div className="grid gap-6 py-4">
@@ -185,6 +244,45 @@ export default function ConfigView() {
             </div>
           </div>
         );
+    }
+  };
+
+  const handleGenerateQR = async () => {
+    if (!instanceId) {
+      setQrError("Por favor, ingresa un ID de instancia.");
+      return;
+    }
+
+    setIsLoadingQR(true);
+    setQrCodeData(null);
+    setQrError(null);
+
+    try {
+      const response = await fetch('/api/evolutionAPI/generateQR', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ instance: instanceId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al generar el QR.');
+      }
+
+      if (data.success && data.data && data.data.qrcode) {
+        setQrCodeData(data.data.qrcode);
+      } else {
+        setQrError("No se recibió un código QR válido.");
+      }
+    } catch (error: unknown) {
+      console.error('Error al generar el QR:', error);
+      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error inesperado.";
+      setQrError(errorMessage);
+    } finally {
+      setIsLoadingQR(false);
     }
   };
 

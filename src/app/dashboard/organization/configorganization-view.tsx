@@ -13,14 +13,8 @@ export default function OrganizationConfigView() {
           Visión general y control total de la plataforma Irina.
         </p>
       </div>
-
-      {/* Sección de Gestión y Configuración */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* <AIResponseConfig /> */}
-      </div>
       
-      <div className="grid gap-6 lg:grid-cols-2">
-        <StaffManagement />
+      <div className="grid gap-6 lg:grid-cols-2 lg:col-span-2">
         {/* <WorkloadOverview /> */}
         <ServiceSpecialtyConfig />
       </div>
