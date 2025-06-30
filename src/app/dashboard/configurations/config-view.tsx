@@ -2,9 +2,9 @@
 
 import { Button } from "@/components/ui/button"
 import { useState, useEffect} from "react"
-import { Input } from "@/components/ui/input" // Added
-import { Label } from "@/components/ui/label" // Added
-import Image from "next/image" // Added
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import Image from "next/image"
 import {
   ChevronLeft,
   User,
@@ -12,7 +12,7 @@ import {
   Building,
   Phone,
   Plug,
-  Loader2 // Added for loading spinner
+  Loader2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { AppearanceSection } from "../com/AppearanceSection"
@@ -48,6 +48,33 @@ const navWorkspace = [
     icon: Plug,
   },
 ]
+
+// === Types ===
+
+/**
+ * Response structure from the generateQR API endpoint.
+ */
+interface GenerateQRResponse {
+  /** Indicates if the request was successful */
+  success: boolean;
+  /** QR code data from Evolution API */
+  data?: {
+    /** QR code as data URL (data:image/png;base64,...) */
+    qrcode?: string;
+    /** Raw QR code string */
+    code?: string;
+    /** QR code as base64 image */
+    base64?: string;
+    /** Connection status */
+    status?: string;
+  };
+  /** Success message */
+  message?: string;
+  /** Error message if request failed */
+  error?: string;
+  /** Additional error details */
+  details?: string;
+}
 
 export default function ConfigView() {
   const { theme, setTheme } = useTheme()
@@ -208,6 +235,8 @@ export default function ConfigView() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Generando QR...
                     </>
+                  ) : qrCodeData ? (
+                    "Regenerar QR"
                   ) : (
                     "Generar QR"
                   )}
@@ -218,14 +247,27 @@ export default function ConfigView() {
                 {qrCodeData && (
                   <div className="mt-4 text-center">
                     <p className="text-sm text-muted-foreground mb-2">Escanea este código QR con tu teléfono:</p>
-                    <Image
-                      src={qrCodeData}
-                      alt="Código QR de WhatsApp"
-                      width={256}
-                      height={256}
-                      className="mx-auto border rounded-lg"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">El código se actualizará automáticamente.</p>
+                    <div className="relative inline-block">
+                      <Image
+                        src={qrCodeData}
+                        alt="Código QR de WhatsApp"
+                        width={256}
+                        height={256}
+                        className="mx-auto border rounded-lg shadow-sm"
+                        priority
+                        onError={() => {
+                          console.error('Error loading QR image');
+                          setQrError("Error al cargar la imagen del código QR. Por favor, inténtalo de nuevo.");
+                          setQrCodeData(null);
+                        }}
+                        onLoad={() => {
+                          console.log('QR image loaded successfully');
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      El código se actualizará automáticamente cuando sea necesario.
+                    </p>
                   </div>
                 )}
               </div>
@@ -247,9 +289,15 @@ export default function ConfigView() {
     }
   };
 
-  const handleGenerateQR = async () => {
-    if (!instanceId) {
-      setQrError("Por favor, ingresa un ID de instancia.");
+  /**
+   * Handles QR code generation with improved error handling and validation.
+   * 
+   * @returns Promise<void>
+   */
+  const handleGenerateQR = async (): Promise<void> => {
+    // Validate instance ID
+    if (!instanceId || instanceId.trim() === '') {
+      setQrError("Por favor, ingresa un ID de instancia válido.");
       return;
     }
 
@@ -258,28 +306,63 @@ export default function ConfigView() {
     setQrError(null);
 
     try {
+      // Add timeout for the request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch('/api/evolutionAPI/generateQR', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ instance: instanceId }),
+        body: JSON.stringify({ instance: instanceId.trim() }),
+        signal: controller.signal,
       });
 
-      const data = await response.json();
+      clearTimeout(timeoutId);
+      const data: GenerateQRResponse = await response.json();
+
+      // Log response for debugging (remove in production)
+      console.log('QR Generation Response:', {
+        success: data.success,
+        hasData: !!data.data,
+        hasQrCode: !!(data.data?.qrcode),
+        status: response.status
+      });
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al generar el QR.');
+        throw new Error(data.error || `Error HTTP ${response.status}: ${response.statusText}`);
       }
 
-      if (data.success && data.data && data.data.qrcode) {
-        setQrCodeData(data.data.qrcode);
+      // Enhanced response validation
+      if (data.success && data.data) {
+        if (data.data.qrcode && data.data.qrcode.startsWith('data:image/')) {
+          setQrCodeData(data.data.qrcode);
+        } else if (data.data.base64) {
+          if (data.data.base64.startsWith('data:image/')) {
+            setQrCodeData(data.data.base64);
+          } else {
+            setQrCodeData(`data:image/png;base64,${data.data.base64}`);
+          }
+        } else {
+          setQrError("No se recibió un código QR válido en la respuesta del servidor.");
+        }
       } else {
-        setQrError("No se recibió un código QR válido.");
+        setQrError(data.error || "Error desconocido al generar el código QR.");
       }
     } catch (error: unknown) {
       console.error('Error al generar el QR:', error);
-      const errorMessage = error instanceof Error ? error.message : "Ocurrió un error inesperado.";
+      
+      let errorMessage = "Ocurrió un error inesperado.";
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = "La solicitud tardó demasiado tiempo. Por favor, inténtalo de nuevo.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setQrError(errorMessage);
     } finally {
       setIsLoadingQR(false);
