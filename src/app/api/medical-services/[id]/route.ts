@@ -333,12 +333,11 @@ const updateMedicalServiceHandler = async (
       return createErrorResponse("ID de servicio inválido", undefined, HTTP_STATUS.BAD_REQUEST);
     }
 
-    // Verificar que el servicio existe y pertenece a la organización
+    // Verificar que el servicio existe y pertenece a la organización (se busca sin importar el estado isActive)
     const existingService = await db.query.medicalServices.findFirst({
       where: and(
         eq(medicalServices.id, serviceId),
-        eq(medicalServices.organizationId, requestingUser.organizationId),
-        eq(medicalServices.isActive, true)
+        eq(medicalServices.organizationId, requestingUser.organizationId)
       )
     });
 
@@ -361,8 +360,8 @@ const updateMedicalServiceHandler = async (
 
       if (duplicateService) {
         return createErrorResponse(
-          "Ya existe otro servicio con este código", 
-          undefined, 
+          "Ya existe otro servicio con este código",
+          undefined,
           HTTP_STATUS.CONFLICT
         );
       }
@@ -370,7 +369,7 @@ const updateMedicalServiceHandler = async (
 
     // Preparar datos de actualización
     const updateData: Partial<NewMedicalService> = {};
-    
+
     // Mapear campos específicos con validación de tipos
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined) updateData.description = body.description;
@@ -380,6 +379,7 @@ const updateMedicalServiceHandler = async (
     if (body.category !== undefined) updateData.category = body.category;
     if (body.requiresPreparation !== undefined) updateData.requiresPreparation = body.requiresPreparation;
     if (body.preparationInstructions !== undefined) updateData.preparationInstructions = body.preparationInstructions;
+    if (body.isActive !== undefined) updateData.isActive = body.isActive;
 
     if (Object.keys(updateData).length === 0) {
       return createErrorResponse("No hay campos para actualizar", undefined, HTTP_STATUS.BAD_REQUEST);
