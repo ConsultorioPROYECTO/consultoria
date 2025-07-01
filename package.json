@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "NODE_OPTIONS=--max_old_space_size=4096 next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "generate": "drizzle-kit generate --out migrations-folder --schema src/db/schema.ts"
@@ -82,10 +82,5 @@
   "overrides": {
     "@types/react": "19.1.8",
     "@types/react-dom": "19.1.6"
-  },
-  "browserslist": [
-    "defaults",
-    "not IE 11",
-    "not op_mini all"
-  ]
+  }
 }
