@@ -251,8 +251,8 @@ export default function ConfigView() {
                       <Image
                         src={qrCodeData}
                         alt="Código QR de WhatsApp"
-                        width={256}
-                        height={256}
+                        width={500}
+                        height={500}
                         className="mx-auto border rounded-lg shadow-sm"
                         priority
                         onError={() => {
