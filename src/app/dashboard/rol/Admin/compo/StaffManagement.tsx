@@ -104,6 +104,10 @@ export function StaffManagement() {
     setSelectedStaffForDetail(null);
   };
 
+  const handleOpenSchedule = (member: StaffMember) => {
+    setSelectedDoctorForSchedule(member);
+  };
+
   const handleSaveWorkingHours = async (doctorId: number, workingHours: WorkingHours) => {
     try {
       const response = await fetch(`/api/doctors/${doctorId}/working-hours`, {
@@ -134,18 +138,7 @@ export function StaffManagement() {
 
 
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'destructive';
-      case 'medico':
-        return 'default';
-      case 'asistente':
-        return 'secondary';
-      default:
-        return 'outline';
-    }
-  };
+
 
   const activeStaff = staffMembers.filter(member => member.status === 'active');
   const doctorsCount = activeStaff.filter(member => member.role === 'medico').length;
@@ -207,16 +200,14 @@ export function StaffManagement() {
               <Table className="w-full table-auto">
                   <TableHeader>
                      <TableRow>
-                       <TableHead className="min-w-[120px] sm:min-w-[200px]">Personal</TableHead>
-                       <TableHead className="min-w-[80px] sm:min-w-[100px]">Rol</TableHead>
-                       <TableHead className="min-w-[120px] sm:min-w-[200px] hidden md:table-cell">Email</TableHead>
+                       <TableHead className="min-w-[200px] sm:min-w-[300px]">Personal</TableHead>
                        <TableHead className="text-right min-w-[100px] sm:min-w-[150px]">Acciones</TableHead>
                      </TableRow>
                    </TableHeader>
                 <TableBody>
                   {staffMembers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
                         No se encontraron miembros del personal
                       </TableCell>
                     </TableRow>
@@ -225,23 +216,27 @@ export function StaffManagement() {
                   <TableRow key={member.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center space-x-3">
-                        
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-sm text-muted-foreground">ID: {member.id}</p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3">
+                            <p className="font-medium">{member.name}</p>
+                            <Badge variant={
+                              member.role === 'medico' ? 'default' : 
+                              member.role === 'admin' ? 'destructive' : 
+                              member.role === 'asistente' ? 'secondary' : 
+                              'outline'
+                            }>
+                              {member.role === 'medico' ? 'Médico' : 
+                               member.role === 'admin' ? 'Admin' : 
+                               member.role === 'asistente' ? 'Asistente' : 
+                               member.role}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">{member.email}</p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(member.role)}>
-                        {member.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">
-                      <div className="truncate max-w-[120px] sm:max-w-none">{member.email}</div>
-                    </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end">
+                      <div className="flex justify-end space-x-2">
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -250,8 +245,20 @@ export function StaffManagement() {
                           className="px-3 sm:px-4"
                         >
                           <Users className="h-4 w-4 sm:mr-2" />
-                          <span className="sm:inline">Ver más</span>
+                          <span className="hidden sm:inline">Ver más</span>
                         </Button>
+                        {member.role === 'medico' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleOpenSchedule(member)}
+                            title="Configurar horarios"
+                            className="px-3 sm:px-4"
+                          >
+                            <Clock className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Horario</span>
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
