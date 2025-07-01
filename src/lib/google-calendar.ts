@@ -245,26 +245,78 @@ export class GoogleCalendarService {
   }
 
   /**
-   * Obtener todos los bloques de tiempo ocupados para un calendario en un día específico.
+   * Convierte una fecha a la zona horaria específica y crea el inicio/fin del día
+   * @param date - Fecha base
+   * @param timezone - Zona horaria objetivo
+   * @param isEndOfDay - Si es true, retorna el final del día (23:59:59)
    */
-  async getBusySlotsForDay(calendarId: string, date: Date) {
-    try {
-      // Establecer el inicio y el fin del día que queremos consultar
-      const timeMin = new Date(date);
-      timeMin.setHours(0, 0, 0, 0); // Inicio del día (medianoche)
+  private createDateInTimezone(date: Date, timezone: string, isEndOfDay: boolean = false): Date {
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = isEndOfDay ? '23:59:59' : '00:00:00';
+    
+    // Crear la fecha en la zona horaria específica
+    // Usamos el constructor de Date que interpreta la fecha como local
+    const localDate = new Date(`${dateStr}T${timeStr}`);
+    
+    // Obtener el offset de la zona horaria del doctor
+    const formatter = new Intl.DateTimeFormat('en', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    
+    const parts = formatter.formatToParts(localDate);
+    const formattedDate = `${parts.find(p => p.type === 'year')?.value}-${parts.find(p => p.type === 'month')?.value}-${parts.find(p => p.type === 'day')?.value}T${parts.find(p => p.type === 'hour')?.value}:${parts.find(p => p.type === 'minute')?.value}:${parts.find(p => p.type === 'second')?.value}`;
+    
+    return new Date(formattedDate);
+  }
 
-      const timeMax = new Date(date);
-      timeMax.setHours(23, 59, 59, 999); // Fin del día
+  /**
+   * Obtener todos los bloques de tiempo ocupados para un calendario en un día específico.
+   * @param calendarId - ID del calendario de Google
+   * @param date - Fecha para consultar (en la zona horaria local del doctor)
+   * @param timezone - Zona horaria del doctor (ej: 'America/Bogota')
+   */
+  async getBusySlotsForDay(calendarId: string, date: Date, timezone: string = 'America/Bogota') {
+    try {
+      // Crear fechas en la zona horaria específica del doctor
+      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // Crear inicio y fin del día en la zona horaria del doctor usando una aproximación más precisa
+      const timeMin = this.createDateInTimezone(date, timezone, false);
+      const timeMax = this.createDateInTimezone(date, timezone, true);
+      
+      const timeMinISO = timeMin.toISOString();
+      const timeMaxISO = timeMax.toISOString();
+      
+      console.log('=== DEBUG GOOGLE CALENDAR QUERY ===');
+      console.log('Calendar ID:', calendarId);
+      console.log('Date input:', date);
+      console.log('Timezone:', timezone);
+      console.log('Date string:', dateStr);
+      console.log('TimeMin (timezone adjusted):', timeMin);
+      console.log('TimeMax (timezone adjusted):', timeMax);
+      console.log('TimeMin ISO:', timeMinISO);
+      console.log('TimeMax ISO:', timeMaxISO);
 
       const response = await this.calendar.freebusy.query({
         requestBody: {
-          timeMin: timeMin.toISOString(),
-          timeMax: timeMax.toISOString(),
+          timeMin: timeMinISO,
+          timeMax: timeMaxISO,
+          timeZone: timezone, // Especificar la zona horaria en la consulta
           items: [{ id: calendarId }],
         },
       });
 
       const busyTimes = response.data.calendars?.[calendarId]?.busy || [];
+      
+      console.log('Google Calendar busy times response:', JSON.stringify(busyTimes, null, 2));
+      
       return busyTimes; // Devuelve [{ start: '...', end: '...' }, ...]
 
     } catch (error) {

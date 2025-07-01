@@ -108,6 +108,32 @@ type BusyBlock = {
 };
 
 /**
+que maneje e * Crea una fecha en una zona horaria específica
+ * @param dateStr - Fecha en formato YYYY-MM-DD
+ * @param timeStr - Hora en formato HH:MM o HH:MM:SS
+ * @param timezone - Zona horaria objetivo
+ * @returns Date object ajustado a la zona horaria
+ */
+function createDateInTimezone(dateStr: string, timeStr: string, timezone: string): Date {
+  // Crear fecha base
+  const baseDate = new Date(`${dateStr}T${timeStr}`);
+  
+  // Para simplificar, usamos el offset de zona horaria conocido
+  // America/Bogota es UTC-5, pero esto debería ser más dinámico en producción
+  const timezoneOffsets: Record<string, number> = {
+    'America/Bogota': -5,
+    'UTC': 0,
+    // Agregar más zonas horarias según sea necesario
+  };
+  
+  const offsetHours = timezoneOffsets[timezone] || -5; // Default a Bogotá
+  const offsetMs = offsetHours * 60 * 60 * 1000;
+  
+  // Ajustar la fecha por el offset de zona horaria
+  return new Date(baseDate.getTime() - offsetMs);
+}
+
+/**
  * Verifica si un horario propuesto se solapa con bloques de tiempo ocupados
  * 
  * @description Utiliza el algoritmo de detección de solapamiento de intervalos:
@@ -133,8 +159,18 @@ function isOverlapping(slotStart: Date, slotEnd: Date, busyBlocks: BusyBlock[]):
     const blockStart = new Date(block.start);
     const blockEnd = new Date(block.end);
     
+    // DEBUG: Log detallado de cada comparación
+    const overlaps = slotStart < blockEnd && slotEnd > blockStart;
+    if (overlaps) {
+      console.log(`🔴 SOLAPAMIENTO DETECTADO:`);
+      console.log(`  Slot: ${slotStart.toISOString()} - ${slotEnd.toISOString()}`);
+      console.log(`  Bloque ocupado: ${blockStart.toISOString()} - ${blockEnd.toISOString()}`);
+      console.log(`  Condición: ${slotStart.toISOString()} < ${blockEnd.toISOString()} && ${slotEnd.toISOString()} > ${blockStart.toISOString()}`);
+      console.log(`  Resultado: ${slotStart < blockEnd} && ${slotEnd > blockStart} = ${overlaps}`);
+    }
+    
     // Algoritmo de detección de solapamiento: slotStart < blockEnd && slotEnd > blockStart
-    if (slotStart < blockEnd && slotEnd > blockStart) {
+    if (overlaps) {
       return true;
     }
   }
@@ -293,11 +329,24 @@ export async function GET(
     /**
      * Obtiene eventos ocupados del calendario de Google del doctor
      * Utiliza Google Calendar API v3 para consultar eventos del día específico
+     * Ahora incluye la zona horaria del doctor para consultas precisas
      */
+    const doctorTimezone = doctor.calendar_timezone || 'America/Bogota';
     const busyBlocksFromGoogle = await googleCalendarService.getBusySlotsForDay(
       doctor.calendar_id, 
-      date
+      date,
+      doctorTimezone
     );
+    
+    // DEBUG: Log para verificar los bloques ocupados obtenidos de Google Calendar
+    console.log('=== DEBUG AVAILABILITY API ===');
+    console.log('Doctor ID:', doctorId);
+    console.log('Calendar ID:', doctor.calendar_id);
+    console.log('Doctor timezone:', doctorTimezone);
+    console.log('Fecha solicitada:', dateParam);
+    console.log('Fecha objeto:', date);
+    console.log('Día de la semana:', dayOfWeek);
+    console.log('Bloques ocupados de Google Calendar:', JSON.stringify(busyBlocksFromGoogle, null, 2));
     
     /**
      * Filtrado y validación de bloques de Google Calendar
@@ -325,20 +374,33 @@ export async function GET(
      * 1. Eventos de Google Calendar (citas existentes)
      * 2. Tiempos de descanso configurados del doctor
      * 
-     * Convierte horarios de descanso (HH:MM) a formato ISO 8601
+     * Convierte horarios de descanso (HH:MM) a formato ISO 8601 usando la zona horaria del doctor
      */
     const allBusyBlocks: BusyBlock[] = [
       // Eventos de Google Calendar ya validados
       ...validBusyBlocks,
       
-      // Descansos del doctor convertidos a formato ISO
+      // Descansos del doctor convertidos a formato ISO con zona horaria correcta
       ...breakTimes
         .filter(bt => bt.startTime && bt.endTime) // Validar que existan horarios
-        .map(bt => ({
-          start: new Date(`${dateParam}T${bt.startTime}:00.000Z`).toISOString(),
-          end: new Date(`${dateParam}T${bt.endTime}:00.000Z`).toISOString(),
-        }))
+        .map(bt => {
+          // Crear fechas en la zona horaria del doctor usando la función auxiliar
+          const breakStart = createDateInTimezone(dateParam, `${bt.startTime}:00`, doctorTimezone);
+          const breakEnd = createDateInTimezone(dateParam, `${bt.endTime}:00`, doctorTimezone);
+          
+          console.log(`DEBUG Break time: ${bt.startTime}-${bt.endTime} -> ${breakStart.toISOString()}-${breakEnd.toISOString()}`);
+          
+          return {
+            start: breakStart.toISOString(),
+            end: breakEnd.toISOString(),
+          };
+        })
     ];
+    
+    // DEBUG: Log para verificar todos los bloques ocupados combinados
+    console.log('Bloques válidos de Google Calendar:', JSON.stringify(validBusyBlocks, null, 2));
+    console.log('Descansos del doctor:', JSON.stringify(breakTimes, null, 2));
+    console.log('TODOS los bloques ocupados combinados:', JSON.stringify(allBusyBlocks, null, 2));
 
     // ========================================
     // PASO 5: GENERACIÓN DE SLOTS DISPONIBLES
@@ -368,9 +430,21 @@ export async function GET(
     /**
      * Conversión de horarios de trabajo a objetos Date
      * Formato de entrada: "HH:MM" -> Formato de salida: Date ISO 8601
+     * Ahora usa la zona horaria del doctor usando la función auxiliar
      */
-    const dayStart = new Date(`${dateParam}T${daySchedule.startTime}:00.000Z`);
-    const dayEnd = new Date(`${dateParam}T${daySchedule.endTime}:00.000Z`);
+    const dayStart = createDateInTimezone(dateParam, `${daySchedule.startTime}:00`, doctorTimezone);
+    const dayEnd = createDateInTimezone(dateParam, `${daySchedule.endTime}:00`, doctorTimezone);
+    
+    // DEBUG: Log para verificar las fechas de trabajo
+    console.log('=== DEBUG HORARIOS DE TRABAJO ===');
+    console.log('Doctor timezone:', doctorTimezone);
+    console.log('Date param:', dateParam);
+    console.log('Day schedule start time:', daySchedule.startTime);
+    console.log('Day schedule end time:', daySchedule.endTime);
+    console.log('Day start (timezone adjusted):', dayStart);
+    console.log('Day end (timezone adjusted):', dayEnd);
+    console.log('Day start ISO:', dayStart.toISOString());
+    console.log('Day end ISO:', dayEnd.toISOString());
 
     /**
      * ALGORITMO DE GENERACIÓN DE SLOTS:
@@ -394,7 +468,14 @@ export async function GET(
       }
 
       // Verificar si el slot está libre (no se solapa con bloques ocupados)
-      if (!isOverlapping(currentSlotStart, currentSlotEnd, allBusyBlocks)) {
+      const hasOverlap = isOverlapping(currentSlotStart, currentSlotEnd, allBusyBlocks);
+      
+      // DEBUG: Log para cada slot evaluado
+      console.log(`Evaluando slot: ${currentSlotStart.toISOString()} - ${currentSlotEnd.toISOString()}`);
+      console.log(`¿Tiene solapamiento?: ${hasOverlap}`);
+      
+      if (!hasOverlap) {
+        console.log('✅ Slot agregado como disponible');
         availableSlots.push({
           start: currentSlotStart.toISOString(),
           end: currentSlotEnd.toISOString(),
