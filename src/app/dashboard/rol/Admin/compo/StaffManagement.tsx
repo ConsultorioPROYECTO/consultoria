@@ -14,6 +14,11 @@ import { WorkingHours } from "@rutas/types/working-hours";
 import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
 import type { User } from '@rutas/db/schema/users';
 
+// Tipo extendido para incluir el campo idDoctor del LEFT JOIN con la tabla doctors
+type UserWithDoctor = User & {
+  idDoctor?: number | null;
+};
+
 // Definir el tipo de miembro del personal basado en el schema de la base de datos
 interface StaffMember {
   id: number;
@@ -26,6 +31,7 @@ interface StaffMember {
   patients?: number;
   appointments?: number;
   workingHours?: WorkingHours;
+  idDoctor?: number | null; // Campo para el ID del doctor desde la API
 }
 
 export function StaffManagement() {
@@ -63,7 +69,7 @@ export function StaffManagement() {
         throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
       }
 
-      const users: User[] = await response.json();
+      const users: UserWithDoctor[] = await response.json();
       
       // Filtrar solo usuarios activos y con roles relevantes (excluir N/A)
       const activeStaff = users
@@ -78,6 +84,7 @@ export function StaffManagement() {
           patients: Math.floor(Math.random() * 50) + 10,
           appointments: Math.floor(Math.random() * 20) + 5,
           specialty: user.role === 'medico' ? 'Especialidad General' : undefined,
+          idDoctor: user.idDoctor, // Incluir el idDoctor desde la API
         }));
 
       setStaffMembers(activeStaff);
@@ -122,9 +129,9 @@ export function StaffManagement() {
         throw new Error('Error al guardar horarios');
       }
 
-      // Actualizar el estado local
+      // Actualizar el estado local usando idDoctor para encontrar el miembro correcto
       setStaffMembers(prev => prev.map(member => 
-        member.id === doctorId 
+        member.idDoctor === doctorId 
           ? { ...member, workingHours }
           : member
       ));
@@ -247,7 +254,7 @@ export function StaffManagement() {
                           <Users className="h-4 w-4 sm:mr-2" />
                           <span className="hidden sm:inline">Ver más</span>
                         </Button>
-                        {member.role === 'medico' && (
+                        {member.role === 'medico' && member.idDoctor && (
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -293,7 +300,7 @@ export function StaffManagement() {
               </DialogDescription>
             </DialogHeader>
             <DoctorWorkingHours
-              doctorId={selectedDoctorForSchedule.id}
+              doctorId={selectedDoctorForSchedule.idDoctor!}
               doctorName={selectedDoctorForSchedule.name}
               initialWorkingHours={selectedDoctorForSchedule.workingHours}
               onSave={handleSaveWorkingHours}

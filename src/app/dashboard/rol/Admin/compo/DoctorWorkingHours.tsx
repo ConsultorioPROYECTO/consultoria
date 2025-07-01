@@ -86,7 +86,7 @@ export function DoctorWorkingHours({
     setWorkingHours(prev => ({
       ...prev,
       [day]: {
-        ...prev[day],
+        ...(prev[day] || DEFAULT_WORKING_HOURS[day]),
         [field]: value
       }
     }));
@@ -186,7 +186,7 @@ export function DoctorWorkingHours({
         {/* Configuración por día */}
         <div className="space-y-3">
           {DAYS_OF_WEEK.map(({ key, label }) => {
-            const daySchedule = workingHours[key];
+            const daySchedule = workingHours[key] || DEFAULT_WORKING_HOURS[key];
             return (
               <div key={key} className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
                 <div className="flex items-center space-x-4 mb-3 lg:mb-0">
@@ -194,22 +194,22 @@ export function DoctorWorkingHours({
                     <Label className="font-medium text-base">{label}</Label>
                   </div>
                   <Switch
-                    checked={daySchedule.isActive}
+                    checked={daySchedule?.isActive || false}
                     onCheckedChange={(checked) => updateDaySchedule(key, 'isActive', checked)}
                   />
-                  {daySchedule.isActive && (
+                  {daySchedule?.isActive && (
                     <Badge variant="outline" className="ml-2">Activo</Badge>
                   )}
                 </div>
                 
-                {daySchedule.isActive && (
+                {daySchedule?.isActive && (
                   <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 lg:space-x-6">
                     <div className="flex items-center space-x-2">
                       <Label htmlFor={`${key}-start`} className="text-sm font-medium min-w-[50px]">Desde:</Label>
                       <Input
                         id={`${key}-start`}
                         type="time"
-                        value={daySchedule.startTime}
+                        value={daySchedule?.startTime || '08:00'}
                         onChange={(e) => updateDaySchedule(key, 'startTime', e.target.value)}
                         className="w-36 h-10"
                       />
@@ -219,7 +219,7 @@ export function DoctorWorkingHours({
                       <Input
                         id={`${key}-end`}
                         type="time"
-                        value={daySchedule.endTime}
+                        value={daySchedule?.endTime || '17:00'}
                         onChange={(e) => updateDaySchedule(key, 'endTime', e.target.value)}
                         className="w-36 h-10"
                       />
