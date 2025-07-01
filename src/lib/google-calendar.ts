@@ -243,6 +243,35 @@ export class GoogleCalendarService {
       throw new Error(`Failed to check availability: ${error}`);
     }
   }
+
+  /**
+   * Obtener todos los bloques de tiempo ocupados para un calendario en un día específico.
+   */
+  async getBusySlotsForDay(calendarId: string, date: Date) {
+    try {
+      // Establecer el inicio y el fin del día que queremos consultar
+      const timeMin = new Date(date);
+      timeMin.setHours(0, 0, 0, 0); // Inicio del día (medianoche)
+
+      const timeMax = new Date(date);
+      timeMax.setHours(23, 59, 59, 999); // Fin del día
+
+      const response = await this.calendar.freebusy.query({
+        requestBody: {
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          items: [{ id: calendarId }],
+        },
+      });
+
+      const busyTimes = response.data.calendars?.[calendarId]?.busy || [];
+      return busyTimes; // Devuelve [{ start: '...', end: '...' }, ...]
+
+    } catch (error) {
+      console.error('Error getting busy slots:', error);
+      throw new Error(`Failed to get busy slots: ${error}`);
+    }
+  }
 }
 
 // Instancia singleton del servicio

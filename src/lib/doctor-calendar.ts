@@ -5,6 +5,7 @@ import { doctors, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { googleCalendarService } from './google-calendar';
 import type { calendar_v3 } from 'googleapis';
+import type { WorkingHours } from '@rutas/types/working-hours';
 
 export interface DoctorCalendarSetup {
   doctorId: number;
@@ -412,6 +413,80 @@ export class DoctorCalendarService {
     .limit(1);
 
     return result[0] || null;
+  }
+
+  /**
+   * Obtener horarios de trabajo de un doctor
+   */
+  async getWorkingHours(doctorId: number): Promise<{
+    success: boolean;
+    workingHours?: WorkingHours | null;
+    error?: string;
+  }> {
+    try {
+      const doctor = await db.select({
+        availability: doctors.availability,
+      })
+      .from(doctors)
+      .where(eq(doctors.idDoctor, doctorId))
+      .limit(1);
+
+      if (!doctor.length) {
+        return {
+          success: false,
+          error: 'Doctor not found'
+        };
+      }
+
+      const workingHours = doctor[0].availability as WorkingHours | undefined;
+
+      return {
+        success: true,
+        workingHours: workingHours || null
+      };
+    } catch (error) {
+      console.error('Error getting working hours:', error);
+      return {
+        success: false,
+        error: 'Failed to get working hours'
+      };
+    }
+  }
+
+  /**
+   * Actualizar horarios de trabajo de un doctor
+   */
+  async updateWorkingHours(doctorId: number, workingHours: WorkingHours): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    try {
+      const result = await db.update(doctors)
+         .set({
+           working_hours: workingHours,
+           updatedAt: new Date()
+         })
+         .where(eq(doctors.idDoctor, doctorId));
+
+      const firstResult = Array.isArray(result) ? result[0] : result;
+      
+      if (!firstResult || !('affectedRows' in firstResult) || firstResult.affectedRows === 0) {
+        return {
+          success: false,
+          error: 'Doctor not found or no changes made'
+        };
+      }
+
+      return {
+        success: true
+      };
+    } catch (error) {
+      console.error('Error updating working hours:', error);
+      return {
+        success: false,
+        error: 'Failed to update working hours'
+      };
+    }
   }
 
   /**

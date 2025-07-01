@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:jsdoc": "eslint --config .eslintrc.jsdoc.js src/app/api/**/*.ts src/lib/**/*.ts",
+    "docs:check": "npm run lint:jsdoc",
+    "docs:api": "echo 'Documentación de API disponible en docs/api/doctors-availability.md'",
     "generate": "drizzle-kit generate --out migrations-folder --schema src/db/schema.ts"
   },
   "dependencies": {
