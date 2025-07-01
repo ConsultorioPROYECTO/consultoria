@@ -36,7 +36,8 @@
  * const result = await response.json();
  * 
  * if (result.success) {
- *   console.log('Connection state:', result.data.state);
+ *   console.log('Instance name:', result.data.instance.instanceName);
+ *   console.log('Connection state:', result.data.instance.state);
  * }
  * ```
  */
@@ -54,14 +55,15 @@ const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY;
  * Evolution API connection state response.
  * 
  * @interface EvolutionConnectionStateResponse
- * @property {string} [state] - Current connection state of the instance
- * @property {string} [status] - Status information
- * @property {boolean} [connected] - Whether the instance is connected
+ * @property {Object} instance - Instance information object
+ * @property {string} instance.instanceName - Name of the instance
+ * @property {string} instance.state - Current connection state of the instance (e.g., 'open', 'close')
  */
 interface EvolutionConnectionStateResponse {
-  state?: string;
-  status?: string;
-  connected?: boolean;
+  instance: {
+    instanceName: string;
+    state: string;
+  };
   [key: string]: unknown;
 }
 
@@ -102,7 +104,7 @@ interface EvolutionConnectionStateResponse {
  * const response = await fetch('/api/evolutionAPI/connectionState/my-instance');
  * const result = await response.json();
  * 
- * if (result.success && result.data.connected) {
+ * if (result.success && result.data.instance.state === 'open') {
  *   console.log('Instance is connected and ready');
  * } else {
  *   console.log('Instance is not connected');
@@ -198,9 +200,8 @@ export async function GET(
     // Parse and return successful response
     const connectionData: EvolutionConnectionStateResponse = await response.json();
     console.log(`Connection state for instance ${trimmedInstance}:`, {
-      state: connectionData.state,
-      connected: connectionData.connected,
-      status: connectionData.status
+      instanceName: connectionData.instance?.instanceName,
+      state: connectionData.instance?.state
     });
 
     return NextResponse.json(
@@ -258,18 +259,17 @@ export async function GET(
  *                 data:
  *                   type: object
  *                   properties:
- *                     state:
- *                       type: string
- *                       description: Current connection state
- *                       example: "open"
- *                     connected:
- *                       type: boolean
- *                       description: Whether the instance is connected
- *                       example: true
- *                     status:
- *                       type: string
- *                       description: Status information
- *                       example: "connected"
+                     instance:
+                       type: object
+                       properties:
+                         instanceName:
+                           type: string
+                           description: Name of the instance
+                           example: "Irina"
+                         state:
+                           type: string
+                           description: Current connection state
+                           example: "close"
  *                 message:
  *                   type: string
  *                   example: "Connection state retrieved successfully for instance: my-whatsapp-instance"
