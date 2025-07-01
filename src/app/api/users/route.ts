@@ -1,8 +1,8 @@
 // src/app/api/users/route.ts
 
 /**
- * @fileoverview API Route para obtener la lista de todos los usuarios (protegida).
- * @version 1.1.0 // Actualización de versión por añadir autenticación/autorización
+ * @fileoverview API Route para obtener la lista de todos los usuarios con información de doctor (protegida).
+ * @version 1.2.0 // Actualización para incluir información de doctor mediante LEFT JOIN
  * @author Santiago Prada
  * @date 2025-05-13
  *
@@ -10,14 +10,17 @@
  * Maneja las solicitudes GET a `/api/users`. Requiere autenticación y que el
  * usuario solicitante tenga el rol de 'admin'.
  * Utiliza la instancia de Drizzle ORM (`db`) para consultar todos los registros
- * de la tabla `users` en la base de datos MySQL.
- * Devuelve un array de objetos usuario en formato JSON.
+ * de la tabla `users` con un LEFT JOIN a la tabla `doctors` para incluir el
+ * `idDoctor` cuando el usuario tenga rol 'medico'.
+ * Devuelve un array de objetos usuario en formato JSON, incluyendo el campo
+ * `idDoctor` (null para usuarios que no son médicos).
  *
  * La autenticación se maneja mediante la validación de Tokens ID de Firebase.
  *
  * @requires next/server - Para los tipos NextRequest y NextResponse.
  * @requires ../../../lib/db - Instancia `db` de Drizzle ORM.
  * @requires ../../../lib/db/schema - Definición de la tabla `users`.
+ * @requires ../../../lib/db/schema/doctors - Definición de la tabla `doctors`.
  * @requires ../../../lib/server/middleware/authMiddleware - Para `withAuthentication`.
  * @requires firebase-admin/auth - Para el tipo `DecodedIdToken`.
  * @requires drizzle-orm - Para el operador `eq` y funciones de ordenamiento.
@@ -25,21 +28,40 @@
  * @returns {Promise<NextResponse | Response>} Una promesa que resuelve a:
  *  - NextResponse con status 401 si la autenticación falla (token faltante/inválido).
  *  - NextResponse con status 403 si el usuario autenticado no tiene el rol 'admin'.
- *  - NextResponse con status 200 y un array de usuarios si la consulta es exitosa.
+ *  - NextResponse con status 200 y un array de usuarios con idDoctor si la consulta es exitosa.
  *  - NextResponse con status 500 y un mensaje de error si ocurre un problema en la BD.
  *
  * @example - Cómo probar la ruta con curl (requiere un token válido de un admin):
  * # Asumiendo que tienes un TOKEN_ID_ADMIN válido
  * curl -H "Authorization: Bearer <TOKEN_ID_ADMIN>" http://localhost:3000/api/users
  *
+ * @example - Respuesta esperada:
+ * [
+ *   {
+ *     "id": 1,
+ *     "firebaseUid": "abc123",
+ *     "email": "doctor@example.com",
+ *     "role": "medico",
+ *     "idDoctor": 5,
+ *     // ... otros campos
+ *   },
+ *   {
+ *     "id": 2,
+ *     "email": "admin@example.com",
+ *     "role": "admin",
+ *     "idDoctor": null,
+ *     // ... otros campos
+ *   }
+ * ]
+ *
  * @todo Considerar paginación más robusta si la lista de usuarios es muy grande (más allá del `limit: 100` actual).
- * @todo Refinar los campos devueltos. Aunque es para admin, ¿necesita todas las columnas siempre?
- *       Se puede ajustar en la opción `columns` de `findMany`.
+ * @todo Considerar añadir filtros por rol para optimizar consultas específicas.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
 import { users } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
+import { doctors } from '@rutas/db/schema/doctors'; // Importar esquema de doctors
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { eq, desc } from 'drizzle-orm';
@@ -91,27 +113,34 @@ const getUsersHandler = async (
 
     console.log(`[API /api/users] Acceso autorizado para admin: ${decodedToken.uid} (${decodedToken.email})`);
 
-    // --- Lógica principal: Obtener todos los usuarios ---
-    console.log('[API /api/users] Consultando la base de datos para obtener todos los usuarios...');
+    // --- Lógica principal: Obtener todos los usuarios con información de doctor si aplica ---
+    console.log('[API /api/users] Consultando la base de datos para obtener todos los usuarios con información de doctor...');
 
-    const allUsers = await db.query.users.findMany({
-      where: requestingUser.organizationId ? eq(users.organizationId, requestingUser.organizationId) : undefined,
-      orderBy: [desc(users.createdAt)], // Ordenar por fecha de creación, más recientes primero
-      limit: 100, // Limitar resultados para evitar sobrecarga (implementar paginación para más)
-      // Opcional: Excluir campos sensibles si no son necesarios para el admin en esta vista
-      // columns: {
-      //   id: true,
-      //   firebaseUid: true, // Quizás útil para el admin
-      //   email: true,
-      //   displayName: true,
-      //   role: true,
-      //   isActive: true,
-      //   lastLoginAt: true,
-      //   createdAt: true,
-      //   // phoneNumber: false, // Ejemplo de exclusión
-      //   // photoURL: false,   // Ejemplo de exclusión
-      // }
-    });
+    const allUsers = await db
+      .select({
+        // Campos de la tabla users
+        id: users.id,
+        firebaseUid: users.firebaseUid,
+        email: users.email,
+        emailVerified: users.emailVerified,
+        phoneNumber: users.phoneNumber,
+        displayName: users.displayName,
+        photoURL: users.photoURL,
+        providerId: users.providerId,
+        role: users.role,
+        isActive: users.isActive,
+        organizationId: users.organizationId,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+        // Campo adicional: idDoctor (solo para usuarios con rol 'medico')
+        idDoctor: doctors.idDoctor,
+      })
+      .from(users)
+      .leftJoin(doctors, eq(users.id, doctors.userId))
+      .where(requestingUser.organizationId ? eq(users.organizationId, requestingUser.organizationId) : undefined)
+      .orderBy(desc(users.createdAt))
+      .limit(100);
 
     console.log(`[API /api/users] Consulta exitosa. ${allUsers.length} usuarios encontrados.`);
     return NextResponse.json(allUsers, { status: 200 });
