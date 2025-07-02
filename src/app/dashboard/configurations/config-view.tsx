@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect} from "react"
+import { useState, useEffect, useCallback} from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Image from "next/image"
@@ -90,6 +90,9 @@ export default function ConfigView() {
   const [qrCodeData, setQrCodeData] = useState<string | null>(null)
   const [isLoadingQR, setIsLoadingQR] = useState<boolean>(false)
   const [qrError, setQrError] = useState<string | null>(null)
+  const [connectionState, setConnectionState] = useState<string | null>(null)
+  const [isCheckingConnection, setIsCheckingConnection] = useState<boolean>(false)
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (theme) {
@@ -130,6 +133,91 @@ export default function ConfigView() {
       fetchUserRole();
     }
   }, [user]);
+
+  /**
+   * Checks the connection state of a WhatsApp instance.
+   * 
+   * @param instanceName - The name of the instance to check
+   * @returns Promise<string | null> - The connection state or null if error
+   */
+  const checkConnectionState = async (instanceName: string): Promise<string | null> => {
+    if (!instanceName || instanceName.trim() === '') {
+      return null;
+    }
+
+    try {
+      setIsCheckingConnection(true);
+      const response = await fetch(`/api/evolutionAPI/connectionState/${instanceName.trim()}`);
+      
+      if (!response.ok) {
+        console.error(`Error checking connection state: ${response.status}`);
+        return null;
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.data?.instance?.state) {
+        const state = data.data.instance.state;
+        setConnectionState(state);
+        console.log(`Connection state for ${instanceName}: ${state}`);
+        return state;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error checking connection state:', error);
+      return null;
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  };
+
+  /**
+   * Starts auto-refresh of QR code when instance is not connected.
+   * Checks connection state every 15 seconds and regenerates QR if needed.
+   */
+  const startAutoRefresh = () => {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+    }
+
+    const interval = setInterval(async () => {
+      if (!instanceId || instanceId.trim() === '') {
+        return;
+      }
+
+      const state = await checkConnectionState(instanceId);
+      
+      // If not connected (state is not 'open'), regenerate QR
+      if (state !== 'open' && !isLoadingQR) {
+        console.log('Instance not connected, regenerating QR...');
+        await handleGenerateQR();
+      } else if (state === 'open') {
+        // If connected, stop auto-refresh
+        console.log('Instance connected, stopping auto-refresh');
+        stopAutoRefresh();
+      }
+    }, 20000); // 15 seconds
+
+    setAutoRefreshInterval(interval);
+  };
+
+  /**
+   * Stops the auto-refresh interval.
+   */
+  const stopAutoRefresh = useCallback(() => {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval);
+      setAutoRefreshInterval(null);
+    }
+  }, [autoRefreshInterval]);
+
+  // Cleanup interval on component unmount
+  useEffect(() => {
+    return () => {
+      stopAutoRefresh();
+    };
+  }, [autoRefreshInterval, stopAutoRefresh]);
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section)
@@ -225,10 +313,54 @@ export default function ConfigView() {
                     id="instanceId"
                     placeholder="ej. mi-instancia-whatsapp"
                     value={instanceId}
-                    onChange={(e) => setInstanceId(e.target.value)}
+                    onChange={(e) => {
+                      setInstanceId(e.target.value);
+                      // Stop auto-refresh when changing instance ID
+                      if (autoRefreshInterval) {
+                        stopAutoRefresh();
+                      }
+                      setConnectionState(null);
+                      setQrCodeData(null);
+                    }}
                     disabled={isLoadingQR}
                   />
                 </div>
+                
+                {/* Connection Status */}
+                {instanceId && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
+                    <div className="flex items-center gap-2">
+                      {isCheckingConnection ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      ) : connectionState === 'open' ? (
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                      ) : connectionState ? (
+                        <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                      ) : (
+                        <div className="h-2 w-2 rounded-full bg-gray-400" />
+                      )}
+                      <span className="text-sm font-medium">
+                        Estado: {isCheckingConnection ? 'Verificando...' : connectionState === 'open' ? 'Conectado' : connectionState || 'Desconocido'}
+                      </span>
+                    </div>
+                    {instanceId && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => checkConnectionState(instanceId)}
+                        disabled={isCheckingConnection || !instanceId}
+                        className="ml-auto"
+                      >
+                        {isCheckingConnection ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          'Verificar'
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
                 <Button onClick={handleGenerateQR} disabled={isLoadingQR || !instanceId}>
                   {isLoadingQR ? (
                     <>
@@ -241,9 +373,26 @@ export default function ConfigView() {
                     "Generar QR"
                   )}
                 </Button>
+                
+                {autoRefreshInterval && (
+                  <div className="flex items-center gap-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span className="text-xs">Verificando conexión cada 15 segundos...</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={stopAutoRefresh}
+                      className="ml-auto h-6 px-2 text-xs"
+                    >
+                      Detener
+                    </Button>
+                  </div>
+                )}
+                
                 {qrError && (
                   <p className="text-sm text-red-500">{qrError}</p>
                 )}
+                
                 {qrCodeData && (
                   <div className="mt-4 text-center">
                     <p className="text-sm text-muted-foreground mb-2">Escanea este código QR con tu teléfono:</p>
@@ -266,7 +415,9 @@ export default function ConfigView() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      El código se actualizará automáticamente cuando sea necesario.
+                      {connectionState === 'open' 
+                        ? 'WhatsApp conectado exitosamente.' 
+                        : 'El código se actualizará automáticamente cada 15 segundos hasta que se conecte.'}
                     </p>
                   </div>
                 )}
@@ -338,12 +489,16 @@ export default function ConfigView() {
       if (data.success && data.data) {
         if (data.data.qrcode && data.data.qrcode.startsWith('data:image/')) {
           setQrCodeData(data.data.qrcode);
+          // Start auto-refresh to check connection state
+          startAutoRefresh();
         } else if (data.data.base64) {
           if (data.data.base64.startsWith('data:image/')) {
             setQrCodeData(data.data.base64);
           } else {
             setQrCodeData(`data:image/png;base64,${data.data.base64}`);
           }
+          // Start auto-refresh to check connection state
+          startAutoRefresh();
         } else {
           setQrError("No se recibió un código QR válido en la respuesta del servidor.");
         }
