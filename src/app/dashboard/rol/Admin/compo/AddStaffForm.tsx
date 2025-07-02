@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserPlus, ChevronsUpDown, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
 import { useMedicalServices } from '@/hooks/useMedicalServices';
 import {
   Popover,
@@ -37,7 +36,7 @@ interface AddStaffFormProps {
 
 export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
   const { user } = useAuth();
-  const { services, loading: servicesLoading } = useMedicalServices();
+  const { services } = useMedicalServices();
   
   const showSuccessToast = (message: string) => toast.success(message);
   const showErrorToast = (message: string) => toast.error(message);
@@ -217,7 +216,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                  <CommandList>
                    <CommandEmpty>No se encontró servicio.</CommandEmpty>
                    <CommandGroup>
-                     {services.map((service: any) => (
+                     {services.map((service: { id: number; name: string }) => (
                        <CommandItem
                          key={service.id}
                          value={service.name}

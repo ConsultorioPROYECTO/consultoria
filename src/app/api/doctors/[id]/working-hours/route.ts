@@ -120,8 +120,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { doctorCalendarService } from '@rutas/lib/doctor-calendar';
-import { WorkingHours, validateWorkingHours } from '@rutas/types/working-hours';
+import { doctorCalendarService } from '@/lib/doctor-calendar';
+import { WorkingHours, validateWorkingHours } from '@/types/working-hours';
 
 /**
  * @description Obtiene los horarios de trabajo de un doctor por su ID.

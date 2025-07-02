@@ -139,6 +139,9 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   // Estado para el mes mostrado en los componentes (sincronización)
   const [sharedDisplayMonth, setSharedDisplayMonth] = React.useState(new Date());
   
+  // Estado para la línea de tiempo actual
+  const [currentTime, setCurrentTime] = React.useState(new Date());
+  
   // Estado para Google Calendar
   const [googleEvents, setGoogleEvents] = React.useState<CalendarEvent[]>([]);
   const [calendarId, setCalendarId] = React.useState<string>('');
@@ -150,6 +153,21 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Actualizar la hora actual cada minuto
+  React.useEffect(() => {
+    const updateCurrentTime = () => {
+      setCurrentTime(new Date());
+    };
+
+    // Actualizar inmediatamente
+    updateCurrentTime();
+
+    // Actualizar cada minuto
+    const interval = setInterval(updateCurrentTime, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Datos locales de consultorios - usando useMemo para evitar recreación en cada render
@@ -361,6 +379,45 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     return { top, height };
   };
 
+  // Función para calcular la posición de la línea de tiempo actual
+  const getCurrentTimePosition = () => {
+    const now = currentTime;
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Solo mostrar la línea si estamos en horario de trabajo (8 AM - 8 PM)
+    if (currentHour < 8 || currentHour >= 20) {
+      return null;
+    }
+    
+    // Calcular minutos desde las 8:00 AM
+    const minutesFromStart = (currentHour - 8) * 60 + currentMinute;
+    
+    // Cada hora tiene 64px (h-16), entonces cada minuto es 64/60 = 1.067px
+    const pixelsPerMinute = 64 / 60;
+    
+    return minutesFromStart * pixelsPerMinute;
+  };
+
+  // Componente de línea de tiempo actual
+  const CurrentTimeLine = ({ isToday }: { isToday: boolean }) => {
+    const position = getCurrentTimePosition();
+    
+    if (!isToday || position === null) {
+      return null;
+    }
+    
+    return (
+      <div 
+        className="absolute left-0 right-0 z-50 flex items-center pointer-events-none"
+        style={{ top: `${position}px` }}
+      >
+        <div className="w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-lg flex-shrink-0"></div>
+        <div className="flex-1 h-0.5 bg-red-500 shadow-sm"></div>
+      </div>
+    );
+  };
+
   // Renderizar vista semanal
   const renderWeekView = () => {
     const { days } = getDateRange();
@@ -389,12 +446,13 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           {/* Columnas de días */}
           {days.map((day, dayIndex) => {
             const dayEvents = getEventsForDate(day);
+            const isDayToday = isToday(day);
             return (
-              <div key={dayIndex} className="border-r border-border last:border-r-0">
+              <div key={dayIndex} className="border-r border-border last:border-r-0 relative">
                 {/* Header del día */}
                 <div className={cn(
                   "h-12 border-b border-border flex flex-col items-center justify-center p-1",
-                  isToday(day) ? "bg-primary/10" : ""
+                  isDayToday ? "bg-primary/10" : ""
                 )}>
                   <div className="text-xs text-muted-foreground uppercase">
                     {format(day, "EEE", { locale: es })}
@@ -414,6 +472,9 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                     <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 8) * 64}px` }}>
                     </div>
                   ))}
+                  
+                  {/* Línea de tiempo actual */}
+                  <CurrentTimeLine isToday={isDayToday} />
                   
                   {/* Eventos posicionados según su tiempo real */}
                   {dayEvents.map((event, eventIndex) => {
@@ -484,6 +545,9 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
               <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 8) * 64}px` }}>
               </div>
             ))}
+            
+            {/* Línea de tiempo actual */}
+            <CurrentTimeLine isToday={isToday(currentDate)} />
             
             {/* Eventos posicionados según su tiempo real */}
             {dayEvents.map((event, eventIndex) => {
