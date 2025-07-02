@@ -1,8 +1,8 @@
 // src/app/api/users/route.ts
 
 /**
- * @fileoverview API Route para obtener la lista de todos los usuarios con información de doctor (protegida).
- * @version 1.2.0 // Actualización para incluir información de doctor mediante LEFT JOIN
+ * @fileoverview API Route para obtener la lista de todos los usuarios con información de doctor y asistente (protegida).
+ * @version 1.3.0 // Actualización para incluir información de doctor y asistente mediante LEFT JOIN
  * @author Santiago Prada
  * @date 2025-05-13
  *
@@ -10,10 +10,10 @@
  * Maneja las solicitudes GET a `/api/users`. Requiere autenticación y que el
  * usuario solicitante tenga el rol de 'admin'.
  * Utiliza la instancia de Drizzle ORM (`db`) para consultar todos los registros
- * de la tabla `users` con un LEFT JOIN a la tabla `doctors` para incluir el
- * `idDoctor` cuando el usuario tenga rol 'medico'.
- * Devuelve un array de objetos usuario en formato JSON, incluyendo el campo
- * `idDoctor` (null para usuarios que no son médicos).
+ * de la tabla `users` con LEFT JOIN a las tablas `doctors` y `assistants` para incluir el
+ * `idDoctor` cuando el usuario tenga rol 'medico' y el `idAssistant` cuando tenga rol 'asistente'.
+ * Devuelve un array de objetos usuario en formato JSON, incluyendo los campos
+ * `idDoctor` e `idAssistant` (null para usuarios que no tienen esos roles).
  *
  * La autenticación se maneja mediante la validación de Tokens ID de Firebase.
  *
@@ -21,6 +21,7 @@
  * @requires ../../../lib/db - Instancia `db` de Drizzle ORM.
  * @requires ../../../lib/db/schema - Definición de la tabla `users`.
  * @requires ../../../lib/db/schema/doctors - Definición de la tabla `doctors`.
+ * @requires ../../../lib/db/schema/assistants - Definición de la tabla `assistants`.
  * @requires ../../../lib/server/middleware/authMiddleware - Para `withAuthentication`.
  * @requires firebase-admin/auth - Para el tipo `DecodedIdToken`.
  * @requires drizzle-orm - Para el operador `eq` y funciones de ordenamiento.
@@ -28,7 +29,7 @@
  * @returns {Promise<NextResponse | Response>} Una promesa que resuelve a:
  *  - NextResponse con status 401 si la autenticación falla (token faltante/inválido).
  *  - NextResponse con status 403 si el usuario autenticado no tiene el rol 'admin'.
- *  - NextResponse con status 200 y un array de usuarios con idDoctor si la consulta es exitosa.
+ *  - NextResponse con status 200 y un array de usuarios con idDoctor e idAssistant si la consulta es exitosa.
  *  - NextResponse con status 500 y un mensaje de error si ocurre un problema en la BD.
  *
  * @example - Cómo probar la ruta con curl (requiere un token válido de un admin):
@@ -43,13 +44,23 @@
  *     "email": "doctor@example.com",
  *     "role": "medico",
  *     "idDoctor": 5,
+ *     "idAssistant": null,
  *     // ... otros campos
  *   },
  *   {
  *     "id": 2,
+ *     "email": "assistant@example.com",
+ *     "role": "asistente",
+ *     "idDoctor": null,
+ *     "idAssistant": 3,
+ *     // ... otros campos
+ *   },
+ *   {
+ *     "id": 3,
  *     "email": "admin@example.com",
  *     "role": "admin",
  *     "idDoctor": null,
+ *     "idAssistant": null,
  *     // ... otros campos
  *   }
  * ]
@@ -62,6 +73,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
 import { users } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
 import { doctors } from '@rutas/db/schema/doctors'; // Importar esquema de doctors
+import { assistants } from '@rutas/db/schema/assistants'; // Importar esquema de assistants
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { eq, desc } from 'drizzle-orm';
@@ -113,8 +125,8 @@ const getUsersHandler = async (
 
     console.log(`[API /api/users] Acceso autorizado para admin: ${decodedToken.uid} (${decodedToken.email})`);
 
-    // --- Lógica principal: Obtener todos los usuarios con información de doctor si aplica ---
-    console.log('[API /api/users] Consultando la base de datos para obtener todos los usuarios con información de doctor...');
+    // --- Lógica principal: Obtener todos los usuarios con información de doctor y asistente si aplica ---
+    console.log('[API /api/users] Consultando la base de datos para obtener todos los usuarios con información de doctor y asistente...');
 
     const allUsers = await db
       .select({
@@ -133,11 +145,13 @@ const getUsersHandler = async (
         lastLoginAt: users.lastLoginAt,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
-        // Campo adicional: idDoctor (solo para usuarios con rol 'medico')
+        // Campos adicionales: idDoctor (solo para usuarios con rol 'medico') e idAssistant (solo para usuarios con rol 'asistente')
         idDoctor: doctors.idDoctor,
+        idAssistant: assistants.idAssistant,
       })
       .from(users)
       .leftJoin(doctors, eq(users.id, doctors.userId))
+      .leftJoin(assistants, eq(users.id, assistants.userId))
       .where(requestingUser.organizationId ? eq(users.organizationId, requestingUser.organizationId) : undefined)
       .orderBy(desc(users.createdAt))
       .limit(100);
