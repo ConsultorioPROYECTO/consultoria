@@ -1,24 +1,34 @@
 'use client';
 
-import { Button } from "@rutas/components/ui/button";
-import { Input } from "@rutas/components/ui/input";
-import { Label } from "@rutas/components/ui/label";
-import { UserPlus, Check, ChevronsUpDown } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@rutas/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@rutas/components/ui/command";
-import { cn } from "@rutas/lib/utils";
-import { useState } from "react";
-import { useAuth } from "../../../../context/AuthContext";
-import { showSuccessToast, showErrorToast } from "./toaster";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { UserPlus, ChevronsUpDown, Check } from 'lucide-react';
+import { toast } from 'sonner';
+import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import { useMedicalServices } from '@/hooks/useMedicalServices';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { useAuth } from '../../../../context/AuthContext';
 
 interface StaffMember {
-  id: string;
-  name: string;
+  email: string;
   role: 'Médico' | 'Asistente';
-  specialty?: string;
-  assignedDoctor?: string;
-  status: 'active' | 'inactive';
-  email?: string;
+  serviceId?: number;
+  serviceName?: string;
 }
 
 interface AddStaffFormProps {
@@ -27,10 +37,16 @@ interface AddStaffFormProps {
 
 export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
   const { user } = useAuth();
+  const { services, loading: servicesLoading } = useMedicalServices();
+  
+  const showSuccessToast = (message: string) => toast.success(message);
+  const showErrorToast = (message: string) => toast.error(message);
   const [roleOpen, setRoleOpen] = useState(false);
+  const [serviceOpen, setServiceOpen] = useState(false);
   const [newStaff, setNewStaff] = useState({
     role: '' as 'Médico' | 'Asistente' | '',
-    specialty: '',
+    serviceId: undefined as number | undefined,
+    serviceName: '',
     email: ''
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -51,8 +67,8 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       return;
     }
     
-    if (newStaff.role === 'Médico' && !newStaff.specialty.trim()) {
-      showErrorToast('Por favor, introduce una especialidad para el médico.');
+    if (newStaff.role === 'Médico' && !newStaff.serviceId) {
+      showErrorToast('Por favor, selecciona un servicio médico para el médico.');
       return;
     }
     
@@ -73,7 +89,8 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
         },
         body: JSON.stringify({ 
           email: newStaff.email, 
-          role: newStaff.role.toLowerCase() === 'médico' ? 'medico' : 'asistente'
+          role: newStaff.role.toLowerCase() === 'médico' ? 'medico' : 'asistente',
+          serviceId: newStaff.role === 'Médico' ? newStaff.serviceId : undefined
         }),
       });
 
@@ -85,16 +102,14 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       }
       
       const newMember: StaffMember = {
-        id: `staff_${Date.now()}`,
-        name: 'Pendiente de asignación',
+        email: newStaff.email,
         role: newStaff.role as 'Médico' | 'Asistente',
-        specialty: newStaff.role === 'Médico' ? newStaff.specialty : undefined,
-        status: 'active',
-        email: newStaff.email
+        serviceId: newStaff.role === 'Médico' ? newStaff.serviceId : undefined,
+        serviceName: newStaff.role === 'Médico' ? newStaff.serviceName : undefined
       };
       
       onAddStaff(newMember);
-      setNewStaff({ role: '', specialty: '', email: '' });
+      setNewStaff({ role: '', serviceId: undefined, serviceName: '', email: '' });
       showSuccessToast("Invitación enviada correctamente.");
       
     } catch (err) {
@@ -181,17 +196,56 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
           </div>
         </div>
        
-       <div className="space-y-2">
-         <Label htmlFor="staffSpecialty">Especialidad</Label>
-         <Input 
-           id="staffSpecialty" 
-           placeholder={newStaff.role === 'Asistente' ? "No aplica para asistentes" : "Ej: Cardiología"}
-           value={newStaff.role === 'Asistente' ? '' : newStaff.specialty}
-           onChange={(e) => setNewStaff({...newStaff, specialty: e.target.value})}
-           disabled={newStaff.role === 'Asistente'}
-           className={newStaff.role === 'Asistente' ? 'opacity-50 cursor-not-allowed' : ''}
-         />
-       </div>
+       {newStaff.role === 'Médico' && (
+         <div className="space-y-2">
+           <Label htmlFor="staffService">Servicio Médico</Label>
+           <Popover open={serviceOpen} onOpenChange={setServiceOpen}>
+             <PopoverTrigger asChild>
+               <Button
+                 variant="outline"
+                 role="combobox"
+                 aria-expanded={serviceOpen}
+                 className="w-full justify-between"
+               >
+                 {newStaff.serviceName || "Seleccionar servicio..."}
+                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+               </Button>
+             </PopoverTrigger>
+             <PopoverContent className="w-full p-0">
+               <Command>
+                 <CommandInput placeholder="Buscar servicio..." />
+                 <CommandList>
+                   <CommandEmpty>No se encontró servicio.</CommandEmpty>
+                   <CommandGroup>
+                     {services.map((service: any) => (
+                       <CommandItem
+                         key={service.id}
+                         value={service.name}
+                         onSelect={() => {
+                           setNewStaff({
+                             ...newStaff, 
+                             serviceId: service.id,
+                             serviceName: service.name
+                           });
+                           setServiceOpen(false);
+                         }}
+                       >
+                         <Check
+                           className={cn(
+                             "mr-2 h-4 w-4",
+                             newStaff.serviceId === service.id ? "opacity-100" : "opacity-0"
+                           )}
+                         />
+                         {service.name}
+                       </CommandItem>
+                     ))}
+                   </CommandGroup>
+                 </CommandList>
+               </Command>
+             </PopoverContent>
+           </Popover>
+         </div>
+       )}
        
        <div className="flex justify-end">
          <Button 
@@ -201,7 +255,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
              !newStaff.role || 
              !newStaff.email || 
              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newStaff.email) ||
-             (newStaff.role === 'Médico' && !newStaff.specialty.trim())
+             (newStaff.role === 'Médico' && !newStaff.serviceId)
            }
            className="px-8"
          >
