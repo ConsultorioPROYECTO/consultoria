@@ -32,6 +32,7 @@ import {
   API_ERRORS,
   HTTP_STATUS
 } from '@/types/api';
+import { z } from 'zod';
 
 // === API Key Authentication ===
 
@@ -104,6 +105,111 @@ async function authenticateApiKey(request: NextRequest): Promise<{
     };
   }
 }
+
+// === Zod Validation Schemas ===
+
+/**
+ * Zod schema for validating appointment creation requests.
+ * Optimized for AI/MCP usage with string-to-number coercion and comprehensive validation.
+ * 
+ * @description This schema handles data coming from external sources (like n8n or AI agents)
+ * where numeric values might be passed as strings. It automatically converts and validates:
+ * - String numbers to actual numbers (e.g., "123" -> 123)
+ * - Date format validation (YYYY-MM-DD)
+ * - Time format validation (HH:MM)
+ * - Virtual appointment requirements
+ * - Optional fields with proper defaults
+ * 
+ * @example
+ * ```typescript
+ * // Valid input (strings will be converted to numbers)
+ * const input = {
+ *   doctorId: "1",
+ *   patientId: "123", 
+ *   serviceId: "5",
+ *   date: "2024-01-15",
+ *   time: "14:30",
+ *   isVirtual: "true",
+ *   meetingLink: "https://meet.google.com/abc-defg-hij"
+ * };
+ * 
+ * const result = CreateAppointmentSchema.parse(input);
+ * // result.doctorId will be number 1
+ * // result.isVirtual will be boolean true
+ * ```
+ */
+const CreateAppointmentSchema = z.object({
+  /** Doctor ID - accepts string or number, converts to number */
+  doctorId: z.union([
+    z.string().regex(/^\d+$/, 'Doctor ID debe ser un número válido').transform(Number),
+    z.number().int().positive('Doctor ID debe ser un número positivo')
+  ]),
+  
+  /** Patient ID - accepts string or number, converts to number */
+  patientId: z.union([
+    z.string().regex(/^\d+$/, 'Patient ID debe ser un número válido').transform(Number),
+    z.number().int().positive('Patient ID debe ser un número positivo')
+  ]),
+  
+  /** Service ID - accepts string or number, converts to number */
+  serviceId: z.union([
+    z.string().regex(/^\d+$/, 'Service ID debe ser un número válido').transform(Number),
+    z.number().int().positive('Service ID debe ser un número positivo')
+  ]),
+  
+  /** Date in YYYY-MM-DD format */
+  date: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Fecha debe estar en formato YYYY-MM-DD')
+    .refine((date) => {
+      const parsedDate = new Date(date);
+      return !isNaN(parsedDate.getTime()) && parsedDate >= new Date(new Date().setHours(0, 0, 0, 0));
+    }, 'Fecha debe ser válida y no puede ser en el pasado'),
+  
+  /** Time in HH:MM format (24-hour) */
+  time: z.string()
+    .regex(/^([01]?\d|2[0-3]):[0-5]\d$/, 'Hora debe estar en formato HH:MM (24 horas)')
+    .refine((time) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+    }, 'Hora debe ser válida (00:00 - 23:59)'),
+  
+  /** Virtual appointment flag - accepts string or boolean, converts to boolean */
+  isVirtual: z.union([
+    z.string().transform((val) => {
+      const lower = val.toLowerCase();
+      if (lower === 'true' || lower === '1' || lower === 'yes' || lower === 'sí') return true;
+      if (lower === 'false' || lower === '0' || lower === 'no') return false;
+      throw new Error('isVirtual debe ser true/false, 1/0, yes/no, o sí/no');
+    }),
+    z.boolean()
+  ]).optional().default(false),
+  
+  /** Meeting link for virtual appointments */
+  meetingLink: z.string()
+    .url('Meeting link debe ser una URL válida')
+    .optional()
+    .or(z.literal('')),
+  
+  /** Additional notes for the appointment */
+  notes: z.string()
+    .max(1000, 'Las notas no pueden exceder 1000 caracteres')
+    .optional()
+    .or(z.literal(''))
+}).refine((data) => {
+  // If virtual appointment, meeting link is required
+  if (data.isVirtual && (!data.meetingLink || data.meetingLink.trim() === '')) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Meeting link es requerido para citas virtuales',
+  path: ['meetingLink']
+});
+
+/**
+ * Type inferred from the Zod schema for validated appointment data.
+ */
+type ValidatedAppointmentData = z.infer<typeof CreateAppointmentSchema>;
 
 // === Appointment API Types ===
 
@@ -198,7 +304,7 @@ export type CreateAppointmentApiKeyApiResponse = APIResponse<CreateAppointmentAp
  * 
  * This function performs the following operations:
  * 1. **API Key Authentication**: Validates API key and retrieves organization context
- * 2. **Request Validation**: Validates request body format and required fields
+ * 2. **Zod Validation**: Parses and validates request body with automatic type conversion
  * 3. **Entity Verification**: Ensures doctor, patient, and service exist and belong to the organization
  * 4. **Calendar Integration**: Creates Google Calendar events if enabled
  * 5. **Database Persistence**: Stores appointment data with proper relationships
@@ -250,10 +356,10 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
 
     const organizationId = authResult.organizationId!;
 
-    // 2. Parse and validate request body
-    let body: CreateAppointmentApiKeyRequest;
+    // 2. Parse and validate request body with Zod
+    let rawBody: unknown;
     try {
-      body = await request.json();
+      rawBody = await request.json();
     } catch {
       return createErrorResponse(
         API_ERRORS.INVALID_REQUEST,
@@ -262,47 +368,35 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { doctorId, patientId, serviceId, date, time, isVirtual = false, meetingLink, notes } = body;
-
-    // 3. Validate required fields
-    if (!doctorId || !patientId || !serviceId || !date || !time) {
+    // 3. Validate and transform data using Zod schema
+    let validatedData: ValidatedAppointmentData;
+    try {
+      validatedData = CreateAppointmentSchema.parse(rawBody);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessages = error.errors.map(err => {
+          const path = err.path.join('.');
+          return `${path}: ${err.message}`;
+        }).join(', ');
+        
+        return createErrorResponse(
+          API_ERRORS.INVALID_REQUEST,
+          `Errores de validación: ${errorMessages}`,
+          HTTP_STATUS.BAD_REQUEST
+        );
+      }
+      
       return createErrorResponse(
         API_ERRORS.INVALID_REQUEST,
-        'Campos requeridos faltantes: doctorId, patientId, serviceId, date, time',
+        'Error de validación de datos',
         HTTP_STATUS.BAD_REQUEST
       );
     }
 
-    // 4. Validate date format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(date)) {
-      return createErrorResponse(
-        API_ERRORS.INVALID_REQUEST,
-        'Formato de fecha inválido. Use YYYY-MM-DD',
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
+    // 4. Extract validated data
+    const { doctorId, patientId, serviceId, date, time, isVirtual, meetingLink, notes } = validatedData;
 
-    // 5. Validate time format (HH:MM)
-    const timeRegex = /^\d{2}:\d{2}$/;
-    if (!timeRegex.test(time)) {
-      return createErrorResponse(
-        API_ERRORS.INVALID_REQUEST,
-        'Formato de hora inválido. Use HH:MM',
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
-
-    // 6. Validate virtual appointment requirements
-    if (isVirtual && !meetingLink) {
-      return createErrorResponse(
-        API_ERRORS.INVALID_REQUEST,
-        'meetingLink es requerido para citas virtuales',
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
-
-    // 7. Verify doctor exists and belongs to the organization
+    // 5. Verify doctor exists and belongs to the organization
     const doctor = await db.query.doctors.findFirst({
       where: eq(doctors.idDoctor, doctorId),
       with: {
@@ -327,7 +421,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 8. Verify patient exists and belongs to the organization
+    // 6. Verify patient exists and belongs to the organization
     const patient = await db.query.patients.findFirst({
       where: eq(patients.id, patientId),
     });
@@ -349,7 +443,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 9. Verify medical service exists and belongs to the organization
+    // 7. Verify medical service exists and belongs to the organization
     const medicalService = await db.query.medicalServices.findFirst({
       where: eq(medicalServices.id, serviceId),
     });
@@ -371,7 +465,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 10. Calculate appointment start and end times
+    // 8. Calculate appointment start and end times
     const appointmentDate = new Date(date);
     const [hours, minutes] = time.split(':').map(Number);
     appointmentDate.setHours(hours, minutes, 0, 0);
@@ -381,7 +475,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       appointmentDate.getTime() + medicalService.durationMinutes * 60 * 1000
     ).toISOString();
 
-    // 11. Google Calendar integration
+    // 9. Google Calendar integration
     let googleEventId: string | null = null;
     let googleCalendarId: string | null = null;
     let finalMeetingLink = meetingLink;
@@ -411,7 +505,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // 12. Create appointment in database
+    // 10. Create appointment in database
     const newAppointment = await db.insert(appointments).values({
       doctorId,
       patientId,
@@ -440,7 +534,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 13. Trigger post-creation hooks
+    // 11. Trigger post-creation hooks
     try {
       await onAppointmentCreated(Number(insertedAppointmentId));
     } catch (hookError) {
@@ -448,7 +542,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       // Don't fail the request if hooks fail
     }
 
-    // 14. Prepare response data
+    // 12. Prepare response data
     const responseData: CreateAppointmentApiKeyResponse = {
       appointmentId: Number(insertedAppointmentId),
       googleEventId,
@@ -473,22 +567,23 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
  * 
  * This endpoint handles the creation of medical appointments with the following features:
  * - **API Key Authentication**: X-API-Key header validation
+ * - **Zod Validation**: AI/MCP-optimized validation with string-to-number conversion
  * - **Organization Isolation**: Multi-tenant data isolation
  * - **Calendar Integration**: Google Calendar synchronization
- * - **Data Validation**: Comprehensive input validation
- * - **Error Handling**: Standardized error responses
+ * - **Flexible Input**: Accepts both strings and numbers for numeric fields
+ * - **Error Handling**: Detailed validation error messages
  * 
  * @route POST /api/n8n/appointments
  * @access Protected - Requires valid API key
  * @authentication API Key via X-API-Key header
  * 
  * @param {CreateAppointmentApiKeyRequest} request.body - Appointment creation data
- * @param {string} request.body.doctorId - Doctor's unique identifier
- * @param {string} request.body.patientId - Patient's unique identifier
- * @param {string} request.body.serviceId - Medical service identifier
+ * @param {string|number} request.body.doctorId - Doctor's unique identifier (accepts string or number)
+ * @param {string|number} request.body.patientId - Patient's unique identifier (accepts string or number)
+ * @param {string|number} request.body.serviceId - Medical service identifier (accepts string or number)
  * @param {string} request.body.date - Appointment date (YYYY-MM-DD)
  * @param {string} request.body.time - Appointment time (HH:MM)
- * @param {boolean} [request.body.isVirtual=false] - Virtual appointment flag
+ * @param {boolean|string} [request.body.isVirtual=false] - Virtual appointment flag (accepts boolean or string)
  * @param {string} [request.body.meetingLink] - Meeting link for virtual appointments
  * @param {string} [request.body.notes] - Additional appointment notes
  * 
@@ -501,18 +596,18 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
  * 
  * @example
  * ```typescript
- * // Request
+ * // Request (AI/MCP optimized - accepts strings that will be auto-converted)
  * POST /api/n8n/appointments
  * X-API-Key: your-api-key-here
  * Content-Type: application/json
  * 
  * {
- *   "doctorId": 1,
- *   "patientId": 123,
- *   "serviceId": 5,
+ *   "doctorId": "1",        // String will be converted to number
+ *   "patientId": "123",     // String will be converted to number
+ *   "serviceId": "5",       // String will be converted to number
  *   "date": "2024-01-15",
  *   "time": "14:30",
- *   "isVirtual": true,
+ *   "isVirtual": "true",     // String will be converted to boolean
  *   "meetingLink": "https://meet.google.com/abc-defg-hij",
  *   "notes": "Consulta de seguimiento"
  * }
@@ -541,7 +636,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
  * @see {@link https://developers.google.com/calendar/api | Google Calendar API}
  * 
  * @since 1.0.0
- * @version 1.0.0
+ * @version 1.1.0 - Added Zod validation with AI/MCP optimization
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   return handlePostRequest(request);
