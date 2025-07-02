@@ -70,10 +70,10 @@ export function NextAppointment({ appointments, className }: NextAppointmentProp
       <span className="text-sm opacity-80"></span>
         <div className="text-4xl @md:text-2xl @lg:text-3xl @xl:text-4xl font-bold leading-tight">
           <p>Tu próxima cita</p>
-          <p>es con <span className="text-primary">{nextAppointment.patientName.split(' ')[0]}</span></p>
-          {nextAppointment.patientName.split(' ').length > 1 && (
-            <p className="text-primary">{nextAppointment.patientName.split(' ').slice(1).join(' ')}</p>
-          )}
+          <p>es con <span className="text-primary">{nextAppointment.patientName?.split(' ')[0] || 'Paciente'}</span></p>
+          {nextAppointment.patientName?.split(' ').length > 1 && (
+             <p className="text-primary">{nextAppointment.patientName?.split(' ').slice(1).join(' ')}</p>
+           )}
         </div>
         <div className="flex items-center text-sm text-muted-foreground mt-2">
            <ClockIcon className="h-4 w-4 mr-2" />
