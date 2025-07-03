@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark *));
 
 :root {
   --background: #fcfcfc;
@@ -159,7 +159,7 @@
 }
 
 @layer base {
-  * {
+  *:not(html):not(body) {
     @apply border-border outline-ring/50;
   }
   body {
