@@ -146,10 +146,7 @@ const CreateAppointmentSchema = z.object({
   ]),
   
   /** Patient ID - accepts string or number, converts to number */
-  patientId: z.union([
-    z.string().regex(/^\d+$/, 'Patient ID debe ser un número válido').transform(Number),
-    z.number().int().positive('Patient ID debe ser un número positivo')
-  ]),
+  patientIDN: z.string(),
   
   /** Service ID - accepts string or number, converts to number */
   serviceId: z.union([
@@ -218,7 +215,7 @@ type ValidatedAppointmentData = z.infer<typeof CreateAppointmentSchema>;
  * 
  * @interface CreateAppointmentApiKeyRequest
  * @property {number} doctorId - Unique identifier of the doctor for the appointment
- * @property {number} patientId - Unique identifier of the patient for the appointment
+ * @property {number} patientIDN - Unique identifier of the patient for the appointment
  * @property {number} serviceId - Unique identifier of the medical service
  * @property {string} date - Date of the appointment in ISO format (YYYY-MM-DD)
  * @property {string} time - Time of the appointment in 24-hour format (HH:MM)
@@ -230,7 +227,7 @@ type ValidatedAppointmentData = z.infer<typeof CreateAppointmentSchema>;
  * ```typescript
  * const appointmentData: CreateAppointmentApiKeyRequest = {
  *   doctorId: 1,
- *   patientId: 123,
+ *   patientIDN: 123,
  *   serviceId: 5,
  *   date: "2024-01-15",
  *   time: "14:30",
@@ -244,7 +241,7 @@ export interface CreateAppointmentApiKeyRequest {
   /** Unique identifier of the doctor */
   doctorId: number;
   /** Unique identifier of the patient */
-  patientId: number;
+  patientIDN: number;
   /** Unique identifier of the medical service */
   serviceId: number;
   /** Date in YYYY-MM-DD format */
@@ -394,7 +391,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
     }
 
     // 4. Extract validated data
-    const { doctorId, patientId, serviceId, date, time, isVirtual, meetingLink, notes } = validatedData;
+    const { doctorId, patientIDN, serviceId, date, time, isVirtual, meetingLink, notes } = validatedData;
 
     // 5. Verify doctor exists and belongs to the organization
     const doctor = await db.query.doctors.findFirst({
@@ -423,13 +420,15 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
 
     // 6. Verify patient exists and belongs to the organization
     const patient = await db.query.patients.findFirst({
-      where: eq(patients.id, patientId),
+      where: eq(patients.identificationNumber, patientIDN ),
     });
+
+    const patientId = patient?.id as number;
 
     if (!patient) {
       return createErrorResponse(
         'Paciente no encontrado',
-        `No se encontró un paciente con ID ${patientId}`,
+        `No se encontró un paciente con ID ${patientIDN}`,
         HTTP_STATUS.NOT_FOUND
       );
     }
@@ -579,7 +578,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
  * 
  * @param {CreateAppointmentApiKeyRequest} request.body - Appointment creation data
  * @param {string|number} request.body.doctorId - Doctor's unique identifier (accepts string or number)
- * @param {string|number} request.body.patientId - Patient's unique identifier (accepts string or number)
+ * @param {string|number} request.body.patientIDN - Patient's unique identifier (accepts string or number)
  * @param {string|number} request.body.serviceId - Medical service identifier (accepts string or number)
  * @param {string} request.body.date - Appointment date (YYYY-MM-DD)
  * @param {string} request.body.time - Appointment time (HH:MM)
@@ -603,7 +602,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
  * 
  * {
  *   "doctorId": "1",        // String will be converted to number
- *   "patientId": "123",     // String will be converted to number
+ *   "patientIDN": "123",     // String will be converted to number
  *   "serviceId": "5",       // String will be converted to number
  *   "date": "2024-01-15",
  *   "time": "14:30",
