@@ -486,7 +486,7 @@ export default function HomePage() {
 
           {/* Columna 2: Producto */} 
           <div>
-            <h4 className="text-lg font-semibold text-foreground mb-4">Producto</h4>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Producto</h3>
             <ul className="space-y-2 text-muted-foreground text-sm">
               <li><Link href="#caracteristicas" className="hover:text-primary transition-colors">Características</Link></li>
               <li><Link href="#beneficios" className="hover:text-primary transition-colors">Beneficios</Link></li>
@@ -496,7 +496,7 @@ export default function HomePage() {
 
           {/* Columna 3: Empresa */} 
           <div>
-            <h4 className="text-lg font-semibold text-foreground mb-4">Empresa</h4>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Empresa</h3>
             <ul className="space-y-2 text-muted-foreground text-sm">
               <li><Link href="/about" className="hover:text-primary transition-colors">Sobre Nosotros</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contacto</Link></li>
@@ -506,7 +506,7 @@ export default function HomePage() {
 
           {/* Columna 4: Legal */}
           <div className="flex flex-col items-start md:items-start">
-            <h4 className="text-lg font-semibold text-foreground mb-4">Legal</h4>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Legal</h3>
             <ul className="space-y-2 text-muted-foreground text-sm mb-6">
               <li><Link href="/privacy" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
               <li><Link href="/terms" className="hover:text-primary transition-colors">Términos de Servicio</Link></li>
@@ -515,7 +515,7 @@ export default function HomePage() {
 
           {/* Columna 4 (real): Contacto */}
           <div className="flex flex-col items-start md:items-start">
-            <h4 className="text-lg font-semibold text-foreground mb-4">Contacto</h4>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Contacto</h3>
             <ul className="space-y-2 text-muted-foreground text-sm mb-6">
               <li><Link href="/contact" className="hover:text-primary transition-colors">Email</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Teléfono</Link></li>
