@@ -560,14 +560,17 @@ function ThemeSwitcher() {
   return (
     <Tabs defaultValue={theme} onValueChange={setTheme} className="w-[200px]">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="light" aria-label="Cambiar a tema claro">
+        <TabsTrigger value="light" title="Cambiar a tema claro">
           <Sun className="h-4 w-4" />
+          <span className="sr-only">Claro</span>
         </TabsTrigger>
-        <TabsTrigger value="dark" aria-label="Cambiar a tema oscuro">
+        <TabsTrigger value="dark" title="Cambiar a tema oscuro">
           <Moon className="h-4 w-4" />
+          <span className="sr-only">Oscuro</span>
         </TabsTrigger>
-        <TabsTrigger value="system" aria-label="Cambiar a tema del sistema">
+        <TabsTrigger value="system" title="Cambiar a tema del sistema">
           <Laptop className="h-4 w-4" />
+          <span className="sr-only">Sistema</span>
         </TabsTrigger>
       </TabsList>
     </Tabs>
