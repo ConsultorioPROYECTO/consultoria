@@ -110,7 +110,12 @@ export default function HomePage() {
 
           {/* Botón de Menú para Móvil */}
           <div className="md:hidden z-50">
-            <Button onClick={() => setIsMenuOpen(!isMenuOpen)} variant="ghost" size="icon">
+            <Button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)} 
+              variant="ghost" 
+              size="icon"
+              aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            >
               <AnimatePresence initial={false} mode="wait">
                 <motion.div
                   key={isMenuOpen ? "x" : "menu"}
