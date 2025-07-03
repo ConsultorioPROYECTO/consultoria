@@ -125,7 +125,7 @@ async function authenticateApiKey(request: NextRequest): Promise<{
  * // Valid input (strings will be converted to numbers)
  * const input = {
  *   doctorId: "1",
- *   patientId: "123", 
+ *   patientIDN: "123", 
  *   serviceId: "5",
  *   date: "2024-01-15",
  *   time: "14:30",
@@ -146,7 +146,10 @@ const CreateAppointmentSchema = z.object({
   ]),
   
   /** Patient ID - accepts string or number, converts to number */
-  patientIDN: z.string(),
+  patientIDN: z.union([
+    z.string(),
+    z.number().int().positive('Doctor ID debe ser un número positivo').transform(String)
+  ]),
   
   /** Service ID - accepts string or number, converts to number */
   serviceId: z.union([
@@ -241,7 +244,7 @@ export interface CreateAppointmentApiKeyRequest {
   /** Unique identifier of the doctor */
   doctorId: number;
   /** Unique identifier of the patient */
-  patientIDN: number;
+  patientIDN: number | string;
   /** Unique identifier of the medical service */
   serviceId: number;
   /** Date in YYYY-MM-DD format */
@@ -428,7 +431,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
     if (!patient) {
       return createErrorResponse(
         'Paciente no encontrado',
-        `No se encontró un paciente con ID ${patientIDN}`,
+        `No se encontró un paciente con IDN ${patientIDN}`,
         HTTP_STATUS.NOT_FOUND
       );
     }
