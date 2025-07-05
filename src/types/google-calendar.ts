@@ -1,4 +1,5 @@
 import type { calendar_v3 } from 'googleapis';
+import { DateTime } from 'luxon';
 
 /**
  * Base interface for event data passed to GoogleCalendarService methods.
@@ -6,8 +7,8 @@ import type { calendar_v3 } from 'googleapis';
  * @property {string} calendarId - The ID of the Google Calendar where the event will be created or managed.
  * @property {string} summary - The title or summary of the event.
  * @property {string} [description] - A detailed description of the event. Optional.
- * @property {string} startDateTime - The start date and time of the event in RFC3339 format (e.g., '2025-07-04T10:00:00-05:00').
- * @property {string} endDateTime - The end date and time of the event in RFC3339 format (e.g., '2025-07-04T11:00:00-05:00').
+ * @property {DateTime} startDateTime - The start date and time of the event as a Luxon DateTime object.
+ * @property {DateTime} endDateTime - The end date and time of the event as a Luxon DateTime object.
  * @property {string} [timezone] - The IANA Time Zone Database name for the event (e.g., 'America/Bogota'). Optional. Defaults to 'America/Bogota' if not provided.
  * @property {calendar_v3.Schema$EventAttendee[]} [attendees] - An array of attendees for the event. Optional.
  * @property {string} [location] - The physical location of the event. Optional.
@@ -17,8 +18,8 @@ export interface BaseEventData {
   calendarId: string;
   summary: string;
   description?: string;
-  startDateTime: string;
-  endDateTime: string;
+  startDateTime: DateTime;
+  endDateTime: DateTime;
   timezone?: string;
   attendees?: calendar_v3.Schema$EventAttendee[];
   location?: string;
