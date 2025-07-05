@@ -2,6 +2,10 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createErrorResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
+import { db } from '@/db';
+import { doctors } from '@/db/schema/doctors';
+import { eq } from 'drizzle-orm';
+import { googleCalendarService } from './google-calendar';
 
 // === Request Validation Helpers ===
 export async function validateRequestBody<T>(
@@ -102,47 +106,65 @@ export async function ensureDoctorHasCalendar(
   created?: boolean;
 }> {
   try {
-    const { doctorCalendarService } = await import('@/lib/doctor-calendar');
-    
-    // Verificar si el doctor ya tiene un calendario
-    const calendarSettings = await doctorCalendarService.getDoctorCalendarSettings(doctorId);
-    
-    if (calendarSettings.success && calendarSettings.calendarInfo?.calendarId) {
-      // El doctor ya tiene un calendario
-      return {
-        success: true,
-        calendarId: calendarSettings.calendarInfo.calendarId,
-        created: false
-      };
-    }
-    
-    // El doctor no tiene calendario, crear uno nuevo
-    const calendarName = `Dr. ${doctorData.firstName} ${doctorData.lastName} - Consultas`;
-    
-    const createResult = await doctorCalendarService.createDoctorCalendar({
-      doctorId,
-      calendarName,
-      timezone: doctorData.timezone || 'America/Bogota',
-      syncEnabled: true
+    // 1. Obtener la información del doctor de la base de datos
+    const doctor = await db.query.doctors.findFirst({
+      where: eq(doctors.idDoctor, doctorId),
     });
-    
-    if (createResult.success) {
-      return {
-        success: true,
-        calendarId: createResult.calendarId,
-        created: true
-      };
-    } else {
+
+    if (!doctor) {
       return {
         success: false,
-        error: createResult.error || 'Failed to create calendar'
+        error: `Doctor with ID ${doctorId} not found.`,
       };
     }
+
+    // 2. Verificar si el doctor ya tiene un calendar_id asignado
+    if (doctor.calendar_id) {
+      return {
+        success: true,
+        calendarId: doctor.calendar_id,
+        created: false,
+      };
+    }
+
+    // 3. Si no tiene calendar_id, crear uno nuevo en Google Calendar
+    const calendarName = `Dr. ${doctorData.firstName} ${doctorData.lastName} - Consultas`;
+    const calendarTimezone = doctorData.timezone || 'America/Bogota';
+
+    const newCalendar = await googleCalendarService.calendar.calendars.insert({
+      requestBody: {
+        summary: calendarName,
+        timeZone: calendarTimezone,
+      },
+    });
+
+    const newCalendarId = newCalendar.data.id;
+
+    if (!newCalendarId) {
+      return {
+        success: false,
+        error: 'Failed to create Google Calendar: No ID returned.',
+      };
+    }
+
+    // 4. Actualizar el registro del doctor en la base de datos con el nuevo calendar_id
+    await db.update(doctors)
+      .set({
+        calendar_id: newCalendarId,
+        calendar_timezone: calendarTimezone,
+      })
+      .where(eq(doctors.idDoctor, doctorId));
+
+    return {
+      success: true,
+      calendarId: newCalendarId,
+      created: true,
+    };
   } catch (error) {
     console.error('Error ensuring doctor has calendar:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error creating calendar'
+      error: error instanceof Error ? error.message : 'Unknown error creating calendar',
     };
   }
 }
