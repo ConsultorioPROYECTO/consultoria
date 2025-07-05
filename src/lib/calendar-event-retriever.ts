@@ -32,6 +32,9 @@ export async function getDoctorAvailability(
     console.debug('🔍 [getDoctorAvailability] Consultando información del doctor en BD...');
     const doctor = await db.query.doctors.findFirst({
       where: eq(doctors.idDoctor, doctorId),
+      with: {
+        user: true
+      }
     });
 
     console.log('👨‍⚕️ [getDoctorAvailability] Resultado consulta doctor:', {
@@ -326,45 +329,160 @@ export async function getDoctorEvents(
     breakTimeType?: BreakTimeType;
   }
 ): Promise<(AppointmentEventData | BreakTimeEventData)[]> {
+  // 🆔 Generar ID único para esta ejecución
+  const requestId = `getDoctorEvents_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const startTime = Date.now();
+  
+  console.log(`🚀 [${requestId}] getDoctorEvents iniciado:`, {
+    doctorId,
+    startDate: startDate.toISO(),
+    endDate: endDate.toISO(),
+    startDateZone: startDate.zoneName,
+    endDateZone: endDate.zoneName,
+    filters: filters || 'sin filtros',
+    timestamp: new Date().toISOString()
+  });
+
   try {
+    // 🔍 Consultar doctor en base de datos
+    console.log(`🔍 [${requestId}] Consultando doctor en BD...`);
+    const doctorQueryStart = Date.now();
+    
     const doctor = await db.query.doctors.findFirst({
       where: eq(doctors.idDoctor, doctorId),
     });
+    
+    const doctorQueryTime = Date.now() - doctorQueryStart;
+    console.log(`👨‍⚕️ [${requestId}] Consulta doctor completada:`, {
+      executionTime: `${doctorQueryTime}ms`,
+      doctorFound: !!doctor,
+      doctorData: doctor ? {
+        idDoctor: doctor.idDoctor,
+        hasCalendarId: !!doctor.calendar_id,
+        calendarTimezone: doctor.calendar_timezone,
+      } : null
+    });
 
     if (!doctor) {
-      throw new Error(`Doctor with ID ${doctorId} not found.`);
+      const errorMsg = `Doctor with ID ${doctorId} not found.`;
+      console.error(`❌ [${requestId}] Error - Doctor no encontrado:`, {
+        doctorId,
+        errorMessage: errorMsg,
+        executionTime: `${Date.now() - startTime}ms`
+      });
+      throw new Error(errorMsg);
     }
 
     const calendarId = doctor.calendar_id;
     const doctorTimezone = doctor.calendar_timezone;
+    
+    console.log(`📅 [${requestId}] Información del calendario:`, {
+      calendarId: calendarId || 'NO CONFIGURADO',
+      doctorTimezone: doctorTimezone || 'NO CONFIGURADO',
+      hasCalendarId: !!calendarId
+    });
 
     if (!calendarId) {
-      throw new Error(`Calendar ID not found for doctor with ID ${doctorId}.`);
+      const errorMsg = `Calendar ID not found for doctor with ID ${doctorId}.`;
+      console.error(`❌ [${requestId}] Error - Calendar ID no encontrado:`, {
+        doctorId,
+        errorMessage: errorMsg,
+        executionTime: `${Date.now() - startTime}ms`
+      });
+      throw new Error(errorMsg);
     }
 
+    // 📞 Preparar llamada a Google Calendar API
+    const timeMinISO = startDate.setZone(doctorTimezone).toISO();
+    const timeMaxISO = endDate.setZone(doctorTimezone).toISO();
+    
+    console.log(`📞 [${requestId}] Preparando llamada a Google Calendar API:`, {
+      calendarId,
+      timeMin: timeMinISO,
+      timeMax: timeMaxISO,
+      timeZone: doctorTimezone,
+      singleEvents: true,
+      orderBy: 'startTime'
+    });
+    
+    const googleApiStart = Date.now();
     const eventsResponse = await googleCalendarService.calendar.events.list({
       calendarId: calendarId,
-      timeMin: startDate.setZone(doctorTimezone).toISO() || undefined,
-      timeMax: endDate.setZone(doctorTimezone).toISO() || undefined,
+      timeMin: timeMinISO || undefined,
+      timeMax: timeMaxISO || undefined,
       timeZone: doctorTimezone,
       singleEvents: true, // Expand recurring events into individual instances
       orderBy: 'startTime',
     });
-
+    
+    const googleApiTime = Date.now() - googleApiStart;
     const rawEvents = eventsResponse.data.items || [];
+    
+    console.log(`📊 [${requestId}] Respuesta de Google Calendar API:`, {
+      executionTime: `${googleApiTime}ms`,
+      totalRawEvents: rawEvents.length,
+      hasEvents: rawEvents.length > 0,
+      firstEventSummary: rawEvents[0]?.summary || 'N/A',
+      eventSummaries: rawEvents.slice(0, 5).map(e => e.summary || 'Sin título')
+    });
+    
     const processedEvents: (AppointmentEventData | BreakTimeEventData)[] = [];
+    console.log(`🔄 [${requestId}] Iniciando procesamiento de eventos...`);
 
+    let eventCounter = 0;
+    let skippedEvents = 0;
+    let processedAppointments = 0;
+    let processedBreaks = 0;
+    let filteredOutEvents = 0;
+    
     for (const event of rawEvents) {
+      eventCounter++;
+      console.log(`📝 [${requestId}] Procesando evento ${eventCounter}/${rawEvents.length}:`, {
+        eventId: event.id,
+        summary: event.summary || 'Sin título',
+        hasExtendedProperties: !!event.extendedProperties?.private,
+        startTime: event.start?.dateTime || event.start?.date || 'N/A',
+        endTime: event.end?.dateTime || event.end?.date || 'N/A'
+      });
+      
       const privateProps = event.extendedProperties?.private;
-      if (!privateProps) continue; // Skip events without private extended properties
+      if (!privateProps) {
+        skippedEvents++;
+        console.log(`⚠️ [${requestId}] Evento ${eventCounter} omitido - Sin propiedades extendidas privadas`);
+        continue; // Skip events without private extended properties
+      }
+      
+      console.log(`🔍 [${requestId}] Propiedades privadas del evento ${eventCounter}:`, {
+        isBreakTime: privateProps.isBreakTime,
+        breakTimeType: privateProps.breakTimeType,
+        patientId: privateProps.patientId,
+        serviceId: privateProps.serviceId,
+        organizationId: privateProps.organizationId,
+        appointmentStatus: privateProps.appointmentStatus
+      });
 
       const startDateTime = event.start?.dateTime ? DateTime.fromISO(event.start.dateTime, { zone: doctorTimezone }) : undefined;
       const endDateTime = event.end?.dateTime ? DateTime.fromISO(event.end.dateTime, { zone: doctorTimezone }) : undefined;
+      
+      console.log(`⏰ [${requestId}] Análisis de fechas del evento ${eventCounter}:`, {
+        rawStartDateTime: event.start?.dateTime,
+        rawEndDateTime: event.end?.dateTime,
+        parsedStartDateTime: startDateTime?.toISO(),
+        parsedEndDateTime: endDateTime?.toISO(),
+        isValidDateTime: !!startDateTime && !!endDateTime,
+        timezone: doctorTimezone
+      });
 
-      if (!startDateTime || !endDateTime) continue; // Skip events without valid start/end times
+      if (!startDateTime || !endDateTime) {
+        skippedEvents++;
+        console.log(`⚠️ [${requestId}] Evento ${eventCounter} omitido - Fechas inválidas`);
+        continue; // Skip events without valid start/end times
+      }
 
       if (privateProps.isBreakTime === 'true') {
         // This is a break time event
+        console.log(`🛑 [${requestId}] Procesando evento de descanso ${eventCounter}:`);
+        
         const breakTimeEvent: BreakTimeEventData = {
           calendarId: calendarId,
           summary: event.summary || 'Break Time',
@@ -374,14 +492,46 @@ export async function getDoctorEvents(
           breakTimeType: privateProps.breakTimeType as BreakTimeType,
           isBreakTime: true,
         };
+        
+        console.log(`🛑 [${requestId}] Evento de descanso ${eventCounter} construido:`, {
+          calendarId: breakTimeEvent.calendarId,
+          summary: breakTimeEvent.summary,
+          startDateTime: breakTimeEvent.startDateTime.toISO(),
+          endDateTime: breakTimeEvent.endDateTime.toISO(),
+          timezone: breakTimeEvent.timezone,
+          breakTimeType: breakTimeEvent.breakTimeType,
+          duration: breakTimeEvent.endDateTime.diff(breakTimeEvent.startDateTime, 'minutes').minutes
+        });
 
         // Apply break time filters
-        if (filters?.eventType && filters.eventType !== 'break') continue;
-        if (filters?.breakTimeType && filters.breakTimeType !== breakTimeEvent.breakTimeType) continue;
-
+        console.log(`🔍 [${requestId}] Aplicando filtros a evento de descanso ${eventCounter}:`, {
+          hasEventTypeFilter: !!filters?.eventType,
+          eventTypeFilter: filters?.eventType,
+          passesEventTypeFilter: !filters?.eventType || filters.eventType === 'break',
+          hasBreakTimeTypeFilter: !!filters?.breakTimeType,
+          breakTimeTypeFilter: filters?.breakTimeType,
+          eventBreakTimeType: breakTimeEvent.breakTimeType,
+          passesBreakTimeTypeFilter: !filters?.breakTimeType || filters.breakTimeType === breakTimeEvent.breakTimeType
+        });
+        
+        if (filters?.eventType && filters.eventType !== 'break') {
+          filteredOutEvents++;
+          console.log(`🚫 [${requestId}] Evento de descanso ${eventCounter} filtrado - eventType no coincide`);
+          continue;
+        }
+        if (filters?.breakTimeType && filters.breakTimeType !== breakTimeEvent.breakTimeType) {
+          filteredOutEvents++;
+          console.log(`🚫 [${requestId}] Evento de descanso ${eventCounter} filtrado - breakTimeType no coincide`);
+          continue;
+        }
+        
+        processedBreaks++;
+        console.log(`✅ [${requestId}] Evento de descanso ${eventCounter} agregado exitosamente`);
         processedEvents.push(breakTimeEvent);
       } else {
         // This is an appointment event
+        console.log(`👩‍⚕️ [${requestId}] Procesando evento de cita ${eventCounter}:`);
+        
         const appointmentEvent: AppointmentEventData = {
           calendarId: calendarId,
           summary: event.summary || 'Appointment',
@@ -396,18 +546,123 @@ export async function getDoctorEvents(
           appointmentStatus: privateProps.appointmentStatus,
           meetingLink: event.conferenceData?.entryPoints?.[0]?.uri || undefined,
         };
+        
+        console.log(`👩‍⚕️ [${requestId}] Evento de cita ${eventCounter} construido:`, {
+          calendarId: appointmentEvent.calendarId,
+          summary: appointmentEvent.summary,
+          description: appointmentEvent.description || 'Sin descripción',
+          location: appointmentEvent.location || 'Sin ubicación',
+          startDateTime: appointmentEvent.startDateTime.toISO(),
+          endDateTime: appointmentEvent.endDateTime.toISO(),
+          timezone: appointmentEvent.timezone,
+          patientId: appointmentEvent.patientId,
+          serviceId: appointmentEvent.serviceId,
+          organizationId: appointmentEvent.organizationId,
+          appointmentStatus: appointmentEvent.appointmentStatus,
+          meetingLink: appointmentEvent.meetingLink || 'Sin enlace de reunión',
+          duration: appointmentEvent.endDateTime.diff(appointmentEvent.startDateTime, 'minutes').minutes
+        });
 
         // Apply appointment filters
-        if (filters?.eventType && filters.eventType !== 'appointment') continue;
-        if (filters?.appointmentStatus && filters.appointmentStatus !== appointmentEvent.appointmentStatus) continue;
-
+        console.log(`🔍 [${requestId}] Aplicando filtros a evento de cita ${eventCounter}:`, {
+          hasEventTypeFilter: !!filters?.eventType,
+          eventTypeFilter: filters?.eventType,
+          passesEventTypeFilter: !filters?.eventType || filters.eventType === 'appointment',
+          hasAppointmentStatusFilter: !!filters?.appointmentStatus,
+          appointmentStatusFilter: filters?.appointmentStatus,
+          eventAppointmentStatus: appointmentEvent.appointmentStatus,
+          passesAppointmentStatusFilter: !filters?.appointmentStatus || filters.appointmentStatus === appointmentEvent.appointmentStatus
+        });
+        
+        if (filters?.eventType && filters.eventType !== 'appointment') {
+          filteredOutEvents++;
+          console.log(`🚫 [${requestId}] Evento de cita ${eventCounter} filtrado - eventType no coincide`);
+          continue;
+        }
+        if (filters?.appointmentStatus && filters.appointmentStatus !== appointmentEvent.appointmentStatus) {
+          filteredOutEvents++;
+          console.log(`🚫 [${requestId}] Evento de cita ${eventCounter} filtrado - appointmentStatus no coincide`);
+          continue;
+        }
+        
+        processedAppointments++;
+        console.log(`✅ [${requestId}] Evento de cita ${eventCounter} agregado exitosamente`);
         processedEvents.push(appointmentEvent);
       }
     }
-
+    
+    // 📊 Resumen final del procesamiento
+    const totalExecutionTime = Date.now() - startTime;
+    console.log(`📊 [${requestId}] Resumen final del procesamiento:`, {
+      totalExecutionTime: `${totalExecutionTime}ms`,
+      totalRawEvents: rawEvents.length,
+      eventCounter,
+      skippedEvents,
+      processedAppointments,
+      processedBreaks,
+      filteredOutEvents,
+      finalProcessedEvents: processedEvents.length,
+      processingEfficiency: `${((processedEvents.length / Math.max(rawEvents.length, 1)) * 100).toFixed(2)}%`
+    });
+    
+    console.log(`🎯 [${requestId}] Eventos finales por tipo:`, {
+      appointments: processedEvents.filter(e => 'patientId' in e).length,
+      breaks: processedEvents.filter(e => 'isBreakTime' in e && e.isBreakTime).length,
+      totalEvents: processedEvents.length
+    });
+    
+    if (processedEvents.length > 0) {
+      console.log(`📋 [${requestId}] Detalles de eventos procesados:`);
+      processedEvents.forEach((event, index) => {
+        if ('isBreakTime' in event && event.isBreakTime) {
+          const breakEvent = event as BreakTimeEventData;
+          console.log(`  🛑 Evento ${index + 1} (Descanso):`, {
+            summary: breakEvent.summary,
+            breakTimeType: breakEvent.breakTimeType,
+            start: breakEvent.startDateTime.toISO(),
+            end: breakEvent.endDateTime.toISO(),
+            duration: breakEvent.endDateTime.diff(breakEvent.startDateTime, 'minutes').minutes + ' min'
+          });
+        } else {
+          const appointmentEvent = event as AppointmentEventData;
+          console.log(`  👩‍⚕️ Evento ${index + 1} (Cita):`, {
+            summary: appointmentEvent.summary,
+            patientId: appointmentEvent.patientId,
+            appointmentStatus: appointmentEvent.appointmentStatus,
+            start: appointmentEvent.startDateTime.toISO(),
+            end: appointmentEvent.endDateTime.toISO(),
+            duration: appointmentEvent.endDateTime.diff(appointmentEvent.startDateTime, 'minutes').minutes + ' min'
+          });
+        }
+      });
+    }
+    
+    console.log(`✅ [${requestId}] getDoctorEvents completado exitosamente en ${totalExecutionTime}ms`);
     return processedEvents;
   } catch (error) {
-    console.error('Error getting doctor events:', error);
+    const errorId = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const totalExecutionTime = Date.now() - startTime;
+    
+    console.error(`❌ [${requestId}] Error en getDoctorEvents:`, {
+      errorId,
+      executionTime: `${totalExecutionTime}ms`,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+      functionParams: {
+        doctorId,
+        startDate: startDate.toISO(),
+        endDate: endDate.toISO(),
+        filters: filters || 'sin filtros'
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+    // Re-lanzar el error con información adicional
+    if (error instanceof Error) {
+      error.message = `[${requestId}][${errorId}] ${error.message}`;
+    }
+    
     throw error;
   }
 }

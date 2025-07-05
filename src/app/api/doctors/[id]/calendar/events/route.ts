@@ -100,94 +100,304 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  console.log('API: /api/doctors/[id]/calendar/events - Request received');
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  console.log(`🚀 [${requestId}] API: /api/doctors/[id]/calendar/events - Request received`);
+  console.log(`📋 [${requestId}] Request URL:`, request.url);
+  console.log(`🔧 [${requestId}] Request method:`, request.method);
+  console.log(`📅 [${requestId}] Request timestamp:`, new Date().toISOString());
+  
   try {
+    console.log(`🔍 [${requestId}] Extracting params from request...`);
     const { id } = await params;
+    console.log(`📝 [${requestId}] Raw doctor ID from params:`, { id, type: typeof id });
+    
     const doctorId = parseInt(id, 10);
-    console.debug(`Parsed doctorId: ${doctorId}`);
+    console.log(`🔢 [${requestId}] Parsed doctorId:`, { doctorId, isValid: !isNaN(doctorId) });
     
     if (isNaN(doctorId)) {
-      console.error(`Validation Error: Invalid doctor ID: ${id}`);
+      console.error(`❌ [${requestId}] Validation Error: Invalid doctor ID:`, { originalId: id, parsedId: doctorId });
       return NextResponse.json(
         { error: 'Invalid doctor ID' },
         { status: 400 }
       );
     }
+    
+    console.log(`✅ [${requestId}] Doctor ID validation passed:`, doctorId);
 
+    console.log(`🔗 [${requestId}] Extracting query parameters from URL...`);
     const { searchParams } = new URL(request.url);
+    
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
     const eventType = searchParams.get('eventType');
     const appointmentStatus = searchParams.get('appointmentStatus');
     const breakTimeType = searchParams.get('breakTimeType');
 
-    console.debug(`Request Params: startDate=${startDateParam}, endDate=${endDateParam}, eventType=${eventType}, appointmentStatus=${appointmentStatus}, breakTimeType=${breakTimeType}`);
+    console.log(`📊 [${requestId}] Raw query parameters extracted:`, {
+      startDateParam,
+      endDateParam,
+      eventType,
+      appointmentStatus,
+      breakTimeType,
+      allParams: Object.fromEntries(searchParams.entries())
+    });
+    
+    console.log(`🔍 [${requestId}] Query parameter types:`, {
+      startDateParam: typeof startDateParam,
+      endDateParam: typeof endDateParam,
+      eventType: typeof eventType,
+      appointmentStatus: typeof appointmentStatus,
+      breakTimeType: typeof breakTimeType
+    });
 
+    console.log(`🔐 [${requestId}] Validating required date parameters...`);
     if (!startDateParam || !endDateParam) {
-      console.error('Validation Error: startDate and endDate are required.');
+      console.error(`❌ [${requestId}] Validation Error: Missing required date parameters:`, {
+        startDateParam: startDateParam || 'MISSING',
+        endDateParam: endDateParam || 'MISSING',
+        hasStartDate: !!startDateParam,
+        hasEndDate: !!endDateParam
+      });
       return NextResponse.json(
         { error: 'startDate and endDate are required' },
         { status: 400 }
       );
     }
+    
+    console.log(`✅ [${requestId}] Required date parameters validation passed`);
 
+    console.log(`📅 [${requestId}] Parsing date parameters with Luxon...`);
     const startDate = DateTime.fromISO(startDateParam, { zone: 'utc' });
     const endDate = DateTime.fromISO(endDateParam, { zone: 'utc' });
+    
+    console.log(`🔍 [${requestId}] Date parsing results:`, {
+      startDate: {
+        input: startDateParam,
+        parsed: startDate.toISO(),
+        isValid: startDate.isValid,
+        invalidReason: startDate.invalidReason,
+        zone: startDate.zoneName
+      },
+      endDate: {
+        input: endDateParam,
+        parsed: endDate.toISO(),
+        isValid: endDate.isValid,
+        invalidReason: endDate.invalidReason,
+        zone: endDate.zoneName
+      }
+    });
 
     if (!startDate.isValid || !endDate.isValid) {
-      console.error(`Validation Error: Invalid date format for startDate=${startDateParam} or endDate=${endDateParam}`);
+      console.error(`❌ [${requestId}] Date validation failed:`, {
+        startDateParam,
+        endDateParam,
+        startDateValid: startDate.isValid,
+        endDateValid: endDate.isValid,
+        startDateError: startDate.invalidReason,
+        endDateError: endDate.invalidReason
+      });
       return NextResponse.json(
         { error: 'Invalid date format. Use YYYY-MM-DD format' },
         { status: 400 }
       );
     }
-    console.debug(`Parsed Date Range: startDate=${startDate.toISO()}, endDate=${endDate.toISO()}`);
+    
+    console.log(`✅ [${requestId}] Date parsing validation passed`);
+    console.log(`📊 [${requestId}] Final parsed date range:`, {
+      startDate: startDate.toISO(),
+      endDate: endDate.toISO(),
+      duration: endDate.diff(startDate, 'days').days + ' days'
+    });
 
+    console.log(`🔧 [${requestId}] Building filters object...`);
     const filters: {
       eventType?: 'appointment' | 'break';
       appointmentStatus?: string;
       breakTimeType?: BreakTimeType;
     } = {};
 
+    console.log(`🔍 [${requestId}] Processing eventType filter:`, {
+      input: eventType,
+      isAppointment: eventType === 'appointment',
+      isBreak: eventType === 'break',
+      isValid: eventType === 'appointment' || eventType === 'break'
+    });
+    
     if (eventType === 'appointment' || eventType === 'break') {
       filters.eventType = eventType;
+      console.log(`✅ [${requestId}] EventType filter applied:`, eventType);
+    } else if (eventType) {
+      console.log(`⚠️ [${requestId}] Invalid eventType ignored:`, eventType);
     }
+    
+    console.log(`🔍 [${requestId}] Processing appointmentStatus filter:`, {
+      input: appointmentStatus,
+      hasValue: !!appointmentStatus,
+      length: appointmentStatus?.length || 0
+    });
+    
     if (appointmentStatus) {
       filters.appointmentStatus = appointmentStatus;
+      console.log(`✅ [${requestId}] AppointmentStatus filter applied:`, appointmentStatus);
     }
+    
+    console.log(`🔍 [${requestId}] Processing breakTimeType filter:`, {
+      input: breakTimeType,
+      hasValue: !!breakTimeType,
+      availableTypes: BREAK_TIME_TYPES,
+      isValidType: breakTimeType && BREAK_TIME_TYPES.includes(breakTimeType as BreakTimeType)
+    });
+    
     if (breakTimeType && BREAK_TIME_TYPES.includes(breakTimeType as BreakTimeType)) {
       filters.breakTimeType = breakTimeType as BreakTimeType;
+      console.log(`✅ [${requestId}] BreakTimeType filter applied:`, breakTimeType);
+    } else if (breakTimeType) {
+      console.log(`⚠️ [${requestId}] Invalid breakTimeType ignored:`, breakTimeType);
     }
-    console.debug('Applied Filters:', filters);
+    
+    console.log(`📋 [${requestId}] Final filters object:`, {
+      filters,
+      filterCount: Object.keys(filters).length,
+      hasEventTypeFilter: !!filters.eventType,
+      hasAppointmentStatusFilter: !!filters.appointmentStatus,
+      hasBreakTimeTypeFilter: !!filters.breakTimeType
+    });
 
-    console.log('Calling getDoctorEvents...');
+    console.log(`🚀 [${requestId}] Calling getDoctorEvents function...`);
+    console.log(`📊 [${requestId}] getDoctorEvents parameters:`, {
+      doctorId,
+      startDate: startDate.toISO(),
+      endDate: endDate.toISO(),
+      filters,
+      parameterTypes: {
+        doctorId: typeof doctorId,
+        startDate: startDate.constructor.name,
+        endDate: endDate.constructor.name,
+        filters: typeof filters
+      }
+    });
+    
+    const startTime = Date.now();
+    console.log(`⏱️ [${requestId}] getDoctorEvents call started at:`, new Date(startTime).toISOString());
+    
     const events = await getDoctorEvents(
       doctorId,
       startDate,
       endDate,
       filters
     );
-    console.log(`Received ${events.length} events from getDoctorEvents.`);
-    console.debug('Retrieved Events:', events);
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`⏱️ [${requestId}] getDoctorEvents call completed in ${duration}ms`);
+    
+    console.log(`📈 [${requestId}] getDoctorEvents results summary:`, {
+      totalEvents: events.length,
+      eventsReceived: !!events,
+      isArray: Array.isArray(events),
+      firstEventType: events[0] ? ('isBreakTime' in events[0] && events[0].isBreakTime ? 'break' : 'appointment') : 'N/A',
+      eventTypes: [...new Set(events.map(e => 'isBreakTime' in e && e.isBreakTime ? 'break' : 'appointment'))],
+      executionTime: `${duration}ms`
+    });
+    
+    console.log(`🔍 [${requestId}] Detailed events analysis:`);
+    events.forEach((event, index) => {
+      if ('isBreakTime' in event && event.isBreakTime) {
+        console.log(`📝 [${requestId}] Event ${index + 1} (Break):`, {
+          eventType: 'break',
+          breakTimeType: event.breakTimeType,
+          summary: event.summary,
+          start: event.startDateTime.toISO(),
+          end: event.endDateTime.toISO(),
+          timezone: event.timezone
+        });
+      } else {
+        console.log(`📝 [${requestId}] Event ${index + 1} (Appointment):`, {
+          eventType: 'appointment',
+          summary: event.summary,
+          start: event.startDateTime.toISO(),
+          end: event.endDateTime.toISO(),
+          location: event.location,
+          timezone: event.timezone
+        });
+      }
+    });
 
-    return NextResponse.json({
+    console.log(`📦 [${requestId}] Building response object...`);
+    const responseData = {
       success: true,
       data: {
-        events: events,
+        events: events.map(event => {
+          if ('isBreakTime' in event && event.isBreakTime) {
+            return {
+              eventType: 'break',
+              breakTimeType: event.breakTimeType,
+              summary: event.summary,
+              start: event.startDateTime.toISO(),
+              end: event.endDateTime.toISO(),
+              timezone: event.timezone,
+              calendarId: event.calendarId
+            };
+          } else {
+            return {
+              eventType: 'appointment',
+              summary: event.summary,
+              description: event.description,
+              location: event.location,
+              meetingLink: event.meetingLink,
+              start: event.startDateTime.toISO(),
+              end: event.endDateTime.toISO(),
+              timezone: event.timezone,
+              calendarId: event.calendarId
+            };
+          }
+        }),
         dateRange: {
           start: startDate.toISODate(),
           end: endDate.toISODate(),
         },
         count: events.length,
       },
+    };
+    
+    console.log(`📊 [${requestId}] Response data summary:`, {
+      success: responseData.success,
+      eventCount: responseData.data.count,
+      dateRangeStart: responseData.data.dateRange.start,
+      dateRangeEnd: responseData.data.dateRange.end,
+      responseSize: JSON.stringify(responseData).length + ' characters'
     });
+    
+    console.log(`✅ [${requestId}] API request completed successfully`);
+    console.log(`📤 [${requestId}] Sending response with ${events.length} events`);
+    
+    return NextResponse.json(responseData);
   } catch (error) {
-    console.error('Error getting doctor calendar events:', {
-      doctorId: (await params).id, // Access doctorId from params for error logging
-      error: error instanceof Error ? error.message : error,
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
+    const errorId = `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.error(`💥 [${requestId}] [${errorId}] Critical error in doctor calendar events API:`);
+    console.error(`🔍 [${requestId}] [${errorId}] Error details:`, {
+      doctorId: (await params).id,
+      errorType: error?.constructor?.name || 'Unknown',
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+      requestUrl: request.url,
+      requestMethod: request.method
     });
+    
+    console.error(`📊 [${requestId}] [${errorId}] Error context:`, {
+      hasParams: !!(await params),
+      paramsId: (await params)?.id,
+      requestHeaders: Object.fromEntries(request.headers.entries()),
+      userAgent: request.headers.get('user-agent')
+    });
+    
+    if (error instanceof Error) {
+      console.error(`🔧 [${requestId}] [${errorId}] Error stack trace:`);
+      console.error(error.stack);
+    }
+    
+    console.error(`❌ [${requestId}] [${errorId}] Returning 500 error response`);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
