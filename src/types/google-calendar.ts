@@ -32,15 +32,15 @@ export interface BaseEventData {
  * These properties are stored in `extendedProperties.private` in Google Calendar.
  * @interface AppointmentEventData
  * @extends {BaseEventData}
- * @property {string} patientId - The unique identifier of the patient associated with the appointment.
- * @property {string} serviceId - The unique identifier of the medical service for the appointment.
- * @property {string} organizationId - The unique identifier of the organization to which the appointment belongs.
+ * @property {number} patientId - The unique identifier of the patient associated with the appointment.
+ * @property {number} serviceId - The unique identifier of the medical service for the appointment.
+ * @property {number} organizationId - The unique identifier of the organization to which the appointment belongs.
  * @property {string} appointmentStatus - The status of the appointment (e.g., "Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada").
  */
 export interface AppointmentEventData extends BaseEventData {
-  patientId: string;
-  serviceId: string;
-  organizationId: string;
+  patientId: number;
+  serviceId: number;
+  organizationId: number;
   appointmentStatus: string;
 }
 

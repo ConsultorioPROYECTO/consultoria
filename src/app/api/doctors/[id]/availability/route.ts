@@ -1,15 +1,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { doctors } from '@/db/schema/doctors';
-import { eq } from 'drizzle-orm';
-import { googleCalendarService } from '@/lib/google-calendar';
-import type { WorkingHours, DaySchedule } from '@/types/working-hours';
+import { DateTime } from 'luxon';
+import { getDoctorAvailability } from '@/lib/calendar-event-retriever';
 
 /**
  * @fileoverview API endpoint para obtener la disponibilidad de horarios de un doctor específico
  * @description Este endpoint calcula los horarios disponibles de un doctor para una fecha específica,
- * considerando sus horarios de trabajo, descansos y eventos existentes en Google Calendar.
+ * utilizando la lógica centralizada en `calendar-event-retriever.ts` que combina horarios de trabajo,
+ * descansos y eventos existentes en Google Calendar.
  * 
  * @route GET /api/doctors/[id]/availability
  * @param {string} id - ID del doctor (parámetro de ruta)
@@ -73,19 +71,6 @@ import type { WorkingHours, DaySchedule } from '@/types/working-hours';
  */
 
 /**
- * Representa un tiempo de descanso de un doctor para un día específico
- * @interface BreakTime
- */
-type BreakTime = {
-  /** Día de la semana (0=Domingo, 1=Lunes, ..., 6=Sábado) */
-  dayOfWeek: number;
-  /** Hora de inicio del descanso en formato HH:MM */
-  startTime: string;
-  /** Hora de fin del descanso en formato HH:MM */
-  endTime: string;
-};
-
-/**
  * Representa un horario disponible para citas
  * @interface TimeSlot
  */
@@ -97,95 +82,11 @@ type TimeSlot = {
 };
 
 /**
- * Representa un bloque de tiempo ocupado
- * @interface BusyBlock
- */
-type BusyBlock = {
-  /** Fecha y hora de inicio en formato ISO 8601 */
-  start: string;
-  /** Fecha y hora de fin en formato ISO 8601 */
-  end: string;
-};
-
-/**
-que maneje e * Crea una fecha en una zona horaria específica
- * @param dateStr - Fecha en formato YYYY-MM-DD
- * @param timeStr - Hora en formato HH:MM o HH:MM:SS
- * @param timezone - Zona horaria objetivo
- * @returns Date object ajustado a la zona horaria
- */
-function createDateInTimezone(dateStr: string, timeStr: string, timezone: string): Date {
-  // Crear fecha base
-  const baseDate = new Date(`${dateStr}T${timeStr}`);
-  
-  // Para simplificar, usamos el offset de zona horaria conocido
-  // America/Bogota es UTC-5, pero esto debería ser más dinámico en producción
-  const timezoneOffsets: Record<string, number> = {
-    'America/Bogota': -5,
-    'UTC': 0,
-    // Agregar más zonas horarias según sea necesario
-  };
-  
-  const offsetHours = timezoneOffsets[timezone] || -5; // Default a Bogotá
-  const offsetMs = offsetHours * 60 * 60 * 1000;
-  
-  // Ajustar la fecha por el offset de zona horaria
-  return new Date(baseDate.getTime() - offsetMs);
-}
-
-/**
- * Verifica si un horario propuesto se solapa con bloques de tiempo ocupados
- * 
- * @description Utiliza el algoritmo de detección de solapamiento de intervalos:
- * Dos intervalos [a,b] y [c,d] se solapan si: a < d && b > c
- * 
- * @param {Date} slotStart - Fecha y hora de inicio del horario propuesto
- * @param {Date} slotEnd - Fecha y hora de fin del horario propuesto
- * @param {BusyBlock[]} busyBlocks - Array de bloques de tiempo ocupados
- * 
- * @returns {boolean} true si hay solapamiento, false en caso contrario
- * 
- * @example
- * const start = new Date('2025-07-02T09:00:00Z');
- * const end = new Date('2025-07-02T09:30:00Z');
- * const busy = [{ start: '2025-07-02T09:15:00Z', end: '2025-07-02T09:45:00Z' }];
- * const overlaps = isOverlapping(start, end, busy); // true
- * 
- * @since 1.0.0
- * @author Sistema de Gestión de Citas
- */
-function isOverlapping(slotStart: Date, slotEnd: Date, busyBlocks: BusyBlock[]): boolean {
-  for (const block of busyBlocks) {
-    const blockStart = new Date(block.start);
-    const blockEnd = new Date(block.end);
-    
-    // DEBUG: Log detallado de cada comparación
-    const overlaps = slotStart < blockEnd && slotEnd > blockStart;
-    if (overlaps) {
-      console.log(`🔴 SOLAPAMIENTO DETECTADO:`);
-      console.log(`  Slot: ${slotStart.toISOString()} - ${slotEnd.toISOString()}`);
-      console.log(`  Bloque ocupado: ${blockStart.toISOString()} - ${blockEnd.toISOString()}`);
-      console.log(`  Condición: ${slotStart.toISOString()} < ${blockEnd.toISOString()} && ${slotEnd.toISOString()} > ${blockStart.toISOString()}`);
-      console.log(`  Resultado: ${slotStart < blockEnd} && ${slotEnd > blockStart} = ${overlaps}`);
-    }
-    
-    // Algoritmo de detección de solapamiento: slotStart < blockEnd && slotEnd > blockStart
-    if (overlaps) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * Endpoint GET para obtener la disponibilidad de horarios de un doctor
  * 
- * @description Implementa un algoritmo completo de cálculo de disponibilidad que:
- * 1. Valida los parámetros de entrada (ID del doctor y fecha)
- * 2. Consulta la información del doctor desde la base de datos MySQL usando Drizzle ORM
- * 3. Obtiene eventos ocupados desde Google Calendar API v3
- * 4. Combina horarios de trabajo, descansos y eventos para calcular disponibilidad
- * 5. Genera slots de tiempo disponibles basados en la duración de citas configurada
+ * @description Este endpoint ahora utiliza la función `getDoctorAvailability`
+ * de `src/lib/calendar-event-retriever.ts` para calcular la disponibilidad,
+ * simplificando la lógica de este controlador de API.
  * 
  * @param {NextRequest} request - Objeto de solicitud de Next.js con parámetros de consulta
  * @param {Object} context - Contexto de la ruta dinámica
@@ -194,7 +95,7 @@ function isOverlapping(slotStart: Date, slotEnd: Date, busyBlocks: BusyBlock[]):
  * @returns {Promise<NextResponse<TimeSlot[] | {error: string}>>} 
  * - 200: Array de horarios disponibles
  * - 400: Error de validación de parámetros
- * - 404: Doctor no encontrado o sin configuración
+ * - 404: Doctor no encontrado
  * - 500: Error interno del servidor
  * 
  * @throws {Error} Error de base de datos o Google Calendar API
@@ -222,31 +123,33 @@ function isOverlapping(slotStart: Date, slotEnd: Date, busyBlocks: BusyBlock[]):
  * Response: { error: "El doctorId no es válido" }
  * 
  * @since 1.0.0
- * @version 1.2.0
+ * @version 1.3.0
  * @author Sistema de Gestión de Citas
  */
 export async function GET(
   request: NextRequest, 
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<TimeSlot[] | { error: string }>> {
-  // Extraer parámetros de consulta de la URL
+  console.log('API: /api/doctors/[id]/availability - Request received');
   const { searchParams } = new URL(request.url);
-  const dateParam = searchParams.get('date'); // Formato esperado: YYYY-MM-DD
-  const intervalParam = searchParams.get('interval'); // Duración del intervalo en minutos
+  const dateParam = searchParams.get('date');
+  const intervalParam = searchParams.get('interval');
 
-  // Validación: El parámetro 'date' es obligatorio
+  console.debug(`Request Params: date=${dateParam}, interval=${intervalParam}`);
+
   if (!dateParam) {
+    console.error('Validation Error: "date" parameter is required.');
     return NextResponse.json(
       { error: 'El parámetro "date" es requerido' }, 
       { status: 400 }
     );
   }
 
-  // Validación y conversión del parámetro 'interval'
-  let intervalMinutes = 30; // Valor por defecto
+  let intervalMinutes = 30;
   if (intervalParam) {
     const parsedInterval = parseInt(intervalParam, 10);
     if (isNaN(parsedInterval) || parsedInterval < 5 || parsedInterval > 120) {
+      console.error(`Validation Error: Invalid "interval" parameter: ${intervalParam}`);
       return NextResponse.json(
         { error: 'El parámetro "interval" debe ser un número entre 5 y 120 minutos' }, 
         { status: 400 }
@@ -254,17 +157,14 @@ export async function GET(
     }
     intervalMinutes = parsedInterval;
   }
+  console.debug(`Parsed intervalMinutes: ${intervalMinutes}`);
 
-  // Convertir fecha y calcular día de la semana (0=Domingo, 6=Sábado)
-  const date = new Date(dateParam);
-  const dayOfWeek = date.getUTCDay();
-  
-  // Resolver parámetros de ruta dinámicos (Next.js 15+)
   const resolvedParams = await params;
   const doctorId = parseInt(resolvedParams.id, 10);
+  console.debug(`Parsed doctorId: ${doctorId}`);
 
-  // Validación: El ID del doctor debe ser un número válido
   if (isNaN(doctorId)) {
+    console.error(`Validation Error: Invalid doctorId: ${resolvedParams.id}`);
     return NextResponse.json(
       { error: 'El doctorId no es válido' }, 
       { status: 400 }
@@ -272,241 +172,49 @@ export async function GET(
   }
 
   try {
-    // ========================================
-    // PASO 1: CONSULTA DE INFORMACIÓN DEL DOCTOR
-    // ========================================
-    
-    /**
-     * Consulta la información del doctor desde MySQL usando Drizzle ORM
-     * Incluye: horarios de trabajo, descansos, ID de calendario de Google, duración de citas
-     */
-    const doctorResult = await db
-      .select()
-      .from(doctors)
-      .where(eq(doctors.idDoctor, doctorId))
-      .limit(1);
-    
-    const doctor = doctorResult[0];
-
-    // Validación: Doctor debe existir y tener configuración básica
-    if (!doctor || !doctor.calendar_id || !doctor.working_hours) {
+    console.log(`Attempting to get availability for doctor ${doctorId} on ${dateParam}`);
+    const targetDate = DateTime.fromISO(dateParam, { zone: 'utc' });
+    if (!targetDate.isValid) {
+      console.error(`Validation Error: Invalid date format for ${dateParam}`);
       return NextResponse.json(
-        { error: 'Doctor no encontrado o sin configuración de calendario/horario' }, 
-        { status: 404 }
-      );
-    }
-
-    // ========================================
-    // PASO 2: FILTRADO POR DÍA DE LA SEMANA
-    // ========================================
-    
-    /**
-     * Mapea el número del día de la semana a la propiedad correspondiente del objeto WorkingHours
-     * 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
-     */
-    const dayNames: (keyof WorkingHours)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = dayNames[dayOfWeek];
-    
-    /**
-     * Extrae horarios de trabajo y descansos específicos para el día solicitado
-     * Los horarios se almacenan como JSON en la base de datos
-     */
-    const doctorWorkingHours = doctor.working_hours as WorkingHours | null;
-    const daySchedule: DaySchedule | null = doctorWorkingHours?.[dayName] || null;
-    
-    const breakTimes = ((doctor.break_times as BreakTime[] | null) || [])
-      .filter(bt => bt.dayOfWeek === dayOfWeek);
-
-    // Si el doctor no trabaja este día o el día no está activo, retornar array vacío
-    if (!daySchedule || !daySchedule.isActive) {
-      return NextResponse.json([]); // El doctor no trabaja este día
-    }
-
-    // ========================================
-    // PASO 3: CONSULTA DE GOOGLE CALENDAR API
-    // ========================================
-    
-    /**
-     * Obtiene eventos ocupados del calendario de Google del doctor
-     * Utiliza Google Calendar API v3 para consultar eventos del día específico
-     * Ahora incluye la zona horaria del doctor para consultas precisas
-     */
-    const doctorTimezone = doctor.calendar_timezone || 'America/Bogota';
-    const busyBlocksFromGoogle = await googleCalendarService.getBusySlotsForDay(
-      doctor.calendar_id, 
-      date,
-      doctorTimezone
-    );
-    
-    // DEBUG: Log para verificar los bloques ocupados obtenidos de Google Calendar
-    console.log('=== DEBUG AVAILABILITY API ===');
-    console.log('Doctor ID:', doctorId);
-    console.log('Calendar ID:', doctor.calendar_id);
-    console.log('Doctor timezone:', doctorTimezone);
-    console.log('Fecha solicitada:', dateParam);
-    console.log('Fecha objeto:', date);
-    console.log('Día de la semana:', dayOfWeek);
-    console.log('Bloques ocupados de Google Calendar:', JSON.stringify(busyBlocksFromGoogle, null, 2));
-    
-    /**
-     * Filtrado y validación de bloques de Google Calendar
-     * Asegura que los bloques tengan propiedades start y end válidas
-     * Convierte tipos de Google Calendar API a nuestro tipo BusyBlock
-     */
-    const validBusyBlocks: BusyBlock[] = busyBlocksFromGoogle
-      .filter(block => 
-        block.start && 
-        block.end && 
-        typeof block.start === 'string' && 
-        typeof block.end === 'string'
-      )
-      .map(block => ({
-        start: block.start as string,
-        end: block.end as string
-      }));
-
-    // ========================================
-    // PASO 4: COMBINACIÓN DE BLOQUES OCUPADOS
-    // ========================================
-    
-    /**
-     * Combina todos los bloques de tiempo ocupados:
-     * 1. Eventos de Google Calendar (citas existentes)
-     * 2. Tiempos de descanso configurados del doctor
-     * 
-     * Convierte horarios de descanso (HH:MM) a formato ISO 8601 usando la zona horaria del doctor
-     */
-    const allBusyBlocks: BusyBlock[] = [
-      // Eventos de Google Calendar ya validados
-      ...validBusyBlocks,
-      
-      // Descansos del doctor convertidos a formato ISO con zona horaria correcta
-      ...breakTimes
-        .filter(bt => bt.startTime && bt.endTime) // Validar que existan horarios
-        .map(bt => {
-          // Crear fechas en la zona horaria del doctor usando la función auxiliar
-          const breakStart = createDateInTimezone(dateParam, `${bt.startTime}:00`, doctorTimezone);
-          const breakEnd = createDateInTimezone(dateParam, `${bt.endTime}:00`, doctorTimezone);
-          
-          console.log(`DEBUG Break time: ${bt.startTime}-${bt.endTime} -> ${breakStart.toISOString()}-${breakEnd.toISOString()}`);
-          
-          return {
-            start: breakStart.toISOString(),
-            end: breakEnd.toISOString(),
-          };
-        })
-    ];
-    
-    // DEBUG: Log para verificar todos los bloques ocupados combinados
-    console.log('Bloques válidos de Google Calendar:', JSON.stringify(validBusyBlocks, null, 2));
-    console.log('Descansos del doctor:', JSON.stringify(breakTimes, null, 2));
-    console.log('TODOS los bloques ocupados combinados:', JSON.stringify(allBusyBlocks, null, 2));
-
-    // ========================================
-    // PASO 5: GENERACIÓN DE SLOTS DISPONIBLES
-    // ========================================
-    
-    /**
-     * Array para almacenar los horarios disponibles calculados
-     * Cada slot representa un período de tiempo libre para agendar citas
-     */
-    const availableSlots: TimeSlot[] = [];
-    
-    /**
-     * Duración de cada cita en minutos
-     * Se obtiene del parámetro de consulta 'interval', por defecto 30 minutos
-     * Nota: Este valor sobrescribe la configuración del doctor para mayor flexibilidad
-     */
-    const appointmentDuration = intervalMinutes;
-    
-    // Validación: Los horarios de trabajo deben estar completos
-    if (!daySchedule.startTime || !daySchedule.endTime) {
-      return NextResponse.json(
-        { error: 'Horarios de trabajo incompletos' }, 
+        { error: 'Formato de fecha inválido. Use YYYY-MM-DD.' },
         { status: 400 }
       );
     }
-    
-    /**
-     * Conversión de horarios de trabajo a objetos Date
-     * Formato de entrada: "HH:MM" -> Formato de salida: Date ISO 8601
-     * Ahora usa la zona horaria del doctor usando la función auxiliar
-     */
-    const dayStart = createDateInTimezone(dateParam, `${daySchedule.startTime}:00`, doctorTimezone);
-    const dayEnd = createDateInTimezone(dateParam, `${daySchedule.endTime}:00`, doctorTimezone);
-    
-    // DEBUG: Log para verificar las fechas de trabajo
-    console.log('=== DEBUG HORARIOS DE TRABAJO ===');
-    console.log('Doctor timezone:', doctorTimezone);
-    console.log('Date param:', dateParam);
-    console.log('Day schedule start time:', daySchedule.startTime);
-    console.log('Day schedule end time:', daySchedule.endTime);
-    console.log('Day start (timezone adjusted):', dayStart);
-    console.log('Day end (timezone adjusted):', dayEnd);
-    console.log('Day start ISO:', dayStart.toISOString());
-    console.log('Day end ISO:', dayEnd.toISOString());
 
-    /**
-     * ALGORITMO DE GENERACIÓN DE SLOTS:
-     * 1. Inicia desde el horario de inicio del doctor
-     * 2. Genera slots de duración appointmentDuration
-     * 3. Verifica que no se solape con bloques ocupados
-     * 4. Avanza al siguiente slot posible
-     * 5. Continúa hasta el horario de fin del doctor
-     */
-    let currentSlotStart = dayStart;
+    const startDate = targetDate.startOf('day');
+    const endDate = targetDate.endOf('day');
+    console.debug(`Date Range: startDate=${startDate.toISO()}, endDate=${endDate.toISO()}`);
 
-    while (currentSlotStart < dayEnd) {
-      // Calcular el fin del slot actual
-      const currentSlotEnd = new Date(
-        currentSlotStart.getTime() + appointmentDuration * 60000
-      );
+    console.log('Calling getDoctorAvailability...');
+    const availableIntervals = await getDoctorAvailability(
+      doctorId,
+      startDate,
+      endDate
+    );
+    console.log(`Received ${availableIntervals.length} available intervals from getDoctorAvailability.`);
+    console.debug('Raw available intervals:', availableIntervals.map(i => i.toISO()));
 
-      // Si el slot se extiende más allá del horario de trabajo, terminar
-      if (currentSlotEnd > dayEnd) {
-        break;
-      }
-
-      // Verificar si el slot está libre (no se solapa con bloques ocupados)
-      const hasOverlap = isOverlapping(currentSlotStart, currentSlotEnd, allBusyBlocks);
-      
-      // DEBUG: Log para cada slot evaluado
-      console.log(`Evaluando slot: ${currentSlotStart.toISOString()} - ${currentSlotEnd.toISOString()}`);
-      console.log(`¿Tiene solapamiento?: ${hasOverlap}`);
-      
-      if (!hasOverlap) {
-        console.log('✅ Slot agregado como disponible');
+    const availableSlots: TimeSlot[] = [];
+    for (const interval of availableIntervals) {
+      let currentSlotStart = interval.start!;
+      console.debug(`Processing interval: ${interval.start!.toISO()} - ${interval.end!.toISO()}`);
+      while (currentSlotStart.plus({ minutes: intervalMinutes }) <= interval.end!) {
+        const currentSlotEnd = currentSlotStart.plus({ minutes: intervalMinutes });
         availableSlots.push({
-          start: currentSlotStart.toISOString(),
-          end: currentSlotEnd.toISOString(),
+          start: currentSlotStart.toISO() || '',
+          end: currentSlotEnd.toISO() || '',
         });
+        console.debug(`Generated slot: ${currentSlotStart.toISO()} - ${currentSlotEnd.toISO()}`);
+        currentSlotStart = currentSlotEnd;
       }
-
-      // Avanzar al siguiente slot posible
-      currentSlotStart = new Date(
-        currentSlotStart.getTime() + appointmentDuration * 60000
-      );
     }
+    console.log(`Generated ${availableSlots.length} final available slots.`);
+    console.debug('Final available slots:', availableSlots);
 
-    // Retornar los slots disponibles en formato JSON
     return NextResponse.json(availableSlots);
 
   } catch (error) {
-    // ========================================
-    // MANEJO DE ERRORES
-    // ========================================
-    
-    /**
-     * Manejo centralizado de errores del endpoint
-     * 
-     * Posibles fuentes de error:
-     * - Conexión a base de datos MySQL (Drizzle ORM)
-     * - Google Calendar API v3 (autenticación, límites de rate, red)
-     * - Parsing de datos JSON (working_hours, break_times)
-     * - Conversión de fechas y horarios
-     * 
-     * @param {Error} error - Error capturado durante la ejecución
-     */
     console.error('Error al obtener la disponibilidad del doctor:', {
       doctorId,
       date: dateParam,
@@ -515,10 +223,6 @@ export async function GET(
       timestamp: new Date().toISOString()
     });
     
-    /**
-     * Respuesta de error genérica para el cliente
-     * No expone detalles internos por seguridad
-     */
     return NextResponse.json(
       { error: 'Error interno del servidor' }, 
       { status: 500 }
@@ -526,34 +230,3 @@ export async function GET(
   }
 }
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     TimeSlot:
- *       type: object
- *       required:
- *         - start
- *         - end
- *       properties:
- *         start:
- *           type: string
- *           format: date-time
- *           description: Fecha y hora de inicio en formato ISO 8601
- *           example: "2025-07-02T09:00:00.000Z"
- *         end:
- *           type: string
- *           format: date-time
- *           description: Fecha y hora de fin en formato ISO 8601
- *           example: "2025-07-02T09:30:00.000Z"
- *     
- *     ErrorResponse:
- *       type: object
- *       required:
- *         - error
- *       properties:
- *         error:
- *           type: string
- *           description: Mensaje de error descriptivo
- *           example: "El parámetro 'date' es requerido"
- */
