@@ -144,7 +144,6 @@ export async function POST(request: NextRequest) {
           calendar_id: null, 
           privatePhone: '', 
           nitId: '', 
-          availability: '', 
           tokenGoogleId: '',
           calendar_settings: {
             notifications: {

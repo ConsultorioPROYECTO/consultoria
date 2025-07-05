@@ -199,14 +199,14 @@ const getMedicalServiceByIdHandler = async (
           where: eq(medicalServices.isActive, true)
         },
         appointments: {
-          columns: { id: true, date: true, time: true, status: true },
+          columns: { id: true, status: true },
           with: {
             patient: {
               columns: { firstName: true, lastName: true}
             }
           },
           limit: 10,
-          orderBy: (appointments, { desc }) => [desc(appointments.date)]
+          orderBy: (appointments, { desc }) => [desc(appointments.createdAt)]
         }
       }
     });
