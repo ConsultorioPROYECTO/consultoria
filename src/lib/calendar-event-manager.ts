@@ -44,6 +44,7 @@ export async function createAppointmentEvent(data: {
       summary: data.summary,
       description: data.description,
       location: data.location,
+      eventType: 'default', // Explicitly set eventType for appointments
       start: {
         dateTime: data.startDateTime.setZone(doctorTimezone).toISO() || undefined,
         timeZone: doctorTimezone,

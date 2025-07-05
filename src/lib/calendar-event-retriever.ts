@@ -3,7 +3,7 @@ import { DateTime, Interval } from 'luxon';
 import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
-import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData, BreakTimeType } from '../types/google-calendar';
+import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData, BreakTimeType, BREAK_TIME_TYPES } from '../types/google-calendar';
 import type { calendar_v3 } from 'googleapis';
 
 /**
@@ -489,8 +489,8 @@ export async function getDoctorEvents(
           startDateTime: startDateTime,
           endDateTime: endDateTime,
           timezone: doctorTimezone,
-          breakTimeType: privateProps.breakTimeType as BreakTimeType,
           isBreakTime: true,
+          breakTimeType: (privateProps.breakTimeType && BREAK_TIME_TYPES.includes(privateProps.breakTimeType as BreakTimeType)) ? privateProps.breakTimeType as BreakTimeType : 'other',
         };
         
         console.log(`🛑 [${requestId}] Evento de descanso ${eventCounter} construido:`, {
@@ -532,6 +532,16 @@ export async function getDoctorEvents(
         // This is an appointment event
         console.log(`👩‍⚕️ [${requestId}] Procesando evento de cita ${eventCounter}:`);
         
+        const patientId = parseInt(privateProps.patientId, 10);
+        const serviceId = parseInt(privateProps.serviceId, 10);
+        const organizationId = parseInt(privateProps.organizationId, 10);
+
+        if (isNaN(patientId) || isNaN(serviceId) || isNaN(organizationId)) {
+          skippedEvents++;
+          console.log(`⚠️ [${requestId}] Evento de cita ${eventCounter} omitido - IDs de propiedades privadas inválidos:`, { patientId, serviceId, organizationId });
+          continue;
+        }
+
         const appointmentEvent: AppointmentEventData = {
           calendarId: calendarId,
           summary: event.summary || 'Appointment',
@@ -540,9 +550,9 @@ export async function getDoctorEvents(
           startDateTime: startDateTime,
           endDateTime: endDateTime,
           timezone: doctorTimezone,
-          patientId: parseInt(privateProps.patientId, 10),
-          serviceId: parseInt(privateProps.serviceId, 10),
-          organizationId: parseInt(privateProps.organizationId, 10),
+          patientId: patientId,
+          serviceId: serviceId,
+          organizationId: organizationId,
           appointmentStatus: privateProps.appointmentStatus,
           meetingLink: event.conferenceData?.entryPoints?.[0]?.uri || undefined,
         };
