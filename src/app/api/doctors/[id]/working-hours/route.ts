@@ -104,24 +104,31 @@
  *     DayWorkingHours:
  *       type: object
  *       properties:
- *         start:
+ *         isActive:
+ *           type: boolean
+ *           description: Indica si el doctor trabaja este día.
+ *           example: true
+ *         startTime:
  *           type: string
  *           format: time
  *           description: Hora de inicio en formato HH:mm.
  *           example: "09:00"
- *         end:
+ *         endTime:
  *           type: string
  *           format: time
  *           description: Hora de fin en formato HH:mm.
  *           example: "17:00"
  *       required:
- *         - start
- *         - end
+ *         - isActive
+ *         - startTime
+ *         - endTime
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { doctorCalendarService } from '@/lib/doctor-calendar';
-import { WorkingHours, validateWorkingHours } from '@/types/working-hours';
+import { WorkingHours, validateWorkingHours, DEFAULT_WORKING_HOURS } from '@/types/working-hours';
+import { db } from '@/db';
+import { doctors } from '@/db/schema/doctors';
+import { eq } from 'drizzle-orm';
 
 /**
  * @description Obtiene los horarios de trabajo de un doctor por su ID.
@@ -135,10 +142,10 @@ export async function GET(
 ) {
   try {
     const resolvedParams = await params;
-        // Extraer y validar el ID del doctor de los parámetros de la ruta.
+    // Extraer y validar el ID del doctor de los parámetros de la ruta.
     const doctorId = parseInt(resolvedParams.id);
     
-        // Validar que el ID del doctor sea un número.
+    // Validar que el ID del doctor sea un número.
     if (isNaN(doctorId)) {
       return NextResponse.json(
         { error: 'ID de doctor inválido' },
@@ -146,18 +153,29 @@ export async function GET(
       );
     }
 
-        const result = await doctorCalendarService.getWorkingHours(doctorId);
+    // Consultar el doctor en la base de datos
+    const doctor = await db
+      .select({
+        idDoctor: doctors.idDoctor,
+        workingHours: doctors.working_hours
+      })
+      .from(doctors)
+      .where(eq(doctors.idDoctor, doctorId))
+      .limit(1);
 
-    if (!result.success) {
-      if (result.error === 'Doctor not found') {
-        return NextResponse.json({ error: result.error }, { status: 404 });
-      }
-      return NextResponse.json({ error: result.error }, { status: 500 });
+    if (doctor.length === 0) {
+      return NextResponse.json(
+        { error: 'Doctor no encontrado' },
+        { status: 404 }
+      );
     }
+
+    // Si no tiene horarios configurados, devolver los horarios por defecto
+    const workingHours = doctor[0].workingHours as WorkingHours || DEFAULT_WORKING_HOURS;
 
     return NextResponse.json({
       doctorId,
-      workingHours: result.workingHours,
+      workingHours,
     });
   } catch (error) {
     console.error('Error al obtener horarios del doctor:', error);
@@ -189,7 +207,7 @@ export async function PUT(
       );
     }
 
-        // Obtener los horarios de trabajo del cuerpo de la solicitud.
+    // Obtener los horarios de trabajo del cuerpo de la solicitud.
     const body = await request.json();
     const { workingHours }: { workingHours: WorkingHours } = body;
 
@@ -201,7 +219,7 @@ export async function PUT(
     }
 
     // Validar horarios
-        // Validar que el formato de los horarios de trabajo sea correcto.
+    // Validar que el formato de los horarios de trabajo sea correcto.
     const validationErrors = validateWorkingHours(workingHours);
     if (validationErrors.length > 0) {
       return NextResponse.json(
@@ -210,14 +228,25 @@ export async function PUT(
       );
     }
 
-    const result = await doctorCalendarService.updateWorkingHours(doctorId, workingHours);
+    // Verificar que el doctor existe antes de actualizar
+    const existingDoctor = await db
+      .select({ idDoctor: doctors.idDoctor })
+      .from(doctors)
+      .where(eq(doctors.idDoctor, doctorId))
+      .limit(1);
 
-    if (!result.success) {
-      if (result.error?.includes('not found')) {
-        return NextResponse.json({ error: 'Doctor not found' }, { status: 404 });
-      }
-      return NextResponse.json({ error: result.error }, { status: 500 });
+    if (existingDoctor.length === 0) {
+      return NextResponse.json(
+        { error: 'Doctor no encontrado' },
+        { status: 404 }
+      );
     }
+
+    // Actualizar los horarios de trabajo en la base de datos
+    await db
+      .update(doctors)
+      .set({ working_hours: workingHours })
+      .where(eq(doctors.idDoctor, doctorId));
 
     return NextResponse.json({
       message: 'Horarios actualizados exitosamente',
