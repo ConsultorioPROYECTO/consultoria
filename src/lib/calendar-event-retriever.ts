@@ -3,7 +3,7 @@ import { DateTime, Interval } from 'luxon';
 import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
-import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData, BreakTimeType, BREAK_TIME_TYPES } from '../types/google-calendar';
+import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData, BasicEventData, CalendarEventData, BreakTimeType, BREAK_TIME_TYPES } from '../types/google-calendar';
 import type { calendar_v3 } from 'googleapis';
 
 /**
@@ -324,11 +324,11 @@ export async function getDoctorEvents(
   startDate: DateTime,
   endDate: DateTime,
   filters?: {
-    eventType?: 'appointment' | 'break';
+    eventType?: 'appointment' | 'break' | 'basic';
     appointmentStatus?: string;
     breakTimeType?: BreakTimeType;
   }
-): Promise<(AppointmentEventData | BreakTimeEventData)[]> {
+): Promise<CalendarEventData[]> {
   // 🆔 Generar ID único para esta ejecución
   const requestId = `getDoctorEvents_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const startTime = Date.now();
@@ -426,13 +426,14 @@ export async function getDoctorEvents(
       eventSummaries: rawEvents.slice(0, 5).map(e => e.summary || 'Sin título')
     });
     
-    const processedEvents: (AppointmentEventData | BreakTimeEventData)[] = [];
+    const processedEvents: CalendarEventData[] = [];
     console.log(`🔄 [${requestId}] Iniciando procesamiento de eventos...`);
 
     let eventCounter = 0;
     let skippedEvents = 0;
     let processedAppointments = 0;
     let processedBreaks = 0;
+    let processedBasicEvents = 0;
     let filteredOutEvents = 0;
     
     for (const event of rawEvents) {
@@ -446,10 +447,62 @@ export async function getDoctorEvents(
       });
       
       const privateProps = event.extendedProperties?.private;
+      
+      // Handle events without extended properties as basic events
       if (!privateProps) {
-        skippedEvents++;
-        console.log(`⚠️ [${requestId}] Evento ${eventCounter} omitido - Sin propiedades extendidas privadas`);
-        continue; // Skip events without private extended properties
+        console.log(`📝 [${requestId}] Procesando evento básico ${eventCounter} (sin propiedades extendidas):`);
+        
+        const startDateTime = event.start?.dateTime ? DateTime.fromISO(event.start.dateTime, { zone: doctorTimezone }) : undefined;
+        const endDateTime = event.end?.dateTime ? DateTime.fromISO(event.end.dateTime, { zone: doctorTimezone }) : undefined;
+        
+        if (!startDateTime || !endDateTime) {
+          skippedEvents++;
+          console.log(`⚠️ [${requestId}] Evento básico ${eventCounter} omitido - Fechas inválidas`);
+          continue;
+        }
+        
+        const basicEvent: BasicEventData = {
+          calendarId: calendarId,
+          summary: event.summary || 'Evento sin título',
+          description: event.description || undefined,
+          location: event.location || undefined,
+          startDateTime: startDateTime,
+          endDateTime: endDateTime,
+          timezone: doctorTimezone,
+          meetingLink: event.conferenceData?.entryPoints?.[0]?.uri || undefined,
+          eventType: 'basic'
+        };
+        
+        console.log(`📝 [${requestId}] Evento básico ${eventCounter} construido:`, {
+          calendarId: basicEvent.calendarId,
+          summary: basicEvent.summary,
+          description: basicEvent.description || 'Sin descripción',
+          location: basicEvent.location || 'Sin ubicación',
+          startDateTime: basicEvent.startDateTime.toISO(),
+          endDateTime: basicEvent.endDateTime.toISO(),
+          timezone: basicEvent.timezone,
+          eventType: basicEvent.eventType,
+          meetingLink: basicEvent.meetingLink || 'Sin enlace de reunión',
+          duration: basicEvent.endDateTime.diff(basicEvent.startDateTime, 'minutes').minutes
+        });
+        
+        // Apply basic event filters
+        console.log(`🔍 [${requestId}] Aplicando filtros a evento básico ${eventCounter}:`, {
+          hasEventTypeFilter: !!filters?.eventType,
+          eventTypeFilter: filters?.eventType,
+          passesEventTypeFilter: !filters?.eventType || filters.eventType === 'basic'
+        });
+        
+        if (filters?.eventType && filters.eventType !== 'basic') {
+          filteredOutEvents++;
+          console.log(`🚫 [${requestId}] Evento básico ${eventCounter} filtrado - eventType no coincide`);
+          continue;
+        }
+        
+        processedBasicEvents++;
+        console.log(`✅ [${requestId}] Evento básico ${eventCounter} agregado exitosamente`);
+        processedEvents.push(basicEvent);
+        continue;
       }
       
       console.log(`🔍 [${requestId}] Propiedades privadas del evento ${eventCounter}:`, {
@@ -610,6 +663,7 @@ export async function getDoctorEvents(
       skippedEvents,
       processedAppointments,
       processedBreaks,
+      processedBasicEvents,
       filteredOutEvents,
       finalProcessedEvents: processedEvents.length,
       processingEfficiency: `${((processedEvents.length / Math.max(rawEvents.length, 1)) * 100).toFixed(2)}%`
@@ -618,6 +672,7 @@ export async function getDoctorEvents(
     console.log(`🎯 [${requestId}] Eventos finales por tipo:`, {
       appointments: processedEvents.filter(e => 'patientId' in e).length,
       breaks: processedEvents.filter(e => 'isBreakTime' in e && e.isBreakTime).length,
+      basicEvents: processedEvents.filter(e => 'eventType' in e && e.eventType === 'basic').length,
       totalEvents: processedEvents.length
     });
     
@@ -632,6 +687,16 @@ export async function getDoctorEvents(
             start: breakEvent.startDateTime.toISO(),
             end: breakEvent.endDateTime.toISO(),
             duration: breakEvent.endDateTime.diff(breakEvent.startDateTime, 'minutes').minutes + ' min'
+          });
+        } else if ('eventType' in event && event.eventType === 'basic') {
+          const basicEvent = event as BasicEventData;
+          console.log(`  📝 Evento ${index + 1} (Básico):`, {
+            summary: basicEvent.summary,
+            description: basicEvent.description || 'Sin descripción',
+            location: basicEvent.location || 'Sin ubicación',
+            start: basicEvent.startDateTime.toISO(),
+            end: basicEvent.endDateTime.toISO(),
+            duration: basicEvent.endDateTime.diff(basicEvent.startDateTime, 'minutes').minutes + ' min'
           });
         } else {
           const appointmentEvent = event as AppointmentEventData;

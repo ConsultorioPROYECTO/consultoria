@@ -13,7 +13,7 @@ import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
  * @param {string} id - ID del doctor (parámetro de ruta)
  * @param {string} startDate - Fecha de inicio en formato YYYY-MM-DD (parámetro de consulta)
  * @param {string} endDate - Fecha de fin en formato YYYY-MM-DD (parámetro de consulta)
- * @param {string} [eventType] - Tipo de evento a filtrar ('appointment' o 'break')
+ * @param {string} [eventType] - Tipo de evento a filtrar ('appointment', 'break' o 'basic')
  * @param {string} [appointmentStatus] - Estado de la cita a filtrar (ej. "Confirmada", "Completada")
  * @param {string} [breakTimeType] - Tipo de descanso a filtrar ('lunch', 'personal', 'meeting', 'other')
  * 
@@ -31,6 +31,10 @@ import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
  * @example
  * // Obtener solo descansos de tipo 'lunch' para el doctor 123
  * GET /api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=break&breakTimeType=lunch
+ * 
+ * @example
+ * // Obtener solo eventos básicos (sin propiedades extendidas) para el doctor 123
+ * GET /api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=basic
  * 
  * @swagger
  * /api/doctors/{id}/calendar/events:
@@ -63,7 +67,7 @@ import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
  *         required: false
  *         schema:
  *           type: string
- *           enum: [appointment, break]
+ *           enum: [appointment, break, basic]
  *         description: Tipo de evento a filtrar.
  *       - in: query
  *         name: appointmentStatus

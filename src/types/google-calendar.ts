@@ -89,6 +89,17 @@ export interface DailyWorkingHours {
 }
 
 /**
+ * Interface for basic calendar events without extended properties.
+ * Used for events that don't have custom metadata stored in extendedProperties.private.
+ * @interface BasicEventData
+ * @extends {BaseEventData}
+ * @property {string} eventType - The type of event ('basic' for events without extended properties)
+ */
+export interface BasicEventData extends BaseEventData {
+  eventType: 'basic';
+}
+
+/**
  * Represents the structure for a doctor's weekly working hours.
  * This type is intended to be stored in the `working_hours` JSON field in the `doctors` schema.
  * @typedef {object} DoctorWorkingHours
@@ -97,3 +108,8 @@ export interface DailyWorkingHours {
 export type DoctorWorkingHours = {
   workingHours: DailyWorkingHours[];
 };
+
+/**
+ * Union type for all possible event data types.
+ */
+export type CalendarEventData = AppointmentEventData | BreakTimeEventData | BasicEventData;
