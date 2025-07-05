@@ -71,7 +71,8 @@ export function ChartAreaInteractive() {
     // Agregar datos reales de citas
     doctors.forEach(doctor => {
       doctor.appointments.forEach(appointment => {
-        const appointmentDate = new Date(appointment.date).toISOString().split('T')[0]
+        //const appointmentDate = new Date(appointment.date).toISOString().split('T')[0]
+        const appointmentDate = new Date().toISOString().split('T')[0]
         if (data[appointmentDate]) {
           if (appointment.status === 'Confirmada') {
             data[appointmentDate].confirmed += 1

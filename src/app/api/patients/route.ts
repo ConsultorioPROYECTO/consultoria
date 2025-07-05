@@ -120,10 +120,10 @@ const getPatientsHandler = async (
       where: eq(patients.organizationId, requestingUser.organizationId),
       with: {
         appointments: {
-          columns: { id: true, date: true, time: true, status: true },
+          columns: { id: true, status: true },
           //where: eq(patients.isActive, true),
           //limit: 5,
-          orderBy: (appointments, { desc }) => [desc(appointments.date)]
+          orderBy: (appointments, { desc }) => [desc(appointments.id)]
         }
       },
       orderBy: (patients, { desc }) => [desc(patients.createdAt)]
