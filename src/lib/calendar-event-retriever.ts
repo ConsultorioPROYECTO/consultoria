@@ -3,7 +3,7 @@ import { DateTime, Interval } from 'luxon';
 import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
-import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData,  CalendarEventData, BreakTimeType, BREAK_TIME_TYPES } from '../types/google-calendar';
+import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData,  CalendarEventData, BreakTimeType, isBreakTimeType } from '../types/google-calendar';
 import type { calendar_v3 } from 'googleapis';
 
 /**
@@ -492,7 +492,7 @@ export async function getDoctorEvents(
           endDateTime: endDateTime,
           timezone: doctorTimezone,
           isBreakTime: true,
-          breakTimeType: (privateProps.breakTimeType && BREAK_TIME_TYPES.includes(privateProps.breakTimeType)) ? privateProps.breakTimeType as BreakTimeType : BreakTimeType.Other,
+          breakTimeType: isBreakTimeType(privateProps.breakTimeType) ? privateProps.breakTimeType : 'other',
         };
         
         console.log(`🛑 [${requestId}] Evento de descanso ${eventCounter} construido:`, {

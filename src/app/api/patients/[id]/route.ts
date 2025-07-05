@@ -139,7 +139,7 @@ const getPatientByIdHandler = async (
               columns: { name: true, category: true }
             }
           },
-          orderBy: (appointments, { desc }) => [desc(appointments.date)]
+          orderBy: (appointments, { desc }) => [ desc(appointments.id)]
         }
       }
     });

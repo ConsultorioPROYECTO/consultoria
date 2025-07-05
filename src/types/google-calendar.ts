@@ -52,6 +52,10 @@ export type BreakTimeType = 'lunch' | 'personal' | 'meeting' | 'other';
 
 export const BREAK_TIME_TYPES = ['lunch', 'personal', 'meeting', 'other'] as const;
 
+export function isBreakTimeType(value: string): value is BreakTimeType {
+  return (BREAK_TIME_TYPES as readonly string[]).includes(value);
+}
+
 /**
  * Interface for break time event data, extending BaseEventData
  * with custom private extended properties for break types.

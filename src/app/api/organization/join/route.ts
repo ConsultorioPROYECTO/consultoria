@@ -229,7 +229,6 @@ const postOrganizationJoinHandler = async (
         calendar_id: '', // Se puede configurar después
         privatePhone: '', // Se puede configurar después
         nitId: '', // Se puede configurar después
-        availability: 'Disponible', // Valor por defecto
         tokenGoogleId: '', // Se puede configurar después
         calendar_settings: {
           notifications: {
@@ -251,7 +250,6 @@ const postOrganizationJoinHandler = async (
           calendar_id: '',
           privatePhone: '',
           nitId: '',
-          availability: 'Disponible',
           tokenGoogleId: '',
           calendar_settings: {
             notifications: {
