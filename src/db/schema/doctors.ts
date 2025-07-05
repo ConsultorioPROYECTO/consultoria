@@ -50,6 +50,7 @@ export const doctors = mysqlTable('doctors', {
   calendar_settings: json('calendar_settings'), // Configuraciones específicas del calendario
   
   // --- Configuración de disponibilidad mejorada ---
+  working_hours: json('working_hours'), // Horarios detallados por día
   appointment_duration: int('appointment_duration').default(30).notNull(), // Duración por defecto en minutos
  
   // --- Timestamps ---
