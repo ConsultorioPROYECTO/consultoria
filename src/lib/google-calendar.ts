@@ -4,6 +4,69 @@ import { google } from 'googleapis';
 import type { calendar_v3 } from 'googleapis';
 import { getServiceAccountCredentials, googleCalendarConfig } from './config/google-calendar-config';
 
+// --- Custom Types and Interfaces for Google Calendar Integration ---
+
+/**
+ * Base interface for event data passed to GoogleCalendarService methods.
+ */
+interface BaseEventData {
+  calendarId: string;
+  summary: string;
+  description?: string;
+  startDateTime: string;
+  endDateTime: string;
+  timezone?: string;
+  attendees?: string[];
+  location?: string;
+  meetingLink?: string;
+}
+
+/**
+ * Interface for appointment event data, extending BaseEventData
+ * with custom private extended properties.
+ */
+export interface AppointmentEventData extends BaseEventData {
+  patientId: string;
+  serviceId: string;
+  organizationId: string;
+  appointmentStatus: string;
+}
+
+/**
+ * Interface for break time event data, extending BaseEventData
+ * with custom private extended properties for break types.
+ */
+export interface BreakTimeEventData extends BaseEventData {
+  isBreakTime: boolean;
+  breakTimeType?: string; // e.g., 'lunch', 'personal', 'meeting'
+}
+
+/**
+ * Defines a time interval with start and end times (HH:MM format).
+ */
+interface TimeInterval {
+  start: string; // e.g., "09:00"
+  end: string;   // e.g., "13:00"
+}
+
+/**
+ * Defines working hours for a single day of the week.
+ */
+interface DailyWorkingHours {
+  dayOfWeek: "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+  intervals: TimeInterval[];
+}
+
+/**
+ * Represents the structure for a doctor's weekly working hours.
+ * This will be stored in the `workingHours` JSON field in the `doctors` schema.
+ */
+export type DoctorWorkingHours = {
+  workingHours: DailyWorkingHours[];
+};
+
+// --- End Custom Types and Interfaces ---
+
 /**
  * Configuración del cliente de Google Calendar
  * Utiliza una cuenta de servicio para autenticación
@@ -75,19 +138,7 @@ export class GoogleCalendarService {
   /**
    * Crear un evento de cita en el calendario
    */
-  async createAppointmentEvent(eventData: {
-    calendarId: string;
-    summary: string;
-    description?: string;
-    startDateTime: string;
-    endDateTime: string;
-    timezone?: string;
-    attendees?: string[];
-    location?: string;
-    meetingLink?: string;
-    isBreakTime?: boolean;
-    breakTimeType?: string;
-  }) {
+  async createAppointmentEvent(eventData: AppointmentEventData | BreakTimeEventData) {
     console.log(`[GoogleCalendarService] Attempting to create event in calendar: ${eventData.calendarId}`);
     try {
       const event: calendar_v3.Schema$Event = {
@@ -112,7 +163,7 @@ export class GoogleCalendarService {
         },
       };
 
-      if (eventData.isBreakTime) {
+      if ('isBreakTime' in eventData && eventData.isBreakTime) {
         event.eventType = 'outOfOffice';
         event.extendedProperties = {
           private: {
@@ -122,8 +173,17 @@ export class GoogleCalendarService {
         };
         event.transparency = 'opaque'; // Bloquear el tiempo en el calendario
       } else {
-        // Lógica para eventos normales (citas)
+        // Assume it's an AppointmentEventData if not a BreakTimeEventData
+        const appointmentData = eventData as AppointmentEventData;
         event.eventType = 'default';
+        event.extendedProperties = {
+          private: {
+            patientId: appointmentData.patientId,
+            serviceId: appointmentData.serviceId,
+            organizationId: appointmentData.organizationId,
+            appointmentStatus: appointmentData.appointmentStatus,
+          },
+        };
       }
 
       console.debug('[GoogleCalendarService] Event data:', event);
