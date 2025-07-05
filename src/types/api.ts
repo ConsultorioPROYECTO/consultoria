@@ -5,6 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import type { Doctor, Appointment, Patient } from '../db/schema';
 
 /**
  * Respuesta genérica de la API.
@@ -116,59 +117,11 @@ export interface CreateOrganizationResponse {
 
 // === Doctor with Appointments Types ===
 /**
- * Representa un doctor con sus citas asociadas.
+ * Representa un doctor con sus citas asociadas usando tipos inferidos de Drizzle ORM.
  */
-export interface DoctorWithAppointments {
-  idDoctor: number;
-  userId: number;
-  speciality: string;
-  calendar_id: string;
-  privatePhone: string;
-  nitId: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  availability: any; // JSON type from database schema
-  tokenGoogleId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  appointments: Array<{
-    id: number;
-    doctorId: number;
-    patientId?: number | null;
-    serviceId?: number | null;
-    time: string;
-    status: 'Confirmada' | 'Completada' | 'Pendiente' | 'Llegó' | 'Cancelada';
-    date: Date;
-    notes?: string | null;
-    cancelReason?: string | null;
-    reminderSent: boolean;
-    // Campos temporales para compatibilidad (DEPRECATED)
-    patientName?: string | null;
-    service?: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    patient?: {
-      id: number;
-      firstName: string;
-      lastName: string;
-      identificationType: 'CC' | 'TI' | 'CE' | 'PP' | 'RC' | 'AS';
-      identificationNumber: string;
-      birthDate?: Date | null;
-      gender: 'M' | 'F' | 'Other';
-      phone?: string | null;
-      email?: string | null;
-      address?: string | null;
-      emergencyContactName?: string | null;
-      emergencyContactPhone?: string | null;
-      emergencyContactRelation?: string | null;
-      medicalHistory?: string | null;
-      allergies?: string | null;
-      currentMedications?: string | null;
-      bloodType?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | null;
-      organizationId: number;
-      isActive: boolean;
-      createdAt: Date;
-      updatedAt: Date;
-    } | null;
+export interface DoctorWithAppointments extends Doctor {
+  appointments: Array<Appointment & {
+    patient?: Patient | null;
   }>;
 }
 
