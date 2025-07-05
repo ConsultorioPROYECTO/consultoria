@@ -17,22 +17,14 @@ import { organization } from './organization'; // Importar el esquema de organiz
  * @property {number} patientId - Clave foránea a la tabla 'patients'.
  * @property {number} serviceId - Clave foránea a la tabla 'medical_services'.
  * @property {number} organizationId - Clave foránea a la tabla 'organization'.
- * @property {string} time - Tiempo en formato hora HH:MM (ej. 14:30).
+ 
  * @property {enum} status - Estado de la cita enum("Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada"). 
- * @property {Date} date - Fecha de la cita.
- * @property {text} notes - Notas de la cita.
- * @property {text} cancelReason - Razón de cancelación (si aplica).
- * @property {boolean} reminderSent - Si se envió recordatorio.
- * @property {string} patientName - Nombre del paciente (TEMPORAL - mantener para compatibilidad).
- * @property {string} service - Descripción del servicio (TEMPORAL - mantener para compatibilidad).
  * @property {string} google_event_id - ID del evento en Google Calendar.
  * @property {string} google_calendar_id - ID del calendario donde está el evento.
  * @property {enum} sync_status - Estado de sincronización con Google Calendar.
  * @property {Date} last_sync_attempt - Último intento de sincronización.
  * @property {text} sync_error - Detalles del error si falla la sincronización.
- * @property {number} duration_minutes - Duración de la cita en minutos.
- * @property {boolean} is_virtual - Si la cita es virtual.
- * @property {string} meeting_link - Enlace de la reunión virtual.
+ 
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */

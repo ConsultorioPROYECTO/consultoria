@@ -28,6 +28,35 @@ export class GoogleCalendarService {
       auth: this.auth,
     });
   }
+
+  /**
+   * Lista todos los calendarios accesibles por la cuenta de servicio.
+   * @returns Una lista de calendarios.
+   */
+  public async listCalendars() {
+    try {
+      const response = await this.calendar.calendarList.list();
+      return response.data.items;
+    } catch (error) {
+      console.error('Error listing calendars:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los detalles de un calendario específico por su ID.
+   * @param calendarId El ID del calendario.
+   * @returns Los detalles del calendario.
+   */
+  public async getCalendar(calendarId: string) {
+    try {
+      const response = await this.calendar.calendars.get({ calendarId });
+      return response.data;
+    } catch (error) {
+      console.error(`Error getting calendar ${calendarId}:`, error);
+      throw error;
+    }
+  }
 }
 
 // Instancia singleton del servicio
