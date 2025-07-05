@@ -204,6 +204,13 @@
       "when": 1751150818408,
       "tag": "0028_grey_strong_guy",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "5",
+      "when": 1751690344308,
+      "tag": "0029_fuzzy_sersi",
+      "breakpoints": true
     }
   ]
 }

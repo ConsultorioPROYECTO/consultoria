@@ -38,6 +38,7 @@ export class GoogleCalendarService {
     timezone?: string;
     color?: string;
   }) {
+    console.log(`[GoogleCalendarService] Attempting to create calendar for: ${doctorData.summary}`);
     try {
       const calendarResource = {
         summary: doctorData.summary,
@@ -45,14 +46,18 @@ export class GoogleCalendarService {
         timeZone: doctorData.timezone || 'America/Bogota',
       };
 
+      console.debug('[GoogleCalendarService] Calendar resource:', calendarResource);
+
       const response = await this.calendar.calendars.insert({
         requestBody: calendarResource,
       });
 
       const calendarId = response.data.id;
+      console.log(`[GoogleCalendarService] Successfully created calendar with ID: ${calendarId}`);
 
       // Configurar color del calendario si se proporciona
       if (doctorData.color && calendarId) {
+        console.debug(`[GoogleCalendarService] Setting color for calendar ${calendarId}`);
         await this.calendar.colors.get(); // Obtener colores disponibles
         // Nota: Google Calendar tiene colores predefinidos, se puede mapear el color hex a un ID de color
       }
@@ -62,7 +67,7 @@ export class GoogleCalendarService {
         calendarData: response.data,
       };
     } catch (error) {
-      console.error('Error creating doctor calendar:', error);
+      console.error('[GoogleCalendarService] Error creating doctor calendar:', error);
       throw new Error(`Failed to create calendar: ${error}`);
     }
   }
@@ -80,9 +85,12 @@ export class GoogleCalendarService {
     attendees?: string[];
     location?: string;
     meetingLink?: string;
+    isBreakTime?: boolean;
+    breakTimeType?: string;
   }) {
+    console.log(`[GoogleCalendarService] Attempting to create event in calendar: ${eventData.calendarId}`);
     try {
-      const event = {
+      const event: calendar_v3.Schema$Event = {
         summary: eventData.summary,
         description: eventData.description,
         start: {
@@ -95,7 +103,6 @@ export class GoogleCalendarService {
         },
         attendees: eventData.attendees?.map(email => ({ email })),
         location: eventData.location,
-        // Eliminamos la lógica de conferencias para evitar errores
         reminders: {
           useDefault: false,
           overrides: [
@@ -105,12 +112,29 @@ export class GoogleCalendarService {
         },
       };
 
+      if (eventData.isBreakTime) {
+        event.eventType = 'outOfOffice';
+        event.extendedProperties = {
+          private: {
+            isBreakTime: 'true',
+            breakTimeType: eventData.breakTimeType || 'general',
+          },
+        };
+        event.transparency = 'opaque'; // Bloquear el tiempo en el calendario
+      } else {
+        // Lógica para eventos normales (citas)
+        event.eventType = 'default';
+      }
+
+      console.debug('[GoogleCalendarService] Event data:', event);
+
       const insertParams = {
         calendarId: eventData.calendarId,
         requestBody: event,
       };
 
       const response = await this.calendar.events.insert(insertParams);
+      console.log(`[GoogleCalendarService] Successfully created event with ID: ${response.data.id}`);
 
       return {
         eventId: response.data.id,
@@ -118,7 +142,7 @@ export class GoogleCalendarService {
         meetingLink: eventData.meetingLink || null, // Devolvemos el meetingLink original si se proporcionó
       };
     } catch (error) {
-      console.error('Error creating appointment event:', error);
+      console.error('[GoogleCalendarService] Error creating appointment event:', error);
       throw new Error(`Failed to create event: ${error}`);
     }
   }
@@ -139,8 +163,10 @@ export class GoogleCalendarService {
       location?: string;
     }
   ) {
+    console.log(`[GoogleCalendarService] Attempting to update event ${eventId} in calendar: ${calendarId}`);
     try {
       // Primero obtener el evento actual
+      console.debug(`[GoogleCalendarService] Fetching current event data for event ${eventId}`);
       const currentEvent = await this.calendar.events.get({
         calendarId,
         eventId,
@@ -162,18 +188,22 @@ export class GoogleCalendarService {
         location: updateData.location || currentEvent.data.location,
       };
 
+      console.debug('[GoogleCalendarService] Updated event data:', updatedEvent);
+
       const response = await this.calendar.events.update({
         calendarId,
         eventId,
         requestBody: updatedEvent,
       });
 
+      console.log(`[GoogleCalendarService] Successfully updated event ${eventId}`);
+
       return {
         eventId: response.data.id,
         eventData: response.data,
       };
     } catch (error) {
-      console.error('Error updating appointment event:', error);
+      console.error(`[GoogleCalendarService] Error updating appointment event ${eventId}:`, error);
       throw new Error(`Failed to update event: ${error}`);
     }
   }
@@ -182,15 +212,17 @@ export class GoogleCalendarService {
    * Eliminar un evento
    */
   async deleteAppointmentEvent(calendarId: string, eventId: string) {
+    console.log(`[GoogleCalendarService] Attempting to delete event ${eventId} from calendar: ${calendarId}`);
     try {
       await this.calendar.events.delete({
         calendarId,
         eventId,
       });
 
+      console.log(`[GoogleCalendarService] Successfully deleted event ${eventId}`);
       return { success: true };
     } catch (error) {
-      console.error('Error deleting appointment event:', error);
+      console.error(`[GoogleCalendarService] Error deleting appointment event ${eventId}:`, error);
       throw new Error(`Failed to delete event: ${error}`);
     }
   }
@@ -203,6 +235,7 @@ export class GoogleCalendarService {
     timeMin: string,
     timeMax: string
   ) {
+    console.log(`[GoogleCalendarService] Fetching events for calendar ${calendarId} between ${timeMin} and ${timeMax}`);
     try {
       const response = await this.calendar.events.list({
         calendarId,
@@ -212,9 +245,10 @@ export class GoogleCalendarService {
         orderBy: 'startTime',
       });
 
+      console.debug(`[GoogleCalendarService] Found ${response.data.items?.length || 0} events`);
       return response.data.items || [];
     } catch (error) {
-      console.error('Error getting calendar events:', error);
+      console.error('[GoogleCalendarService] Error getting calendar events:', error);
       throw new Error(`Failed to get events: ${error}`);
     }
   }
@@ -227,6 +261,7 @@ export class GoogleCalendarService {
     startDateTime: string,
     endDateTime: string
   ) {
+    console.log(`[GoogleCalendarService] Checking availability for calendar ${calendarId} between ${startDateTime} and ${endDateTime}`);
     try {
       const response = await this.calendar.freebusy.query({
         requestBody: {
@@ -237,9 +272,10 @@ export class GoogleCalendarService {
       });
 
       const busyTimes = response.data.calendars?.[calendarId]?.busy || [];
+      console.debug(`[GoogleCalendarService] Busy times found:`, busyTimes);
       return busyTimes.length === 0; // true si está disponible
     } catch (error) {
-      console.error('Error checking availability:', error);
+      console.error('[GoogleCalendarService] Error checking availability:', error);
       throw new Error(`Failed to check availability: ${error}`);
     }
   }
@@ -251,29 +287,37 @@ export class GoogleCalendarService {
    * @param isEndOfDay - Si es true, retorna el final del día (23:59:59)
    */
   private createDateInTimezone(date: Date, timezone: string, isEndOfDay: boolean = false): Date {
-    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-    const timeStr = isEndOfDay ? '23:59:59' : '00:00:00';
-    
-    // Crear la fecha en la zona horaria específica
-    // Usamos el constructor de Date que interpreta la fecha como local
-    const localDate = new Date(`${dateStr}T${timeStr}`);
-    
-    // Obtener el offset de la zona horaria del doctor
-    const formatter = new Intl.DateTimeFormat('en', {
+    const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    });
+    }).formatToParts(date);
+
+    const year = parts.find((p) => p.type === 'year')?.value;
+    const month = parts.find((p) => p.type === 'month')?.value;
+    const day = parts.find((p) => p.type === 'day')?.value;
+
+    if (!year || !month || !day) {
+      throw new Error('Could not determine the date parts in the specified timezone.');
+    }
+
+    const timeStr = isEndOfDay ? '23:59:59.999' : '00:00:00.000';
     
-    const parts = formatter.formatToParts(localDate);
-    const formattedDate = `${parts.find(p => p.type === 'year')?.value}-${parts.find(p => p.type === 'month')?.value}-${parts.find(p => p.type === 'day')?.value}T${parts.find(p => p.type === 'hour')?.value}:${parts.find(p => p.type === 'minute')?.value}:${parts.find(p => p.type === 'second')?.value}`;
+    // Construct a new date string in the target timezone and convert it to a Date object.
+    // IMPORTANT: Appending 'Z' to the ISO-like string makes the JS engine parse it as UTC.
+    // We are building the date in the target timezone and then getting the UTC representation.
+    const dateInTimezoneStr = `${year}-${month}-${day}T${timeStr}`;
     
-    return new Date(formattedDate);
+    // To correctly convert this local time string to a UTC Date object, we need to know the offset.
+    // A trick is to get the difference between UTC time and the time in the target timezone.
+    const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+    const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
+    const offset = (tzDate.getTime() - utcDate.getTime());
+
+    const localDate = new Date(dateInTimezoneStr);
+    
+    return new Date(localDate.getTime() - offset);
   }
 
   /**
@@ -283,45 +327,28 @@ export class GoogleCalendarService {
    * @param timezone - Zona horaria del doctor (ej: 'America/Bogota')
    */
   async getBusySlotsForDay(calendarId: string, date: Date, timezone: string = 'America/Bogota') {
+    console.log(`[GoogleCalendarService] Getting busy slots for calendar ${calendarId} on date: ${date.toISOString()}`);
     try {
-      // Crear fechas en la zona horaria específica del doctor
-      const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-      
-      // Crear inicio y fin del día en la zona horaria del doctor usando una aproximación más precisa
-      const timeMin = this.createDateInTimezone(date, timezone, false);
-      const timeMax = this.createDateInTimezone(date, timezone, true);
-      
-      const timeMinISO = timeMin.toISOString();
-      const timeMaxISO = timeMax.toISOString();
-      
-      console.log('=== DEBUG GOOGLE CALENDAR QUERY ===');
-      console.log('Calendar ID:', calendarId);
-      console.log('Date input:', date);
-      console.log('Timezone:', timezone);
-      console.log('Date string:', dateStr);
-      console.log('TimeMin (timezone adjusted):', timeMin);
-      console.log('TimeMax (timezone adjusted):', timeMax);
-      console.log('TimeMin ISO:', timeMinISO);
-      console.log('TimeMax ISO:', timeMaxISO);
+      const timeMin = this.createDateInTimezone(date, timezone, false).toISOString();
+      const timeMax = this.createDateInTimezone(date, timezone, true).toISOString();
+
+      console.debug(`[GoogleCalendarService] Querying free/busy between ${timeMin} and ${timeMax} in timezone ${timezone}`);
 
       const response = await this.calendar.freebusy.query({
         requestBody: {
-          timeMin: timeMinISO,
-          timeMax: timeMaxISO,
-          timeZone: timezone, // Especificar la zona horaria en la consulta
+          timeMin,
+          timeMax,
+          timeZone: timezone,
           items: [{ id: calendarId }],
         },
       });
 
-      const busyTimes = response.data.calendars?.[calendarId]?.busy || [];
-      
-      console.log('Google Calendar busy times response:', JSON.stringify(busyTimes, null, 2));
-      
-      return busyTimes; // Devuelve [{ start: '...', end: '...' }, ...]
-
+      const busySlots = response.data.calendars?.[calendarId]?.busy || [];
+      console.debug(`[GoogleCalendarService] Busy slots found:`, busySlots);
+      return busySlots;
     } catch (error) {
-      console.error('Error getting busy slots:', error);
-      throw new Error(`Failed to get busy slots: ${error}`);
+      console.error('[GoogleCalendarService] Error getting busy slots for day:', error);
+      throw new Error(`Failed to get busy slots for day: ${error}`);
     }
   }
 }

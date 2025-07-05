@@ -1,6 +1,6 @@
 // src/db/schema/appointments.ts 
 
-import { mysqlTable, varchar, timestamp, serial, index, date as mysqlDate, int, mysqlEnum, text, boolean } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, serial, index, int, mysqlEnum, text } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { doctors } from './doctors'; // Importar el esquema de doctors
 import { patients } from './patients'; // Importar el esquema de patients
@@ -41,36 +41,17 @@ export const appointments = mysqlTable('appointments', {
 
   // --- Claves foráneas ---
   doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade' , onUpdate : 'cascade'}).notNull(),
-  patientId: int('patient_id').references(() => patients.id, { onDelete: 'cascade', onUpdate: 'cascade' }), // Opcional por compatibilidad
-  serviceId: int('service_id').references(() => medicalServices.id, { onDelete: 'set null', onUpdate: 'cascade' }), // Opcional por compatibilidad
+  patientId: int('patient_id').references(() => patients.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
+  serviceId: int('service_id').references(() => medicalServices.id, { onDelete: 'set null', onUpdate: 'cascade' }),
   organizationId: int('organization_id').references(()=> organization.id, {onDelete: "cascade", onUpdate: "cascade"}).notNull(),
 
-
-  // --- Campos específicos de la cita ---
-  time: varchar('time', { length: 12 }).notNull(), // Formato HH:MM AM/PM
-  status: mysqlEnum('status',["Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada"]).default("Pendiente").notNull(),
-  date: mysqlDate('date').notNull(),
-  
-  // --- Campos adicionales ---
-  notes: text('notes'), // Notas de la cita
-  cancelReason: text('cancel_reason'), // Razón de cancelación
-  reminderSent: boolean('reminder_sent').default(false).notNull(), // Si se envió recordatorio
-  
-  // --- Campos temporales para compatibilidad (DEPRECATED) ---
-  patientName: varchar('patient_name', { length: 255 }), // TEMPORAL - usar patientId en su lugar
-  service: varchar('service', { length: 255 }), // TEMPORAL - usar serviceId en su lugar
-
   // --- Campos de sincronización con Google Calendar ---
-  google_event_id: varchar('google_event_id', { length: 255 }), // ID del evento en Google Calendar
-  google_calendar_id: varchar('google_calendar_id', { length: 255 }), // ID del calendario donde está el evento
+  google_event_id: varchar('google_event_id', { length: 255 }).notNull(),
+  google_calendar_id: varchar('google_calendar_id', { length: 255 }).notNull(),
+  status: mysqlEnum('status',["Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada"]).default("Pendiente").notNull(),
   sync_status: mysqlEnum('sync_status', ['pending', 'synced', 'failed', 'not_synced']).default('pending').notNull(),
   last_sync_attempt: timestamp('last_sync_attempt'),
-  sync_error: text('sync_error'), // Detalles del error si falla la sincronización
-  
-  // --- Campos adicionales para mejor gestión ---
-  duration_minutes: int('duration_minutes').default(30).notNull(),
-  is_virtual: boolean('is_virtual').default(false).notNull(),
-  meeting_link: varchar('meeting_link', { length: 500 }),
+  sync_error: text('sync_error'),
 
   // --- Timestamps ---
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -81,10 +62,7 @@ export const appointments = mysqlTable('appointments', {
   index('appointment_patient_id_idx').on(table.patientId),
   index('appointment_service_id_idx').on(table.serviceId),
   index('appointment_organization_id_idx').on(table.organizationId),
-  index('appointment_time_idx').on(table.time),
-  index('appointment_date_idx').on(table.date),
   index('appointment_status_idx').on(table.status),
-  index('appointment_date_time_idx').on(table.date, table.time), // Índice compuesto para búsquedas por fecha y hora
   
   // Índices para Google Calendar
   index('appointment_google_event_id_idx').on(table.google_event_id),

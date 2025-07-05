@@ -40,7 +40,6 @@ export const doctors = mysqlTable('doctors', {
   calendar_id: varchar('calendar_id', { length: 255 }), // ID del calendario del doctor
   privatePhone: varchar('private_phone', { length: 255 }).notNull(), // Número de teléfono privado del doctor
   nitId: varchar('nit_id', { length: 255 }).notNull(), // NIT del doctor
-  availability: json('availability').notNull(), // Horarios de trabajo del doctor (JSON)
   tokenGoogleId: varchar('token_google_id', { length: 255 }).notNull(), // Token de Google
   
   // --- Campos de Google Calendar ---
@@ -51,8 +50,6 @@ export const doctors = mysqlTable('doctors', {
   calendar_settings: json('calendar_settings'), // Configuraciones específicas del calendario
   
   // --- Configuración de disponibilidad mejorada ---
-  working_hours: json('working_hours'), // Horarios detallados por día
-  break_times: json('break_times'), // Descansos durante el día
   appointment_duration: int('appointment_duration').default(30).notNull(), // Duración por defecto en minutos
  
   // --- Timestamps ---
