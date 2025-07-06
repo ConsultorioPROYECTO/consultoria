@@ -3,7 +3,7 @@ import { DateTime, Interval } from 'luxon';
 import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
-import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData,  CalendarEventData, BreakTimeType, isBreakTimeType } from '../types/google-calendar';
+import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData,  CalendarEventData, BreakTimeType, isBreakTimeType, getTimeIntervalAsLuxonInterval, isValidTimeHHMM } from '../types/google-calendar';
 import type { calendar_v3 } from 'googleapis';
 
 /**
@@ -170,27 +170,20 @@ export async function getDoctorAvailability(
             intervalStart: interval.start,
             intervalEnd: interval.end
           });
-          
-          const start = DateTime.fromISO(`${currentDay.toISODate()}T${interval.start}`, { zone: doctorTimezone });
-          const end = DateTime.fromISO(`${currentDay.toISODate()}T${interval.end}`, { zone: doctorTimezone });
-          
-          console.debug('🕐 [getDoctorAvailability] DateTime generados:', {
-            start: start.toISO(),
-            end: end.toISO(),
-            startValid: start.isValid,
-            endValid: end.isValid,
-            duration: end.diff(start).as('minutes')
-          });
-          
-          if (start.isValid && end.isValid) {
-            potentialAvailableIntervals.push(Interval.fromDateTimes(start, end));
+
+          if (!isValidTimeHHMM(interval.start) || !isValidTimeHHMM(interval.end)) {
+            console.error('❌ [getDoctorAvailability] Formato de tiempo inválido en el intervalo:', interval);
+            continue; // Skip this interval if the time format is incorrect
+          }
+
+          try {
+            const luxonInterval = getTimeIntervalAsLuxonInterval(interval, currentDay, doctorTimezone);
+            potentialAvailableIntervals.push(luxonInterval);
             console.debug('✅ [getDoctorAvailability] Intervalo agregado exitosamente');
-          } else {
-            console.error('❌ [getDoctorAvailability] DateTime inválidos:', {
-              startValid: start.isValid,
-              endValid: end.isValid,
-              startError: start.invalidReason,
-              endError: end.invalidReason
+          } catch (error) {
+            console.error('❌ [getDoctorAvailability] Error al convertir el intervalo de tiempo a Luxon Interval:', {
+              interval,
+              error: error instanceof Error ? error.message : error
             });
           }
         }

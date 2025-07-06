@@ -1,5 +1,5 @@
 import type { calendar_v3 } from 'googleapis';
-import { DateTime } from 'luxon';
+import { DateTime, Interval } from 'luxon';
 
 /**
  * Base interface for event data passed to GoogleCalendarService methods.
@@ -71,14 +71,67 @@ export interface BreakTimeEventData extends BaseEventData {
 }
 
 /**
- * Defines a time interval with start and end times in HH:MM format.
+ * Represents a time string in a strict "HH:mm" format (e.g., "09:00", "17:30").
+ * This type alias provides semantic clarity for strings that are expected
+ * to represent a time of day.
+ */
+export type TimeHHMM = string;
+
+/**
+ * A regular expression for validating TimeHHMM format.
+ * Ensures the string is in the format HH:MM (e.g., 00:00 to 23:59).
+ */
+export const TIME_HHMM_REGEX = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+
+/**
+ * Type guard to validate if a string is a valid TimeHHMM.
+ * @param {unknown} value - The value to check.
+ * @returns {value is TimeHHMM} - True if the value is a string in "HH:mm" format.
+ */
+export function isValidTimeHHMM(value: unknown): value is TimeHHMM {
+  return typeof value === 'string' && TIME_HHMM_REGEX.test(value);
+}
+
+/**
+ * Defines a time interval with start and end times.
+ * The use of the `TimeHHMM` type ensures that the start and end properties
+ * are not just any string, but one that represents a time in "HH:mm" format.
  * @interface TimeInterval
- * @property {string} start - The start time of the interval (e.g., "09:00").
- * @property {string} end - The end time of the interval (e.g., "13:00").
+ * @property {TimeHHMM} start - The start time of the interval (e.g., "09:00").
+ * @property {TimeHHMM} end - The end time of the interval (e.g., "13:00").
  */
 export interface TimeInterval {
-  start: string;
-  end: string;
+  start: TimeHHMM;
+  end: TimeHHMM;
+}
+
+/**
+ * Converts a TimeInterval object into a Luxon Interval object for a specific date.
+ * This function is crucial for translating the easily serializable working hours
+ * from the database into a format that can be used for date and time calculations.
+ *
+ * @param {TimeInterval} timeInterval - The time interval to convert, with start and end times in "HH:mm" format.
+ * @param {DateTime} date - The specific date for which to create the interval.
+ * @param {string} timezone - The IANA timezone (e.g., 'America/Bogota') to ensure the interval is created in the correct timezone.
+ * @returns {Interval} A Luxon Interval object representing the time interval for the given date and timezone.
+ * @throws {Error} If the start or end times in the timeInterval are invalid, Luxon will throw an error.
+ */
+export function getTimeIntervalAsLuxonInterval(
+  timeInterval: TimeInterval,
+  date: DateTime,
+  timezone: string
+): Interval {
+  const startDate = date.set({ 
+    hour: parseInt(timeInterval.start.split(':')[0]), 
+    minute: parseInt(timeInterval.start.split(':')[1]) 
+  }).setZone(timezone);
+
+  const endDate = date.set({ 
+    hour: parseInt(timeInterval.end.split(':')[0]), 
+    minute: parseInt(timeInterval.end.split(':')[1]) 
+  }).setZone(timezone);
+
+  return Interval.fromDateTimes(startDate, endDate);
 }
 
 /**
@@ -117,3 +170,30 @@ export type DoctorWorkingHours = {
  * Union type for all possible event data types.
  */
 export type CalendarEventData = AppointmentEventData | BreakTimeEventData | BasicEventData;
+
+/**
+ * Type guard to check if an event is an AppointmentEventData.
+ * @param {CalendarEventData} event - The event to check.
+ * @returns {event is AppointmentEventData} - True if the event is an AppointmentEventData.
+ */
+export function isAppointmentEvent(event: CalendarEventData): event is AppointmentEventData {
+  return 'patientId' in event && 'serviceId' in event && 'organizationId' in event;
+}
+
+/**
+ * Type guard to check if an event is a BreakTimeEventData.
+ * @param {CalendarEventData} event - The event to check.
+ * @returns {event is BreakTimeEventData} - True if the event is a BreakTimeEventData.
+ */
+export function isBreakTimeEvent(event: CalendarEventData): event is BreakTimeEventData {
+  return 'isBreakTime' in event && event.isBreakTime === true;
+}
+
+/**
+ * Type guard to check if an event is a BasicEventData.
+ * @param {CalendarEventData} event - The event to check.
+ * @returns {event is BasicEventData} - True if the event is a BasicEventData.
+ */
+export function isBasicEvent(event: CalendarEventData): event is BasicEventData {
+  return 'eventType' in event && event.eventType === 'basic';
+}
