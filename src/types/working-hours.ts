@@ -1,11 +1,17 @@
 // Tipos para los horarios de trabajo de los doctores
 
+/**
+ * Deprecated
+ */
 export interface DaySchedule {
   isActive: boolean;
   startTime: string; // Formato HH:MM (24 horas)
   endTime: string;   // Formato HH:MM (24 horas)
 }
 
+/**
+ * Deprecated
+ */
 export interface WorkingHours {
   monday: DaySchedule;
   tuesday: DaySchedule;
@@ -16,6 +22,9 @@ export interface WorkingHours {
   sunday: DaySchedule;
 }
 
+/**
+ * Deprecated
+ */
 export const DEFAULT_WORKING_HOURS: WorkingHours = {
   monday: { isActive: true, startTime: '08:00', endTime: '17:00' },
   tuesday: { isActive: true, startTime: '08:00', endTime: '17:00' },
@@ -26,6 +35,9 @@ export const DEFAULT_WORKING_HOURS: WorkingHours = {
   sunday: { isActive: false, startTime: '08:00', endTime: '12:00' }
 };
 
+/**
+ * Deprecated
+ */
 export const DAYS_OF_WEEK = [
   { key: 'monday' as keyof WorkingHours, label: 'Lunes' },
   { key: 'tuesday' as keyof WorkingHours, label: 'Martes' },
@@ -36,7 +48,9 @@ export const DAYS_OF_WEEK = [
   { key: 'sunday' as keyof WorkingHours, label: 'Domingo' }
 ];
 
-// Función para validar horarios
+/**
+ * Deprecated
+ */
 export function validateWorkingHours(hours: WorkingHours): string[] {
   const errors: string[] = [];
   

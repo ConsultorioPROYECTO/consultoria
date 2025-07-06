@@ -6,11 +6,17 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
+    "test" : "jest",
     "lint": "next lint",
     "lint:jsdoc": "eslint --config .eslintrc.jsdoc.js src/app/api/**/*.ts src/lib/**/*.ts",
     "docs:check": "npm run lint:jsdoc",
     "docs:api": "echo 'Documentación de API disponible en docs/api/doctors-availability.md'",
     "generate": "drizzle-kit generate --out migrations-folder --schema src/db/schema.ts"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.[t|j]sx?$": "babel-jest"
+    }
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -69,15 +75,21 @@
     "zod": "^3.25.28"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@babel/preset-typescript": "^7.27.1",
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4.1.5",
+    "@types/jest": "^30.0.0",
     "@types/luxon": "^3.6.2",
     "@types/node": "^20",
     "@types/react": "19.1.8",
     "@types/react-dom": "19.1.6",
+    "babel-jest": "^30.0.4",
     "drizzle-kit": "^0.31.1",
     "eslint": "^9",
     "eslint-config-next": "^15.3.4",
+    "jest": "^30.0.4",
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.1.5",
     "tw-animate-css": "^1.2.9",
