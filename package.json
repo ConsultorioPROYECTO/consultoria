@@ -15,7 +15,12 @@
   },
   "jest": {
     "transform": {
-      "^.+\\.[t|j]sx?$": "babel-jest"
+      "^.+\\.[t|j]sx?$": [
+        "babel-jest",
+        {
+          "configFile": "./jest.babel.config.js"
+        }
+      ]
     }
   },
   "dependencies": {
