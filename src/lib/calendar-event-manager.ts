@@ -1,10 +1,11 @@
 import { googleCalendarService } from './google-calendar';
-import { DateTime } from 'luxon';
+import { DateTime, Interval } from 'luxon';
 import type { calendar_v3 } from 'googleapis';
 import {BreakTimeType } from '../types/google-calendar';
 import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
+import { getDoctorAvailability } from './calendar-event-retriever';
 
 
 /**
@@ -42,7 +43,7 @@ export async function createAppointmentEvent(data: {
   description?: string;
   location?: string;
   meetingLink?: string;
-  appointmentStatus: string;
+  appointmentStatus: AppointmentStatus;
 }) {
   try {
     const doctor = await db.query.doctors.findFirst({
@@ -60,6 +61,27 @@ export async function createAppointmentEvent(data: {
       throw new Error(`Calendar ID not found for doctor with ID ${data.doctorId}.`);
     }
 
+    // 1. Check for availability before creating the event
+    const availableSlots = await getDoctorAvailability(
+      data.doctorId,
+      data.startDateTime,
+      data.endDateTime
+    );
+
+    const requestedSlot = Interval.fromDateTimes(
+      data.startDateTime.setZone(doctorTimezone),
+      data.endDateTime.setZone(doctorTimezone)
+    );
+
+    const isAvailable = availableSlots.some(slot =>
+      slot.engulfs(requestedSlot)
+    );
+
+    if (!isAvailable) {
+      throw new Error('The selected time slot is no longer available.');
+    }
+
+    // 2. If available, proceed to create the event
     const eventBody: calendar_v3.Schema$Event = {
       summary: data.summary,
       description: data.description,

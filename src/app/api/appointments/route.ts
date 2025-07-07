@@ -23,7 +23,7 @@ import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMid
 import { db } from '@/db';
 import { appointments, doctors, medicalServices, patients, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { createAppointmentEvent } from '@/lib/calendar-event-manager';
+import { createAppointmentEvent, AppointmentStatus } from '@/lib/calendar-event-manager';
 import { handleDatabaseError } from '@/lib/api-helpers';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { DateTime } from 'luxon';
@@ -360,7 +360,7 @@ async function handlePostRequest(
           description: notes || `Servicio: ${medicalService.name}\nPaciente: ${patient.firstName} ${patient.lastName}`,
           location: isVirtual ? 'Online' : undefined,
           meetingLink: isVirtual ? meetingLink : undefined,
-          appointmentStatus: 'Pendiente',
+          appointmentStatus: AppointmentStatus.Pending,
         };
 
         const calendarEventResponse = await createAppointmentEvent(eventData);
@@ -368,9 +368,19 @@ async function handlePostRequest(
         googleCalendarId = calendarEventResponse.google_calendar_id;
 
       } catch (calendarError) {
-        console.error('Error creating Google Calendar event:', calendarError);
-        // Continue without calendar event if there's an error
-        // The appointment will still be created in the database
+        console.error('Error during appointment creation validation:', calendarError);
+        if (calendarError instanceof Error) {
+          return createErrorResponse(
+            'APPOINTMENT_SLOT_UNAVAILABLE',
+            calendarError.message,
+            HTTP_STATUS.CONFLICT
+          );
+        }
+        return createErrorResponse(
+          API_ERRORS.INTERNAL_ERROR,
+          'Ocurrió un error inesperado al validar la disponibilidad del calendario.',
+          HTTP_STATUS.INTERNAL_ERROR
+        );
       }
     }
 
