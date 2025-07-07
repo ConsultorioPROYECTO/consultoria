@@ -406,6 +406,8 @@ export async function getDoctorEvents(
       timeZone: doctorTimezone,
       singleEvents: true, // Expand recurring events into individual instances
       orderBy: 'startTime',
+      fields:
+        'items(id,summary,description,location,start,end,extendedProperties,conferenceData,attendees)',
     });
     
     const googleApiTime = Date.now() - googleApiStart;
@@ -479,24 +481,34 @@ export async function getDoctorEvents(
         console.log(`🛑 [${requestId}] Procesando evento de descanso ${eventCounter}:`);
         
         const breakTimeEvent: BreakTimeEventData = {
+          id: event.id || undefined,
           calendarId: calendarId,
           summary: event.summary || 'Break Time',
+          description: event.description || undefined,
+          location: event.location || undefined,
           startDateTime: startDateTime,
           endDateTime: endDateTime,
           timezone: doctorTimezone,
           isBreakTime: true,
           breakTimeType: isBreakTimeType(privateProps.breakTimeType) ? privateProps.breakTimeType : 'other',
+          attendees: event.attendees || [],
         };
         
-        console.log(`🛑 [${requestId}] Evento de descanso ${eventCounter} construido:`, {
-          calendarId: breakTimeEvent.calendarId,
-          summary: breakTimeEvent.summary,
-          startDateTime: breakTimeEvent.startDateTime.toISO(),
-          endDateTime: breakTimeEvent.endDateTime.toISO(),
-          timezone: breakTimeEvent.timezone,
-          breakTimeType: breakTimeEvent.breakTimeType,
-          duration: breakTimeEvent.endDateTime.diff(breakTimeEvent.startDateTime, 'minutes').minutes
-        });
+        console.log(`🛑 [${requestId}] Evento de descanso ${eventCounter} construido:`,
+          {
+            id: breakTimeEvent.id,
+            calendarId: breakTimeEvent.calendarId,
+            summary: breakTimeEvent.summary,
+            startDateTime: breakTimeEvent.startDateTime.toISO(),
+            endDateTime: breakTimeEvent.endDateTime.toISO(),
+            timezone: breakTimeEvent.timezone,
+            breakTimeType: breakTimeEvent.breakTimeType,
+            attendees: breakTimeEvent.attendees?.length,
+            duration:
+              breakTimeEvent.endDateTime.diff(breakTimeEvent.startDateTime, 'minutes')
+                .minutes,
+          }
+        );
 
         // Apply break time filters
         console.log(`🔍 [${requestId}] Aplicando filtros a evento de descanso ${eventCounter}:`, {
@@ -538,6 +550,7 @@ export async function getDoctorEvents(
         }
 
         const appointmentEvent: AppointmentEventData = {
+          id: event.id || undefined,
           calendarId: calendarId,
           summary: event.summary || 'Appointment',
           description: event.description || undefined,
@@ -550,23 +563,32 @@ export async function getDoctorEvents(
           organizationId: organizationId,
           appointmentStatus: privateProps.appointmentStatus,
           meetingLink: event.conferenceData?.entryPoints?.[0]?.uri || undefined,
+          attendees: event.attendees || [],
         };
         
-        console.log(`👩‍⚕️ [${requestId}] Evento de cita ${eventCounter} construido:`, {
-          calendarId: appointmentEvent.calendarId,
-          summary: appointmentEvent.summary,
-          description: appointmentEvent.description || 'Sin descripción',
-          location: appointmentEvent.location || 'Sin ubicación',
-          startDateTime: appointmentEvent.startDateTime.toISO(),
-          endDateTime: appointmentEvent.endDateTime.toISO(),
-          timezone: appointmentEvent.timezone,
-          patientId: appointmentEvent.patientId,
-          serviceId: appointmentEvent.serviceId,
-          organizationId: appointmentEvent.organizationId,
-          appointmentStatus: appointmentEvent.appointmentStatus,
-          meetingLink: appointmentEvent.meetingLink || 'Sin enlace de reunión',
-          duration: appointmentEvent.endDateTime.diff(appointmentEvent.startDateTime, 'minutes').minutes
-        });
+        console.log(`👩‍⚕️ [${requestId}] Evento de cita ${eventCounter} construido:`,
+          {
+            id: appointmentEvent.id,
+            calendarId: appointmentEvent.calendarId,
+            summary: appointmentEvent.summary,
+            description: appointmentEvent.description || 'Sin descripción',
+            location: appointmentEvent.location || 'Sin ubicación',
+            startDateTime: appointmentEvent.startDateTime.toISO(),
+            endDateTime: appointmentEvent.endDateTime.toISO(),
+            timezone: appointmentEvent.timezone,
+            patientId: appointmentEvent.patientId,
+            serviceId: appointmentEvent.serviceId,
+            organizationId: appointmentEvent.organizationId,
+            appointmentStatus: appointmentEvent.appointmentStatus,
+            meetingLink: appointmentEvent.meetingLink || 'Sin enlace de reunión',
+            attendees: appointmentEvent.attendees?.length,
+            duration:
+              appointmentEvent.endDateTime.diff(
+                appointmentEvent.startDateTime,
+                'minutes'
+              ).minutes,
+          }
+        );
 
         // Apply appointment filters
         console.log(`🔍 [${requestId}] Aplicando filtros a evento de cita ${eventCounter}:`, {

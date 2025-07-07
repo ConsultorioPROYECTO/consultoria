@@ -15,6 +15,7 @@ import { DateTime, Interval } from 'luxon';
  * @property {string} [meetingLink] - A link to a virtual meeting (e.g., Google Meet link). Optional.
  */
 export interface BaseEventData {
+  id?: string;
   calendarId: string;
   summary: string;
   description?: string;
@@ -36,12 +37,16 @@ export interface BaseEventData {
  * @property {number} serviceId - The unique identifier of the medical service for the appointment.
  * @property {number} organizationId - The unique identifier of the organization to which the appointment belongs.
  * @property {string} appointmentStatus - The status of the appointment (e.g., "Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada").
+ * @property {string} [id] - The unique identifier of the event.
+ * @property {calendar_v3.Schema$EventAttendee[]} [attendees] - An array of attendees for the event. Optional.
  */
 export interface AppointmentEventData extends BaseEventData {
+  id?: string;
   patientId: number;
   serviceId: number;
   organizationId: number;
   appointmentStatus: string;
+  attendees?: calendar_v3.Schema$EventAttendee[];
 }
 
 /**
