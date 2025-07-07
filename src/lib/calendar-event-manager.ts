@@ -42,7 +42,7 @@ export async function createAppointmentEvent(data: {
   description?: string;
   location?: string;
   meetingLink?: string;
-  appointmentStatus: AppointmentStatus;
+  appointmentStatus: string;
 }) {
   try {
     const doctor = await db.query.doctors.findFirst({

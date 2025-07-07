@@ -385,7 +385,7 @@ async function handlePostRequest(
       status: 'Pendiente',
       sync_status: googleEventId ? 'synced' : 'pending',
       last_sync_attempt: googleEventId ? new Date() : null,
-    })
+    });
 
     const insertedAppointmentId = newAppointment[0]?.insertId;
 
