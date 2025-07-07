@@ -3,7 +3,7 @@ import { DateTime, Interval } from 'luxon';
 import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
-import { DoctorWorkingHours, AppointmentEventData, BreakTimeEventData,  CalendarEventData, BreakTimeType, isBreakTimeType, getTimeIntervalAsLuxonInterval, isValidTimeHHMM } from '../types/google-calendar';
+import { AppointmentEventData, AppointmentExtendedProperties, BreakTimeEventData, BreakTimeExtendedProperties, BreakTimeType, CalendarEventData, DoctorWorkingHours, getTimeIntervalAsLuxonInterval, isBreakTimeType, isValidTimeHHMM } from '../types/google-calendar';
 import type { calendar_v3 } from 'googleapis';
 
 /**
@@ -492,6 +492,9 @@ export async function getDoctorEvents(
           isBreakTime: true,
           breakTimeType: isBreakTimeType(privateProps.breakTimeType) ? privateProps.breakTimeType : 'other',
           attendees: event.attendees || [],
+          extendedProperties: {
+            private: privateProps as unknown as BreakTimeExtendedProperties,
+          },
         };
         
         console.log(`🛑 [${requestId}] Evento de descanso ${eventCounter} construido:`,
@@ -564,6 +567,9 @@ export async function getDoctorEvents(
           appointmentStatus: privateProps.appointmentStatus,
           meetingLink: event.conferenceData?.entryPoints?.[0]?.uri || undefined,
           attendees: event.attendees || [],
+          extendedProperties: {
+            private: privateProps as unknown as AppointmentExtendedProperties,
+          },
         };
         
         console.log(`👩‍⚕️ [${requestId}] Evento de cita ${eventCounter} construido:`,

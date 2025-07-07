@@ -215,19 +215,19 @@ export async function GET(
 
     console.log(`🔧 [${requestId}] Building filters object...`);
     const filters: {
-      eventType?: 'appointment' | 'break';
+      eventType?: 'default' | 'break';
       appointmentStatus?: string;
       breakTimeType?: BreakTimeType;
     } = {};
 
     console.log(`🔍 [${requestId}] Processing eventType filter:`, {
       input: eventType,
-      isAppointment: eventType === 'appointment',
+      isAppointment: eventType === 'default',
       isBreak: eventType === 'break',
-      isValid: eventType === 'appointment' || eventType === 'break'
+      isValid: eventType === 'default' || eventType === 'break'
     });
     
-    if (eventType === 'appointment' || eventType === 'break') {
+    if (eventType === 'default' || eventType === 'break') {
       filters.eventType = eventType;
       console.log(`✅ [${requestId}] EventType filter applied:`, eventType);
     } else if (eventType) {
@@ -328,52 +328,30 @@ export async function GET(
     });
 
     console.log(`📦 [${requestId}] Building response object...`);
+    const serializedEvents = events.map(event => ({
+      ...event,
+      startDateTime: event.startDateTime.toISO(),
+      endDateTime: event.endDateTime.toISO(),
+    }));
+
     const responseData = {
-      success: true,
-      data: {
-        events: events.map(event => {
-          if ('isBreakTime' in event && event.isBreakTime) {
-            return {
-              eventType: 'break',
-              breakTimeType: event.breakTimeType,
-              summary: event.summary,
-              start: event.startDateTime.toISO(),
-              end: event.endDateTime.toISO(),
-              timezone: event.timezone,
-              calendarId: event.calendarId
-            };
-          } else {
-            return {
-              eventType: 'appointment',
-              summary: event.summary,
-              description: event.description,
-              location: event.location,
-              meetingLink: event.meetingLink,
-              start: event.startDateTime.toISO(),
-              end: event.endDateTime.toISO(),
-              timezone: event.timezone,
-              calendarId: event.calendarId
-            };
-          }
-        }),
-        dateRange: {
-          start: startDate.toISODate(),
-          end: endDate.toISODate(),
-        },
-        count: events.length,
+      eventCount: events.length,
+      dateRange: {
+        start: startDate.toISODate(),
+        end: endDate.toISODate(),
       },
+      events: serializedEvents,
     };
-    
+
     console.log(`📊 [${requestId}] Response data summary:`, {
-      success: responseData.success,
-      eventCount: responseData.data.count,
-      dateRangeStart: responseData.data.dateRange.start,
-      dateRangeEnd: responseData.data.dateRange.end,
+      eventCount: responseData.eventCount,
+      dateRangeStart: responseData.dateRange.start,
+      dateRangeEnd: responseData.dateRange.end,
       responseSize: JSON.stringify(responseData).length + ' characters'
     });
     
     console.log(`✅ [${requestId}] API request completed successfully`);
-    console.log(`📤 [${requestId}] Sending response with ${events.length} events`);
+    console.log(`📤 [${requestId}] Sending response with ${responseData.eventCount} events`);
     
     return NextResponse.json(responseData);
   } catch (error) {

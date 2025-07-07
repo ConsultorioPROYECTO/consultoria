@@ -28,6 +28,25 @@ export interface BaseEventData {
 }
 
 /**
+ * Defines the structure for the private extended properties of an appointment event.
+ * These are custom key-value pairs stored within a Google Calendar event.
+ */
+export interface AppointmentExtendedProperties {
+  patientId: string;
+  serviceId: string;
+  organizationId: string;
+  appointmentStatus: string;
+}
+
+/**
+ * Defines the structure for the private extended properties of a break time event.
+ */
+export interface BreakTimeExtendedProperties {
+  isBreakTime: 'true';
+  breakTimeType: BreakTimeType;
+}
+
+/**
  * Interface for appointment event data, extending BaseEventData
  * with custom private extended properties specific to appointments.
  * These properties are stored in `extendedProperties.private` in Google Calendar.
@@ -39,6 +58,7 @@ export interface BaseEventData {
  * @property {string} appointmentStatus - The status of the appointment (e.g., "Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada").
  * @property {string} [id] - The unique identifier of the event.
  * @property {calendar_v3.Schema$EventAttendee[]} [attendees] - An array of attendees for the event. Optional.
+ * @property {{ private: AppointmentExtendedProperties }} [extendedProperties] - The raw extended properties from the Google Calendar event.
  */
 export interface AppointmentEventData extends BaseEventData {
   id?: string;
@@ -47,6 +67,9 @@ export interface AppointmentEventData extends BaseEventData {
   organizationId: number;
   appointmentStatus: string;
   attendees?: calendar_v3.Schema$EventAttendee[];
+  extendedProperties?: {
+    private: AppointmentExtendedProperties;
+  };
 }
 
 /**
@@ -69,10 +92,14 @@ export function isBreakTimeType(value: string): value is BreakTimeType {
  * @extends {BaseEventData}
  * @property {boolean} isBreakTime - A flag indicating that this event represents a break time. Should be `true`.
  * @property {BreakTimeType} [breakTimeType] - The specific type of break. Optional. Defaults to 'other' if not provided.
+ * @property {{ private: BreakTimeExtendedProperties }} [extendedProperties] - The raw extended properties from the Google Calendar event.
  */
 export interface BreakTimeEventData extends BaseEventData {
   isBreakTime: boolean;
   breakTimeType?: BreakTimeType;
+  extendedProperties?: {
+    private: BreakTimeExtendedProperties;
+  };
 }
 
 /**
