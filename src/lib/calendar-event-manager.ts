@@ -6,6 +6,26 @@ import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
 
+
+/**
+ * Enum for appointment status.
+ */
+export enum AppointmentStatus {
+  Pending = 'pending',
+  Accepted = 'accepted',
+  Rejected = 'rejected',
+  Canceled = 'canceled',
+}
+
+/**
+ * Enum for out-of-office status.
+ */
+export enum OutOfOfficeStatus {
+  Accepted = 'accepted',
+  Rejected = 'rejected',
+  Tentative = 'tentative',
+}
+
 /**
  * Creates a new appointment event in Google Calendar.
  * @param data - The appointment event data.
@@ -22,7 +42,7 @@ export async function createAppointmentEvent(data: {
   description?: string;
   location?: string;
   meetingLink?: string;
-  appointmentStatus: string;
+  appointmentStatus: AppointmentStatus;
 }) {
   try {
     const doctor = await db.query.doctors.findFirst({

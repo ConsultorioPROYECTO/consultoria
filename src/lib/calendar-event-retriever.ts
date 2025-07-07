@@ -317,7 +317,7 @@ export async function getDoctorEvents(
   startDate: DateTime,
   endDate: DateTime,
   filters?: {
-    eventType?: 'appointment' | 'break' | 'basic';
+    eventType?: 'default' | 'break' | 'basic';
     appointmentStatus?: string;
     breakTimeType?: BreakTimeType;
   }
@@ -572,14 +572,14 @@ export async function getDoctorEvents(
         console.log(`🔍 [${requestId}] Aplicando filtros a evento de cita ${eventCounter}:`, {
           hasEventTypeFilter: !!filters?.eventType,
           eventTypeFilter: filters?.eventType,
-          passesEventTypeFilter: !filters?.eventType || filters.eventType === 'appointment',
+          passesEventTypeFilter: !filters?.eventType || filters.eventType === 'default',
           hasAppointmentStatusFilter: !!filters?.appointmentStatus,
           appointmentStatusFilter: filters?.appointmentStatus,
           eventAppointmentStatus: appointmentEvent.appointmentStatus,
           passesAppointmentStatusFilter: !filters?.appointmentStatus || filters.appointmentStatus === appointmentEvent.appointmentStatus
         });
         
-        if (filters?.eventType && filters.eventType !== 'appointment') {
+        if (filters?.eventType && filters.eventType !== 'default') {
           filteredOutEvents++;
           console.debug(`🚫 [${requestId}] Evento de cita ${eventCounter} (${event.id}) filtrado - eventType no coincide. Summary: ${event.summary || 'N/A'}`);
           continue;
