@@ -32,56 +32,7 @@ interface NextAppointmentProps {
   className?: string;
 }
 
-// Función auxiliar para crear un objeto Date para hoy con una hora y minuto específicos
-function getDateFromTimeString(timeString: string): Date {
-  // Validar que timeString no sea undefined, null o vacío
-  if (!timeString || typeof timeString !== 'string') {
-    console.warn('getDateFromTimeString: timeString inválido:', timeString);
-    return new Date(); // Retornar fecha actual como fallback
-  }
 
-  const parts = timeString.split(' ');
-  if (parts.length < 1) {
-    console.warn('getDateFromTimeString: formato de tiempo inválido:', timeString);
-    return new Date();
-  }
-
-  const [time, modifier] = parts;
-  const timeParts = time?.split(':');
-  
-  if (!timeParts || timeParts.length < 2) {
-    console.warn('getDateFromTimeString: formato de hora inválido:', timeString);
-    return new Date();
-  }
-
-  const hoursStr = timeParts[0];
-  const minutesStr = timeParts[1];
-  
-  if (!hoursStr || !minutesStr) {
-    console.warn('getDateFromTimeString: horas o minutos inválidos:', timeString);
-    return new Date();
-  }
-
-  let hours = parseInt(hoursStr, 10);
-  const minutes = parseInt(minutesStr, 10);
-
-  if (isNaN(hours) || isNaN(minutes)) {
-    console.warn('getDateFromTimeString: no se pudieron parsear horas/minutos:', timeString);
-    return new Date();
-  }
-
-  // Ajustar horas para formato 24h basado en AM/PM
-  if (modifier === 'PM' && hours !== 12) {
-    hours += 12;
-  } else if (modifier === 'AM' && hours === 12) {
-    hours = 0; // 12 AM (medianoche) es 00 en formato 24h
-  }
-  // 12 PM (mediodía) se mantiene como 12
-
-  const today = new Date();
-  today.setHours(hours, minutes, 0, 0);
-  return today;
-}
 
 export function NextAppointment({ appointments, className }: NextAppointmentProps) {
   const now = new Date();
