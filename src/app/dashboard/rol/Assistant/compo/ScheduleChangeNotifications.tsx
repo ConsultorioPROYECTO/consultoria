@@ -30,38 +30,44 @@ export function ScheduleChangeNotifications() {
     const notifications: Notification[] = [];
     const now = new Date();
     
-    doctors.forEach(doctor => {
-      doctor.appointments.forEach(appointment => {
-        const appointmentDate = new Date(`${appointment.date} ${appointment.time}`);
-        const timeDiff = appointmentDate.getTime() - now.getTime();
-        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        
-        // Simular notificaciones para citas con diferentes estados
-        if (appointment.status === 'Pendiente' && daysDiff === 0) {
-          notifications.push({
-            id: `pending-${appointment.id}`,
-            type: 'Nueva Cita Urgente',
-            patientName: appointment.patientName || undefined,
-            doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
-            newTime: `${appointment.time} - ${new Date(appointment.date).toLocaleDateString()}`,
-            reason: 'Cita pendiente de confirmación para hoy',
-            timestamp: 'Hace 30 minutos',
-            isRead: false,
-            priority: 'Alta'
-          });
-        }
-        
-        if (appointment.status === 'Confirmada' && timeDiff < 30 * 60 * 1000 && timeDiff > 0) {
-          notifications.push({
-            id: `reminder-${appointment.id}`,
-            type: 'Retraso Médico',
-            doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
-            reason: `Próxima cita con ${appointment.patientName || 'paciente'} en 30 minutos`,
-            timestamp: 'Hace 5 minutos',
-            isRead: false,
-            priority: 'Media'
-          });
-        }
+    doctors.forEach(assistant => {
+      assistant.doctors.forEach(doctor => {
+        doctor.appointments.forEach(appointment => {
+          const appointmentDate = new Date(appointment.createdAt);
+          const timeDiff = appointmentDate.getTime() - now.getTime();
+          const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+          
+          const patientName = appointment.patient ? 
+            `${appointment.patient.firstName} ${appointment.patient.lastName}` : 
+            'Paciente sin información';
+          
+          // Simular notificaciones para citas con diferentes estados
+          if (appointment.status === 'Pendiente' && daysDiff === 0) {
+            notifications.push({
+              id: `pending-${appointment.id}`,
+              type: 'Nueva Cita Urgente',
+              patientName: patientName,
+              doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
+              newTime: `${appointmentDate.toLocaleTimeString()} - ${appointmentDate.toLocaleDateString()}`,
+              reason: 'Cita pendiente de confirmación para hoy',
+              timestamp: 'Hace 30 minutos',
+              isRead: false,
+              priority: 'Alta'
+            });
+          }
+          
+          if (appointment.status === 'Confirmada' && timeDiff < 30 * 60 * 1000 && timeDiff > 0) {
+            notifications.push({
+              id: `reminder-${appointment.id}`,
+              type: 'Retraso Médico',
+              doctorName: `${doctor.speciality} (ID: ${doctor.idDoctor})`,
+              reason: `Próxima cita con ${patientName} en 30 minutos`,
+              timestamp: 'Hace 5 minutos',
+              isRead: false,
+              priority: 'Media'
+            });
+          }
+        });
       });
     });
     

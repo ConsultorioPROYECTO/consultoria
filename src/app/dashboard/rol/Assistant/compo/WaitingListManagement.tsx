@@ -41,12 +41,15 @@ export function WaitingListManagement() {
   const initialWaitingList = useMemo(() => {
     if (!doctors.length) return [];
     
+    const firstDoctor = doctors[0]?.doctors?.[0];
+    const secondDoctor = doctors[0]?.doctors?.[1] || doctors[1]?.doctors?.[0];
+    
     return [
       {
         id: "wait1",
         patientName: "Ricardo Gómez",
-        requestedDoctorId: doctors[0]?.idDoctor,
-        requestedSpecialty: doctors[0]?.speciality || "General",
+        requestedDoctorId: firstDoctor?.idDoctor,
+        requestedSpecialty: firstDoctor?.speciality || "General",
         reason: "Revisión anual programada",
         contactInfo: "ricardo@email.com / 555-1234",
         addedAt: "2024-07-28",
@@ -56,7 +59,7 @@ export function WaitingListManagement() {
       {
         id: "wait2",
         patientName: "Fernanda López",
-        requestedSpecialty: doctors[1]?.speciality || "Pediatría",
+        requestedSpecialty: secondDoctor?.speciality || "Pediatría",
         reason: "Consulta para recién nacido",
         contactInfo: "fernanda.l@email.com / 555-5678",
         addedAt: "2024-07-30",
@@ -81,15 +84,29 @@ export function WaitingListManagement() {
   
   // Obtener especialidades únicas de los doctores
   const availableSpecialties = useMemo(() => {
-    const specialties = [...new Set(doctors.map(doctor => doctor.speciality))];
-    return specialties.filter(Boolean);
+    const specialties: string[] = [];
+    doctors.forEach(assistant => {
+      assistant.doctors.forEach(doctor => {
+        if (doctor.speciality) {
+          specialties.push(doctor.speciality);
+        }
+      });
+    });
+    return [...new Set(specialties)].filter(Boolean);
   }, [doctors]);
   
   // Función para obtener el nombre del doctor
   const getDoctorName = (doctorId?: number) => {
     if (!doctorId) return '';
-    const doctor = doctors.find(d => d.idDoctor === doctorId);
-    return doctor ? `${doctor.speciality} (ID: ${doctor.idDoctor})` : '';
+    let foundDoctor = null;
+    doctors.forEach(assistant => {
+      assistant.doctors.forEach(doctor => {
+        if (doctor.idDoctor === doctorId) {
+          foundDoctor = doctor;
+        }
+      });
+    });
+    return foundDoctor ? `${foundDoctor.speciality} (ID: ${foundDoctor.idDoctor})` : '';
   };
 
   const openModal = (patient?: WaitingPatient) => {

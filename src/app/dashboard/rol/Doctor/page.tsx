@@ -106,8 +106,23 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handleStartConsultation = (appointment: Appointment) => {
-    setSelectedConsultationAppointment(appointment);
+  const handleStartConsultation = (appointment: any) => {
+    // Transformar la cita al formato esperado por ConsultationModal
+    const transformedAppointment = {
+      id: appointment.id,
+      time: appointment.createdAt, // Usar createdAt como time
+      patient: {
+        firstName: appointment.patient?.firstName || '',
+        lastName: appointment.patient?.lastName || ''
+      },
+      service: appointment.service || {
+        id: appointment.serviceId,
+        name: 'Servicio',
+        description: ''
+      },
+      status: appointment.status
+    };
+    setSelectedConsultationAppointment(transformedAppointment);
     setIsConsultationModalOpen(true);
   };
 
