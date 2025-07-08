@@ -49,7 +49,7 @@ export function OrganizationStats() {
   const { patients, loading: patientsLoading, error: patientsError } = usePatients();
   const { services, loading: servicesLoading, error: servicesError } = useMedicalServices();
   const { doctorServices, total: totalRelations, loading: relationsLoading, error: relationsError } = useDoctorServices();
-  const { doctors, loading: doctorsLoading, error: doctorsError } = useDoctorsWithAppointments();
+  const { doctors: assistantsData, loading: doctorsLoading, error: doctorsError } = useDoctorsWithAppointments();
 
   const isLoading = patientsLoading || servicesLoading || relationsLoading || doctorsLoading;
   const hasError = patientsError || servicesError || relationsError || doctorsError;
@@ -69,12 +69,15 @@ export function OrganizationStats() {
     const activeServices = services.filter(s => s.isActive).length;
     const serviceCategories = [...new Set(services.map(s => s.category))].length;
 
+    // Extraer todos los doctores de todos los asistentes
+    const allDoctors = assistantsData.flatMap(assistant => assistant.doctors || []);
+    
     // Estadísticas de doctores
-    const totalDoctors = doctors.length;
-    const specialties = [...new Set(doctors.map(d => d.speciality))].length;
+    const totalDoctors = allDoctors.length;
+    const specialties = [...new Set(allDoctors.map(d => d.speciality))].length;
 
     // Estadísticas de citas
-    const allAppointments = doctors.flatMap(d => d.appointments || []);
+    const allAppointments = allDoctors.flatMap(d => d.appointments || []);
     const totalAppointments = allAppointments.length;
     const completedAppointments = allAppointments.filter(a => a.status === 'Completada').length;
     const pendingAppointments = allAppointments.filter(a => a.status === 'Pendiente').length;
@@ -115,8 +118,12 @@ export function OrganizationStats() {
         total: totalRelations,
         available: availableRelations,
       },
+      assistants: {
+        total: assistantsData.length,
+        withDoctors: assistantsData.filter(a => a.doctors && a.doctors.length > 0).length,
+      },
     };
-  }, [patients, services, doctors, doctorServices, totalRelations, isLoading]);
+  }, [patients, services, assistantsData, doctorServices, totalRelations, isLoading]);
 
   if (isLoading) {
     return (
@@ -190,10 +197,17 @@ export function OrganizationStats() {
         />
         
         <StatCard
-          title="Total Citas"
+          title="Citas Totales"
           value={stats.appointments.total}
           description={`${stats.appointments.completed} completadas`}
           icon={<Calendar className="h-4 w-4 text-muted-foreground" />}
+        />
+        
+        <StatCard
+          title="Asistentes"
+          value={stats.assistants.total}
+          description={`${stats.assistants.withDoctors} con doctores asignados`}
+          icon={<UserCheck className="h-4 w-4 text-muted-foreground" />}
         />
       </div>
 
