@@ -40,13 +40,13 @@ import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments"
 
 // Nuevo schema para datos de citas médicas
 export const appointmentSchema = z.object({
-  id: z.number(),
-  doctorId: z.number(),
+  id: z.string(),
+  doctorId: z.string(),
   doctorSpecialty: z.string(),
   patientName: z.string(),
   service: z.string(),
   date: z.string(),
-  time: z.string(),
+  time: z.string().optional(),
   status: z.enum(['Confirmada', 'Completada', 'Pendiente', 'Llegó']),
 })
 
@@ -190,23 +190,27 @@ export function DataTable() {
     pageSize: 10,
   })
 
-  // Transformar datos de doctores a formato de tabla
+  // Transformar datos de asistentes con doctores a formato de tabla
   const tableData = React.useMemo(() => {
     if (!doctors.length) return []
     
     const appointments: AppointmentData[] = []
     
-    doctors.forEach(doctor => {
-      doctor.appointments.forEach(appointment => {
-        appointments.push({
-          id: appointment.id,
-          doctorId: doctor.idDoctor,
-          doctorSpecialty: doctor.speciality,
-          patientName: appointment.patientName || '',
-          service: appointment.service || '',
-          date: appointment.date.toString(),
-          time: appointment.time,
-          status: appointment.status as AppointmentData['status'],
+    doctors.forEach(assistant => {
+      assistant.doctors.forEach(doctor => {
+        doctor.appointments.forEach((appointment) => {
+          appointments.push({
+            id: appointment.id?.toString() || '',
+            doctorId: doctor.idDoctor?.toString() || '',
+            doctorSpecialty: doctor.speciality || '',
+            patientName: appointment.patient ? 
+              `${appointment.patient.firstName} ${appointment.patient.lastName}` : 
+              'Paciente no disponible',
+            service: 'Servicio no disponible', // appointment.service?.name || '',
+            date: appointment.createdAt?.toString() || '',
+            time: '', // Campo no disponible en el esquema actual
+            status: appointment.status as AppointmentData['status'],
+          })
         })
       })
     })
