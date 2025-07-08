@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useMemo, useTransition, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from "@rutas/app/context/NavigationContext"
 import dynamic from 'next/dynamic';
 import { ConfigDrawer } from './config-drawer';
@@ -72,7 +72,7 @@ const MobileNavbar = memo(() => {
   // Memoize active index calculation
   const activeIndex = useMemo(() => {
     if (currentView === 'configuration' || currentView === 'organization') {
-      return 2; // No active index when in configuration
+      return -1; // No active index for main nav when in configuration
     }
     return navItems.findIndex(item => isItemActive(item));
   }, [navItems, isItemActive, currentView]);
@@ -85,37 +85,16 @@ const MobileNavbar = memo(() => {
     }
   }, [navItems]);
 
-  // Memoize motion animation props
-  const motionProps = useMemo(() => {
-    const tabsWidth = `${100 / navItems.length}%`;
-    
-    if (currentView === 'configuration' || currentView === 'organization') {
-      // Hide motion completely when in configuration view
-      return {
-        className: "absolute inset-0 bg-primary rounded-full z-0",
-        style: { width: tabsWidth, opacity: 0 },
-        initial: false,
-        animate: { 
-          opacity: 0
-        },
-        transition: { type: 'spring', stiffness: 300, damping: 30 }
-      };
-    } else {
-      // Normal position for nav items
-      const xPosition = `${activeIndex * 100}%`;
-      
-      return {
-        className: "absolute inset-0 bg-primary rounded-full z-0",
-        style: { width: tabsWidth, opacity: 0 },
-        initial: false,
-        animate: { 
-          x: xPosition,
-          opacity: 1
-        },
-        transition: { type: 'spring', stiffness: 300, damping: 30 }
-      };
-    }
-  }, [navItems.length, activeIndex, currentView]);
+  const configIndicatorVariants = useMemo(() => ({
+    hidden: { opacity: 0, scale: 0.5 },
+    visible: { opacity: 1, scale: 1 },
+  }), []);
+
+  const navIndicatorVariants = useMemo(() => ({
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.95 }
+  }), []);
 
   return (
     <div className={`fixed bottom-4 left-4 right-4 flex justify-center gap-4 z-50`}>
@@ -128,7 +107,23 @@ const MobileNavbar = memo(() => {
           className="relative z-10"
         >
           <div className="relative">
-            <motion.div {...motionProps} />
+            <AnimatePresence>
+              {activeIndex !== -1 && (
+                <motion.div
+                   key={activeIndex}
+                   className="absolute inset-0 bg-primary rounded-full z-0"
+                   style={{
+                     width: `${100 / navItems.length}%`,
+                     left: `${activeIndex * (100 / navItems.length)}%`,
+                   }}
+                   variants={navIndicatorVariants}
+                   initial="hidden"
+                   animate="visible"
+                   exit="exit"
+                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                 />
+              )}
+            </AnimatePresence>
             <TabsList className="w-full h-10 p-0 bg-transparent grid grid-cols-2 gap-0 relative z-10">
             {navItems.map((item, index) => {
               const isActive = index === activeIndex;
@@ -167,14 +162,18 @@ const MobileNavbar = memo(() => {
           className="relative z-10"
         >
           <div className="relative">
-            {(currentView === 'configuration' || currentView === 'organization') && (
-              <motion.div 
-                className="absolute inset-0 bg-primary rounded-full z-0"
-                initial={false}
-                animate={{ opacity: 1 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              />
-            )}
+            <AnimatePresence>
+              {(currentView === 'configuration' || currentView === 'organization') && (
+                <motion.div 
+                  className="absolute inset-0 bg-primary rounded-full z-0"
+                  variants={configIndicatorVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                />
+              )}
+            </AnimatePresence>
             <TabsList className="w-10 h-10 p-0 bg-transparent relative z-10">
               <TabsTrigger
                 value="config"
