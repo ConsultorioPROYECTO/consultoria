@@ -6,30 +6,35 @@ import { IconCalendarEvent, IconUser } from "@tabler/icons-react"
 import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments"
 
 export function UpcomingAppointments() {
-  const { doctors, loading, error } = useDoctorsWithAppointments()
+  const { doctors: assistants, loading, error } = useDoctorsWithAppointments()
 
   // Obtener todas las citas y ordenar por fecha/hora más próxima
   const upcomingAppointments = React.useMemo(() => {
-    if (!doctors.length) return []
+    if (!assistants.length) return []
     
-    const allAppointments = doctors.flatMap(doctor => 
-      doctor.appointments
-        .filter(apt => apt.status !== 'Completada')
-        .map(apt => ({
-          ...apt,
-          doctorSpecialty: doctor.speciality,
-          doctorId: doctor.idDoctor
-        }))
+    // Extraer todas las citas de todos los doctores de todos los asistentes
+    const allAppointments = assistants.flatMap(assistant => 
+      assistant.doctors.flatMap(doctor => 
+        doctor.appointments
+          .filter(apt => apt.status !== 'Completada')
+          .map(apt => ({
+            ...apt,
+            doctorName: `Dr. ${doctor.speciality}` || `Doctor ${doctor.idDoctor}`,
+            doctorId: doctor.idDoctor,
+            patientName: apt.patient ? `${apt.patient.firstName} ${apt.patient.lastName}` : 'Paciente no especificado'
+          }))
+      )
     )
     
     return allAppointments
       .sort((a, b) => {
-        const dateA = new Date(`${a.date} ${a.time}`)
-        const dateB = new Date(`${b.date} ${b.time}`)
-        return dateA.getTime() - dateB.getTime()
+        // Ordenar por fecha de creación ya que no hay campos específicos de fecha/hora de cita
+        const dateA = new Date(a.createdAt)
+        const dateB = new Date(b.createdAt)
+        return dateB.getTime() - dateA.getTime() // Más recientes primero
       })
       .slice(0, 5) // Mostrar solo las próximas 5 citas
-  }, [doctors])
+  }, [assistants])
 
   if (loading) {
     return (
@@ -81,13 +86,12 @@ export function UpcomingAppointments() {
                     <IconUser className="h-3 w-3 text-muted-foreground" />
                     <p className="text-sm font-semibold">{appointment.patientName}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{appointment.service}</p>
-                  <p className="text-xs text-muted-foreground">{appointment.doctorSpecialty}</p>
+                  <p className="text-xs text-muted-foreground">Dr. {appointment.doctorName}</p>
+                  <p className="text-xs text-muted-foreground">{appointment.status}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm font-medium">{appointment.time}</span>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(appointment.date).toLocaleDateString()}
+                    {new Date(appointment.createdAt).toLocaleDateString()}
                   </p>
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     appointment.status === 'Confirmada' ? 'bg-green-100 text-green-800' :

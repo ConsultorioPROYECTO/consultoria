@@ -3,7 +3,7 @@
 import { ChartAreaInteractive } from "@rutas/app/dashboard/com/chart-area-interactive"
 import { DataTable } from "@rutas/app/dashboard/com/data-table"
 import { SectionCards } from "@rutas/app/dashboard/com/section-cards"
-import { UpcomingAppointments } from "@rutas/app/dashboard/com/UpcomingAppointments"
+import { UpcomingAppointments } from "@/app/dashboard/com/AssistantDashboardAppointments"
 import { PendingInteractions } from "@rutas/app/dashboard/com/PendingInteractions"
 import { AIStats } from "@rutas/app/dashboard/com/AIStats"
 import { QuickActions } from "@rutas/app/dashboard/com/QuickActions"

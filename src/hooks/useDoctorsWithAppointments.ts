@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { getFirebaseAuthToken } from '@lib/firebase/clientUtils';
-import type { DoctorsWithAppointmentsResponse } from '@/types/api';
+import type { OrganizationAssistantDoctorAppointmentsResponse } from '@/app/api/master/organization-asistant-doctor-appointments/route';
 
 interface UseDoctorsWithAppointmentsReturn {
-  doctors: DoctorsWithAppointmentsResponse;
+  doctors: OrganizationAssistantDoctorAppointmentsResponse;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
 export function useDoctorsWithAppointments(): UseDoctorsWithAppointmentsReturn {
-  const [doctors, setDoctors] = useState<DoctorsWithAppointmentsResponse>([]);
+  const [doctors, setDoctors] = useState<OrganizationAssistantDoctorAppointmentsResponse>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +20,7 @@ export function useDoctorsWithAppointments(): UseDoctorsWithAppointmentsReturn {
       setError(null);
       
       const token = await getFirebaseAuthToken();
-      const response = await fetch('/api/assitantants/doctors-with-appointments', {
+      const response = await fetch('/api/master/organization-asistant-doctor-appointments', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
