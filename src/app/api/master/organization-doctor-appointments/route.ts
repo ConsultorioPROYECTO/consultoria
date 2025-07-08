@@ -2,7 +2,7 @@
  * @fileoverview API Route para obtener todos los doctores de una organización
  *               con sus citas asociadas y información de pacientes.
  * @version 1.0.0
- * @author Santiago Prada
+ * @author Santiago Prada - Backend Developer
  * @date 2025-01-20
  * @since 1.0.0
  * @module OrganizationDoctorAppointmentsAPI
@@ -264,7 +264,7 @@ async function handleGetRequest(
     const user = userResult[0];
 
     // 2. Validar que el usuario tenga rol de "admin" (master)
-    const roleValidationError = validateUserRole(user.role, 'admin');
+    const roleValidationError = validateUserRole(user.role, ['admin', 'asistente']);
     if (roleValidationError) {
       return roleValidationError;
     }
