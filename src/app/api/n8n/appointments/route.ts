@@ -21,7 +21,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { appointments, doctors, medicalServices, patients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { createAppointmentEvent } from '@/lib/calendar-event-manager';
+import { AppointmentStatus, createAppointmentEvent } from '@/lib/calendar-event-manager';
 import { handleDatabaseError } from '@/lib/api-helpers';
 import { DateTime } from 'luxon';
 import {
@@ -390,7 +390,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
           description: notes || `Servicio: ${medicalService.name}\nPaciente: ${patient.firstName} ${patient.lastName}`,
           location: isVirtual ? 'Online' : undefined,
           meetingLink: isVirtual ? meetingLink : undefined,
-          appointmentStatus: 'Pendiente',
+          appointmentStatus: 'Pendiente' as AppointmentStatus,
         };
 
         const calendarEventResponse = await createAppointmentEvent(eventData);
