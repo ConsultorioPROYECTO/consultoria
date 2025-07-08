@@ -16,34 +16,7 @@ import {
   DialogTitle,
 } from "@rutas/components/ui/dialog";
 
-interface Appointment {
-  id: string;
-  doctorId: string;
-  patientId: string;
-  serviceId: string;
-  status: string;
-  google_event_id?: string;
-  google_calendar_id?: string;
-  sync_status?: string;
-  last_sync_attempt?: string;
-  sync_error?: string;
-  createdAt: string;
-  updatedAt: string;
-  patient?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-  };
-  service?: {
-    id: string;
-    name: string;
-    description?: string;
-    duration: number;
-    price: number;
-  };
-}
+import { Appointment } from '../../../lib/appointmentsService';
 
 interface DailyAgendaViewProps {
   todayAppointments: Appointment[]; // Añadir la prop para recibir las citas

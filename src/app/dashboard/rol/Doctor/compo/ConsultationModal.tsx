@@ -12,8 +12,10 @@ import { useAICare } from '@/app/hooks/useAICare';
 import { PatientHistoryView } from "./PatientHistoryView";
 
 
-interface Appointment {
-  id: string;
+import { Appointment as BaseAppointment } from '../../../lib/appointmentsService';
+
+// Extender el tipo base para incluir la propiedad time requerida por el modal
+interface ConsultationAppointment extends Omit<BaseAppointment, 'patient' | 'service'> {
   time: string;
   patient: {
     firstName: string;
@@ -34,11 +36,10 @@ interface Appointment {
     createdAt?: string;
     updatedAt?: string;
   };
-  status: string;
 }
 
 interface ConsultationModalProps {
-  appointment: Appointment | null; // La cita para la consulta actual
+  appointment: ConsultationAppointment | null; // La cita para la consulta actual
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveAndComplete: (appointmentId: string, notes: string) => void;

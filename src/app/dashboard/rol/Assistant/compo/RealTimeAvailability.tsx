@@ -6,28 +6,36 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@ruta
 import { Badge } from "@rutas/components/ui/badge";
 import { CalendarCheck2, User, Clock } from "lucide-react";
 import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments";
+import type { Appointment } from "@/db/schema/appointments";
+import type { Doctor } from "@/db/schema/doctors";
+import type { Patient } from "@/db/schema/patients";
 
 export function RealTimeAvailability() {
   const { doctors, loading, error } = useDoctorsWithAppointments();
 
   const getDoctorStatus = React.useMemo(() => {
-    const allDoctors: any[] = [];
+    const allDoctors: Array<Doctor & {
+      status: string;
+      nextAvailable: string | null;
+      currentPatient: string | null;
+      appointments: Array<Appointment & { patient: Patient | null }>;
+    }> = [];
     
     doctors.forEach(assistant => {
       assistant.doctors.forEach(doctor => {
         const now = new Date();
-        const currentAppointment = doctor.appointments.find((apt: any) => {
+        const currentAppointment = doctor.appointments.find((apt: Appointment & { patient: Patient | null }) => {
           const aptDate = new Date(apt.createdAt);
           const endTime = new Date(aptDate.getTime() + 60 * 60 * 1000); // Asumiendo citas de 1 hora
           return aptDate <= now && now <= endTime && apt.status !== 'Completada';
         });
 
         const nextAppointment = doctor.appointments
-          .filter((apt: any) => {
+          .filter((apt: Appointment & { patient: Patient | null }) => {
             const aptDate = new Date(apt.createdAt);
             return aptDate > now && apt.status !== 'Completada';
           })
-          .sort((a: any, b: any) => {
+          .sort((a: Appointment, b: Appointment) => {
             const dateA = new Date(a.createdAt);
             const dateB = new Date(b.createdAt);
             return dateA.getTime() - dateB.getTime();
@@ -151,9 +159,9 @@ export function RealTimeAvailability() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Citas hoy: {doctor.appointments.filter((apt: any) => {
+                    Citas hoy: {doctor.appointments.filter((apt: Appointment) => {
                       const today = new Date().toDateString();
-                      const aptDate = new Date(apt.date).toDateString();
+                      const aptDate = new Date(apt.createdAt).toDateString();
                       return today === aptDate && apt.status !== 'Completada';
                     }).length}
                   </p>

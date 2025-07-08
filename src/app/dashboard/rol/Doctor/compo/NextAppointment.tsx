@@ -16,12 +16,12 @@ interface Appointment {
     firstName: string;
     lastName: string;
     email: string;
-    phone: string;
+    phone?: string;
   };
   service?: {
     id: string;
     name: string;
-    description: string;
+    description?: string;
     duration: number;
     price: number;
   };

@@ -19,11 +19,32 @@ import {
   type Appointment 
 } from "../../lib/appointmentsService";
 
+// Tipo específico para el modal de consulta
+type ConsultationAppointment = {
+  id: string;
+  time: string;
+  patient: {
+    firstName: string;
+    lastName: string;
+  };
+  service: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+  status: string;
+  doctorId: string;
+  patientId: string;
+  serviceId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export default function DoctorDashboard() {
   const { user } = useAuth();
   const [, setSelectedAppointmentId] = useState<string | null>(null);
   const [todayAppointmentsState, setTodayAppointmentsState] = useState<Appointment[]>([]);
-  const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<Appointment | null>(null);
+  const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
 
   const pendingAppointmentsCount = todayAppointmentsState.filter(apt => apt.status !== 'Completada').length;
@@ -106,9 +127,9 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handleStartConsultation = (appointment: any) => {
+  const handleStartConsultation = (appointment: Appointment) => {
     // Transformar la cita al formato esperado por ConsultationModal
-    const transformedAppointment = {
+    const transformedAppointment: ConsultationAppointment = {
       id: appointment.id,
       time: appointment.createdAt, // Usar createdAt como time
       patient: {
@@ -120,7 +141,12 @@ export default function DoctorDashboard() {
         name: 'Servicio',
         description: ''
       },
-      status: appointment.status
+      status: appointment.status,
+      doctorId: appointment.doctorId,
+      patientId: appointment.patientId,
+      serviceId: appointment.serviceId,
+      createdAt: appointment.createdAt,
+      updatedAt: appointment.updatedAt
     };
     setSelectedConsultationAppointment(transformedAppointment);
     setIsConsultationModalOpen(true);

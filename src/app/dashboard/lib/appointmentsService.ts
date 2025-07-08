@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
 
-// Definir la interfaz Appointment
+// Definir la interfaz Appointment unificada
 export interface Appointment {
   id: string;
   doctorId: string;
@@ -10,17 +10,24 @@ export interface Appointment {
   status: string;
   date?: string;
   notes?: string;
+  google_event_id?: string;
+  google_calendar_id?: string;
+  sync_status?: string;
+  last_sync_attempt?: string;
+  sync_error?: string;
+  createdAt: string;
+  updatedAt: string;
   patient?: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
-    phone: string;
+    phone?: string;
   };
   service?: {
     id: string;
     name: string;
-    description: string;
+    description?: string;
     duration: number;
     price: number;
   };

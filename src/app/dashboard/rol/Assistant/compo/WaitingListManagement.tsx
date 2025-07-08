@@ -106,7 +106,7 @@ export function WaitingListManagement() {
         }
       });
     });
-    return foundDoctor ? `${foundDoctor.speciality} (ID: ${foundDoctor.idDoctor})` : '';
+    return foundDoctor ? `no implementado (ID: no implementado)` : '';
   };
 
   const openModal = (patient?: WaitingPatient) => {
@@ -305,11 +305,13 @@ export function WaitingListManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="">Sin preferencia</SelectItem>
-                    {doctors.map((doctor) => (
-                      <SelectItem key={doctor.idDoctor} value={doctor.idDoctor.toString()}>
-                        {doctor.speciality} (ID: {doctor.idDoctor})
-                      </SelectItem>
-                    ))}
+                    {doctors.flatMap(assistant => 
+                      assistant.doctors.map((doctor) => (
+                        <SelectItem key={doctor.idDoctor} value={doctor.idDoctor.toString()}>
+                          {doctor.speciality} (ID: {doctor.idDoctor})
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
