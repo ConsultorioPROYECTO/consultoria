@@ -21,7 +21,7 @@ import { useUIStyle } from "@/app/context/UIStyleContext"
 import { useAuth } from "@/app/context/AuthContext"
 import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"
 import { AccountSection } from "../com/AccountSection"
-import { QRCode } from '@/components/ui/kibo-ui/qr-code'
+import Image from "next/image"
 
 const navAccount = [
   {
@@ -397,12 +397,22 @@ export default function ConfigView() {
                   <div className="mt-4 text-center">
                     <p className="text-sm text-muted-foreground mb-2">Escanea este código QR con tu teléfono:</p>
                     <div className="relative inline-block">
-                      <QRCode
-                        data={qrCodeData}
-                        className="mx-auto w-[200px] h-[200px]"
-                        robustness="M"
-                        foreground="bg-secondary"
-                        background="bg-primary"
+                      <Image
+                        src={qrCodeData}
+                        alt="Código QR de WhatsApp"
+                        width={500}
+                        height={500}
+                        className="mx-auto border rounded-lg shadow-sm"
+                        priority
+                        onError={() => {
+                          console.error('Error loading QR image');
+                          setQrError("Error al cargar la imagen del código QR. Por favor, inténtalo de nuevo.");
+                          setQrCodeData(null);
+                        }}
+                        
+                        onLoad={() => {
+                          console.log('QR image loaded successfully');
+                        }}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
