@@ -5,10 +5,26 @@ import { ClockIcon, UserIcon } from 'lucide-react'; // Iconos
 
 interface Appointment {
   id: string;
-  time: string;
-  patientName: string;
-  service: string;
+  doctorId: string;
+  patientId: string;
+  serviceId: string;
   status: string;
+  date?: string;
+  notes?: string;
+  patient?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+    description: string;
+    duration: number;
+    price: number;
+  };
 }
 
 interface NextAppointmentProps {
@@ -18,9 +34,41 @@ interface NextAppointmentProps {
 
 // Función auxiliar para crear un objeto Date para hoy con una hora y minuto específicos
 function getDateFromTimeString(timeString: string): Date {
-  const [time, modifier] = timeString.split(' ');
-  let hours = parseInt(time.split(':')[0], 10);
-  const minutes = parseInt(time.split(':')[1], 10);
+  // Validar que timeString no sea undefined, null o vacío
+  if (!timeString || typeof timeString !== 'string') {
+    console.warn('getDateFromTimeString: timeString inválido:', timeString);
+    return new Date(); // Retornar fecha actual como fallback
+  }
+
+  const parts = timeString.split(' ');
+  if (parts.length < 1) {
+    console.warn('getDateFromTimeString: formato de tiempo inválido:', timeString);
+    return new Date();
+  }
+
+  const [time, modifier] = parts;
+  const timeParts = time?.split(':');
+  
+  if (!timeParts || timeParts.length < 2) {
+    console.warn('getDateFromTimeString: formato de hora inválido:', timeString);
+    return new Date();
+  }
+
+  const hoursStr = timeParts[0];
+  const minutesStr = timeParts[1];
+  
+  if (!hoursStr || !minutesStr) {
+    console.warn('getDateFromTimeString: horas o minutos inválidos:', timeString);
+    return new Date();
+  }
+
+  let hours = parseInt(hoursStr, 10);
+  const minutes = parseInt(minutesStr, 10);
+
+  if (isNaN(hours) || isNaN(minutes)) {
+    console.warn('getDateFromTimeString: no se pudieron parsear horas/minutos:', timeString);
+    return new Date();
+  }
 
   // Ajustar horas para formato 24h basado en AM/PM
   if (modifier === 'PM' && hours !== 12) {
@@ -38,20 +86,31 @@ function getDateFromTimeString(timeString: string): Date {
 export function NextAppointment({ appointments, className }: NextAppointmentProps) {
   const now = new Date();
 
-  // Filtrar citas no completadas y ordenarlas por hora
+  // Debug: Log para ver qué citas están llegando
+  console.log('NextAppointment - Citas recibidas:', appointments);
+  console.log('NextAppointment - Hora actual:', now);
+
+  // Filtrar citas no completadas y ordenarlas por fecha de creación
   const upcomingAppointments = appointments
-    .filter(apt => apt.status !== 'Completada')
+    .filter(apt => {
+      const isNotCompleted = apt.status !== 'Completada';
+      console.log(`Cita ${apt.id}: status=${apt.status}, isNotCompleted=${isNotCompleted}`);
+      console.log(`Cita ${apt.id}: patient=${apt.patient?.firstName} ${apt.patient?.lastName}, service=${apt.service?.name}`);
+      return isNotCompleted;
+    })
     .sort((a, b) => {
-      const dateA = getDateFromTimeString(a.time);
-      const dateB = getDateFromTimeString(b.time);
-      return dateA.getTime() - dateB.getTime();
+      // Ordenar por ID (asumiendo que IDs más altos son más recientes)
+      return a.id.localeCompare(b.id);
     });
 
-  // Encontrar la próxima cita (la primera que aún no ha pasado)
-  const nextAppointment = upcomingAppointments.find(apt => {
-     const aptDate = getDateFromTimeString(apt.time);
-     return aptDate >= now; // Comparar con la hora actual
-  });
+  console.log('NextAppointment - Citas no completadas:', upcomingAppointments);
+
+  // Tomar la primera cita pendiente (más antigua)
+  const nextAppointment = upcomingAppointments.length > 0 ? upcomingAppointments[0] : null;
+  
+  console.log('NextAppointment - Próxima cita encontrada:', nextAppointment);
+
+  console.log('NextAppointment - Próxima cita encontrada:', nextAppointment);
 
   if (!nextAppointment) {
     return (
@@ -70,18 +129,18 @@ export function NextAppointment({ appointments, className }: NextAppointmentProp
       <span className="text-sm opacity-80"></span>
         <div className="text-4xl @md:text-2xl @lg:text-3xl @xl:text-4xl font-bold leading-tight">
           <p>Tu próxima cita</p>
-          <p>es con <span className="text-primary">{nextAppointment.patientName?.split(' ')[0] || 'Paciente'}</span></p>
-          {nextAppointment.patientName?.split(' ').length > 1 && (
-             <p className="text-primary">{nextAppointment.patientName?.split(' ').slice(1).join(' ')}</p>
+          <p>es con <span className="text-primary">{nextAppointment.patient?.firstName || 'Paciente'}</span></p>
+          {nextAppointment.patient?.lastName && (
+             <p className="text-primary">{nextAppointment.patient.lastName}</p>
            )}
         </div>
         <div className="flex items-center text-sm text-muted-foreground mt-2">
            <ClockIcon className="h-4 w-4 mr-2" />
-           <span>Hora: {nextAppointment.time}</span>
+           <span>Estado: {nextAppointment.status}</span>
         </div>
          <div className="flex items-center text-sm text-muted-foreground">
            <UserIcon className="h-4 w-4 mr-2" />
-           <span>Servicio: {nextAppointment.service}</span>
+           <span>Servicio: {nextAppointment.service?.name || 'No especificado'}</span>
         </div>
       </CardContent>
     </Card>

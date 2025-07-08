@@ -18,10 +18,31 @@ import {
 
 interface Appointment {
   id: string;
-  time: string;
-  patientName: string;
-  service: string;
-  status: string; // Mantener status para la lógica condicional del botón
+  doctorId: string;
+  patientId: string;
+  serviceId: string;
+  status: string;
+  google_event_id?: string;
+  google_calendar_id?: string;
+  sync_status?: string;
+  last_sync_attempt?: string;
+  sync_error?: string;
+  createdAt: string;
+  updatedAt: string;
+  patient?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+    description?: string;
+    duration: number;
+    price: number;
+  };
 }
 
 interface DailyAgendaViewProps {
@@ -36,9 +57,32 @@ interface DailyAgendaViewProps {
 
 // Función auxiliar para crear un objeto Date para hoy con una hora y minuto específicos
 function getDateFromTimeString(timeString: string): Date {
-  const [time, modifier] = timeString.split(' ');
-  let hours = parseInt(time.split(':')[0], 10);
-  const minutes = parseInt(time.split(':')[1], 10);
+  // Validar que timeString no sea undefined o null
+  if (!timeString || typeof timeString !== 'string') {
+    console.warn('getDateFromTimeString: timeString is undefined or invalid:', timeString);
+    return new Date(); // Retornar fecha actual como fallback
+  }
+
+  const parts = timeString.split(' ');
+  if (parts.length < 2) {
+    console.warn('getDateFromTimeString: Invalid time format:', timeString);
+    return new Date(); // Retornar fecha actual como fallback
+  }
+
+  const [time, modifier] = parts;
+  const timeParts = time.split(':');
+  if (timeParts.length < 2) {
+    console.warn('getDateFromTimeString: Invalid time format:', timeString);
+    return new Date(); // Retornar fecha actual como fallback
+  }
+
+  let hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10);
+
+  if (isNaN(hours) || isNaN(minutes)) {
+    console.warn('getDateFromTimeString: Invalid time values:', timeString);
+    return new Date(); // Retornar fecha actual como fallback
+  }
 
   if (hours === 12) {
     hours = 0; // Medianoche o Mediodía se manejan por el modifier
@@ -176,13 +220,13 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                     <div className="p-2 md:p-4 space-y-2 md:space-y-4">
                       {filteredAppointments.length > 0 ? (
                         filteredAppointments.map((apt) => {
-                           const aptDateTime = getDateFromTimeString(apt.time);
-                           const timeDiff = formatTimeDifference(aptDateTime);
+                           const patientName = apt.patient ? `${apt.patient.firstName} ${apt.patient.lastName}` : 'Paciente no disponible';
+                           const serviceName = apt.service?.name || 'Servicio no disponible';
                            return (
                              <div 
                                key={apt.id} 
                                className="p-2 md:p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
-                               onClick={() => handlePatientClick(apt.id, apt.patientName)} // Hacer la tarjeta clickeable
+                               onClick={() => handlePatientClick(apt.id, patientName)} // Hacer la tarjeta clickeable
                              >
                                
                                
@@ -194,15 +238,14 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                                     <div className="flex justify-between items-center mb-2">
                                       <div className="flex items-center">
                                         <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
-                                          <span className="font-medium text-primary text-sm">{apt.time}</span>
-                                          <span className="text-muted-foreground text-xs ml-2">{timeDiff}</span>
+                                          <span className="font-medium text-primary text-sm">{apt.status}</span>
                                       </div>
                                     </div>
                                    <div className="flex items-center mb-1">
                                       <UserIcon className="h-5 w-5 mr-2 flex-shrink-0 text-muted-foreground" />
-                                      <p className="text-lg md:text-xl font-bold text-foreground">{apt.patientName}</p> {/* Nombre más grande */}
+                                      <p className="text-lg md:text-xl font-bold text-foreground">{patientName}</p> {/* Nombre más grande */}
                                    </div>
-                                   <p className="text-sm text-muted-foreground md:ml-7">{apt.service}</p> {/* Servicio más pequeño, indentado */}
+                                   <p className="text-sm text-muted-foreground md:ml-7">{serviceName}</p> {/* Servicio más pequeño, indentado */}
 
                                  </div>
 
@@ -247,17 +290,20 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                  <ScrollArea className="h-[430px]"> {/* Altura fija para mostrar 3.5 elementos y habilitar scroll */}
           <div className="p-2 md:p-4 space-y-2 md:space-y-4">
                       {filteredAppointments.length > 0 ? (
-                        filteredAppointments.map((apt) => (
+                        filteredAppointments.map((apt) => {
+                           const patientName = apt.patient ? `${apt.patient.firstName} ${apt.patient.lastName}` : 'Paciente no disponible';
+                           const serviceName = apt.service?.name || 'Servicio no disponible';
+                           return (
                            <div 
                              key={apt.id} 
                              className="p-2 md:p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
-                             onClick={() => handlePatientClick(apt.id, apt.patientName)} // Hacer la tarjeta clickeable
+                             onClick={() => handlePatientClick(apt.id, patientName)} // Hacer la tarjeta clickeable
                            >
                              {/* Fila superior: Hora e ícono + estado completada */}
                              <div className="flex justify-between items-center mb-1 md:mb-2">
                     <div className="flex items-center">
                       <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
-                      <span className="font-semibold text-primary text-sm md:text-base">{apt.time}</span>
+                      <span className="font-semibold text-primary text-sm md:text-base">{apt.status}</span>
                     </div>
                                <span className="text-xs md:text-sm text-muted-foreground">Completada</span> {/* Estado Completada a la derecha */}
                   </div>
@@ -268,9 +314,9 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                                <div className="flex-1 w-full md:w-auto md:mr-2">
                   <div className="mb-1 flex items-center">
                     <UserIcon className="h-4 w-4 mr-1 md:mr-2 text-muted-foreground" />
-                                   <p className="font-medium text-foreground text-base md:text-lg">{apt.patientName}</p> {/* Nombre del paciente */}
+                                   <p className="font-medium text-foreground text-base md:text-lg">{patientName}</p> {/* Nombre del paciente */}
                                  </div>
-                                 <p className="text-xs md:text-sm text-muted-foreground md:ml-6">{apt.service}</p> {/* Servicio */}
+                                 <p className="text-xs md:text-sm text-muted-foreground md:ml-6">{serviceName}</p> {/* Servicio */}
                                </div>
                                 
                                 {/* Botón de acción (columna derecha, apilado en pantallas grandes, fila en pequeñas) */}
@@ -287,7 +333,8 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                   </div>
                   </div>
                 </div>
-              ))
+              );
+                        })
             ) : (
                         <p className="text-center text-muted-foreground py-8">No hay citas completadas.</p>
             )}
@@ -314,13 +361,13 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
             <div className="py-4 space-y-2">
               <div className="flex items-center gap-2">
                 <UserIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{selectedAppointment.patientName}</span>
+                <span className="font-medium">{selectedAppointment.patient?.firstName} {selectedAppointment.patient?.lastName}</span>
               </div>
               <div className="flex items-center gap-2">
                 <ClockIcon className="h-4 w-4 text-muted-foreground" />
-                <span>{selectedAppointment.time}</span>
+                <span>{selectedAppointment.status}</span>
               </div>
-              <p className="text-sm text-muted-foreground ml-6">{selectedAppointment.service}</p>
+              <p className="text-sm text-muted-foreground ml-6">{selectedAppointment.service?.name}</p>
             </div>
           )}
 

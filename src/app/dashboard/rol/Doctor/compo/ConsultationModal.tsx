@@ -15,8 +15,25 @@ import { PatientHistoryView } from "./PatientHistoryView";
 interface Appointment {
   id: string;
   time: string;
-  patientName: string;
-  service: string;
+  patient: {
+    firstName: string;
+    lastName: string;
+  };
+  service: {
+    id: string;
+    name: string;
+    description?: string;
+    code?: string;
+    durationMinutes?: number;
+    basePrice?: number;
+    category?: string;
+    requiresPreparation?: boolean;
+    preparationInstructions?: string;
+    organizationId?: string;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+  };
   status: string;
 }
 
@@ -70,7 +87,7 @@ export function ConsultationModal({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-5xl lg:max-w-7xl xl:max-w-[90vw] max-h-[95vh] flex flex-col p-6">
         <DialogHeader>
-          <DialogTitle>Consulta con {appointment.patientName} ({appointment.service})</DialogTitle>
+          <DialogTitle>Consulta con {appointment.patient ? `${appointment.patient.firstName} ${appointment.patient.lastName}` : 'Paciente no disponible'} ({appointment.service?.name || 'Servicio no disponible'})</DialogTitle>
           <DialogDescription>
             Hora: {appointment.time}
           </DialogDescription>
@@ -87,7 +104,7 @@ export function ConsultationModal({
                   <CardContent>
                     {/* Aquí iría la información del perfil del paciente */}
                     <div className="text-4xl font-bold mt-1 mb-2">
-                      <span >{appointment.patientName}</span>
+                      <span>{appointment.patient ? `${appointment.patient.firstName} ${appointment.patient.lastName}` : 'Paciente no disponible'}</span>
                     </div>
                     {/**/}
                     <div className="text-sm opacity-80 ">
@@ -117,7 +134,7 @@ export function ConsultationModal({
               <TabsContent value="medical-history" className="flex-1 overflow-hidden pt-4">
                 <PatientHistoryView
                   patientId={appointment.id} // Usar el ID de la cita como ID de paciente mock
-                  patientName={appointment.patientName}
+                  patientName={appointment.patient ? `${appointment.patient.firstName} ${appointment.patient.lastName}` : 'Paciente no disponible'}
                   // isOpen={isOpen} // La visibilidad del modal principal controla la del historial
                   // onOpenChange={onOpenChange}
                 />

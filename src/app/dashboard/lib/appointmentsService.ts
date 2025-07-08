@@ -4,13 +4,26 @@ import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
 // Definir la interfaz Appointment
 export interface Appointment {
   id: string;
-  time: string;
-  patientName: string;
-  service: string;
+  doctorId: string;
+  patientId: string;
+  serviceId: string;
   status: string;
   date?: string;
-  doctorId?: string;
   notes?: string;
+  patient?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  service?: {
+    id: string;
+    name: string;
+    description: string;
+    duration: number;
+    price: number;
+  };
 }
 
 // Función base para obtener citas (sin cache para uso en cliente)
@@ -104,23 +117,13 @@ export const getTodayAppointments = async (): Promise<Appointment[]> => {
 // Función para obtener la próxima cita
 export const getNextAppointment = async (): Promise<Appointment | null> => {
   const appointments = await getTodayAppointments();
-  const now = new Date();
-  const currentTime = now.getHours() * 60 + now.getMinutes();
   
-  // Filtrar citas futuras del día
+  // Filtrar citas que no estén completadas
   const futureAppointments = appointments.filter(appointment => {
-    const [hours, minutes] = appointment.time.split(':').map(Number);
-    const appointmentTime = hours * 60 + minutes;
-    return appointmentTime > currentTime && appointment.status !== 'Completada';
+    return appointment.status !== 'Completada';
   });
   
-  // Ordenar por hora y retornar la primera
-  futureAppointments.sort((a, b) => {
-    const timeA = a.time.split(':').map(Number);
-    const timeB = b.time.split(':').map(Number);
-    return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
-  });
-  
+  // Retornar la primera cita disponible
   return futureAppointments[0] || null;
 };
 

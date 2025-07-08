@@ -105,7 +105,12 @@ const getUsersHandler = async (
       const doctorWithAppointments = await db.query.doctors.findFirst({
         where: eq(doctors.idDoctor, doctorRequested.idDoctor),
         with: {
-          appointments: true,
+          appointments: {
+            with: {
+              patient: true,
+              service: true,
+            },
+          },
         },
       });
 

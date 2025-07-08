@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@rutas/components/ui/card';
 import { Button } from '@rutas/components/ui/button';
 import { Input } from '@rutas/components/ui/input';
@@ -14,10 +14,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@rutas/components/ui/po
 import { CalendarIcon, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useAuth } from '@rutas/app/context/AuthContext';
-import { usePatients } from '@rutas/hooks/usePatients';
-import { useMedicalServices, MedicalService } from '@rutas/hooks/useMedicalServices';
-import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
 
 /**
  * @typedef {object} CreateAppointmentRequest
@@ -35,33 +31,17 @@ interface CreateAppointmentRequest {
 }
 
 /**
- * @typedef {object} DoctorInfo
- * @description Información del doctor actual.
- */
-interface DoctorInfo {
-  idDoctor: number;
-  firstName: string;
-  lastName: string;
-}
-
-/**
  * @typedef {object} ImportantNotificationsProps
  * @description Propiedades para el componente ImportantNotifications.
  */
 type ImportantNotificationsProps = Record<string, never>;
 
 /**
- * Componente para crear citas médicas.
+ * Componente para crear citas médicas (versión simplificada sin APIs).
  * @returns {React.ReactElement} El componente de creación de citas.
  */
 const ImportantNotifications: React.FC<ImportantNotificationsProps> = () => {
-  const { user } = useAuth();
-  const { patients, loading: patientsLoading } = usePatients();
-  const { services: medicalServices, loading: servicesLoading } = useMedicalServices();
-  
-  const [doctorInfo, setDoctorInfo] = useState<DoctorInfo | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
@@ -76,45 +56,18 @@ const ImportantNotifications: React.FC<ImportantNotificationsProps> = () => {
     notes: ''
   });
 
-  // Obtener información del doctor actual
-  useEffect(() => {
-    const fetchDoctorInfo = async () => {
-      if (!user) return;
-      
-      try {
-        const token = await getFirebaseAuthToken();
-        if (!token) return;
-        
-        const response = await fetch('/api/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        if (response.ok) {
-          const users = await response.json();
-          const currentUser = users.find((u: { firebaseUid: string; idDoctor?: number; firstName: string; lastName: string }) => u.firebaseUid === user.uid);
-          
-          if (currentUser && currentUser.idDoctor) {
-            setDoctorInfo({
-              idDoctor: currentUser.idDoctor,
-              firstName: currentUser.firstName,
-              lastName: currentUser.lastName
-            });
-            
-            setFormData(prev => ({
-              ...prev,
-              doctorId: currentUser.idDoctor
-            }));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching doctor info:', error);
-      }
-    };
-    
-    fetchDoctorInfo();
-  }, [user]);
+  // Datos de ejemplo para mostrar la interfaz
+  const mockPatients = [
+    { id: 1, firstName: 'Juan', lastName: 'Pérez' },
+    { id: 2, firstName: 'María', lastName: 'García' },
+    { id: 3, firstName: 'Carlos', lastName: 'López' }
+  ];
+  
+  const mockServices = [
+    { id: 1, name: 'Consulta General' },
+    { id: 2, name: 'Cardiología' },
+    { id: 3, name: 'Dermatología' }
+  ];
 
   const handleInputChange = (field: keyof CreateAppointmentRequest, value: string | number | boolean) => {
     setFormData(prev => ({
@@ -134,13 +87,8 @@ const ImportantNotifications: React.FC<ImportantNotificationsProps> = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!doctorInfo) {
-      alert('No se pudo obtener la información del doctor');
-      return;
-    }
     
     if (!formData.patientId || !formData.serviceId || !formData.date || !formData.time) {
       alert('Por favor complete todos los campos requeridos');
@@ -152,50 +100,22 @@ const ImportantNotifications: React.FC<ImportantNotificationsProps> = () => {
       return;
     }
     
-    setIsSubmitting(true);
+    // Simulación de creación exitosa
+    alert('Formulario completado. Esperando integración con el backend.');
+    setIsDialogOpen(false);
     
-    try {
-      const token = await getFirebaseAuthToken();
-      if (!token) {
-        alert('Error de autenticación');
-        return;
-      }
-      
-      const response = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      if (response.ok) {
-        await response.json();
-        alert('Cita creada exitosamente');
-        setIsDialogOpen(false);
-        // Resetear formulario
-        setFormData({
-          doctorId: doctorInfo.idDoctor,
-          patientId: 0,
-          serviceId: 0,
-          date: '',
-          time: '',
-          isVirtual: false,
-          meetingLink: '',
-          notes: ''
-        });
-        setSelectedDate(undefined);
-      } else {
-        const error = await response.json();
-        alert(`Error al crear la cita: ${error.message || 'Error desconocido'}`);
-      }
-    } catch (error) {
-      console.error('Error creating appointment:', error);
-      alert('Error al crear la cita');
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Resetear formulario
+    setFormData({
+      doctorId: 0,
+      patientId: 0,
+      serviceId: 0,
+      date: '',
+      time: '',
+      isVirtual: false,
+      meetingLink: '',
+      notes: ''
+    });
+    setSelectedDate(undefined);
   };
 
   return (
@@ -230,15 +150,11 @@ const ImportantNotifications: React.FC<ImportantNotificationsProps> = () => {
                       <SelectValue placeholder="Seleccionar paciente" />
                     </SelectTrigger>
                     <SelectContent>
-                      {patientsLoading ? (
-                        <SelectItem value="loading" disabled>Cargando pacientes...</SelectItem>
-                      ) : (
-                        patients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id.toString()}>
-                            {patient.firstName} {patient.lastName}
-                          </SelectItem>
-                        ))
-                      )}
+                      {mockPatients.map((patient) => (
+                        <SelectItem key={patient.id} value={patient.id.toString()}>
+                          {patient.firstName} {patient.lastName}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -254,15 +170,11 @@ const ImportantNotifications: React.FC<ImportantNotificationsProps> = () => {
                       <SelectValue placeholder="Seleccionar servicio" />
                     </SelectTrigger>
                     <SelectContent>
-                      {servicesLoading ? (
-                        <SelectItem value="loading" disabled>Cargando servicios...</SelectItem>
-                      ) : (
-                        medicalServices.map((service: MedicalService) => (
-                           <SelectItem key={service.id} value={service.id.toString()}>
-                             {service.name}
-                          </SelectItem>
-                        ))
-                      )}
+                      {mockServices.map((service) => (
+                        <SelectItem key={service.id} value={service.id.toString()}>
+                          {service.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -347,15 +259,13 @@ const ImportantNotifications: React.FC<ImportantNotificationsProps> = () => {
                     type="button" 
                     variant="outline" 
                     onClick={() => setIsDialogOpen(false)}
-                    disabled={isSubmitting}
                   >
                     Cancelar
                   </Button>
                   <Button 
-                    type="submit" 
-                    disabled={isSubmitting || !doctorInfo}
+                    type="submit"
                   >
-                    {isSubmitting ? 'Creando...' : 'Crear Cita'}
+                    Crear Cita (Demo)
                   </Button>
                 </div>
               </form>
