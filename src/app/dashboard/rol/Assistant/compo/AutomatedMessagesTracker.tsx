@@ -29,71 +29,74 @@ export function AutomatedMessagesTracker() {
     const messages: AutomatedMessage[] = [];
     const now = new Date();
     
-    doctors.forEach(doctor => {
-      doctor.appointments.forEach(appointment => {
-        const appointmentDate = new Date(`${appointment.date} ${appointment.time}`);
-        const timeDiff = appointmentDate.getTime() - now.getTime();
-        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        
-        // Recordatorio de cita (1 día antes)
-        if (daysDiff === 1 && appointment.status === 'Confirmada' && appointment.patientName) {
-          messages.push({
-            id: `reminder-${appointment.id}`,
-            patientName: appointment.patientName,
-            messageType: "Recordatorio de Cita",
-            sentAt: new Date(now.getTime() - 60 * 60 * 1000).toLocaleString(), // Hace 1 hora
-            status: Math.random() > 0.8 ? 'Fallido' : 'Entregado',
-            channel: 'WhatsApp',
-            contentPreview: `Hola ${appointment.patientName}, te recordamos tu cita mañana a las ${appointment.time}...`,
-            doctorId: doctor.idDoctor,
-            appointmentId: appointment.id
-          });
-        }
-        
-        // Confirmación de cita
-        if (appointment.status === 'Confirmada' && appointment.patientName) {
-          messages.push({
-            id: `confirmation-${appointment.id}`,
-            patientName: appointment.patientName,
-            messageType: "Confirmación de Cita",
-            sentAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toLocaleString(), // Hace 2 horas
-            status: Math.random() > 0.9 ? 'Fallido' : 'Leído',
-            channel: 'WhatsApp',
-            contentPreview: `Tu cita para el ${new Date(appointment.date).toLocaleDateString()} a las ${appointment.time} ha sido confirmada...`,
-            doctorId: doctor.idDoctor,
-            appointmentId: appointment.id
-          });
-        }
-        
-        // Solicitud de feedback para citas completadas
-        if (appointment.status === 'Completada' && appointment.patientName) {
-          messages.push({
-            id: `feedback-${appointment.id}`,
-            patientName: appointment.patientName,
-            messageType: "Solicitud de Feedback",
-            sentAt: new Date(appointmentDate.getTime() + 24 * 60 * 60 * 1000).toLocaleString(), // 1 día después
-            status: Math.random() > 0.7 ? 'Fallido' : 'Enviado',
-            channel: 'SMS',
-            contentPreview: `Nos encantaría conocer tu opinión sobre tu consulta con ${doctor.speciality}...`,
-            doctorId: doctor.idDoctor,
-            appointmentId: appointment.id
-          });
-        }
-        
-        // Información pre-consulta
-        if (appointment.status === 'Confirmada' && daysDiff <= 2 && daysDiff >= 0 && appointment.patientName) {
-          messages.push({
-            id: `preconsult-${appointment.id}`,
-            patientName: appointment.patientName,
-            messageType: "Información Pre-consulta",
-            sentAt: new Date(now.getTime() - 3 * 60 * 60 * 1000).toLocaleString(), // Hace 3 horas
-            status: 'Enviado',
-            channel: 'WhatsApp',
-            contentPreview: `Recuerda traer tus documentos y análisis para tu consulta de ${appointment.service}...`,
-            doctorId: doctor.idDoctor,
-            appointmentId: appointment.id
-          });
-        }
+    doctors.forEach(assistant => {
+      assistant.doctors.forEach(doctor => {
+        doctor.appointments.forEach(appointment => {
+          const appointmentDate = new Date(appointment.createdAt);
+          const timeDiff = appointmentDate.getTime() - now.getTime();
+          const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+          const patientName = appointment.patient ? `${appointment.patient.firstName} ${appointment.patient.lastName}` : 'Paciente';
+          
+          // Recordatorio de cita (1 día antes)
+          if (daysDiff === 1 && appointment.status === 'Confirmada' && appointment.patient) {
+            messages.push({
+              id: `reminder-${appointment.id}`,
+              patientName,
+              messageType: "Recordatorio de Cita",
+              sentAt: new Date(now.getTime() - 60 * 60 * 1000).toLocaleString(), // Hace 1 hora
+              status: Math.random() > 0.8 ? 'Fallido' : 'Entregado',
+              channel: 'WhatsApp',
+              contentPreview: `Hola ${patientName}, te recordamos tu cita mañana...`,
+              doctorId: doctor.idDoctor,
+              appointmentId: appointment.id
+            });
+          }
+          
+          // Confirmación de cita
+          if (appointment.status === 'Confirmada' && appointment.patient) {
+            messages.push({
+              id: `confirmation-${appointment.id}`,
+              patientName,
+              messageType: "Confirmación de Cita",
+              sentAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toLocaleString(), // Hace 2 horas
+              status: Math.random() > 0.9 ? 'Fallido' : 'Leído',
+              channel: 'WhatsApp',
+              contentPreview: `Tu cita para el ${new Date(appointment.createdAt).toLocaleDateString()} ha sido confirmada...`,
+              doctorId: doctor.idDoctor,
+               appointmentId: appointment.id
+            });
+          }
+          
+          // Solicitud de feedback para citas completadas
+          if (appointment.status === 'Completada' && appointment.patient) {
+            messages.push({
+              id: `feedback-${appointment.id}`,
+              patientName,
+              messageType: "Solicitud de Feedback",
+              sentAt: new Date(appointmentDate.getTime() + 24 * 60 * 60 * 1000).toLocaleString(), // 1 día después
+              status: Math.random() > 0.7 ? 'Fallido' : 'Enviado',
+              channel: 'SMS',
+              contentPreview: `Nos encantaría conocer tu opinión sobre tu consulta...`,
+              doctorId: doctor.idDoctor,
+               appointmentId: appointment.id
+            });
+          }
+          
+          // Información pre-consulta
+          if (appointment.status === 'Confirmada' && daysDiff <= 2 && daysDiff >= 0 && appointment.patient) {
+            messages.push({
+              id: `preconsult-${appointment.id}`,
+              patientName,
+              messageType: "Información Pre-consulta",
+              sentAt: new Date(now.getTime() - 3 * 60 * 60 * 1000).toLocaleString(), // Hace 3 horas
+              status: 'Enviado',
+              channel: 'WhatsApp',
+              contentPreview: `Recuerda traer tus documentos y análisis para tu consulta...`,
+              doctorId: doctor.idDoctor,
+               appointmentId: appointment.id
+            });
+          }
+        });
       });
     });
     

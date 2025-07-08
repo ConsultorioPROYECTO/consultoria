@@ -11,49 +11,58 @@ export function RealTimeAvailability() {
   const { doctors, loading, error } = useDoctorsWithAppointments();
 
   const getDoctorStatus = React.useMemo(() => {
-    return doctors.map(doctor => {
-      const now = new Date();
-      const currentAppointment = doctor.appointments.find(apt => {
-        const aptDate = new Date(`${apt.date} ${apt.time}`);
-        const endTime = new Date(aptDate.getTime() + 60 * 60 * 1000); // Asumiendo citas de 1 hora
-        return aptDate <= now && now <= endTime && apt.status !== 'Completada';
-      });
+    const allDoctors: any[] = [];
+    
+    doctors.forEach(assistant => {
+      assistant.doctors.forEach(doctor => {
+        const now = new Date();
+        const currentAppointment = doctor.appointments.find((apt: any) => {
+          const aptDate = new Date(apt.createdAt);
+          const endTime = new Date(aptDate.getTime() + 60 * 60 * 1000); // Asumiendo citas de 1 hora
+          return aptDate <= now && now <= endTime && apt.status !== 'Completada';
+        });
 
-      const nextAppointment = doctor.appointments
-        .filter(apt => {
-          const aptDate = new Date(`${apt.date} ${apt.time}`);
-          return aptDate > now && apt.status !== 'Completada';
-        })
-        .sort((a, b) => {
-          const dateA = new Date(`${a.date} ${a.time}`);
-          const dateB = new Date(`${b.date} ${b.time}`);
-          return dateA.getTime() - dateB.getTime();
-        })[0];
+        const nextAppointment = doctor.appointments
+          .filter((apt: any) => {
+            const aptDate = new Date(apt.createdAt);
+            return aptDate > now && apt.status !== 'Completada';
+          })
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateA.getTime() - dateB.getTime();
+          })[0];
 
-      let status = "Disponible";
-      let nextAvailable = null;
+        let status = "Disponible";
+        let nextAvailable = null;
 
-      if (currentAppointment) {
-        status = "En Cita";
-        if (nextAppointment) {
-          nextAvailable = `${nextAppointment.time} - ${new Date(nextAppointment.date).toLocaleDateString()}`;
-        }
+        if (currentAppointment) {
+          status = "En Cita";
+          if (nextAppointment) {
+            nextAvailable = `${new Date(nextAppointment.createdAt).toLocaleTimeString()} - ${new Date(nextAppointment.createdAt).toLocaleDateString()}`;
+          }
       } else if (nextAppointment) {
-        const nextAptTime = new Date(`${nextAppointment.date} ${nextAppointment.time}`);
-        const timeDiff = nextAptTime.getTime() - now.getTime();
-        if (timeDiff < 30 * 60 * 1000) { // Menos de 30 minutos
-          status = "Ocupado";
+          const nextAptTime = new Date(nextAppointment.createdAt);
+          const timeDiff = nextAptTime.getTime() - now.getTime();
+          if (timeDiff < 30 * 60 * 1000) { // Menos de 30 minutos
+            status = "Ocupado";
+          }
+          nextAvailable = `${new Date(nextAppointment.createdAt).toLocaleTimeString()} - ${new Date(nextAppointment.createdAt).toLocaleDateString()}`;
         }
-        nextAvailable = `${nextAppointment.time} - ${new Date(nextAppointment.date).toLocaleDateString()}`;
-      }
 
-      return {
-        ...doctor,
-        status,
-        nextAvailable,
-        currentPatient: currentAppointment?.patientName || null
-      };
+        const patientName = currentAppointment?.patient ? 
+          `${currentAppointment.patient.firstName} ${currentAppointment.patient.lastName}` : null;
+
+        allDoctors.push({
+          ...doctor,
+          status,
+          nextAvailable,
+          currentPatient: patientName
+        });
+      });
     });
+    
+    return allDoctors;
   }, [doctors]);
 
   const getStatusColor = (status: string) => {
@@ -142,7 +151,7 @@ export function RealTimeAvailability() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Citas hoy: {doctor.appointments.filter(apt => {
+                    Citas hoy: {doctor.appointments.filter((apt: any) => {
                       const today = new Date().toDateString();
                       const aptDate = new Date(apt.date).toDateString();
                       return today === aptDate && apt.status !== 'Completada';
