@@ -118,13 +118,14 @@ const MobileNavbar = memo(() => {
   }, [navItems.length, activeIndex, currentView]);
 
   return (
-    <nav className={`fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-md mx-auto bg-card border border-border rounded-full p-2 shadow-lg transition-opacity duration-200 z-50 ${
-      isPending ? 'opacity-90' : ''
-    }`}>
-      <div className="relative flex items-center">
+    <div className={`fixed bottom-4 left-4 right-4 flex justify-center gap-4 z-50`}>
+      {/* Navegación principal */}
+      <nav className={`flex-1 max-w-sm bg-card border border-border rounded-full p-2 shadow-lg transition-opacity duration-200 ${
+        isPending ? 'opacity-90' : ''
+      }`}>
         <Tabs 
           value={navItems[activeIndex]?.title.toLowerCase() || 'dashboard'} 
-          className="flex-1 relative z-10"
+          className="relative z-10"
         >
           <div className="relative">
             <motion.div {...motionProps} />
@@ -155,32 +156,52 @@ const MobileNavbar = memo(() => {
             </TabsList>
           </div>
         </Tabs>
-        
-        {/* Config button positioned separately */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={configButton.onClick}
-          disabled={isPending}
-          className={`w-10 h-10 rounded-full ml-2 transition-colors duration-300 ${
-            currentView === 'configuration' || currentView === 'organization' ? 'bg-primary text-primary-foreground' : ''
-          } ${
-            isPending ? 'cursor-wait' : ''
-          }`}
+      </nav>
+
+      {/* Tab de configuración completamente separado */}
+      <nav className={`w-14 bg-card border border-border rounded-full p-2 shadow-lg transition-opacity duration-200 ${
+        isPending ? 'opacity-90' : ''
+      }`}>
+        <Tabs 
+          value={currentView === 'configuration' || currentView === 'organization' ? 'config' : ''} 
+          className="relative z-10"
         >
-          <configButton.icon className={`h-5 w-5 ${
-            currentView === 'configuration' || currentView === 'organization' ? 'text-primary-foreground' : ''
-          } ${
-            isPending ? 'animate-pulse' : ''
-          }`} />
-        </Button>
-      </div>
+          <div className="relative">
+            {(currentView === 'configuration' || currentView === 'organization') && (
+              <motion.div 
+                className="absolute inset-0 bg-primary rounded-full z-0"
+                initial={false}
+                animate={{ opacity: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              />
+            )}
+            <TabsList className="w-10 h-10 p-0 bg-transparent relative z-10">
+              <TabsTrigger
+                value="config"
+                onClick={configButton.onClick}
+                disabled={isPending}
+                className={`w-10 h-10 flex justify-center items-center rounded-full text-foreground transition-colors duration-300 ease-in-out border-0 bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none ${
+                  currentView === 'configuration' || currentView === 'organization' ? '' : 'hover:bg-muted'
+                } ${
+                  isPending ? 'cursor-wait' : ''
+                }`}
+              >
+                <configButton.icon className={`h-5 w-5 ${
+                  currentView === 'configuration' || currentView === 'organization' ? 'text-primary-foreground' : 'text-foreground'
+                } ${
+                  isPending ? 'animate-pulse' : ''
+                }`} />
+              </TabsTrigger>
+            </TabsList>
+          </div>
+        </Tabs>
+      </nav>
       
       <ConfigDrawer 
         isOpen={isDrawerOpen} 
         onOpenChange={setIsDrawerOpen}
       />
-    </nav>
+    </div>
   );
 });
 
