@@ -51,11 +51,17 @@ const chartConfig = {
 export function ChartAreaInteractive() {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
-  const { doctors, loading, error } = useDoctorsWithAppointments()
+  const { doctors: assistantsData, loading, error } = useDoctorsWithAppointments()
+
+  // Extraer todos los doctores de los asistentes
+  const allDoctors = React.useMemo(() => {
+    if (!assistantsData) return []
+    return assistantsData.flatMap((assistant) => assistant.doctors || [])
+  }, [assistantsData])
 
   // Generar datos del gráfico basados en las citas reales
   const chartData = React.useMemo(() => {
-    if (!doctors.length) return []
+    if (!allDoctors.length) return []
 
     const data: { [key: string]: { date: string; confirmed: number; completed: number } } = {}
     const today = new Date()
@@ -69,9 +75,10 @@ export function ChartAreaInteractive() {
     }
 
     // Agregar datos reales de citas
-    doctors.forEach(doctor => {
-      doctor.appointments.forEach(appointment => {
-        const appointmentDate = new Date(appointment.date).toISOString().split('T')[0]
+    allDoctors.forEach((doctor) => {
+      doctor.appointments?.forEach((appointment) => {
+        // Usar createdAt como fecha de la cita si no hay campo date específico
+        const appointmentDate = new Date(appointment.createdAt).toISOString().split('T')[0]
         if (data[appointmentDate]) {
           if (appointment.status === 'Confirmada') {
             data[appointmentDate].confirmed += 1
@@ -83,7 +90,7 @@ export function ChartAreaInteractive() {
     })
 
     return Object.values(data).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-  }, [doctors])
+  }, [allDoctors])
 
   React.useEffect(() => {
     if (isMobile) {
