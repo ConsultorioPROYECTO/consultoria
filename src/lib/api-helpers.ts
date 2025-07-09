@@ -164,7 +164,7 @@ export async function ensureDoctorHasCalendar(
     console.error('Error ensuring doctor has calendar:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error creating calendar',
+      error: error instanceof Error ? error.message : 'Error desconocido al crear el calendario',
     };
   }
 }

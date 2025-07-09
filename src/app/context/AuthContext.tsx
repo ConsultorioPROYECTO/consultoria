@@ -195,7 +195,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       } else {
         setError({
           code: 'auth/unknown-error',
-          message: err instanceof Error ? err.message : 'An unknown error occurred during sign-in.',
+          message: err instanceof Error ? err.message : 'Ocurrió un error desconocido durante el inicio de sesión.',
           name: 'AuthError',
         } as AuthError);
       }
@@ -272,7 +272,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       } else {
         setError({
           code: 'auth/unknown-error',
-          message: err instanceof Error ? err.message : 'An unknown error occurred during sign-out.',
+          message: err instanceof Error ? err.message : 'Ocurrió un error desconocido durante el cierre de sesión.',
           name: 'AuthError',
         } as AuthError);
       }

@@ -117,7 +117,7 @@ export function ServiceSpecialtyConfig() {
       toast.success(`Servicio "${service.name}" ${isActivating ? 'activado' : 'desactivado'}.`);
 
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "An unknown error occurred");
+      toast.error(err instanceof Error ? err.message : "Ocurrió un error desconocido");
     }
   };
 
@@ -138,7 +138,7 @@ export function ServiceSpecialtyConfig() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} service`);
+        throw new Error(errorData.message || `Error al ${isEditing ? 'actualizar' : 'crear'} el servicio`);
       }
       
       toast.success(`Servicio "${serviceData.name}" ${isEditing ? 'actualizado' : 'creado'} exitosamente.`);

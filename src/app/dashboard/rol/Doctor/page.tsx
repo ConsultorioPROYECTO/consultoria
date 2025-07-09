@@ -82,7 +82,7 @@ export default function DoctorDashboard() {
         const data = await eventsResponse.json();
         setCalendarEvents(data.events || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        setError(err instanceof Error ? err.message : 'Ocurrió un error desconocido');
       } finally {
         setIsLoading(false);
       }

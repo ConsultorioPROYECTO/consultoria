@@ -215,7 +215,7 @@ export const GET = async (
     return NextResponse.json(
       {
         error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred while retrieving calendar events",
+        message: "Ocurrió un error inesperado al obtener los eventos del calendario",
         timestamp: new Date().toISOString(),
       } satisfies ErrorResponse,
       { status: 500 }
