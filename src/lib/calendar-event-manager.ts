@@ -14,6 +14,7 @@ import { getDoctorAvailability } from './calendar-event-retriever';
 export enum AppointmentStatus {
   Pending = 'pending',
   Accepted = 'accepted',
+  Attended = 'attended',
   Rejected = 'rejected',
   Canceled = 'canceled',
 }
