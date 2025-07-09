@@ -12,7 +12,7 @@ export function TodayIsDay() {
     <Card className="w-full bg-card rounded-xl overflow-hidden">
       <CardContent className="flex items-center justify-between py-1 px-8">
         <div className="flex flex-col">
-          <span className="text-sm opacity-80">Hoy es</span>
+          <span className="text-sm opacity-80">Hoy</span>
           <span className="text-3xl lg:text-3xl font-bold mt-1">{date} de {capitalizedMonth}</span>
         </div>
       </CardContent>
