@@ -15,6 +15,7 @@ import { CalendarIcon, Plus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '@/app/context/AuthContext';
+import { toast } from 'sonner';
 
 /**
  * Interfaz para los datos de creación de cita
@@ -107,7 +108,7 @@ interface CreateAppointmentModalProps {
  * Componente para crear citas médicas con integración completa al backend
  */
 export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointmentModalProps) {
-  const { user } = useAuth();
+  const { user, doctorId: contextDoctorId } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -130,59 +131,8 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
   const [patients, setPatients] = useState<Patient[]>([]);
   const [medicalServices, setMedicalServices] = useState<MedicalService[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [doctorId, setDoctorId] = useState<number | null>(null);
 
-  /**
-   * Obtener el doctorId del usuario autenticado (solo para médicos)
-   */
-  const fetchDoctorId = async () => {
-    try {
-      const token = await user?.getIdToken();
-      if (!token) {
-        throw new Error('No se pudo obtener el token de autenticación');
-      }
 
-      // Primero verificar el rol del usuario
-      const roleResponse = await fetch('/api/users/rol', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!roleResponse.ok) {
-        console.warn('No se pudo obtener el rol del usuario');
-        return null;
-      }
-
-      const roleData = await roleResponse.json();
-      
-      // Si el usuario no es médico, retornar null sin hacer más llamadas
-      if (roleData.role !== 'medico') {
-        console.info('Usuario no es médico, saltando obtención de doctor info');
-        return null;
-      }
-
-      // Solo si es médico, obtener la información del doctor
-      const response = await fetch('/api/users/doctor-info', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        console.warn('Usuario médico sin información de doctor asociada');
-        return null;
-      }
-
-      const data = await response.json();
-      return data.doctorId;
-    } catch (error) {
-      console.error('Error fetching doctor ID:', error);
-      return null;
-    }
-  };
 
   /**
    * Obtener lista de pacientes
@@ -209,6 +159,10 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
       return data.data || [];
     } catch (error) {
       console.error('Error fetching patients:', error);
+      toast.error('Error al cargar pacientes', {
+        description: 'No se pudieron cargar los pacientes disponibles',
+        duration: 4000,
+      });
       return [];
     }
   };
@@ -238,6 +192,10 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
       return data.data.services || [];
     } catch (error) {
       console.error('Error fetching medical services:', error);
+      toast.error('Error al cargar servicios médicos', {
+        description: 'No se pudieron cargar los servicios disponibles',
+        duration: 4000,
+      });
       return [];
     }
   };
@@ -269,6 +227,10 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
       return doctorsOnly;
     } catch (error) {
       console.error('Error fetching doctors:', error);
+      toast.error('Error al cargar médicos', {
+        description: 'No se pudieron cargar los médicos disponibles',
+        duration: 4000,
+      });
       return [];
     }
   };
@@ -279,26 +241,27 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
   const loadInitialData = async () => {
     setIsLoadingData(true);
     try {
-      const [doctorIdResult, patientsResult, servicesResult, doctorsResult] = await Promise.all([
-        fetchDoctorId(),
+      const [patientsResult, servicesResult, doctorsResult] = await Promise.all([
         fetchPatients(),
         fetchMedicalServices(),
         fetchDoctors()
       ]);
 
-      setDoctorId(doctorIdResult);
       setPatients(patientsResult);
       setMedicalServices(servicesResult);
       setDoctors(doctorsResult);
       
-      // Actualizar el doctorId en el formulario solo si existe
+      // Actualizar el doctorId en el formulario usando el contexto
       setFormData(prev => ({
         ...prev,
-        doctorId: doctorIdResult || 0
+        doctorId: contextDoctorId || 0
       }));
     } catch (error) {
       console.error('Error loading initial data:', error);
-      alert('Error al cargar los datos iniciales. Por favor, intente nuevamente.');
+      toast.error('Error al cargar datos iniciales', {
+        description: 'No se pudieron cargar los datos necesarios. Por favor, intente nuevamente.',
+        duration: 5000,
+      });
     } finally {
       setIsLoadingData(false);
     }
@@ -367,12 +330,18 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
     e.preventDefault();
     
     if (!formData.doctorId || !formData.patientId || !formData.serviceId || !formData.date || !formData.time) {
-      alert('Por favor complete todos los campos requeridos');
+      toast.error('Por favor complete todos los campos requeridos', {
+        description: 'Todos los campos marcados con * son obligatorios',
+        duration: 4000,
+      });
       return;
     }
     
     if (formData.isVirtual && !formData.meetingLink) {
-      alert('Por favor proporcione el enlace de la reunión para citas virtuales');
+      toast.error('Enlace de reunión requerido', {
+        description: 'Por favor proporcione el enlace de la reunión para citas virtuales',
+        duration: 4000,
+      });
       return;
     }
     
@@ -381,7 +350,10 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
     try {
       const result = await createAppointment(formData);
       
-      alert('¡Cita creada exitosamente!');
+      toast.success('¡Cita creada exitosamente!', {
+        description: `Cita programada para el ${formData.date} a las ${formData.time}`,
+        duration: 5000,
+      });
       
       // Llamar callback si existe
       if (onAppointmentCreated) {
@@ -393,7 +365,10 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
       resetForm();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      alert(`Error al crear la cita: ${errorMessage}`);
+      toast.error('Error al crear la cita', {
+        description: errorMessage,
+        duration: 6000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -404,7 +379,7 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
    */
   const resetForm = () => {
     setFormData({
-      doctorId: doctorId || 0,
+      doctorId: contextDoctorId || 0,
       patientId: 0,
       serviceId: 0,
       date: '',
