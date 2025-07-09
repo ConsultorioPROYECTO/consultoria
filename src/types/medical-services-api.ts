@@ -1,5 +1,5 @@
 // Tipos para la respuesta del método GET de /api/medical-services
-import { MedicalService } from "@/hooks/useMedicalServices";
+import { MedicalServiceWithRelations } from "@/hooks/useMedicalServices";
 
 /**
  *  @fileoverview Tipos para la respuesta del método GET de /api/medical-services
@@ -12,7 +12,7 @@ import { MedicalService } from "@/hooks/useMedicalServices";
  *  `GetMedicalServicesResponse` que representa la respuesta completa de la API.
  */
 export type GetMedicalServicesResponse = {
-  services: MedicalService[];
+  services: MedicalServiceWithRelations[];
   categories: string[];
   total: number;
 };

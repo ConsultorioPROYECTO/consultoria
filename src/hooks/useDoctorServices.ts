@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import { DoctorService } from '@/db/schema';
 
-export interface DoctorService {
-  doctorId: number;
-  serviceId: number;
-  customPrice?: string;
-  isAvailable: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+// Tipo extendido para el hook que incluye relaciones
+export interface DoctorServiceWithRelations extends DoctorService {
   doctor: {
     idDoctor: number;
     speciality: string;
@@ -28,12 +24,12 @@ export interface DoctorService {
 }
 
 interface DoctorServicesResponse {
-  doctorServices: DoctorService[];
+  doctorServices: DoctorServiceWithRelations[];
   total: number;
 }
 
 interface UseDoctorServicesReturn {
-  doctorServices: DoctorService[];
+  doctorServices: DoctorServiceWithRelations[];
   total: number;
   loading: boolean;
   error: string | null;
@@ -41,7 +37,7 @@ interface UseDoctorServicesReturn {
 }
 
 export function useDoctorServices(): UseDoctorServicesReturn {
-  const [doctorServices, setDoctorServices] = useState<DoctorService[]>([]);
+  const [doctorServices, setDoctorServices] = useState<DoctorServiceWithRelations[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

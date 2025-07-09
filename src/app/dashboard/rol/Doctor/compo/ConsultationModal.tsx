@@ -12,10 +12,10 @@ import { useAICare } from '@/app/hooks/useAICare';
 import { PatientHistoryView } from "./PatientHistoryView";
 
 
-import { Appointment as BaseAppointment } from '../../../lib/appointmentsService';
+import { Appointment, } from '../../../../../db/schema';
 
-// Extender el tipo base para incluir la propiedad time requerida por el modal
-interface ConsultationAppointment extends Omit<BaseAppointment, 'patient' | 'service'> {
+// Definir el tipo para la cita de consulta con las relaciones necesarias
+interface ConsultationAppointment extends Omit<Appointment, 'patientId' | 'serviceId'> {
   time: string;
   patient: {
     firstName: string;

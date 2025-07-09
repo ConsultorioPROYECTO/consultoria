@@ -18,9 +18,11 @@ import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calenda
 
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
 
-// Tipo específico para el modal de consulta
-type ConsultationAppointment = {
-  id: number;
+// Importar tipos de la base de datos
+import { Appointment } from "@/db/schema";
+
+// Tipo específico para el modal de consulta (debe coincidir con ConsultationModal.tsx)
+type ConsultationAppointment = Omit<Appointment, 'patientId' | 'serviceId'> & {
   time: string;
   patient: {
     firstName: string;
@@ -31,12 +33,6 @@ type ConsultationAppointment = {
     name: string;
     description?: string;
   };
-  status: string;
-  doctorId: number;
-  patientId: number;
-  serviceId: number;
-  createdAt: string;
-  updatedAt: string;
 };
 
 export default function DoctorDashboard() {

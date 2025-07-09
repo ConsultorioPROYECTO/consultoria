@@ -1,29 +1,9 @@
 import { useState, useEffect } from 'react';
 import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import { Patient } from '@/db/schema';
 
-export interface Patient {
-  id: number;
-  patientCode: string;
-  firstName: string;
-  lastName: string;
-  identificationType: 'CC' | 'TI' | 'CE' | 'PP' | 'RC' | 'AS';
-  identificationNumber: string;
-  birthDate?: Date;
-  gender: 'M' | 'F' | 'Other';
-  phone?: string;
-  email?: string;
-  address?: string;
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  emergencyContactRelation?: string;
-  medicalHistory?: string;
-  allergies?: string;
-  currentMedications?: string;
-  bloodType?: 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
-  isActive: boolean;
-  organizationId: number;
-  createdAt: Date;
-  updatedAt: Date;
+// Tipo extendido para el hook que incluye relaciones
+export interface PatientWithRelations extends Patient {
   appointments?: Array<{
     id: number;
     date: Date;
@@ -40,14 +20,14 @@ export interface Patient {
 }
 
 interface UsePatientsReturn {
-  patients: Patient[];
+  patients: PatientWithRelations[];
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
 export function usePatients(): UsePatientsReturn {
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [patients, setPatients] = useState<PatientWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

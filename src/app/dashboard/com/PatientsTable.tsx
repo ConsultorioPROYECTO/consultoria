@@ -36,10 +36,10 @@ import {
   TableHeader,
   TableRow,
 } from "@rutas/components/ui/table"
-import { usePatients, type Patient } from "@/hooks/usePatients"
+import { usePatients, type PatientWithRelations } from "@/hooks/usePatients"
 
 // Definir columnas para la tabla de pacientes
-const columns: ColumnDef<Patient>[] = [
+const columns: ColumnDef<PatientWithRelations>[] = [
   {
     accessorKey: "patientCode",
     header: ({ column }) => {

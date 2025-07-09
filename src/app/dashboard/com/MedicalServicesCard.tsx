@@ -13,10 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@rutas/components/ui/select"
-import { useMedicalServices, type MedicalService } from "@/hooks/useMedicalServices"
+import { useMedicalServices, type MedicalServiceWithRelations } from "@/hooks/useMedicalServices"
 
 interface ServiceCardProps {
-  service: MedicalService;
+  service: MedicalServiceWithRelations;
 }
 
 function ServiceCard({ service }: ServiceCardProps) {
