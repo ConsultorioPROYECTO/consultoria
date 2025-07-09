@@ -45,7 +45,7 @@ const mockPatientHistory: MedicalRecord[] = [
 ];
 
 interface PatientHistoryViewProps {
-  patientId: string | null; // Se pasaría el ID del paciente seleccionado
+  patientId: number | null; // Se pasaría el ID del paciente seleccionado
   patientName?: string;
   // isOpen: boolean; // Ya no es un diálogo, no necesita isOpen
   // onOpenChange: (open: boolean) => void; // Ya no es un diálogo, no necesita onOpenChange

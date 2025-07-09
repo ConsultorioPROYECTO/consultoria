@@ -4,7 +4,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
 import { ScrollArea } from "@rutas/components/ui/scroll-area";
 import { Button } from "@rutas/components/ui/button";
-import { ClockIcon, UserIcon, AlertCircle, CalendarSync, Play } from "lucide-react";
+import { ClockIcon, UserIcon, AlertCircle, CalendarSync, Play, MapPinIcon, VideoIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
 import {
@@ -20,11 +20,11 @@ import { Appointment } from '../../../lib/appointmentsService';
 
 interface DailyAgendaViewProps {
   todayAppointments: Appointment[]; // Añadir la prop para recibir las citas
-  onSelectPatient?: (id: string, name: string) => void;
-  onSelectAppointment?: (id: string) => void;
-  onStartAppointment?: (id: string) => void;
-  onCompleteAppointment?: (id: string) => void;
-  onResetAppointment?: (id: string) => void; // Añadir nueva prop para restablecer cita
+  onSelectPatient?: (id: number, name: string) => void;
+  onSelectAppointment?: (id: number) => void;
+  onStartAppointment?: (id: number) => void;
+  onCompleteAppointment?: (id: number) => void;
+  onResetAppointment?: (id: number) => void; // Añadir nueva prop para restablecer cita
   onStartConsultation?: (appointment: Appointment) => void; // Nueva prop para iniciar consulta
 }
 
@@ -34,6 +34,88 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
   const [currentTime, setCurrentTime] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Función para formatear la hora de la cita
+  const formatAppointmentTime = (appointment: Appointment): string => {
+    // Debug: Log de datos de la cita
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🕐 Formateando hora para cita ${appointment.id}:`, {
+        startDateTime: appointment.startDateTime,
+        endDateTime: appointment.endDateTime,
+        time: appointment.time,
+        date: appointment.date
+      });
+    }
+    
+    if (appointment.startDateTime) {
+      const startTime = new Date(appointment.startDateTime);
+      const endTime = appointment.endDateTime ? new Date(appointment.endDateTime) : null;
+      
+      // Debug: Verificar si las fechas son válidas
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`📅 Fechas parseadas para cita ${appointment.id}:`, {
+          startTime: startTime.toISOString(),
+          endTime: endTime?.toISOString(),
+          startTimeValid: !isNaN(startTime.getTime()),
+          endTimeValid: endTime ? !isNaN(endTime.getTime()) : 'N/A'
+        });
+      }
+      
+      const timeOptions: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      };
+      
+      const startTimeStr = startTime.toLocaleTimeString('es-ES', timeOptions);
+      
+      if (endTime) {
+        const endTimeStr = endTime.toLocaleTimeString('es-ES', timeOptions);
+        return `${startTimeStr} - ${endTimeStr}`;
+      }
+      
+      return startTimeStr;
+    }
+    
+    // Fallback al campo time si existe
+    if (appointment.time) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`⏰ Usando campo time para cita ${appointment.id}: ${appointment.time}`);
+      }
+      return appointment.time;
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`❌ No se pudo determinar hora para cita ${appointment.id}`);
+    }
+    
+    return 'Hora no especificada';
+  };
+
+  // Función para calcular la duración de la cita
+  const getAppointmentDuration = (appointment: Appointment): string => {
+    if (appointment.startDateTime && appointment.endDateTime) {
+      const start = new Date(appointment.startDateTime);
+      const end = new Date(appointment.endDateTime);
+      const durationMs = end.getTime() - start.getTime();
+      const durationMinutes = Math.round(durationMs / (1000 * 60));
+      
+      if (durationMinutes >= 60) {
+        const hours = Math.floor(durationMinutes / 60);
+        const minutes = durationMinutes % 60;
+        return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
+      }
+      
+      return `${durationMinutes}min`;
+    }
+    
+    // Fallback a la duración del servicio
+    if (appointment.service?.duration) {
+      return `${appointment.service.duration}min`;
+    }
+    
+    return '';
+  };
 
   // Debug logs solo en desarrollo
   if (process.env.NODE_ENV === 'development') {
@@ -52,7 +134,7 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
     return () => clearInterval(timerId); // Limpiar el intervalo al desmontar el componente
   }, []); // El array vacío asegura que el efecto solo se ejecute una vez al montar
 
-  const handlePatientClick = (id: string, name: string) => {
+  const handlePatientClick = (id: number, name: string) => {
     onSelectPatient?.(id, name);
   };
   /*
@@ -62,12 +144,12 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
   };
   */
 
-  const handleCompleteAppointment = (id: string) => {
+  const handleCompleteAppointment = (id: number) => {
     onCompleteAppointment?.(id);
     // Log removido para producción
   };
 
-  const handleResetAppointment = (id: string) => {
+  const handleResetAppointment = (id: number) => {
     const appointment = todayAppointments.find(apt => apt.id === id);
     if (appointment) {
       setSelectedAppointment(appointment);
@@ -138,18 +220,48 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                                <div className="flex flex-row items-center justify-between gap-3 md:gap-2">
                                  {/* Info del paciente y servicio (columna izquierda) */}
                                  <div className="flex-1 w-full md:w-auto md:mr-2">
-                                    {/* Fila superior: Hora e ícono + posible estado (para completadas) */}
-                                    <div className="flex justify-between items-center mb-2">
-                                      <div className="flex items-center">
-                                        <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
-                                          <span className="font-medium text-primary text-sm">{apt.status}</span>
-                                      </div>
+                                    {/* Fila superior: Hora exacta y duración */}
+                                    <div className="flex items-center mb-2">
+                                      <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
+                                      <span className="font-medium text-primary text-sm">
+                                        {formatAppointmentTime(apt)}
+                                        {getAppointmentDuration(apt) && (
+                                          <span className="text-muted-foreground ml-2">({getAppointmentDuration(apt)})</span>
+                                        )}
+                                      </span>
                                     </div>
                                    <div className="flex items-center mb-1">
                                       <UserIcon className="h-5 w-5 mr-2 flex-shrink-0 text-muted-foreground" />
-                                      <p className="text-lg md:text-xl font-bold text-foreground">{patientName}</p> {/* Nombre más grande */}
+                                      <p className="text-lg md:text-xl font-bold text-foreground">{patientName}</p>
                                    </div>
-                                   <p className="text-sm text-muted-foreground md:ml-7">{serviceName}</p> {/* Servicio más pequeño, indentado */}
+                                   <p className="text-sm text-muted-foreground md:ml-7 mb-1">{serviceName}</p>
+                                   
+                                   {/* Información adicional de Google Calendar */}
+                                   <div className="space-y-1">
+                                     {apt.location && (
+                                       <div className="flex items-center text-xs text-muted-foreground md:ml-7">
+                                         <MapPinIcon className="h-3 w-3 mr-1" />
+                                         <span>{apt.location}</span>
+                                       </div>
+                                     )}
+                                     {apt.meetingLink && (
+                                       <div className="flex items-center text-xs text-muted-foreground md:ml-7">
+                                         <VideoIcon className="h-3 w-3 mr-1" />
+                                         <a 
+                                           href={apt.meetingLink} 
+                                           target="_blank" 
+                                           rel="noopener noreferrer"
+                                           className="text-blue-600 hover:text-blue-800 underline"
+                                           onClick={(e) => e.stopPropagation()}
+                                         >
+                                           Unirse a la reunión
+                                         </a>
+                                       </div>
+                                     )}
+                                     <div className="flex items-center text-xs text-muted-foreground md:ml-7">
+                                       <span>Estado: {apt.status}</span>
+                                     </div>
+                                   </div>
 
                                  </div>
 
@@ -203,24 +315,53 @@ export function DailyAgendaView({ todayAppointments, onSelectPatient, onStartApp
                              className="p-2 md:p-3 border rounded-lg hover:shadow-md transition-shadow bg-card cursor-pointer"
                              onClick={() => handlePatientClick(apt.id, patientName)} // Hacer la tarjeta clickeable
                            >
-                             {/* Fila superior: Hora e ícono + estado completada */}
+                             {/* Fila superior: Hora exacta y duración */}
                              <div className="flex justify-between items-center mb-1 md:mb-2">
-                    <div className="flex items-center">
-                      <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
-                      <span className="font-semibold text-primary text-sm md:text-base">{apt.status}</span>
-                    </div>
-                               <span className="text-xs md:text-sm text-muted-foreground">Completada</span> {/* Estado Completada a la derecha */}
-                  </div>
+                               <div className="flex items-center">
+                                 <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
+                                 <span className="font-semibold text-primary text-sm md:text-base">
+                                   {formatAppointmentTime(apt)}
+                                   {getAppointmentDuration(apt) && (
+                                     <span className="text-muted-foreground ml-2">({getAppointmentDuration(apt)})</span>
+                                   )}
+                                 </span>
+                               </div>
+                               <span className="text-xs md:text-sm text-muted-foreground">Completada</span>
+                             </div>
                              
                               {/* Sección principal: Info paciente a la izq, botón a la der */}
                              <div className="flex flex-row items-center justify-between gap-3 md:gap-2">
                                 {/* Info del paciente y servicio (columna izquierda) */}
                                <div className="flex-1 w-full md:w-auto md:mr-2">
-                  <div className="mb-1 flex items-center">
-                    <UserIcon className="h-4 w-4 mr-1 md:mr-2 text-muted-foreground" />
-                                   <p className="font-medium text-foreground text-base md:text-lg">{patientName}</p> {/* Nombre del paciente */}
+                                 <div className="mb-1 flex items-center">
+                                   <UserIcon className="h-4 w-4 mr-1 md:mr-2 text-muted-foreground" />
+                                   <p className="font-medium text-foreground text-base md:text-lg">{patientName}</p>
                                  </div>
-                                 <p className="text-xs md:text-sm text-muted-foreground md:ml-6">{serviceName}</p> {/* Servicio */}
+                                 <p className="text-xs md:text-sm text-muted-foreground md:ml-6 mb-1">{serviceName}</p>
+                                 
+                                 {/* Información adicional de Google Calendar */}
+                                 <div className="space-y-1">
+                                   {apt.location && (
+                                     <div className="flex items-center text-xs text-muted-foreground md:ml-6">
+                                       <MapPinIcon className="h-3 w-3 mr-1" />
+                                       <span>{apt.location}</span>
+                                     </div>
+                                   )}
+                                   {apt.meetingLink && (
+                                     <div className="flex items-center text-xs text-muted-foreground md:ml-6">
+                                       <VideoIcon className="h-3 w-3 mr-1" />
+                                       <a 
+                                         href={apt.meetingLink} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer"
+                                         className="text-blue-600 hover:text-blue-800 underline"
+                                         onClick={(e) => e.stopPropagation()}
+                                       >
+                                         Ver grabación
+                                       </a>
+                                     </div>
+                                   )}
+                                 </div>
                                </div>
                                 
                                 {/* Botón de acción (columna derecha, apilado en pantallas grandes, fila en pequeñas) */}

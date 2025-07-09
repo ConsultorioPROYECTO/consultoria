@@ -22,7 +22,7 @@ interface ConsultationAppointment extends Omit<BaseAppointment, 'patient' | 'ser
     lastName: string;
   };
   service: {
-    id: string;
+    id: number;
     name: string;
     description?: string;
     code?: string;
@@ -31,7 +31,7 @@ interface ConsultationAppointment extends Omit<BaseAppointment, 'patient' | 'ser
     category?: string;
     requiresPreparation?: boolean;
     preparationInstructions?: string;
-    organizationId?: string;
+    organizationId?: number;
     isActive?: boolean;
     createdAt?: string;
     updatedAt?: string;
@@ -42,7 +42,7 @@ interface ConsultationModalProps {
   appointment: ConsultationAppointment | null; // La cita para la consulta actual
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaveAndComplete: (appointmentId: string, notes: string) => void;
+  onSaveAndComplete: (appointmentId: number, notes: string) => void;
 }
 
 export function ConsultationModal({

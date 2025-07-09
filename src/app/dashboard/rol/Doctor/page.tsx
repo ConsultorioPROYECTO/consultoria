@@ -15,34 +15,35 @@ import { ImportantNotifications } from "./compo/ImportantNotifications";
 // Importar el nuevo servicio de data fetching
 import { 
   fetchAppointments, 
+  getAppointmentsWithGoogleCalendarData,
   updateAppointmentStatus,
   type Appointment 
 } from "../../lib/appointmentsService";
 
 // Tipo específico para el modal de consulta
 type ConsultationAppointment = {
-  id: string;
+  id: number;
   time: string;
   patient: {
     firstName: string;
     lastName: string;
   };
   service: {
-    id: string;
+    id: number;
     name: string;
     description?: string;
   };
   status: string;
-  doctorId: string;
-  patientId: string;
-  serviceId: string;
+  doctorId: number;
+  patientId: number;
+  serviceId: number;
   createdAt: string;
   updatedAt: string;
 };
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
-  const [, setSelectedAppointmentId] = useState<string | null>(null);
+  const [, setSelectedAppointmentId] = useState<number | null>(null);
   const [todayAppointmentsState, setTodayAppointmentsState] = useState<Appointment[]>([]);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
@@ -70,12 +71,12 @@ export default function DoctorDashboard() {
     timeBasedPhrase = "Excelente jornada de trabajo. ¡Momento de descansar!";
   }
 
-  const handleSelectAppointment = (id: string) => {
+  const handleSelectAppointment = (id: number) => {
     setSelectedAppointmentId(id);
   };
 
   // Funciones para manejar el estado de las citas
-  const handleStartAppointment = async (id: string) => {
+  const handleStartAppointment = async (id: number) => {
     // Actualizar estado local inmediatamente para mejor UX
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
@@ -95,7 +96,7 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handleCompleteAppointment = async (id: string) => {
+  const handleCompleteAppointment = async (id: number) => {
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
         apt.id === id ? { ...apt, status: "Completada" } : apt
@@ -112,7 +113,7 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handleResetAppointment = async (id: string) => {
+  const handleResetAppointment = async (id: number) => {
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
         apt.id === id ? { ...apt, status: "Confirmada" } : apt
@@ -152,7 +153,7 @@ export default function DoctorDashboard() {
     setIsConsultationModalOpen(true);
   };
 
-  const handleSaveAndCompleteConsultation = async (appointmentId: string, notes: string) => {
+  const handleSaveAndCompleteConsultation = async (appointmentId: number, notes: string) => {
     // Actualizar el estado de la cita a "Completada"
     setTodayAppointmentsState(prevState =>
       prevState.map(apt =>
@@ -180,6 +181,28 @@ export default function DoctorDashboard() {
   useEffect(() => {
     const loadAppointments = async () => {
       if (user) {
+        try {
+          // Obtener el doctorId del usuario autenticado
+          const token = await user.getIdToken();
+          const response = await fetch('/api/users/doctor-info', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (response.ok) {
+            const doctorInfo = await response.json();
+            if (doctorInfo.doctorId) {
+              const enrichedAppointments = await getAppointmentsWithGoogleCalendarData(doctorInfo.doctorId);
+              setTodayAppointmentsState(enrichedAppointments);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Error obteniendo información del doctor:', error);
+        }
+        
+        // Fallback: usar el método original
         const appointments = await fetchAppointments();
         setTodayAppointmentsState(appointments);
       }

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CreateAppointmentModal } from './CreateAppointmentModal';
+import { CreateAppointmentModal } from '../Doctor/compo/CreateAppointmentModal';
 
 /**
  * @typedef {object} ImportantNotificationsProps
