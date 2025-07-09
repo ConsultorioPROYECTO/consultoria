@@ -4,17 +4,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ClockIcon, UserIcon, AlertCircle, CalendarSync, Play, MapPinIcon, VideoIcon, Coffee } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ClockIcon, UserIcon, Play, MapPinIcon, VideoIcon, Coffee } from "lucide-react";
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
 import { DateTime } from 'luxon';
 

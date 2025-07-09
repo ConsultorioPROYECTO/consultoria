@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@rutas/components/ui/card';
 import { Button } from '@rutas/components/ui/button';
 import { Input } from '@rutas/components/ui/input';
@@ -604,7 +604,7 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
       <CardContent className="flex-grow flex flex-col justify-center items-center text-center space-y-4">
         <div className="text-muted-foreground">
           <CalendarIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Haga clic en "Nueva Cita" para programar una cita médica.</p>
+          <p className="text-sm">Haga clic en &quot;Nueva Cita&quot; para programar una cita médica.</p>
         </div>
       </CardContent>
     </Card>
