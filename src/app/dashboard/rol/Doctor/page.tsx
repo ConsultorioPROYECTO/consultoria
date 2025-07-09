@@ -39,7 +39,7 @@ export default function DoctorDashboard() {
   const { user, doctorId } = useAuth();
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [selectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
 
@@ -99,26 +99,24 @@ export default function DoctorDashboard() {
           <p className="text-muted-foreground">{timeBasedPhrase}</p>
         </div>
 
-        {!isLoading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="col-span-1"><TodayIsDay /></div>
-                <div className="col-span-1"><TodaysAppointments appointmentCount={calendarEvents.length} /></div>
-              </div>
-              <div>
-                <DailyAgendaView calendarEvents={calendarEvents} />
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="col-span-1"><TodayIsDay /></div>
+              <div className="col-span-1"><TodaysAppointments appointmentCount={isLoading ? 0 : calendarEvents.length} /></div>
             </div>
+            <div>
+               <DailyAgendaView calendarEvents={isLoading ? [] : calendarEvents} />
+             </div>
+           </div>
 
-            <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col gap-4">
-              <NextAppointment calendarEvents={calendarEvents} />
-              <MonthlyAppointmentsSummary pendingAppointments={pendingAppointmentsCount} />
-              <div className="hidden sm:block"><ImportantNotifications /></div>
-              <div className="block sm:hidden"><ImportantNotifications /></div>
-            </div>
+           <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col gap-4">
+             <NextAppointment calendarEvents={isLoading ? [] : calendarEvents} />
+            <MonthlyAppointmentsSummary pendingAppointments={isLoading ? 0 : pendingAppointmentsCount} />
+            <div className="hidden sm:block"><ImportantNotifications /></div>
+            <div className="block sm:hidden"><ImportantNotifications /></div>
           </div>
-        )}
+        </div>
 
         <ConsultationModal
           appointment={selectedConsultationAppointment}
