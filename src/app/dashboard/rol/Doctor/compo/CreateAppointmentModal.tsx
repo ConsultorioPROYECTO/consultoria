@@ -53,6 +53,28 @@ interface MedicalService {
 }
 
 /**
+ * Interfaz para usuarios del sistema
+ */
+interface User {
+  id: number;
+  firebaseUid: string;
+  email: string;
+  emailVerified: boolean | null;
+  phoneNumber: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  providerId: string | null;
+  role: string;
+  isActive: boolean;
+  organizationId: number | null;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  idDoctor: number | null;
+  idAssistant: number | null;
+}
+
+/**
  * Interfaz para médicos
  */
 interface Doctor {
@@ -243,7 +265,7 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
 
       const data = await response.json();
       // Filtrar solo usuarios con rol 'medico' y que tengan idDoctor
-      const doctorsOnly = data.filter((user: any) => user.role === 'medico' && user.idDoctor) || [];
+      const doctorsOnly = data.filter((user: User) => user.role === 'medico' && user.idDoctor) || [];
       return doctorsOnly;
     } catch (error) {
       console.error('Error fetching doctors:', error);
