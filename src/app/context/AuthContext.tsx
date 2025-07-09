@@ -57,6 +57,11 @@ export interface EmailPasswordCredentials {
  * @description Define la forma del objeto que se comparte a través del AuthContext.
  * @property {User | null} user - El objeto User de Firebase.
  * @property {boolean} loading - Indica si se está cargando el estado inicial.
+ * @property {string | null} userRole - El rol del usuario (admin, medico, asistente, N/A).
+ * @property {boolean} isLoadingRole - Indica si se está cargando la información del rol.
+ * @property {number | null} organizationId - ID de la organización del usuario.
+ * @property {number | null} doctorId - ID del doctor si el usuario es médico.
+ * @property {number | null} assistantId - ID del asistente si el usuario es asistente.
  * @property {() => Promise<void>} signInWithGoogle - Función para iniciar sesión con Google.
  * @property {(credentials: EmailPasswordCredentials) => Promise<void>} signInWithEmail - Función para iniciar sesión con email/contraseña.
  * @property {(credentials: EmailPasswordCredentials) => Promise<void>} signUpWithEmail - Función para registrarse con email/contraseña.
@@ -68,9 +73,12 @@ interface AuthContextType {
   loading: boolean;
   userRole: string | null;
   isLoadingRole: boolean;
+  organizationId: number | null;
+  doctorId: number | null;
+  assistantId: number | null;
   signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>; // Nuevo
-  signUpWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>; // Nuevo
+  signInWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>;
+  signUpWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>;
   signOut: () => Promise<void>;
   error: AuthError | null;
 }
@@ -102,6 +110,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const [error, setError] = useState<AuthError | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoadingRole, setIsLoadingRole] = useState<boolean>(true);
+  const [organizationId, setOrganizationId] = useState<number | null>(null);
+  const [doctorId, setDoctorId] = useState<number | null>(null);
+  const [assistantId, setAssistantId] = useState<number | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
@@ -120,17 +131,29 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
             if (response.ok) {
               const data = await response.json();
               setUserRole(data.role);
+              setOrganizationId(data.organizationId || null);
+              setDoctorId(data.doctorId || null);
+              setAssistantId(data.assistantId || null);
             } else {
               setUserRole(null);
+              setOrganizationId(null);
+              setDoctorId(null);
+              setAssistantId(null);
             }
           } catch (error) {
             console.error("Error fetching user role:", error);
             setUserRole(null);
+            setOrganizationId(null);
+            setDoctorId(null);
+            setAssistantId(null);
           } finally {
             setIsLoadingRole(false);
           }
         } else {
           setUserRole(null);
+          setOrganizationId(null);
+          setDoctorId(null);
+          setAssistantId(null);
           setIsLoadingRole(false);
         }
         setLoading(false);
@@ -141,6 +164,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         setError(authError as AuthError);
         setUser(null);
         setUserRole(null);
+        setOrganizationId(null);
+        setDoctorId(null);
+        setAssistantId(null);
         setLoading(false);
         setIsLoadingRole(false);
       },
@@ -260,6 +286,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     loading,
     userRole,
     isLoadingRole,
+    organizationId,
+    doctorId,
+    assistantId,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail, 

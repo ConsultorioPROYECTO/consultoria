@@ -2,6 +2,7 @@
 
 import { useAuth } from "../../../context/AuthContext";
 import { useState, useEffect } from "react";
+import { DateTime } from 'luxon';
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./compo/DailyAgendaView";
@@ -12,13 +13,10 @@ import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
 import { TodayIsDay } from "./compo/TodayIsDay";
 import { ImportantNotifications } from "./compo/ImportantNotifications";
 
-// Importar el nuevo servicio de data fetching
-import { 
-  fetchAppointments, 
-  getAppointmentsWithGoogleCalendarData,
-  updateAppointmentStatus,
-  type Appointment 
-} from "../../lib/appointmentsService";
+// Tipos de datos para eventos de calendario
+import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
+
+type CalendarEvent = AppointmentEventData | BreakTimeEventData;
 
 // Tipo específico para el modal de consulta
 type ConsultationAppointment = {
@@ -42,15 +40,15 @@ type ConsultationAppointment = {
 };
 
 export default function DoctorDashboard() {
-  const { user } = useAuth();
-  const [, setSelectedAppointmentId] = useState<number | null>(null);
-  const [todayAppointmentsState, setTodayAppointmentsState] = useState<Appointment[]>([]);
-  const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
+  const { user, doctorId } = useAuth();
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
 
-  const pendingAppointmentsCount = todayAppointmentsState.filter(apt => apt.status !== 'Completada').length;
+  const pendingAppointmentsCount = calendarEvents.filter(event => 'appointmentStatus' in event && event.appointmentStatus !== 'Completada').length;
 
-  // Obtener y formatear los dos primeros nombres del usuario (primera letra en mayúscula, resto en minúscula)
   const doctorNames = user?.displayName?.split(' ') || [];
   const formattedNames = doctorNames.slice(0, 2).map(name => {
     if (!name) return '';
@@ -58,7 +56,6 @@ export default function DoctorDashboard() {
   });
   const displayTwoNames = formattedNames.join(' ');
 
-  // Lógica para determinar la frase según la hora del día
   const now = new Date();
   const hour = now.getHours();
   let timeBasedPhrase = "";
@@ -71,201 +68,74 @@ export default function DoctorDashboard() {
     timeBasedPhrase = "Excelente jornada de trabajo. ¡Momento de descansar!";
   }
 
-  const handleSelectAppointment = (id: number) => {
-    setSelectedAppointmentId(id);
-  };
-
-  // Funciones para manejar el estado de las citas
-  const handleStartAppointment = async (id: number) => {
-    // Actualizar estado local inmediatamente para mejor UX
-    setTodayAppointmentsState(prevState =>
-      prevState.map(apt =>
-        apt.id === id ? { ...apt, status: "Llegó" } : apt
-      )
-    );
-    
-    // Actualizar en el servidor
-    const success = await updateAppointmentStatus(id, "Llegó");
-    if (!success) {
-      // Revertir cambio local si falla la actualización
-      setTodayAppointmentsState(prevState =>
-        prevState.map(apt =>
-          apt.id === id ? { ...apt, status: "Confirmada" } : apt
-        )
-      );
-    }
-  };
-
-  const handleCompleteAppointment = async (id: number) => {
-    setTodayAppointmentsState(prevState =>
-      prevState.map(apt =>
-        apt.id === id ? { ...apt, status: "Completada" } : apt
-      )
-    );
-    
-    const success = await updateAppointmentStatus(id, "Completada");
-    if (!success) {
-      setTodayAppointmentsState(prevState =>
-        prevState.map(apt =>
-          apt.id === id ? { ...apt, status: "Llegó" } : apt
-        )
-      );
-    }
-  };
-
-  const handleResetAppointment = async (id: number) => {
-    setTodayAppointmentsState(prevState =>
-      prevState.map(apt =>
-        apt.id === id ? { ...apt, status: "Confirmada" } : apt
-      )
-    );
-    
-    const success = await updateAppointmentStatus(id, "Confirmada");
-    if (!success) {
-      // En caso de error, recargar las citas
-      const appointments = await fetchAppointments();
-      setTodayAppointmentsState(appointments);
-    }
-  };
-
-  const handleStartConsultation = (appointment: Appointment) => {
-    // Transformar la cita al formato esperado por ConsultationModal
-    const transformedAppointment: ConsultationAppointment = {
-      id: appointment.id,
-      time: appointment.createdAt, // Usar createdAt como time
-      patient: {
-        firstName: appointment.patient?.firstName || '',
-        lastName: appointment.patient?.lastName || ''
-      },
-      service: appointment.service || {
-        id: appointment.serviceId,
-        name: 'Servicio',
-        description: ''
-      },
-      status: appointment.status,
-      doctorId: appointment.doctorId,
-      patientId: appointment.patientId,
-      serviceId: appointment.serviceId,
-      createdAt: appointment.createdAt,
-      updatedAt: appointment.updatedAt
-    };
-    setSelectedConsultationAppointment(transformedAppointment);
-    setIsConsultationModalOpen(true);
-  };
-
-  const handleSaveAndCompleteConsultation = async (appointmentId: number, notes: string) => {
-    // Actualizar el estado de la cita a "Completada"
-    setTodayAppointmentsState(prevState =>
-      prevState.map(apt =>
-        apt.id === appointmentId ? { ...apt, status: "Completada", notes } : apt
-      )
-    );
-    
-    // Actualizar en el servidor
-    const success = await updateAppointmentStatus(appointmentId, "Completada");
-    if (!success) {
-      // Revertir cambio si falla
-      setTodayAppointmentsState(prevState =>
-        prevState.map(apt =>
-          apt.id === appointmentId ? { ...apt, status: "Llegó", notes: undefined } : apt
-        )
-      );
-    }
-    
-    // Cerrar el modal
-    setIsConsultationModalOpen(false);
-    setSelectedConsultationAppointment(null);
-  };
-
-  // Cargar citas al montar el componente
   useEffect(() => {
-    const loadAppointments = async () => {
-      if (user) {
-        try {
-          // Obtener el doctorId del usuario autenticado
-          const token = await user.getIdToken();
-          const response = await fetch('/api/users/doctor-info', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          if (response.ok) {
-            const doctorInfo = await response.json();
-            if (doctorInfo.doctorId) {
-              const enrichedAppointments = await getAppointmentsWithGoogleCalendarData(doctorInfo.doctorId);
-              setTodayAppointmentsState(enrichedAppointments);
-              return;
-            }
-          }
-        } catch (error) {
-          console.error('Error obteniendo información del doctor:', error);
-        }
+    const fetchCalendarEvents = async () => {
+      if (!user || !doctorId) return;
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const startDate = DateTime.now().toISODate();
+        const endDate = DateTime.now().plus({ days: 7 }).toISODate();
+
+        const eventsResponse = await fetch(`/api/doctors/${doctorId}/calendar/events?startDate=${startDate}&endDate=${endDate}`);
         
-        // Fallback: usar el método original
-        const appointments = await fetchAppointments();
-        setTodayAppointmentsState(appointments);
+        if (!eventsResponse.ok) throw new Error('Error fetching calendar events');
+
+        const data = await eventsResponse.json();
+        setCalendarEvents(data.events || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setIsLoading(false);
       }
     };
-    loadAppointments();
-  }, [user]);
+
+    fetchCalendarEvents();
+  }, [user, doctorId]);
 
   return (
-        <div className="flex flex-1 flex-col overflow-y-auto">
-          <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
-            <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">Hola, {displayTwoNames}</h1>
-              <p className="text-muted-foreground">
-                {timeBasedPhrase}
-              </p>
-            </div>
-            {/* Reestructurar la grilla principal */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Bloque Izquierdo/Central */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
-                {/* Fila para TodayIsDay y TodaysAppointments */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="col-span-1"> {/* Hoy es */}
-                    <TodayIsDay />
-                  </div>
-                  <div className="col-span-1"> {/* Hoy tienes */}
-                    <TodaysAppointments appointmentCount={todayAppointmentsState.length} />
-                  </div>
-                </div>
-                {/* Agenda del Día */}
-                <div>
-                  <DailyAgendaView
-                    todayAppointments={todayAppointmentsState}
-                    // onSelectPatient={handleSelectPatient}
-                    onSelectAppointment={handleSelectAppointment}
-                    onStartAppointment={handleStartAppointment}
-                    onCompleteAppointment={handleCompleteAppointment}
-                    onResetAppointment={handleResetAppointment}
-                    onStartConsultation={handleStartConsultation} // Added this line back as it was in original and likely needed in new structure
-                  />
-                </div>
-              </div>
-
-              {/* Bloque Derecho */}
-              <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col gap-4">
-                <NextAppointment appointments={todayAppointmentsState} />
-                <MonthlyAppointmentsSummary pendingAppointments={pendingAppointmentsCount} />
-                <div className="hidden sm:block">
-                  <ImportantNotifications />
-                </div>
-                {/* ImportantNotifications for small screens, moved to be consistent with original logic if needed, or can be placed elsewhere */}
-                <div className="block sm:hidden">
-                  <ImportantNotifications />
-                </div>
-              </div>
-            </div>
-            <ConsultationModal
-              appointment={selectedConsultationAppointment}
-              isOpen={isConsultationModalOpen}
-              onOpenChange={setIsConsultationModalOpen}
-              onSaveAndComplete={handleSaveAndCompleteConsultation}
-            />
-          </main>
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+        <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Hola, {displayTwoNames}</h1>
+          <p className="text-muted-foreground">{timeBasedPhrase}</p>
         </div>
-  )
+
+        {isLoading && <p>Loading events...</p>}
+        {error && <p>Error: {error}</p>}
+
+        {!isLoading && !error && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="col-span-1"><TodayIsDay /></div>
+                <div className="col-span-1"><TodaysAppointments appointmentCount={calendarEvents.length} /></div>
+              </div>
+              <div>
+                <DailyAgendaView calendarEvents={calendarEvents} />
+              </div>
+            </div>
+
+            <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col gap-4">
+              <NextAppointment calendarEvents={calendarEvents} />
+              <MonthlyAppointmentsSummary pendingAppointments={pendingAppointmentsCount} />
+              <div className="hidden sm:block"><ImportantNotifications /></div>
+              <div className="block sm:hidden"><ImportantNotifications /></div>
+            </div>
+          </div>
+        )}
+
+        <ConsultationModal
+          appointment={selectedConsultationAppointment}
+          isOpen={isConsultationModalOpen}
+          onOpenChange={setIsConsultationModalOpen}
+          onSaveAndComplete={() => {
+            // Lógica de guardado
+          }}
+        />
+      </main>
+    </div>
+  );
 }

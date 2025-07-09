@@ -11,7 +11,7 @@
  * @POST Maneja las solicitudes POST a `src/app/api/users/rol/route.ts`. Requiere autenticación y cuerpo.
  * Utiliza la instancia de Drizzle ORM (`db`) para consultar todos los registros
  * de la tabla `users` en la base de datos MySQL.
- * Devuelve el rol del usuario en formato JSON.
+ * Devuelve el rol del usuario, organizationId y doctorId/assistantId según corresponda en formato JSON.
  *
  * La autenticación se maneja mediante la validación de Tokens ID de Firebase.
  *
@@ -56,14 +56,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
-import { users } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
+import { users, doctors, assistants } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
 import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { eq } from 'drizzle-orm';
 
 /**
  * Manejador para solicitudes GET a src/app/api/users/rol/route.ts.
- * Devuelve el rol del usuario autenticado.
+ * Devuelve el rol del usuario autenticado junto con doctorId o assistantId según corresponda.
  * @async
  * @param {NextRequest} request
  * @param {DecodedIdToken} decodedToken
@@ -75,7 +75,7 @@ const getUserRoleHandler = async (
   try {
     const user = await db.query.users.findFirst({
       where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, organizationId: true }
+      columns: { id: true, role: true, organizationId: true }
     });
     if (!user) {
       return NextResponse.json(
@@ -83,10 +83,40 @@ const getUserRoleHandler = async (
         { status: 404 }
       );
     }
-    return NextResponse.json({ 
-      role: user.role, 
-      organizationId: user.organizationId 
-    });
+
+    const response: {
+      role: string;
+      organizationId: number | null;
+      doctorId?: number;
+      assistantId?: number;
+    } = {
+      role: user.role,
+      organizationId: user.organizationId
+    };
+
+    // Si el usuario es médico, buscar su doctorId
+    if (user.role === 'medico') {
+      const doctor = await db.query.doctors.findFirst({
+        where: eq(doctors.userId, user.id),
+        columns: { idDoctor: true }
+      });
+      if (doctor) {
+        response.doctorId = doctor.idDoctor;
+      }
+    }
+
+    // Si el usuario es asistente, buscar su assistantId
+    if (user.role === 'asistente') {
+      const assistant = await db.query.assistants.findFirst({
+        where: eq(assistants.userId, user.id),
+        columns: { idAssistant: true }
+      });
+      if (assistant) {
+        response.assistantId = assistant.idAssistant;
+      }
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error en el servidor:', error);
     return NextResponse.json(
