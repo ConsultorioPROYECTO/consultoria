@@ -103,9 +103,6 @@ export default function DoctorDashboard() {
           <p className="text-muted-foreground">{timeBasedPhrase}</p>
         </div>
 
-        {isLoading && <p>Loading events...</p>}
-        {error && <p>Error: {error}</p>}
-
         {!isLoading && !error && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
