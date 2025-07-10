@@ -8,6 +8,7 @@ import { Label } from '@rutas/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rutas/components/ui/select';
 import { Textarea } from '@rutas/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@rutas/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@rutas/components/ui/drawer';
 import { Switch } from '@rutas/components/ui/switch';
 import { Calendar } from '@rutas/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@rutas/components/ui/popover';
@@ -15,6 +16,7 @@ import { CalendarIcon, Plus, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '@/app/context/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { toast } from 'sonner';
 
 /**
@@ -109,6 +111,7 @@ interface CreateAppointmentModalProps {
  */
 export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointmentModalProps) {
   const { user, doctorId: contextDoctorId } = useAuth();
+  const isMobile = useIsMobile();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -407,195 +410,225 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
     resetForm();
   };
 
+  // Componente del contenido del formulario
+  const FormContent = () => (
+    <>
+      {isLoadingData ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Cargando datos...</span>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="grid gap-4 px-4">
+          {/* Selección de Médico */}
+          <div className="grid gap-2">
+            <Label htmlFor="doctor">Médico *</Label>
+            <Select 
+              value={formData.doctorId > 0 ? formData.doctorId.toString() : ""} 
+              onValueChange={(value) => handleInputChange('doctorId', parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar médico" />
+              </SelectTrigger>
+              <SelectContent>
+                {doctors.map((doctor) => (
+                  <SelectItem key={doctor.idDoctor} value={doctor.idDoctor.toString()}>
+                    {doctor.displayName} - {doctor.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selección de Paciente */}
+          <div className="grid gap-2">
+            <Label htmlFor="patient">Paciente *</Label>
+            <Select 
+              value={formData.patientId > 0 ? formData.patientId.toString() : ""} 
+              onValueChange={(value) => handleInputChange('patientId', parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar paciente" />
+              </SelectTrigger>
+              <SelectContent>
+                {patients.map((patient) => (
+                  <SelectItem key={patient.id} value={patient.id.toString()}>
+                    {patient.firstName} {patient.lastName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selección de Servicio */}
+          <div className="grid gap-2">
+            <Label htmlFor="service">Servicio Médico *</Label>
+            <Select 
+              value={formData.serviceId > 0 ? formData.serviceId.toString() : ""} 
+              onValueChange={(value) => handleInputChange('serviceId', parseInt(value))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar servicio" />
+              </SelectTrigger>
+              <SelectContent>
+                {medicalServices.map((service) => (
+                  <SelectItem key={service.id} value={service.id.toString()}>
+                    {service.name} ({service.durationMinutes} min)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Fecha */}
+          <div className="grid gap-2">
+            <Label>Fecha *</Label>
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? format(selectedDate, 'PPP', { locale: es }) : 'Seleccionar fecha'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Hora */}
+          <div className="grid gap-2">
+            <Label htmlFor="time">Hora *</Label>
+            <Input
+              id="time"
+              type="time"
+              value={formData.time}
+              onChange={(e) => handleInputChange('time', e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Cita Virtual */}
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="virtual"
+              checked={formData.isVirtual}
+              onCheckedChange={(checked) => handleInputChange('isVirtual', checked)}
+            />
+            <Label htmlFor="virtual">Cita Virtual</Label>
+          </div>
+
+          {/* Enlace de Reunión (solo si es virtual) */}
+          {formData.isVirtual && (
+            <div className="grid gap-2">
+              <Label htmlFor="meetingLink">Enlace de Reunión *</Label>
+              <Input
+                id="meetingLink"
+                type="url"
+                placeholder="https://meet.google.com/..."
+                value={formData.meetingLink}
+                onChange={(e) => handleInputChange('meetingLink', e.target.value)}
+                required={formData.isVirtual}
+              />
+            </div>
+          )}
+
+          {/* Notas */}
+          <div className="grid gap-2">
+            <Label htmlFor="notes">Notas (Opcional)</Label>
+            <Textarea
+              id="notes"
+              placeholder="Notas adicionales sobre la cita..."
+              value={formData.notes}
+              onChange={(e) => handleInputChange('notes', e.target.value)}
+              rows={3}
+            />
+          </div>
+
+          {/* Botones */}
+          <div className="grid grid-cols-2 gap-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={handleCloseDialog}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Creando...
+                </>
+              ) : (
+                'Crear Cita'
+              )}
+            </Button>
+          </div>
+        </form>
+      )}
+    </>
+  );
+
   return (
     <Card className="flex flex-col justify-between h-full">
       <CardHeader className="pb-3">
         <CardTitle className="text-md font-semibold flex items-center justify-between">
           Crear Nueva Cita
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="ml-2" onClick={handleOpenDialog}>
-                <Plus className="h-4 w-4 mr-1" />
-                Nueva Cita
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Crear Nueva Cita</DialogTitle>
-                <DialogDescription>
-                  Complete los detalles para programar una nueva cita médica.
-                </DialogDescription>
-              </DialogHeader>
-              
-              {isLoadingData ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                  <span className="ml-2">Cargando datos...</span>
+          {isMobile ? (
+            <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DrawerTrigger asChild>
+                <Button size="sm" className="ml-2" onClick={handleOpenDialog}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nueva Cita
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent className="max-h-[90vh]">
+                <div className="overflow-y-auto px-4">
+                  <DrawerHeader className="text-left">
+                    <DrawerTitle>Crear Nueva Cita</DrawerTitle>
+                    <DrawerDescription>
+                      Complete los detalles para programar una nueva cita médica.
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <div className="pb-4">
+                    <FormContent />
+                  </div>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Selección de Médico */}
-                  <div className="space-y-2">
-                    <Label htmlFor="doctor">Médico *</Label>
-                    <Select 
-                      value={formData.doctorId > 0 ? formData.doctorId.toString() : ""} 
-                      onValueChange={(value) => handleInputChange('doctorId', parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar médico" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {doctors.map((doctor) => (
-                          <SelectItem key={doctor.idDoctor} value={doctor.idDoctor.toString()}>
-                            {doctor.displayName} - {doctor.email}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Selección de Paciente */}
-                  <div className="space-y-2">
-                    <Label htmlFor="patient">Paciente *</Label>
-                    <Select 
-                      value={formData.patientId > 0 ? formData.patientId.toString() : ""} 
-                      onValueChange={(value) => handleInputChange('patientId', parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar paciente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {patients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id.toString()}>
-                            {patient.firstName} {patient.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Selección de Servicio */}
-                  <div className="space-y-2">
-                    <Label htmlFor="service">Servicio Médico *</Label>
-                    <Select 
-                      value={formData.serviceId > 0 ? formData.serviceId.toString() : ""} 
-                      onValueChange={(value) => handleInputChange('serviceId', parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar servicio" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {medicalServices.map((service) => (
-                          <SelectItem key={service.id} value={service.id.toString()}>
-                            {service.name} ({service.durationMinutes} min)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Fecha */}
-                  <div className="space-y-2">
-                    <Label>Fecha *</Label>
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {selectedDate ? format(selectedDate, 'PPP', { locale: es }) : 'Seleccionar fecha'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={handleDateSelect}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Hora */}
-                  <div className="space-y-2">
-                    <Label htmlFor="time">Hora *</Label>
-                    <Input
-                      id="time"
-                      type="time"
-                      value={formData.time}
-                      onChange={(e) => handleInputChange('time', e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  {/* Cita Virtual */}
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="virtual"
-                      checked={formData.isVirtual}
-                      onCheckedChange={(checked) => handleInputChange('isVirtual', checked)}
-                    />
-                    <Label htmlFor="virtual">Cita Virtual</Label>
-                  </div>
-
-                  {/* Enlace de Reunión (solo si es virtual) */}
-                  {formData.isVirtual && (
-                    <div className="space-y-2">
-                      <Label htmlFor="meetingLink">Enlace de Reunión *</Label>
-                      <Input
-                        id="meetingLink"
-                        type="url"
-                        placeholder="https://meet.google.com/..."
-                        value={formData.meetingLink}
-                        onChange={(e) => handleInputChange('meetingLink', e.target.value)}
-                        required={formData.isVirtual}
-                      />
-                    </div>
-                  )}
-
-                  {/* Notas */}
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notas (Opcional)</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Notas adicionales sobre la cita..."
-                      value={formData.notes}
-                      onChange={(e) => handleInputChange('notes', e.target.value)}
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Botones */}
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleCloseDialog}
-                      disabled={isLoading}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button 
-                      type="submit"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Creando...
-                        </>
-                      ) : (
-                        'Crear Cita'
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </DialogContent>
-          </Dialog>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="ml-2" onClick={handleOpenDialog}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Nueva Cita
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Crear Nueva Cita</DialogTitle>
+                  <DialogDescription>
+                    Complete los detalles para programar una nueva cita médica.
+                  </DialogDescription>
+                </DialogHeader>
+                <FormContent />
+              </DialogContent>
+            </Dialog>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col justify-center items-center text-center space-y-4">
