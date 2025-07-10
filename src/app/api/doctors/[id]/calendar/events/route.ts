@@ -4,105 +4,124 @@ import { getDoctorEvents } from '@/lib/calendar-event-retriever';
 import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
 
 /**
- * @fileoverview API endpoint para obtener eventos del calendario de un doctor.
- * @description Este endpoint permite obtener eventos (citas o descansos) de un doctor
- * en un rango de fechas, con opciones de filtrado por tipo de evento, estado de cita
- * o tipo de descanso.
+ * @fileoverview API endpoint para obtener eventos del calendario de un doctor específico.
  * 
- * @route GET /api/doctors/[id]/calendar/events
- * @param {string} id - ID del doctor (parámetro de ruta)
- * @param {string} startDate - Fecha de inicio en formato YYYY-MM-DD (parámetro de consulta)
- * @param {string} endDate - Fecha de fin en formato YYYY-MM-DD (parámetro de consulta)
- * @param {string} [eventType] - Tipo de evento a filtrar ('appointment', 'break' o 'basic')
- * @param {string} [appointmentStatus] - Estado de la cita a filtrar (ej. "Confirmada", "Completada")
- * @param {string} [breakTimeType] - Tipo de descanso a filtrar ('lunch', 'personal', 'meeting', 'other')
+ * Este módulo implementa un endpoint REST que permite consultar eventos de calendario
+ * (citas médicas y períodos de descanso) para un doctor específico dentro de un rango
+ * de fechas determinado. La API integra con Google Calendar a través del sistema de
+ * gestión de eventos centralizado y proporciona capacidades avanzadas de filtrado.
  * 
- * @returns {Array<AppointmentEventData | BreakTimeEventData>} Array de eventos.
- * @returns {Object} Error object en caso de fallo.
+ * @remarks
+ * 
+ * **Arquitectura del endpoint:**
+ * - Utiliza Next.js App Router con parámetros de ruta dinámicos [id]
+ * - Integra con {@link getDoctorEvents} para consulta centralizada de eventos
+ * - Implementa validación robusta de parámetros de entrada con Luxon DateTime
+ * - Maneja errores de forma consistente con logging detallado para debugging
+ * - Sigue principios de TypeScript strict para type safety
+ * 
+ * **Lógica de procesamiento:**
+ * 1. **Validación de parámetros:** Extrae y valida el ID del doctor desde la ruta
+ * 2. **Procesamiento de fechas:** Convierte parámetros de fecha ISO a objetos DateTime
+ * 3. **Construcción de filtros:** Aplica filtros opcionales por tipo de evento y estado
+ * 4. **Consulta de eventos:** Llama a getDoctorEvents con parámetros validados
+ * 5. **Serialización:** Convierte objetos DateTime a formato ISO para respuesta JSON
+ * 6. **Respuesta estructurada:** Retorna eventos con metadatos de conteo y rango
+ * 
+ * **Tipos de eventos soportados:**
+ * - **Citas médicas (default):** Eventos con propiedades de paciente y servicio
+ * - **Períodos de descanso (break):** Eventos de tiempo fuera de oficina
+ * - **Eventos básicos (basic):** Eventos sin propiedades extendidas del sistema
+ * 
+ * **Capacidades de filtrado:**
+ * - Por tipo de evento: 'default', 'break', 'basic'
+ * - Por estado de cita: 'Confirmada', 'Completada', 'Cancelada', etc.
+ * - Por tipo de descanso: 'lunch', 'personal', 'meeting', 'other'
  * 
  * @example
- * // Obtener todas las citas y descansos para el doctor 123 entre dos fechas
- * GET /api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31
+ * ```typescript
+ * // Obtener todas las citas y descansos para el doctor 123 en julio 2025
+ * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31');
+ * const data = await response.json();
+ * console.log(`Encontrados ${data.eventCount} eventos`);
+ * ```
  * 
  * @example
- * // Obtener solo citas confirmadas para el doctor 123
- * GET /api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=appointment&appointmentStatus=Confirmada
+ * ```typescript
+ * // Obtener solo citas confirmadas con filtrado específico
+ * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=default&appointmentStatus=Confirmada');
+ * ```
  * 
  * @example
- * // Obtener solo descansos de tipo 'lunch' para el doctor 123
- * GET /api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=break&breakTimeType=lunch
+ * ```typescript
+ * // Obtener solo descansos de almuerzo
+ * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=break&breakTimeType=lunch');
+ * ```
+ * 
+ * @author Santiago Prada - Backend Developer
+ * @version 1.2.0
+ * @since 2025-01-15
+ */
+/**
+ * Maneja las peticiones GET para obtener eventos del calendario de un doctor específico.
+ * 
+ * Esta función implementa la lógica principal del endpoint, procesando parámetros de entrada,
+ * validando fechas, aplicando filtros opcionales y consultando eventos desde Google Calendar
+ * a través del sistema de gestión centralizado.
+ * 
+ * @param request - Objeto NextRequest que contiene los parámetros de consulta (query parameters)
+ * @param params - Objeto que contiene los parámetros de ruta, específicamente el ID del doctor
+ * @param params.id - ID único del doctor como string (extraído de la ruta [id])
+ * 
+ * @returns Promise que resuelve a NextResponse con:
+ * - **200 OK:** Array de eventos con metadatos (eventCount, dateRange)
+ * - **400 Bad Request:** Error de validación de parámetros (fechas inválidas, ID malformado)
+ * - **404 Not Found:** Doctor no encontrado en el sistema
+ * - **500 Internal Server Error:** Error interno del servidor o de Google Calendar API
+ * 
+ * @remarks
+ * 
+ * **Parámetros de consulta requeridos:**
+ * - `startDate`: Fecha de inicio en formato ISO (YYYY-MM-DD)
+ * - `endDate`: Fecha de fin en formato ISO (YYYY-MM-DD)
+ * 
+ * **Parámetros de consulta opcionales:**
+ * - `eventType`: Filtra por tipo ('default' para citas, 'break' para descansos, 'basic' para eventos simples)
+ * - `appointmentStatus`: Filtra citas por estado ('Confirmada', 'Completada', 'Cancelada', etc.)
+ * - `breakTimeType`: Filtra descansos por tipo ('lunch', 'personal', 'meeting', 'other')
+ * 
+ * **Flujo de procesamiento:**
+ * 1. Extrae y valida el doctorId desde params.id
+ * 2. Obtiene parámetros de consulta desde request.nextUrl.searchParams
+ * 3. Valida y convierte fechas usando Luxon DateTime con zona horaria UTC
+ * 4. Construye objeto de filtros opcionales basado en parámetros
+ * 5. Llama a getDoctorEvents con parámetros validados
+ * 6. Serializa fechas DateTime a formato ISO para respuesta JSON
+ * 7. Retorna respuesta estructurada con eventos y metadatos
+ * 
+ * **Manejo de errores:**
+ * - Valida que startDate y endDate sean fechas válidas
+ * - Verifica que endDate sea posterior o igual a startDate
+ * - Maneja errores de getDoctorEvents con logging detallado
+ * - Retorna códigos de estado HTTP apropiados según el tipo de error
  * 
  * @example
- * // Obtener solo eventos básicos (sin propiedades extendidas) para el doctor 123
- * GET /api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=basic
+ * ```typescript
+ * // Petición típica para obtener eventos de un doctor
+ * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31');
+ * const result = await response.json();
+ * // result.events contiene los eventos encontrados
+ * // result.eventCount contiene el número total de eventos
+ * // result.dateRange contiene el rango de fechas consultado
+ * ```
  * 
- * @swagger
- * /api/doctors/{id}/calendar/events:
- *   get:
- *     summary: Obtener eventos del calendario de un doctor
- *     description: Permite obtener eventos (citas o descansos) de un doctor en un rango de fechas, con opciones de filtrado.
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID único del doctor.
- *       - in: query
- *         name: startDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: Fecha de inicio para la consulta (YYYY-MM-DD).
- *       - in: query
- *         name: endDate
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: Fecha de fin para la consulta (YYYY-MM-DD).
- *       - in: query
- *         name: eventType
- *         required: false
- *         schema:
- *           type: string
- *           enum: [appointment, break, basic]
- *         description: Tipo de evento a filtrar.
- *       - in: query
- *         name: appointmentStatus
- *         required: false
- *         schema:
- *           type: string
- *         description: Estado de la cita a filtrar (solo si eventType es 'appointment').
- *       - in: query
- *         name: breakTimeType
- *         required: false
- *         schema:
- *           type: string
- *           enum: [lunch, personal, meeting, other]
- *         description: Tipo de descanso a filtrar (solo si eventType es 'break').
- *     responses:
- *       200:
- *         description: Lista de eventos del calendario.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 oneOf:
- *                   - $ref: '#/components/schemas/AppointmentEventData'
- *                   - $ref: '#/components/schemas/BreakTimeEventData'
- *       400:
- *         description: Parámetros inválidos.
- *       404:
- *         description: Doctor no encontrado.
- *       500:
- *         description: Error interno del servidor.
+ * @throws {Error} Cuando los parámetros de fecha son inválidos o malformados
+ * @throws {Error} Cuando el doctorId no es un número válido
+ * @throws {Error} Cuando getDoctorEvents falla por problemas de conectividad o permisos
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   console.log(`🚀 [${requestId}] API: /api/doctors/[id]/calendar/events - Request received`);
