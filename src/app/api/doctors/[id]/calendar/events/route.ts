@@ -121,7 +121,7 @@ import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   console.log(`🚀 [${requestId}] API: /api/doctors/[id]/calendar/events - Request received`);

@@ -104,11 +104,11 @@ import { BreakTimeType } from '@/types/google-calendar';
  * });
  * ```
  */
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia
     // Esto previene manipulación del doctorId en el cuerpo de la petición
-    const reqParams = await params
+    const reqParams = await params;
     const doctorId = reqParams.id;
 
     // Extrae y parsea el cuerpo de la petición JSON
@@ -249,10 +249,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
  * );
  * ```
  */
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia
   // Esto previene manipulación del doctorId en los query parameters
-  const doctorId = params.id;
+  const resolvedParams = await params;
+  const doctorId = resolvedParams.id;
 
   // Extrae los query parameters de la URL de la petición
   // Next.js proporciona una URL completa que incluye el dominio y path
