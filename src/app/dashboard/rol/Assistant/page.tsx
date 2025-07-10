@@ -7,13 +7,13 @@ import { UpcomingAppointments } from "@/app/dashboard/com/AssistantDashboardAppo
 import { PendingInteractions } from "@rutas/app/dashboard/com/PendingInteractions"
 import { AIStats } from "@rutas/app/dashboard/com/AIStats"
 import { QuickActions } from "@rutas/app/dashboard/com/QuickActions"
-import { AutomatedMessagesTracker } from "./compo/AutomatedMessagesTracker";
-import { RealTimeAvailability } from "./compo/RealTimeAvailability";
-import { DirectContactTools } from "./compo/DirectContactTools";
-import { CommunicationTemplates } from "./compo/CommunicationTemplates";
-import { ScheduleChangeNotifications } from "./compo/ScheduleChangeNotifications";
-import { WaitingListManagement } from "./compo/WaitingListManagement";
-import { ConflictResolutionCenter } from "./compo/ConflictResolutionCenter";
+import { AutomatedMessagesTracker } from "./_compo/AutomatedMessagesTracker";
+import { RealTimeAvailability } from "./_compo/RealTimeAvailability";
+import { DirectContactTools } from "./_compo/DirectContactTools";
+import { CommunicationTemplates } from "./_compo/CommunicationTemplates";
+import { ScheduleChangeNotifications } from "./_compo/ScheduleChangeNotifications";
+import { WaitingListManagement } from "./_compo/WaitingListManagement";
+import { ConflictResolutionCenter } from "./_compo/ConflictResolutionCenter";
 
 export default function AssistantDashboard() {
 

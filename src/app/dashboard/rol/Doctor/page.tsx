@@ -11,7 +11,6 @@ import { NextAppointment } from "./_compo/NextAppointment";
 import { MedicalConsultationWorkspace } from "./_compo/MedicalConsultationWorkspace";
 import { MonthlyAppointmentsSummary } from "./_compo/MonthlyAppointmentsSummary";
 import { TodayIsDay } from "./_compo/TodayIsDay";
-import { CreateAppointmentModal } from "./_compo/CreateAppointmentModal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from 'lucide-react';
 
@@ -182,8 +181,6 @@ export default function DoctorDashboard() {
            <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col gap-4">
              <NextAppointment calendarEvents={isLoading ? [] : calendarEvents} />
             <MonthlyAppointmentsSummary pendingAppointments={isLoading ? 0 : pendingAppointmentsCount} />
-            <div className="hidden sm:block"><CreateAppointmentModal /></div>
-              <div className="block sm:hidden"><CreateAppointmentModal /></div>
           </div>
         </div>
 

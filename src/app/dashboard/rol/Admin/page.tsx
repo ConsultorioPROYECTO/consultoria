@@ -5,7 +5,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { FinancialMetrics } from "./_compo/FinancialMetrics";
 import { WorkloadOverview } from "./_compo/WorkloadOverview";
 import { AIPerformancePanel } from "./_compo/AIPerformancePanel";
-import { CreateAppointmentModal } from "../Doctor/_compo/CreateAppointmentModal";
+import { CreateAppointmentModal } from "./_compo/CreateAppointmentModal";
 
 
 export default function AdminDashboard() {
