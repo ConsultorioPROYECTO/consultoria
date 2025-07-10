@@ -443,6 +443,10 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         <div className="flex w-full">
           {/* Columna de horas */}
           <div className="w-20 flex-shrink-0 relative">
+            {/* Header vacío para alineación */}
+            <div className="h-12 border-b border-border"></div>
+            {/* Fila adicional vacía */}
+            <div className="h-16 border-b border-border"></div>
             <div className="relative" style={{ height: `${23 * 64}px` }}>
               {timeSlots.map((hour, index) => (
                 <div key={hour} className="absolute w-full" style={{ top: `${index * 64}px` }}>
@@ -463,7 +467,26 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           </div>
           
           {/* Área de eventos */}
-          <div className="flex-1 relative border-l border-border" style={{ height: `${23 * 64}px` }}>
+          <div className="flex-1 relative border-l border-border">
+            {/* Header del día */}
+            <div className={cn(
+              "h-12 border-b border-border flex flex-col items-center justify-center p-1",
+              isToday(currentDate) ? "bg-primary/10" : ""
+            )}>
+              <div className="text-xs text-muted-foreground uppercase">
+                {format(currentDate, "EEE", { locale: es })}
+              </div>
+              <div className={cn(
+                "text-sm font-medium",
+                isToday(currentDate) ? "bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center" : ""
+              )}>
+                {format(currentDate, "d")}
+              </div>
+            </div>
+            {/* Fila adicional vacía */}
+            <div className="h-16 border-b border-border"></div>
+            
+            <div className="relative" style={{ height: `${23 * 64}px` }}>
             {/* Líneas de tiempo de fondo */}
             {timeSlots.map((hour) => (
               <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 1) * 64}px` }}>
@@ -500,8 +523,9 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                     <div className="text-xs opacity-75">{event.type}</div>
                   )}
                 </div>
-              );
+              )
             })}
+            </div>
           </div>
         </div>
       </div>
