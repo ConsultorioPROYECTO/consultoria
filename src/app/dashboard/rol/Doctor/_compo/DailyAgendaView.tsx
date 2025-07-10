@@ -70,7 +70,7 @@ export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAg
         </div>
       </CardHeader>
       <CardContent className="flex-grow p-0 flex flex-col">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4 w-full flex flex-col px-4 sm:px-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4 w-full flex flex-col px-4 sm:px-6">
           <TabsList className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground w-full justify-center sm:w-auto sm:self-end sm:mr-4">
             <TabsTrigger value="pending">Pendientes ({pendingCount})</TabsTrigger>
             <TabsTrigger value="completed">Atendidas ({completedCount})</TabsTrigger>
