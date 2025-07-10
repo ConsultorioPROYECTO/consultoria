@@ -6,6 +6,7 @@ import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
 import { eq } from 'drizzle-orm';
 import { getDoctorAvailability } from './calendar-event-retriever';
+import { appointments } from '@/db/schema/appointments';
 
 
 /**
@@ -187,11 +188,124 @@ export async function createBreakTimeEvent(data: {
       google_event_id: response.data.id,
       google_calendar_id: calendarId,
     };
-  } catch (error) {
+    } catch (error) {
     console.error('Error creating break time event:', error);
     throw error;
   }
 }
+
+/**
+ * Updates an existing appointment event in Google Calendar and the local database.
+ * @param data - The data for updating the appointment.
+ * @returns The updated Google event data.
+ */
+export async function updateAppointmentEvent(data: {
+  eventId: string;
+  doctorId: number;
+  startDateTime?: DateTime;
+  endDateTime?: DateTime;
+  appointmentStatus?: AppointmentStatus;
+  summary?: string;
+  description?: string;
+}) {
+  try {
+    const doctor = await db.query.doctors.findFirst({
+      where: eq(doctors.idDoctor, data.doctorId),
+    });
+
+    if (!doctor || !doctor.calendar_id) {
+      throw new Error(`Doctor or calendar not found for ID ${data.doctorId}.`);
+    }
+
+    const { calendar_id: calendarId, calendar_timezone: doctorTimezone } = doctor;
+
+    // First, get the existing event to merge extended properties
+    const existingEvent = await googleCalendarService.calendar.events.get({
+      calendarId,
+      eventId: data.eventId,
+    });
+
+    if (!existingEvent.data) {
+      throw new Error(`Event with ID ${data.eventId} not found.`);
+    }
+
+    const privateProperties = existingEvent.data.extendedProperties?.private || {};
+
+    // Prepare the update payload
+    const eventBody: calendar_v3.Schema$Event = {
+      summary: data.summary,
+      description: data.description,
+      start: data.startDateTime
+        ? { dateTime: data.startDateTime.setZone(doctorTimezone).toISO(), timeZone: doctorTimezone }
+        : undefined,
+      end: data.endDateTime
+        ? { dateTime: data.endDateTime.setZone(doctorTimezone).toISO(), timeZone: doctorTimezone }
+        : undefined,
+      extendedProperties: {
+        private: {
+          ...privateProperties,
+          ...(data.appointmentStatus && { appointmentStatus: data.appointmentStatus }),
+        },
+      },
+    };
+
+    // Patch the event in Google Calendar
+    const response = await googleCalendarService.calendar.events.patch({
+      calendarId,
+      eventId: data.eventId,
+      requestBody: eventBody,
+    });
+
+    // If the calendar update is successful, update the local database
+    if (response.data && data.appointmentStatus) {
+      await db
+        .update(appointments)
+        .set({ status: data.appointmentStatus, updatedAt: new Date() })
+        .where(eq(appointments.google_event_id, data.eventId));
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Error updating appointment event:', error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes an appointment event from Google Calendar and the local database.
+ * @param data - The data for deleting the appointment.
+ */
+export async function deleteAppointmentEvent(data: {
+  eventId: string;
+  doctorId: number;
+}) {
+  try {
+    const doctor = await db.query.doctors.findFirst({
+      where: eq(doctors.idDoctor, data.doctorId),
+    });
+
+    if (!doctor || !doctor.calendar_id) {
+      throw new Error(`Doctor or calendar not found for ID ${data.doctorId}.`);
+    }
+
+    // Delete the event from Google Calendar
+    await googleCalendarService.calendar.events.delete({
+      calendarId: doctor.calendar_id,
+      eventId: data.eventId,
+    });
+
+    // If successful, delete the record from the local database
+    await db.delete(appointments).where(eq(appointments.google_event_id, data.eventId));
+
+  } catch (error) {
+    console.error('Error deleting appointment event:', error);
+    // If the event is already gone from the calendar, we might get a 410 error.
+    // We can choose to ignore it and proceed to delete from our DB, or just throw.
+    // For now, we throw.
+    throw error;
+  }
+}
+
 /**
  * Updates an existing break time event in Google Calendar.
  * @param data - The data for updating the break time event.

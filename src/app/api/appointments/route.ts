@@ -504,6 +504,52 @@ async function handlePostRequest(
  * @since 1.0.0
  * @version 1.2.0
  */
+import { getDoctorEvents } from '@/lib/calendar-event-retriever';
+
+async function handleGetRequest(
+  request: NextRequest,
+  decodedToken: DecodedIdToken
+): Promise<NextResponse> {
+  try {
+    const { searchParams } = new URL(request.url);
+    const doctorId = searchParams.get('doctorId');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const status = searchParams.get('status');
+
+    if (!doctorId || !startDate || !endDate) {
+      return createErrorResponse(
+        API_ERRORS.INVALID_REQUEST,
+        'Missing required query parameters: doctorId, startDate, endDate',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    const events = await getDoctorEvents({
+      doctorId: Number(doctorId),
+      startDate: DateTime.fromISO(startDate),
+      endDate: DateTime.fromISO(endDate),
+      filters: {
+        eventType: 'default',
+        ...(status && { appointmentStatus: status }),
+      },
+    });
+
+    return createSuccessResponse(events, 'Appointments retrieved successfully');
+
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    return handleDatabaseError(error, 'fetching appointments');
+  }
+}
+
+export const GET = withAuthentication(async (
+  request: NextRequest,
+  decodedToken: DecodedIdToken
+) => {
+  return handleGetRequest(request, decodedToken);
+});
+
 export const POST = withAuthentication(async (
   request: NextRequest,
   decodedToken: DecodedIdToken

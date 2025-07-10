@@ -18,7 +18,7 @@ import { organization } from './organization'; // Importar el esquema de organiz
  * @property {number} serviceId - Clave foránea a la tabla 'medical_services'.
  * @property {number} organizationId - Clave foránea a la tabla 'organization'.
  
- * @property {enum} status - Estado de la cita enum("Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada"). 
+ * @property {enum} status - Estado de la cita enum("pending", "accepted", "attended", "rejected", "canceled"). 
  * @property {string} google_event_id - ID del evento en Google Calendar.
  * @property {string} google_calendar_id - ID del calendario donde está el evento.
  * @property {enum} sync_status - Estado de sincronización con Google Calendar.
@@ -40,7 +40,7 @@ export const appointments = mysqlTable('appointments', {
   // --- Campos de sincronización con Google Calendar ---
   google_event_id: varchar('google_event_id', { length: 255 }).notNull(),
   google_calendar_id: varchar('google_calendar_id', { length: 255 }).notNull(),
-  status: mysqlEnum('status',["Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada"]).default("Pendiente").notNull(),
+  status: mysqlEnum('status',["pending", "accepted", "attended", "rejected", "canceled"]).default("pending").notNull(),
   sync_status: mysqlEnum('sync_status', ['pending', 'synced', 'failed', 'not_synced']).default('pending').notNull(),
   last_sync_attempt: timestamp('last_sync_attempt'),
   sync_error: text('sync_error'),
