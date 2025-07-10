@@ -99,7 +99,18 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     return () => clearInterval(interval);
   }, []);
 
-
+  // Obtener el rango de fechas según la vista
+  const getDateRange = React.useCallback(() => {
+    if (viewMode === "week") {
+      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      return { start, end, days: eachDayOfInterval({ start, end }) };
+    } else if (viewMode === "day") {
+      return { start: currentDate, end: currentDate, days: [currentDate] };
+    }
+    // Para vista mensual, mantener la lógica existente
+    return { start: currentDate, end: currentDate, days: [] };
+  }, [viewMode, currentDate]);
 
   // Cargar eventos del doctor
   React.useEffect(() => {
@@ -158,7 +169,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     };
 
     loadEvents();
-  }, [doctorId, user, currentDate, viewMode, consultorioId]);
+  }, [doctorId, user, currentDate, viewMode, consultorioId, getDateRange]);
 
   // Sincronizar sharedDisplayMonth cuando currentDate cambie
   React.useEffect(() => {
@@ -203,20 +214,6 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     setCurrentDate(new Date());
     setSelectedDate(new Date());
   };
-
-  // Obtener el rango de fechas según la vista
-  const getDateRange = React.useCallback(() => {
-    if (viewMode === "week") {
-      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
-      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
-      return { start, end, days: eachDayOfInterval({ start, end }) };
-    } else if (viewMode === "day") {
-      return { start: currentDate, end: currentDate, days: [currentDate] };
-    }
-    // Para vista mensual, mantener la lógica existente
-    return { start: currentDate, end: currentDate, days: [] };
-  }, [viewMode, currentDate]);
-
 
 
   // Obtener eventos para una fecha específica
