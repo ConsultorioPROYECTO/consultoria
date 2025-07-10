@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CreateAppointmentModal } from '../Doctor/compo/CreateAppointmentModal';
+import { CreateAppointmentModal } from '../Doctor/_compo/CreateAppointmentModal';
 import { CreateAppointmentResponse } from '@/app/api/appointments/route';
 
 /**

@@ -9,7 +9,7 @@ import { DialogFooter } from "@rutas/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
 import { useState, useRef } from 'react';
 import { useAICare } from '@/app/hooks/useAICare';
-import { PatientHistoryView } from "./PatientHistoryView";
+import { PatientHistoryView } from "./medical-consultation/PatientHistoryView";
 
 
 import { Appointment, } from '../../../../../db/schema';

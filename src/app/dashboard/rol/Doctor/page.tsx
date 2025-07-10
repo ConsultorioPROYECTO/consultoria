@@ -5,13 +5,13 @@ import { useState, useEffect } from "react";
 import { DateTime } from 'luxon';
 
 // Componentes específicos del Dashboard Médico
-import { DailyAgendaView } from "./compo/DailyAgendaView";
-import { TodaysAppointments } from "./compo/TodaysAppointments";
-import { NextAppointment } from "./compo/NextAppointment";
-import { MedicalConsultationWorkspace } from "./compo/MedicalConsultationWorkspace";
-import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
-import { TodayIsDay } from "./compo/TodayIsDay";
-import { ImportantNotifications } from "./compo/ImportantNotifications";
+import { DailyAgendaView } from "./_compo/DailyAgendaView";
+import { TodaysAppointments } from "./_compo/TodaysAppointments";
+import { NextAppointment } from "./_compo/NextAppointment";
+import { MedicalConsultationWorkspace } from "./_compo/MedicalConsultationWorkspace";
+import { MonthlyAppointmentsSummary } from "./_compo/MonthlyAppointmentsSummary";
+import { TodayIsDay } from "./_compo/TodayIsDay";
+import { ImportantNotifications } from "./_compo/ImportantNotifications";
 
 // Tipos de datos para eventos de calendario
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
