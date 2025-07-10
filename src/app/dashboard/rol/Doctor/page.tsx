@@ -12,70 +12,91 @@ import { MedicalConsultationWorkspace } from "./_compo/MedicalConsultationWorksp
 import { MonthlyAppointmentsSummary } from "./_compo/MonthlyAppointmentsSummary";
 import { TodayIsDay } from "./_compo/TodayIsDay";
 import { CreateAppointmentModal } from "./_compo/CreateAppointmentModal";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from 'lucide-react';
 
 // Tipos de datos para eventos de calendario
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
 
+// Tipo combinado para el estado
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
 
-// Importar tipos de la base de datos
-import { Appointment } from "@/db/schema";
-
-// Tipo específico para el workspace de consulta médica (debe coincidir con MedicalConsultationWorkspace.tsx)
-type ConsultationAppointment = Omit<Appointment, 'patientId' | 'serviceId'> & {
+// Tipo específico para el workspace de consulta médica (DEBE COINCIDIR CON EL ESPERADO POR EL WORKSPACE)
+type ConsultationAppointment = {
+  id: number;
+  google_event_id: string;
+  google_calendar_id: string;
+  doctorId: number;
+  organizationId: number;
   time: string;
-  patient: {
-    firstName: string;
-    lastName: string;
+  status: string;
+  patient: { 
+    // Corregido para coincidir con el workspace
+    firstName: string; 
+    lastName: string; 
   };
-  service: {
-    id: number;
-    name: string;
-    description?: string;
-  };
+  service: { id: number; name: string; description?: string; };
+  createdAt: Date;
+  updatedAt: Date;
+  // Campos requeridos por el workspace para sincronización
+  sync_status: 'synced' | 'not_synced' | 'error';
+  last_sync_attempt: Date | null;
+  sync_error: string | null;
 };
 
 export default function DoctorDashboard() {
   const { user, doctorId } = useAuth();
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isMedicalWorkspaceOpen, setIsMedicalWorkspaceOpen] = useState(false);
 
   const pendingAppointmentsCount = calendarEvents.filter(event => 'appointmentStatus' in event && event.appointmentStatus !== 'Completada').length;
 
-  // Función para manejar el inicio de consulta
   const handleStartConsultation = (appointment: AppointmentEventData) => {
-    if (!doctorId) return;
-    
-    // Convertir AppointmentEventData a ConsultationAppointment
-    const startDateTime = typeof appointment.startDateTime === 'string' 
-      ? appointment.startDateTime 
-      : appointment.startDateTime.toISO();
-    
+    if (!doctorId || !appointment.id || !appointment.patientId || !appointment.serviceId) {
+      console.error("Datos insuficientes en el evento para iniciar la consulta.", appointment);
+      setError("No se puede iniciar la consulta, faltan datos clave en el evento.");
+      return;
+    }
+
+    const summaryMatch = appointment.summary.match(/Cita con (.*) - (.*)/);
+    const patientFullName = summaryMatch ? summaryMatch[1].trim() : 'Paciente Desconocido';
+    const serviceName = summaryMatch ? summaryMatch[2].trim() : 'Servicio Desconocido';
+
+    // Dividir el nombre completo en nombre y apellido
+    const nameParts = patientFullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const startDateTime = typeof appointment.startDateTime === 'string'
+      ? DateTime.fromISO(appointment.startDateTime)
+      : appointment.startDateTime;
+
     const consultationAppointment: ConsultationAppointment = {
-      id: parseInt(appointment.id || '0'),
+      id: 0, 
+      google_event_id: appointment.id,
+      google_calendar_id: appointment.calendarId,
       doctorId: doctorId,
       organizationId: appointment.organizationId,
-      google_event_id: appointment.id || '',
-      google_calendar_id: '',
-      time: startDateTime?.split('T')[1]?.substring(0, 5) || '',
-      status: 'pending' as const,
-      sync_status: 'not_synced' as const,
-      last_sync_attempt: null,
-      sync_error: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      time: startDateTime.toFormat('HH:mm'),
+      status: appointment.appointmentStatus,
       patient: {
-        firstName: appointment.summary.split(' ')[0] || '',
-        lastName: appointment.summary.split(' ').slice(1).join(' ') || ''
+        // Corregido para usar firstName y lastName
+        firstName: firstName,
+        lastName: lastName,
       },
       service: {
         id: appointment.serviceId,
-        name: 'Consulta General',
-        description: appointment.description
-      }
+        name: serviceName,
+        description: appointment.description || '',
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sync_status: 'not_synced',
+      last_sync_attempt: null,
+      sync_error: null,
     };
     
     setSelectedConsultationAppointment(consultationAppointment);
@@ -135,6 +156,14 @@ export default function DoctorDashboard() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Hola, {displayTwoNames}</h1>
           <p className="text-muted-foreground">{timeBasedPhrase}</p>
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="col-span-1 sm:col-span-2 lg:col-span-2 flex flex-col gap-4">
