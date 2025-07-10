@@ -86,15 +86,13 @@ export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAg
                         // Render Appointment
                         <div className="flex flex-row items-center justify-between gap-3 md:gap-2">
                           <div className="flex-1 w-full md:w-auto md:mr-2">
-                            <div className="flex items-center mb-2">
-                              <ClockIcon className="h-4 w-4 mr-1 md:mr-2 text-primary" />
-                              <span className="font-medium text-primary text-sm">
-                                {formatEventTime(event)} ({getEventDuration(event)})
-                              </span>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <ClockIcon className="h-4 w-4" />
+                              <span>{formatEventTime(event)} ({getEventDuration(event)})</span>
                             </div>
-                            <div className="flex items-center mb-1">
-                              <UserIcon className="h-5 w-5 mr-2 flex-shrink-0 text-muted-foreground" />
-                              <p className="text-lg md:text-xl font-bold text-foreground">{event.summary}</p>
+                            <div className="flex items-center gap-3">
+                              <UserIcon className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
+                              <p className="font-medium text-foreground">{event.summary}</p>
                             </div>
                             <p className="text-sm text-muted-foreground md:ml-7 mb-1">{event.description}</p>
                             <div className="space-y-1">
@@ -113,14 +111,14 @@ export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAg
                       ) : (
                         // Render Break
                         <div className="flex flex-row items-center gap-3 md:gap-4">
-                            <Coffee className="h-5 w-5 mr-2 flex-shrink-0 text-muted-foreground" />
+                            <Coffee className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
                             <div className="flex-1">
                                 <div className="flex items-center mb-1">
                                     <span className="font-medium text-foreground">{event.summary}</span>
                                     <span className="text-muted-foreground ml-2 text-sm">({(event as BreakTimeEventData).breakTimeType})</span>
                                 </div>
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                    <ClockIcon className="h-4 w-4 mr-1" />
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <ClockIcon className="h-4 w-4" />
                                     <span>{formatEventTime(event)}</span>
                                 </div>
                             </div>
@@ -154,7 +152,7 @@ export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAg
                             <div className="flex flex-row items-center justify-between gap-3 md:gap-2">
                                 <div className="flex-1 w-full md:w-auto md:mr-2">
                                     <div className="mb-1 flex items-center">
-                                        <UserIcon className="h-4 w-4 mr-1 md:mr-2 text-muted-foreground" />
+                                        <UserIcon className="h-5 w-5 text-muted-foreground" />
                                         <p className="font-medium text-foreground text-base md:text-lg">{event.summary}</p>
                                     </div>
                                     <p className="text-xs md:text-sm text-muted-foreground md:ml-6 mb-1">{event.description}</p>
