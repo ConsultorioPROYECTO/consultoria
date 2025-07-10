@@ -192,3 +192,102 @@ export async function createBreakTimeEvent(data: {
     throw error;
   }
 }
+/**
+ * Updates an existing break time event in Google Calendar.
+ * @param data - The data for updating the break time event.
+ * @returns The updated Google event data.
+ */
+export async function updateBreakTimeEvent(data: {
+  doctorId: number;
+  eventId: string;
+  startDateTime?: DateTime;
+  endDateTime?: DateTime;
+  breakTimeType?: BreakTimeType;
+  summary?: string;
+}) {
+  try {
+    const doctor = await db.query.doctors.findFirst({
+      where: eq(doctors.idDoctor, data.doctorId),
+    });
+
+    if (!doctor) {
+      throw new Error(`Doctor with ID ${data.doctorId} not found.`);
+    }
+
+    const calendarId = doctor.calendar_id;
+    const doctorTimezone = doctor.calendar_timezone;
+
+    if (!calendarId) {
+      throw new Error(`Calendar ID not found for doctor with ID ${data.doctorId}.`);
+    }
+
+    const eventBody: calendar_v3.Schema$Event = {
+      summary: data.summary,
+      start: data.startDateTime
+        ? {
+            dateTime: data.startDateTime.setZone(doctorTimezone).toISO() || undefined,
+            timeZone: doctorTimezone,
+          }
+        : undefined,
+      end: data.endDateTime
+        ? {
+            dateTime: data.endDateTime.setZone(doctorTimezone).toISO() || undefined,
+            timeZone: doctorTimezone,
+          }
+        : undefined,
+      extendedProperties: {
+        private: {
+          isBreakTime: 'true',
+          breakTimeType: data.breakTimeType,
+        },
+      },
+    };
+
+    const response = await googleCalendarService.calendar.events.patch({
+      calendarId: calendarId,
+      eventId: data.eventId,
+      requestBody: eventBody,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error updating break time event:', error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a break time event from Google Calendar.
+ * @param data - The data for deleting the break time event.
+ * @returns An empty response if successful.
+ */
+export async function deleteBreakTimeEvent(data: {
+  doctorId: number;
+  eventId: string;
+}) {
+  try {
+    const doctor = await db.query.doctors.findFirst({
+      where: eq(doctors.idDoctor, data.doctorId),
+    });
+
+    if (!doctor) {
+      throw new Error(`Doctor with ID ${data.doctorId} not found.`);
+    }
+
+    const calendarId = doctor.calendar_id;
+
+    if (!calendarId) {
+      throw new Error(`Calendar ID not found for doctor with ID ${data.doctorId}.`);
+    }
+
+    await googleCalendarService.calendar.events.delete({
+      calendarId: calendarId,
+      eventId: data.eventId,
+    });
+
+    return {}; // Return an empty object to indicate success
+  } catch (error) {
+    console.error('Error deleting break time event:', error);
+    throw error;
+  }
+}
