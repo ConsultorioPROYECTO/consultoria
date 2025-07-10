@@ -108,7 +108,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   try {
     // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia
     // Esto previene manipulación del doctorId en el cuerpo de la petición
-    const doctorId = params.id;
+    const reqParams = await params
+    const doctorId = reqParams.id;
 
     // Extrae y parsea el cuerpo de la petición JSON
     // Esto puede fallar si el JSON es inválido, por lo que está dentro del try-catch

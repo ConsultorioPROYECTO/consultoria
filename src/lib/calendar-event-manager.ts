@@ -19,14 +19,8 @@ export enum AppointmentStatus {
   Canceled = 'canceled',
 }
 
-/**
- * Enum for out-of-office status.
- */
-export enum OutOfOfficeStatus {
-  Accepted = 'accepted',
-  Rejected = 'rejected',
-  Tentative = 'tentative',
-}
+// Removed OutOfOfficeStatus enum as we no longer use 'outOfOffice' event types
+// Break time events are now created as regular events with custom properties
 
 /**
  * Creates a new appointment event in Google Calendar.
@@ -128,7 +122,9 @@ export async function createAppointmentEvent(data: {
 }
 
 /**
- * Creates a new "out of office" event in Google Calendar to mark a doctor's break time.
+ * Creates a new break time event in Google Calendar to mark a doctor's unavailable time.
+ * Uses a regular event with custom properties instead of 'outOfOffice' type to avoid
+ * primary calendar restrictions.
  * @param data - The break time event data.
  * @returns The Google event ID and calendar ID.
  */
@@ -157,7 +153,8 @@ export async function createBreakTimeEvent(data: {
 
     const eventBody: calendar_v3.Schema$Event = {
       summary: data.summary || 'Break Time',
-      eventType: 'outOfOffice',
+      // Removed eventType: 'outOfOffice' as it can only be created on primary calendars
+      // Using a regular event with custom properties to identify break times
       start: {
         dateTime: data.startDateTime.setZone(doctorTimezone).toISO() || undefined,
         timeZone: doctorTimezone,
@@ -168,10 +165,13 @@ export async function createBreakTimeEvent(data: {
       },
       extendedProperties: {
         private: {
+          eventType: 'break', // Custom property to identify break time events
           isBreakTime: 'true',
           breakTimeType: data.breakTimeType,
         },
       },
+      // Mark the event as busy to block the time slot
+      transparency: 'opaque',
     };
 
     const response = await googleCalendarService.calendar.events.insert({
@@ -235,10 +235,14 @@ export async function updateBreakTimeEvent(data: {
             timeZone: doctorTimezone,
           }
         : undefined,
-      extendedProperties: {
+      extendedProperties: data.breakTimeType ? {
         private: {
           isBreakTime: 'true',
           breakTimeType: data.breakTimeType,
+        },
+      } : {
+        private: {
+          isBreakTime: 'true',
         },
       },
     };
