@@ -22,6 +22,7 @@ import { db } from '@/db';
 import { appointments, doctors, medicalServices, patients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { AppointmentStatus, createAppointmentEvent } from '@/lib/calendar-event-manager';
+import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
 import { handleDatabaseError } from '@/lib/api-helpers';
 import { DateTime } from 'luxon';
 import {
@@ -159,7 +160,7 @@ export interface CreateAppointmentRequest {
  *   appointmentId: 456,
  *   googleEventId: "abc123def456",
  *   googleCalendarId: "doctor_calendar_id",
- *   status: "Pendiente",
+ *   status: "pending",
  *   syncStatus: "synced"
  * };
  * ```
@@ -208,7 +209,7 @@ export type CreateAppointmentApiResponse = APIResponse<CreateAppointmentResponse
  *   "data": {
  *     "appointmentId": 123,
  *     "googleEventId": "abc123",
- *     "status": "Pendiente",
+ *     "status": "pending",
  *     "syncStatus": "synced"
  *   }
  * }
@@ -390,7 +391,7 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
           description: notes || `Servicio: ${medicalService.name}\nPaciente: ${patient.firstName} ${patient.lastName}`,
           location: isVirtual ? 'Online' : undefined,
           meetingLink: isVirtual ? meetingLink : undefined,
-          appointmentStatus: 'Pendiente' as AppointmentStatus,
+          appointmentStatus: AppointmentStatus.Pending,
         };
 
         const calendarEventResponse = await createAppointmentEvent(eventData);
@@ -412,8 +413,8 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       organizationId: defaultOrganizationId,
       google_event_id: googleEventId || '',
       google_calendar_id: googleCalendarId || '',
-      status: 'Pendiente',
-      sync_status: googleEventId ? 'synced' : 'pending',
+      status: APPOINTMENT_STATUS.PENDING,
+      sync_status: googleEventId ? SYNC_STATUS.SYNCED : SYNC_STATUS.PENDING,
       last_sync_attempt: googleEventId ? new Date() : null,
     })
 
@@ -432,8 +433,8 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       appointmentId: Number(insertedAppointmentId),
       googleEventId,
       googleCalendarId,
-      status: 'Pendiente',
-      syncStatus: googleEventId ? 'synced' : 'pending'
+      status: APPOINTMENT_STATUS.PENDING,
+      syncStatus: googleEventId ? SYNC_STATUS.SYNCED : SYNC_STATUS.PENDING
     };
 
     return createSuccessResponse(

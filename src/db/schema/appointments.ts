@@ -6,6 +6,7 @@ import { doctors } from './doctors'; // Importar el esquema de doctors
 import { patients } from './patients'; // Importar el esquema de patients
 import { medicalServices } from './medical_services'; // Importar el esquema de medical_services
 import { organization } from './organization'; // Importar el esquema de organization
+import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
 
 /**
  * @typedef AppointmentTableSchema
@@ -18,10 +19,10 @@ import { organization } from './organization'; // Importar el esquema de organiz
  * @property {number} serviceId - Clave foránea a la tabla 'medical_services'.
  * @property {number} organizationId - Clave foránea a la tabla 'organization'.
  
- * @property {enum} status - Estado de la cita enum("pending", "accepted", "attended", "rejected", "canceled"). 
+ * @property {enum} status - Estado de la cita: 'pending' | 'accepted' | 'attended' | 'rejected' | 'canceled'
  * @property {string} google_event_id - ID del evento en Google Calendar.
  * @property {string} google_calendar_id - ID del calendario donde está el evento.
- * @property {enum} sync_status - Estado de sincronización con Google Calendar.
+ * @property {enum} sync_status - Estado de sincronización: 'pending' | 'synced' | 'failed' | 'not_synced'
  * @property {Date} last_sync_attempt - Último intento de sincronización.
  * @property {text} sync_error - Detalles del error si falla la sincronización.
  
@@ -40,8 +41,8 @@ export const appointments = mysqlTable('appointments', {
   // --- Campos de sincronización con Google Calendar ---
   google_event_id: varchar('google_event_id', { length: 255 }).notNull(),
   google_calendar_id: varchar('google_calendar_id', { length: 255 }).notNull(),
-  status: mysqlEnum('status',["pending", "accepted", "attended", "rejected", "canceled"]).default("pending").notNull(),
-  sync_status: mysqlEnum('sync_status', ['pending', 'synced', 'failed', 'not_synced']).default('pending').notNull(),
+  status: mysqlEnum('status', Object.values(APPOINTMENT_STATUS) as [string, ...string[]]).default(APPOINTMENT_STATUS.PENDING).notNull(),
+  sync_status: mysqlEnum('sync_status', Object.values(SYNC_STATUS) as [string, ...string[]]).default(SYNC_STATUS.PENDING).notNull(),
   last_sync_attempt: timestamp('last_sync_attempt'),
   sync_error: text('sync_error'),
 

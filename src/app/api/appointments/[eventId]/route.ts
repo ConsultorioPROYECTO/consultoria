@@ -13,8 +13,8 @@ import {
 
 async function handlePatchRequest(
   request: NextRequest,
-  { params }: { params: { eventId: string } },
-  decodedToken: DecodedIdToken
+  decodedToken: DecodedIdToken,
+  { params }: { params: { eventId: string } }
 ): Promise<NextResponse> {
   try {
     const { eventId } = params;
@@ -44,8 +44,8 @@ async function handlePatchRequest(
 
 async function handleDeleteRequest(
   request: NextRequest,
-  { params }: { params: { eventId: string } },
-  decodedToken: DecodedIdToken
+  decodedToken: DecodedIdToken,
+  { params }: { params: { eventId: string } }
 ): Promise<NextResponse> {
   try {
     const { eventId } = params;
@@ -60,7 +60,7 @@ async function handleDeleteRequest(
       doctorId: Number(doctorId),
     });
 
-    return createSuccessResponse(null, 'Appointment deleted successfully', HTTP_STATUS.NO_CONTENT);
+    return createSuccessResponse(null, 'Appointment deleted successfully', HTTP_STATUS.OK);
   } catch (error) {
     console.error(`Error deleting appointment ${params.eventId}:`, error);
     return handleDatabaseError(error, 'delete appointment');
@@ -69,16 +69,16 @@ async function handleDeleteRequest(
 
 export const PATCH = withAuthentication(async (
   request: NextRequest,
-  context: { params: { eventId: string } },
-  decodedToken: DecodedIdToken
+  decodedToken: DecodedIdToken,
+  context: { params: { eventId: string } }
 ) => {
-  return handlePatchRequest(request, context, decodedToken);
+  return handlePatchRequest(request, decodedToken, context);
 });
 
 export const DELETE = withAuthentication(async (
   request: NextRequest,
-  context: { params: { eventId: string } },
-  decodedToken: DecodedIdToken
+  decodedToken: DecodedIdToken,
+  context: { params: { eventId: string } }
 ) => {
-  return handleDeleteRequest(request, context, decodedToken);
+  return handleDeleteRequest(request, decodedToken, context);
 });

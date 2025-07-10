@@ -24,6 +24,7 @@ import { db } from '@/db';
 import { appointments, doctors, medicalServices, patients, users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createAppointmentEvent, AppointmentStatus } from '@/lib/calendar-event-manager';
+import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
 import { handleDatabaseError } from '@/lib/api-helpers';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { DateTime } from 'luxon';
@@ -99,7 +100,7 @@ export interface CreateAppointmentRequest {
  *   appointmentId: 456,
  *   googleEventId: "abc123def456",
  *   googleCalendarId: "doctor_calendar_id",
- *   status: "Pendiente",
+ *   status: "pending",
  *   syncStatus: "synced"
  * };
  * ```
@@ -150,7 +151,7 @@ export type CreateAppointmentApiResponse = APIResponse<CreateAppointmentResponse
  *   "data": {
  *     "appointmentId": 123,
  *     "googleEventId": "abc123",
- *     "status": "Pendiente",
+ *     "status": "pending",
  *     "syncStatus": "synced"
  *   }
  * }
@@ -392,8 +393,8 @@ async function handlePostRequest(
       organizationId: userOrganizationId,
       google_event_id: googleEventId || '',
       google_calendar_id: googleCalendarId || '',
-      status: 'Pendiente',
-      sync_status: googleEventId ? 'synced' : 'pending',
+      status: APPOINTMENT_STATUS.PENDING,
+      sync_status: googleEventId ? SYNC_STATUS.SYNCED : SYNC_STATUS.PENDING,
       last_sync_attempt: googleEventId ? new Date() : null,
     });
 
@@ -412,8 +413,8 @@ async function handlePostRequest(
       appointmentId: Number(insertedAppointmentId),
       googleEventId,
       googleCalendarId,
-      status: 'Pendiente',
-      syncStatus: googleEventId ? 'synced' : 'pending'
+      status: APPOINTMENT_STATUS.PENDING,
+      syncStatus: googleEventId ? SYNC_STATUS.SYNCED : SYNC_STATUS.PENDING
     };
 
     return createSuccessResponse(
@@ -508,7 +509,8 @@ import { getDoctorEvents } from '@/lib/calendar-event-retriever';
 
 async function handleGetRequest(
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _decodedToken: DecodedIdToken
 ): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
@@ -525,15 +527,15 @@ async function handleGetRequest(
       );
     }
 
-    const events = await getDoctorEvents({
-      doctorId: Number(doctorId),
-      startDate: DateTime.fromISO(startDate),
-      endDate: DateTime.fromISO(endDate),
-      filters: {
+    const events = await getDoctorEvents(
+      Number(doctorId),
+      DateTime.fromISO(startDate),
+      DateTime.fromISO(endDate),
+      {
         eventType: 'default',
         ...(status && { appointmentStatus: status }),
-      },
-    });
+      }
+    );
 
     return createSuccessResponse(events, 'Appointments retrieved successfully');
 
