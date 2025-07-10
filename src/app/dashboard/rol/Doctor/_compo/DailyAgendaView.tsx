@@ -1,11 +1,11 @@
 // src/app/dashboard/rol/Doctor/compo/DailyAgendaView.tsx
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { ClockIcon, UserIcon, Play, MapPinIcon, VideoIcon, Coffee } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
 import { DateTime } from 'luxon';
@@ -23,8 +23,14 @@ interface DailyAgendaViewProps {
 }
 
 export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAgendaViewProps) {
-  const currentDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const [activeTab, setActiveTab] = useState("pending");
+
+  // Memoizar contadores para evitar recálculos
+  const { pendingCount, completedCount } = useMemo(() => {
+    const pending = calendarEvents.filter(e => !isAppointmentEvent(e) || e.appointmentStatus !== 'Completada').length;
+    const completed = calendarEvents.filter(e => isAppointmentEvent(e) && e.appointmentStatus === 'Completada').length;
+    return { pendingCount: pending, completedCount: completed };
+  }, [calendarEvents]);
 
   const formatEventTime = (event: CalendarEvent): string => {
     const startTime = DateTime.fromISO(event.startDateTime as unknown as string);
@@ -39,38 +45,40 @@ export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAg
     return `${duration}min`;
   };
 
-  const handleStartConsultationClick = (e: React.MouseEvent, appointment: AppointmentEventData) => {
+  const handleStartConsultationClick = useCallback((e: React.MouseEvent, appointment: AppointmentEventData) => {
     e.stopPropagation();
     onStartConsultation?.(appointment);
-  };
+  }, [onStartConsultation]);
 
-  const filteredEvents = calendarEvents.filter(event => {
-    if (activeTab === "pending") {
-      return !isAppointmentEvent(event) || (isAppointmentEvent(event) && event.appointmentStatus !== "Completada");
-    } else if (activeTab === "completed") {
-      return isAppointmentEvent(event) && event.appointmentStatus === "Completada";
-    }
-    return false;
-  });
+  // Memoizar eventos filtrados para evitar recálculos
+  const filteredEvents = useMemo(() => {
+    return calendarEvents.filter(event => {
+      if (activeTab === "pending") {
+        return !isAppointmentEvent(event) || (isAppointmentEvent(event) && event.appointmentStatus !== "Completada");
+      } else if (activeTab === "completed") {
+        return isAppointmentEvent(event) && event.appointmentStatus === "Completada";
+      }
+      return false;
+    });
+  }, [calendarEvents, activeTab]);
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader>
+      <CardHeader className="px-4 sm:px-6">
         <div className="flex justify-between items-center">
-          <CardTitle>Agenda del Día</CardTitle>
+          <CardTitle className="text-2xl font-bold">Agenda del Día</CardTitle>
         </div>
-        <CardDescription>{currentDate}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow p-0 flex flex-col">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col px-4 sm:px-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4 w-full flex flex-col px-4 sm:px-0">
           <TabsList className="inline-flex h-9 items-center rounded-lg bg-muted p-1 text-muted-foreground w-full justify-center sm:w-auto sm:self-end sm:mr-4">
-            <TabsTrigger value="pending">Pendientes ({calendarEvents.filter(e => !isAppointmentEvent(e) || e.appointmentStatus !== 'Completada').length})</TabsTrigger>
-            <TabsTrigger value="completed">Atendidas ({calendarEvents.filter(e => isAppointmentEvent(e) && e.appointmentStatus === 'Completada').length})</TabsTrigger>
+            <TabsTrigger value="pending">Pendientes ({pendingCount})</TabsTrigger>
+            <TabsTrigger value="completed">Atendidas ({completedCount})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="m-0 flex-grow">
             <ScrollArea className="h-[430px]">
-              <div className="p-2 md:p-4 space-y-2 md:space-y-4">
+              <div className="space-y-2 md:space-y-4">
                 {filteredEvents.length > 0 ? (
                   filteredEvents.map((event) => (
                     <div key={event.id} className="p-2 md:p-3 border rounded-lg hover:shadow-md transition-shadow bg-card">
