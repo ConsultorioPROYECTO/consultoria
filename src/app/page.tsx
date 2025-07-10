@@ -23,6 +23,7 @@ import { geistFont } from './fonts'; // Usando la fuente de Vercel para consiste
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
+import Image from 'next/image';
 
 // Datos para la sección de beneficios
 const benefits = [
@@ -214,7 +215,13 @@ export default function HomePage() {
         >
           {/* Contenido del Mockup - Placeholder */}
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-semibold">
-            [Espacio para Mockup de la Aplicación]
+            <Image
+              src={"/MedDashboardDark.webp"}
+              alt="Mockup de la aplicación"
+              width={1000}
+              height={1000}
+              className="w-full h-full object-cover"
+            />
           </div>
         </motion.div>
 
@@ -228,7 +235,13 @@ export default function HomePage() {
         >
           {/* Contenido del Mockup - Placeholder */}
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-semibold">
-            [Mockup Móvil 3D]
+            <Image
+              src={"/MedDashboardDark.webp"}
+              alt="Mockup de la aplicación"
+              width={1000}
+              height={1000}
+              className="w-full h-full object-cover"
+            />
           </div>
           {/* Degradado inferior para fusionarse con el fondo */}
           <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-background to-transparent"></div>
@@ -293,13 +306,13 @@ export default function HomePage() {
             },
             {
               icon: FileText,
-              title: "Historial Clínico y AI-Care",
-              description: "Accede al historial médico completo de tus pacientes, registra notas de consulta detalladas (incluyendo voz a texto con AI-Care) y adjunta documentos de forma segura.",
+              title: "Historial Clínico",
+              description: "Accede al historial médico completo de tus pacientes, registra notas de consulta detalladas y adjunta documentos de forma segura.",
             },
             {
               icon: MessageSquare,
-              title: "Comunicación Unificada",
-              description: "Comunícate directamente con pacientes y personal vía chat, gestiona mensajes automatizados, utiliza plantillas personalizables y centraliza las solicitudes que requieren intervención humana.",
+              title: "AI-Care",
+              description: "Utiliza inteligencia artificial para convertir voz a texto en consultas, obtén sugerencias inteligentes de diagnóstico y automatiza la documentación clínica.",
             },
             {
               icon: BarChart2,
