@@ -42,6 +42,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
   const showErrorToast = (message: string) => toast.error(message);
   const [roleOpen, setRoleOpen] = useState(false);
   const [serviceOpen, setServiceOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [newStaff, setNewStaff] = useState({
     role: '' as 'Médico' | 'Asistente' | '',
     serviceId: undefined as number | undefined,
@@ -125,79 +126,177 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
         <UserPlus className="h-5 w-5 mr-2 text-primary" />
         <h3 className="text-lg font-semibold">Agregar Nuevo Personal</h3>
       </div>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="staffEmail">Email y Rol</Label>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Input 
-              id="staffEmail" 
-              type="email"
-              placeholder="email@clinica.com" 
-              value={newStaff.email}
-              onChange={(e) => {
-                setNewStaff({...newStaff, email: e.target.value});
-              }}
-              className={'w-full sm:flex-1 min-w-0'}
-            />
-            <Popover open={roleOpen} onOpenChange={setRoleOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={roleOpen}
-                  className="w-full sm:w-[140px] justify-between"
-                >
-                  {newStaff.role || "Rol..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[140px] p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar rol..." />
-                  <CommandList>
-                    <CommandEmpty>No se encontró rol.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="Médico"
-                        onSelect={() => {
-                          setNewStaff({...newStaff, role: 'Médico'})
-                          setRoleOpen(false)
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            newStaff.role === 'Médico' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Médico
-                      </CommandItem>
-                      <CommandItem
-                        value="Asistente"
-                        onSelect={() => {
-                          setNewStaff({...newStaff, role: 'Asistente'})
-                          setRoleOpen(false)
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            newStaff.role === 'Asistente' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        Asistente
-                      </CommandItem>
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+      <div className="grid gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor="staffEmail">Email</Label>
+          <Input 
+            id="staffEmail" 
+            type="email"
+            placeholder="email@clinica.com" 
+            value={newStaff.email}
+            onChange={(e) => {
+              setNewStaff({...newStaff, email: e.target.value});
+            }}
+            className="w-full"
+          />
+        </div>
+        
+        <div className="grid gap-2">
+          <Label htmlFor="staffRole">Rol</Label>
+          <Popover open={roleOpen} onOpenChange={setRoleOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={roleOpen}
+                className="w-full justify-between"
+              >
+                {newStaff.role || "Seleccionar rol..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0">
+              <Command>
+                <CommandInput placeholder="Buscar rol..." />
+                <CommandList>
+                  <CommandEmpty>No se encontró rol.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="Médico"
+                      onSelect={() => {
+                        setNewStaff({...newStaff, role: 'Médico'})
+                        setRoleOpen(false)
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          newStaff.role === 'Médico' ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      Médico
+                    </CommandItem>
+                    <CommandItem
+                      value="Asistente"
+                      onSelect={() => {
+                        setNewStaff({...newStaff, role: 'Asistente'})
+                        setRoleOpen(false)
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          newStaff.role === 'Asistente' ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      Asistente
+                    </CommandItem>
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
        
        {newStaff.role === 'Médico' && (
-         <div className="space-y-2">
-           <Label htmlFor="staffService">Servicio Médico</Label>
+         <div className="grid gap-4">
+           <div className="grid gap-2">
+             <Label htmlFor="staffService">Servicio Médico</Label>
+             <Popover open={serviceOpen} onOpenChange={setServiceOpen}>
+               <PopoverTrigger asChild>
+                 <Button
+                   variant="outline"
+                   role="combobox"
+                   aria-expanded={serviceOpen}
+                   className="w-full justify-between"
+                 >
+                   {newStaff.serviceName || "Seleccionar servicio..."}
+                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                 </Button>
+               </PopoverTrigger>
+               <PopoverContent className="w-full p-0">
+                 <Command>
+                   <CommandInput placeholder="Buscar servicio..." />
+                   <CommandList>
+                     <CommandEmpty>No se encontró servicio.</CommandEmpty>
+                     <CommandGroup>
+                       {services.map((service: { id: number; name: string }) => (
+                         <CommandItem
+                           key={service.id}
+                           value={service.name}
+                           onSelect={() => {
+                             setNewStaff({
+                               ...newStaff, 
+                               serviceId: service.id,
+                               serviceName: service.name
+                             });
+                             setServiceOpen(false);
+                           }}
+                         >
+                           <Check
+                             className={cn(
+                               "mr-2 h-4 w-4",
+                               newStaff.serviceId === service.id ? "opacity-100" : "opacity-0"
+                             )}
+                           />
+                           {service.name}
+                         </CommandItem>
+                       ))}
+                     </CommandGroup>
+                   </CommandList>
+                 </Command>
+               </PopoverContent>
+             </Popover>
+           </div>
+           
+           <div className="grid gap-2">
+             <Label htmlFor="staffAssistant">Asignar Asistente</Label>
+             <Popover open={assistantOpen} onOpenChange={setAssistantOpen}>
+               <PopoverTrigger asChild>
+                 <Button
+                   variant="outline"
+                   role="combobox"
+                   aria-expanded={assistantOpen}
+                   className="w-full justify-between"
+                 >
+                   {"Seleccionar asistente..."}
+                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                 </Button>
+               </PopoverTrigger>
+               <PopoverContent className="w-full p-0">
+                 <Command>
+                   <CommandInput placeholder="Buscar asistente..." />
+                   <CommandList>
+                     <CommandEmpty>No se encontró asistente.</CommandEmpty>
+                     <CommandGroup>
+                       {/* Aquí irán las asistentes disponibles cuando se implemente la lógica */}
+                       <CommandItem
+                         value="placeholder"
+                         onSelect={() => {
+                           // Lógica temporal para cerrar el popover
+                           setAssistantOpen(false);
+                         }}
+                       >
+                         <Check
+                           className={cn(
+                             "mr-2 h-4 w-4",
+                             "opacity-0"
+                           )}
+                         />
+                         Asistentes disponibles...
+                       </CommandItem>
+                     </CommandGroup>
+                   </CommandList>
+                 </Command>
+               </PopoverContent>
+             </Popover>
+           </div>
+         </div>
+       )}
+       
+       {newStaff.role === 'Asistente' && (
+         <div className="grid gap-2">
+           <Label htmlFor="staffDoctor">Asignar Doctor(es)</Label>
            <Popover open={serviceOpen} onOpenChange={setServiceOpen}>
              <PopoverTrigger asChild>
                <Button
@@ -206,38 +305,32 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
                  aria-expanded={serviceOpen}
                  className="w-full justify-between"
                >
-                 {newStaff.serviceName || "Seleccionar servicio..."}
+                 {"Seleccionar doctor(es)..."}
                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                </Button>
              </PopoverTrigger>
              <PopoverContent className="w-full p-0">
                <Command>
-                 <CommandInput placeholder="Buscar servicio..." />
+                 <CommandInput placeholder="Buscar doctor..." />
                  <CommandList>
-                   <CommandEmpty>No se encontró servicio.</CommandEmpty>
+                   <CommandEmpty>No se encontró doctor.</CommandEmpty>
                    <CommandGroup>
-                     {services.map((service: { id: number; name: string }) => (
-                       <CommandItem
-                         key={service.id}
-                         value={service.name}
-                         onSelect={() => {
-                           setNewStaff({
-                             ...newStaff, 
-                             serviceId: service.id,
-                             serviceName: service.name
-                           });
-                           setServiceOpen(false);
-                         }}
-                       >
-                         <Check
-                           className={cn(
-                             "mr-2 h-4 w-4",
-                             newStaff.serviceId === service.id ? "opacity-100" : "opacity-0"
-                           )}
-                         />
-                         {service.name}
-                       </CommandItem>
-                     ))}
+                     {/* Aquí irán los doctores disponibles cuando se implemente la lógica */}
+                     <CommandItem
+                       value="placeholder"
+                       onSelect={() => {
+                         // Lógica temporal para cerrar el popover
+                         setServiceOpen(false);
+                       }}
+                     >
+                       <Check
+                         className={cn(
+                           "mr-2 h-4 w-4",
+                           "opacity-0"
+                         )}
+                       />
+                       Doctores disponibles...
+                     </CommandItem>
                    </CommandGroup>
                  </CommandList>
                </Command>
@@ -246,23 +339,26 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
          </div>
        )}
        
-       <div className="flex justify-end">
-         <Button 
-           onClick={handleAddStaff} 
-           disabled={
-             isLoading ||
-             !newStaff.role || 
-             !newStaff.email || 
-             !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newStaff.email) ||
-             (newStaff.role === 'Médico' && !newStaff.serviceId)
-           }
-           className="px-8"
-         >
-           <UserPlus className="h-4 w-4 mr-2" />
-           {isLoading ? 'Enviando Invitación...' : 'Enviar Invitación'}
-         </Button>
+       <div className="grid">
+         <div className="justify-self-end">
+           <Button 
+             onClick={handleAddStaff} 
+             disabled={
+               isLoading ||
+               !newStaff.role || 
+               !newStaff.email || 
+               !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newStaff.email) ||
+               (newStaff.role === 'Médico' && !newStaff.serviceId)
+               // Nota: Para 'Asistente' no validamos doctores por ahora (solo visual)
+             }
+             className="px-8"
+           >
+             <UserPlus className="h-4 w-4 mr-2" />
+             {isLoading ? 'Enviando Invitación...' : 'Enviar Invitación'}
+           </Button>
+         </div>
        </div>
-     </div>
+      </div>
     </div>
   );
 }
