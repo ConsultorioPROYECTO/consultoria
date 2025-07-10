@@ -6,7 +6,7 @@ import { BusinessAnalytics } from "./compo/BusinessAnalytics";
 import { FinancialMetrics } from "./compo/FinancialMetrics";
 import { WorkloadOverview } from "./compo/WorkloadOverview";
 import { AIPerformancePanel } from "./compo/AIPerformancePanel";
-import { ImportantNotifications } from "./ImportantNotifications";
+import { CreateAppointmentModal } from "../Doctor/_compo/CreateAppointmentModal";
 
 
 export default function AdminDashboard() {
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
             
             <div className="grid gap-6 lg:grid-cols-2">
               <WorkloadOverview />
-              <ImportantNotifications />
+              <CreateAppointmentModal />
             </div>
             
             {/* Podrías agregar más secciones aquí según sea necesario */}
