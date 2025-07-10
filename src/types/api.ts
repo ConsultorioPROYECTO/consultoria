@@ -130,6 +130,53 @@ export interface DoctorWithAppointments extends Doctor {
  */
 export type DoctorsWithAppointmentsResponse = DoctorWithAppointments[];
 
+// === Doctor-Assistant Assignment API Types ===
+/**
+ * Request para crear una asignación de doctor a asistente.
+ */
+export interface CreateDoctorAssistantAssignmentRequest {
+  doctorId: number;
+  assistantId: number;
+}
+
+/**
+ * Request para obtener asignaciones con filtros opcionales.
+ */
+export interface GetDoctorAssistantAssignmentsRequest {
+  doctorId?: number;
+  assistantId?: number;
+}
+
+/**
+ * Respuesta de asignación de doctor a asistente.
+ */
+export interface DoctorAssistantAssignmentResponse {
+  doctorId: number;
+  assistantId: number;
+  doctor: {
+    idDoctor: number;
+    speciality: string;
+    user: {
+      id: number;
+      displayName: string | null;
+      email: string | null;
+    };
+  };
+  assistant: {
+    idAssistant: number;
+    user: {
+      id: number;
+      displayName: string | null;
+      email: string | null;
+    };
+  };
+}
+
+/**
+ * Respuesta para múltiples asignaciones.
+ */
+export type DoctorAssistantAssignmentsResponse = DoctorAssistantAssignmentResponse[];
+
 // === Common Error Messages ===
 /**
  * Mensajes de error comunes de la API.
@@ -142,6 +189,10 @@ export const API_ERRORS = {
   INTERNAL_ERROR: 'Error interno del servidor',
   ASSISTANT_ONLY: 'Acceso denegado: Debes ser asistente',
   ADMIN_ONLY: 'Acceso denegado: Debes ser administrador',
+  DOCTOR_NOT_FOUND: 'Doctor no encontrado',
+  ASSISTANT_NOT_FOUND: 'Asistente no encontrado',
+  ASSIGNMENT_ALREADY_EXISTS: 'La asignación ya existe',
+  ASSIGNMENT_NOT_FOUND: 'Asignación no encontrada',
 } as const;
 
 /**

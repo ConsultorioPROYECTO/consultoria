@@ -81,6 +81,17 @@ export const updateUserRoleSchema = z.object({
   }),
 });
 
+// === Doctor-Assistant Assignment Schemas ===
+export const createDoctorAssistantAssignmentSchema = z.object({
+  doctorId: z.number().int().positive('Doctor ID debe ser un número entero positivo'),
+  assistantId: z.number().int().positive('Assistant ID debe ser un número entero positivo'),
+});
+
+export const getDoctorAssistantAssignmentsSchema = z.object({
+  doctorId: z.number().int().positive().optional(),
+  assistantId: z.number().int().positive().optional(),
+}).optional();
+
 // === Doctor Calendar Management Helpers ===
 
 /**
