@@ -2,10 +2,9 @@
 import { useAuth } from "../../../context/AuthContext";
 
 // Componentes específicos del Dashboard Master
-import { BusinessAnalytics } from "./compo/BusinessAnalytics";
-import { FinancialMetrics } from "./compo/FinancialMetrics";
-import { WorkloadOverview } from "./compo/WorkloadOverview";
-import { AIPerformancePanel } from "./compo/AIPerformancePanel";
+import { FinancialMetrics } from "./_compo/FinancialMetrics";
+import { WorkloadOverview } from "./_compo/WorkloadOverview";
+import { AIPerformancePanel } from "./_compo/AIPerformancePanel";
 import { CreateAppointmentModal } from "../Doctor/_compo/CreateAppointmentModal";
 
 
@@ -30,8 +29,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Sección de KPIs principales y análisis de negocio */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <BusinessAnalytics />
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
               <FinancialMetrics />
               <AIPerformancePanel />
             </div>

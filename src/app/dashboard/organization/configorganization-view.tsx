@@ -1,8 +1,8 @@
 'use client';
 
-import { StaffManagement } from "../rol/Admin/compo/StaffManagement";
-import { ServiceSpecialtyConfig } from "../rol/Admin/compo/ServiceSpecialtyConfig";
-import { AddStaffForm } from "../rol/Admin/compo/AddStaffForm";
+import { StaffManagement } from "../rol/Admin/_compo/StaffManagement";
+import { ServiceSpecialtyConfig } from "../rol/Admin/_compo/ServiceSpecialtyConfig";
+import { AddStaffForm } from "../rol/Admin/_compo/AddStaffForm";
 
 export default function OrganizationConfigView() {
   return (
