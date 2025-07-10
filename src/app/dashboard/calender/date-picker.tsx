@@ -43,14 +43,14 @@ export function DatePicker({
           variant="outline"
           size="sm"
           className={cn(
-            "justify-start text-left font-normal text-sm text-muted-foreground",
+            "justify-start text-left font-normal text-sm capitalize",
             !selectedDate && "text-muted-foreground",
             className
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {selectedDate ? (
-            format(selectedDate, "d 'de' MMM", { locale: es })
+            format(selectedDate, "d MMM", { locale: es })
           ) : (
             "Seleccionar fecha"
           )}
@@ -66,7 +66,7 @@ export function DatePicker({
           initialFocus
           locale={es}
           weekStartsOn={0}
-          className="rounded-md border-0"
+          className="rounded-md border-0 capitalize"
         />
       </PopoverContent>
     </Popover>

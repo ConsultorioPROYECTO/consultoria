@@ -85,7 +85,7 @@ export function DateRangePicker({
   const getDisplayText = () => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-    return `${format(weekStart, "d MMM", { locale: es })} - ${format(weekEnd, "d MMM, yyyy", { locale: es })}`;
+    return `${format(weekStart, "d MMM", { locale: es })} - ${format(weekEnd, "d MMM", { locale: es })}`;
   };
 
 
@@ -96,7 +96,7 @@ export function DateRangePicker({
         <Button
           variant="outline"
           className={cn(
-            "w-auto justify-start text-left font-normal",
+            "w-auto justify-start text-left font-normal capitalize",
             !currentDate && "text-muted-foreground"
           )}
         >
@@ -132,12 +132,12 @@ export function DateRangePicker({
                         }
                       }}
                     >
-                      <SelectTrigger className="w-[120px] h-8">
+                      <SelectTrigger className="w-[120px] h-8 capitalize">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: 12 }, (_, i) => (
-                          <SelectItem key={i} value={i.toString()}>
+                          <SelectItem key={i} value={i.toString()} className="capitalize">
                             {format(new Date(2024, i, 1), "MMMM", { locale: es })}
                           </SelectItem>
                         ))}
@@ -193,7 +193,7 @@ export function DateRangePicker({
                 </div>
               )
             }}
-            className="rounded-lg border-0"
+            className="rounded-lg border-0 capitalize"
           />
         </div>
       </PopoverContent>
