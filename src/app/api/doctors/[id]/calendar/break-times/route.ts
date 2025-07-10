@@ -6,9 +6,10 @@
  * automáticamente con Google Calendar para mantener la disponibilidad actualizada en tiempo real.
  * 
  * **Arquitectura del módulo:**
- * - Utiliza Next.js App Router para definir rutas API
+ * - Utiliza Next.js App Router con parámetros de ruta dinámicos [id]
  * - Integra con Google Calendar API a través de managers centralizados
  * - Implementa validación robusta de parámetros de entrada
+ * - Obtiene el doctorId del parámetro de ruta para mayor seguridad
  * - Maneja errores de forma consistente con logging detallado
  * - Sigue principios de TypeScript strict para type safety
  * 
@@ -19,8 +20,8 @@
  * - `@/types/google-calendar`: Definiciones de tipos para eventos
  * 
  * **Endpoints disponibles:**
- * - POST /api/break-times: Crear nuevo evento de descanso
- * - GET /api/break-times: Consultar eventos de descanso por doctor y rango de fechas
+ * - POST /api/doctors/[id]/calendar/break-times: Crear nuevo evento de descanso
+ * - GET /api/doctors/[id]/calendar/break-times: Consultar eventos de descanso por rango de fechas
  * 
  * **Casos de uso del sistema:**
  * - Bloqueo automático de disponibilidad durante almuerzos
@@ -29,8 +30,8 @@
  * - Mantenimiento de consultorios y equipos médicos
  * - Emergencias personales que requieren ausencia temporal
  * 
- * @author Santiago Prada - Backen Developer
- * @version 1.0.0
+ * @author Santiago Prada - Backend Developer
+ * @version 1.1.0
  * @since 2025-07-09
  */
 
@@ -59,7 +60,7 @@ import { BreakTimeType } from '@/types/google-calendar';
  * - Verifica que todos los campos requeridos estén presentes
  * - Convierte las fechas ISO a objetos DateTime de Luxon para manejo preciso de zonas horarias
  * - Valida que el tipo de descanso sea uno de los valores permitidos en BreakTimeType
- * - Asegura que el doctorId sea un número válido
+ * - Obtiene el doctorId del parámetro de ruta para mayor seguridad
  * 
  * **Integración con Google Calendar:**
  * - Crea eventos con visibilidad "busy" para bloquear disponibilidad
@@ -68,7 +69,8 @@ import { BreakTimeType } from '@/types/google-calendar';
  * - Maneja conflictos con citas existentes
  * 
  * @param req - Request object de Next.js conteniendo el body con los datos del evento
- * @param req.body.doctorId - ID único del doctor en la base de datos (requerido)
+ * @param context - Contexto de Next.js con parámetros de ruta
+ * @param context.params.id - ID único del doctor obtenido del parámetro de ruta (requerido)
  * @param req.body.startDateTime - Fecha y hora de inicio en formato ISO 8601 (requerido)
  * @param req.body.endDateTime - Fecha y hora de fin en formato ISO 8601 (requerido)
  * @param req.body.breakTimeType - Tipo de descanso según enum BreakTimeType (requerido)
@@ -89,12 +91,11 @@ import { BreakTimeType } from '@/types/google-calendar';
  * 
  * @example
  * ```typescript
- * // Crear un descanso para almuerzo
- * const response = await fetch('/api/break-times', {
+ * // Crear un descanso para almuerzo del doctor con ID 123
+ * const response = await fetch('/api/doctors/123/calendar/break-times', {
  *   method: 'POST',
  *   headers: { 'Content-Type': 'application/json' },
  *   body: JSON.stringify({
- *     doctorId: 123,
  *     startDateTime: '2024-01-15T12:00:00.000Z',
  *     endDateTime: '2024-01-15T13:00:00.000Z',
  *     breakTimeType: 'lunch',
@@ -103,13 +104,16 @@ import { BreakTimeType } from '@/types/google-calendar';
  * });
  * ```
  */
-export async function POST(req: Request) {
+export async function POST(req: Request, { params }: { params: { id: string } }) {
   try {
+    // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia
+    // Esto previene manipulación del doctorId en el cuerpo de la petición
+    const doctorId = params.id;
+
     // Extrae y parsea el cuerpo de la petición JSON
     // Esto puede fallar si el JSON es inválido, por lo que está dentro del try-catch
     const body = await req.json();
     const {
-      doctorId,
       startDateTime,
       endDateTime,
       breakTimeType,
@@ -199,7 +203,8 @@ export async function POST(req: Request) {
  * - Rate limiting para prevenir abuso de la API
  * 
  * @param req - Request object de Next.js con query parameters
- * @param req.query.doctorId - ID único del doctor en la base de datos (requerido)
+ * @param context - Contexto de Next.js con parámetros de ruta
+ * @param context.params.id - ID único del doctor obtenido del parámetro de ruta (requerido)
  * @param req.query.startDate - Fecha de inicio del rango en formato YYYY-MM-DD (requerido)
  * @param req.query.endDate - Fecha de fin del rango en formato YYYY-MM-DD (requerido)
  * 
@@ -225,16 +230,15 @@ export async function POST(req: Request) {
  * - 500: Error interno, problemas con Google Calendar API o base de datos
  * 
  * **Validaciones de entrada:**
- * - Verifica presencia de todos los query parameters requeridos
- * - Valida que doctorId sea un número entero positivo
+ * - Obtiene el doctorId del parámetro de ruta para mayor seguridad
  * - Confirma que las fechas estén en formato ISO válido
  * - Asegura que startDate sea anterior o igual a endDate
  * 
  * @example
  * ```typescript
- * // Obtener descansos del Dr. García para enero 2024
+ * // Obtener descansos del Dr. García (ID: 123) para enero 2024
  * const response = await fetch(
- *   '/api/break-times?doctorId=123&startDate=2024-01-01&endDate=2024-01-31'
+ *   '/api/doctors/123/calendar/break-times?startDate=2024-01-01&endDate=2024-01-31'
  * );
  * const breakEvents = await response.json();
  * 
@@ -244,25 +248,28 @@ export async function POST(req: Request) {
  * );
  * ```
  */
-export async function GET(req: Request) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+  // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia
+  // Esto previene manipulación del doctorId en los query parameters
+  const doctorId = params.id;
+
   // Extrae los query parameters de la URL de la petición
   // Next.js proporciona una URL completa que incluye el dominio y path
   const { searchParams } = new URL(req.url);
-  const doctorId = searchParams.get('doctorId');
   const startDate = searchParams.get('startDate');
   const endDate = searchParams.get('endDate');
 
   // Validación temprana de parámetros requeridos para evitar procesamiento innecesario
   // Todos los parámetros son críticos para la consulta efectiva de eventos
   if (!doctorId || !startDate || !endDate) {
-    console.error('GET /api/break-times validation failed:', {
+    console.error('GET /api/doctors/[id]/calendar/break-times validation failed:', {
       doctorId: !!doctorId,
       startDate: !!startDate,
       endDate: !!endDate,
       receivedParams: { doctorId, startDate, endDate }
     });
     return NextResponse.json({ 
-      message: 'Missing required query parameters: doctorId, startDate, endDate' 
+      message: 'Missing required parameters: startDate, endDate' 
     }, { status: 400 });
   }
 
