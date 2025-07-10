@@ -1,4 +1,5 @@
 // Tipos para los horarios de trabajo de los doctores
+import type { DayOfWeek } from './google-calendar-schemas';
 
 /**
  * Deprecated
@@ -38,14 +39,14 @@ export const DEFAULT_WORKING_HOURS: WorkingHours = {
 /**
  * Deprecated
  */
-export const DAYS_OF_WEEK = [
-  { key: 'monday' as keyof WorkingHours, label: 'Lunes' },
-  { key: 'tuesday' as keyof WorkingHours, label: 'Martes' },
-  { key: 'wednesday' as keyof WorkingHours, label: 'Miércoles' },
-  { key: 'thursday' as keyof WorkingHours, label: 'Jueves' },
-  { key: 'friday' as keyof WorkingHours, label: 'Viernes' },
-  { key: 'saturday' as keyof WorkingHours, label: 'Sábado' },
-  { key: 'sunday' as keyof WorkingHours, label: 'Domingo' }
+export const DAYS_OF_WEEK: { key: keyof WorkingHours; label: string; apiValue: DayOfWeek }[] = [
+  { key: 'monday',    label: 'Lunes',     apiValue: 'MONDAY' },
+  { key: 'tuesday',   label: 'Martes',    apiValue: 'TUESDAY' },
+  { key: 'wednesday', label: 'Miércoles', apiValue: 'WEDNESDAY' },
+  { key: 'thursday',  label: 'Jueves',    apiValue: 'THURSDAY' },
+  { key: 'friday',    label: 'Viernes',   apiValue: 'FRIDAY' },
+  { key: 'saturday',  label: 'Sábado',    apiValue: 'SATURDAY' },
+  { key: 'sunday',    label: 'Domingo',   apiValue: 'SUNDAY' }
 ];
 
 /**

@@ -1,37 +1,39 @@
 // src/app/dashboard/1/compo/StaffManagement.tsx
+// src/app/dashboard/rol/Admin/_compo/StaffManagement.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button } from "@rutas/components/ui/button";
-import { Card, CardContent } from "@rutas/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@rutas/components/ui/table";
-import { Badge } from "@rutas/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Clock, RefreshCw } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@rutas/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
 import { StaffDetailModal } from "./StaffDetailModal";
-import { WorkingHours } from "@rutas/types/working-hours";
-import { getFirebaseAuthToken } from '@rutas/app/lib/firebase/clientUtils';
-import type { User } from '@rutas/db/schema/users';
+import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import type { User } from '@/db/schema/users';
+import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/google-calendar-schemas";
+import { toast } from 'sonner';
 
-// Tipo extendido para incluir el campo idDoctor del LEFT JOIN con la tabla doctors
+// Tipo extendido para incluir datos del doctor desde la API
 type UserWithDoctor = User & {
   idDoctor?: number | null;
+  working_hours?: DoctorWorkingHoursType | string | null; // La API puede devolver JSON como string
 };
 
-// Definir el tipo de miembro del personal basado en el schema de la base de datos
+// Tipo interno para el estado del componente
 interface StaffMember {
   id: number;
   name: string;
-  role: 'admin' | 'medico' | 'asistente' | 'N/A';
-  specialty?: string;
-  assignedDoctor?: string;
-  status: 'active' | 'inactive';
+  role: 'admin' | 'medico' | 'asistente';
   email: string;
+  status: 'active' | 'inactive';
+  idDoctor?: number | null;
+  workingHours?: DoctorWorkingHoursType; // Usar el tipo correcto de la API
+  specialty?: string;
   patients?: number;
   appointments?: number;
-  workingHours?: WorkingHours;
-  idDoctor?: number | null; // Campo para el ID del doctor desde la API
 }
 
 export function StaffManagement() {
@@ -42,50 +44,52 @@ export function StaffManagement() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Función para obtener los miembros del personal de la API
   const fetchStaffMembers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    const token = await getFirebaseAuthToken();
-
-    if (!token) {
-      setError('Autenticación requerida. Por favor, inicia sesión.');
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      const token = await getFirebaseAuthToken();
+      if (!token) throw new Error('Autenticación requerida. Por favor, inicia sesión.');
+
       const response = await fetch('/api/users', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${token}` },
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: response.statusText }));
-        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Error ${response.status}`);
       }
 
       const users: UserWithDoctor[] = await response.json();
       
-      // Filtrar solo usuarios activos y con roles relevantes (excluir N/A)
       const activeStaff = users
         .filter(user => user.isActive && user.role !== 'N/A')
-        .map(user => ({
-          id: user.id,
-          name: user.displayName || user.email || 'Usuario sin nombre',
-          role: user.role as 'admin' | 'medico' | 'asistente',
-          email: user.email || '',
-          status: 'active' as const,
-          // Datos mock para pacientes y citas - en una implementación real vendrían de otras APIs
-          patients: Math.floor(Math.random() * 50) + 10,
-          appointments: Math.floor(Math.random() * 20) + 5,
-          specialty: user.role === 'medico' ? 'Especialidad General' : undefined,
-          idDoctor: user.idDoctor, // Incluir el idDoctor desde la API
-        }));
+        .map((user): StaffMember => {
+          let parsedWorkingHours: DoctorWorkingHoursType | undefined = undefined;
+          if (typeof user.working_hours === 'string') {
+            try {
+              parsedWorkingHours = JSON.parse(user.working_hours);
+            } catch (e) {
+              console.error('Error parsing working_hours JSON:', e);
+            }
+          } else if (user.working_hours) {
+            parsedWorkingHours = user.working_hours;
+          }
+
+          return {
+            id: user.id,
+            name: user.displayName || user.email || 'Usuario sin nombre',
+            role: user.role as 'admin' | 'medico' | 'asistente',
+            email: user.email || '',
+            status: 'active',
+            idDoctor: user.idDoctor,
+            workingHours: parsedWorkingHours,
+            specialty: user.role === 'medico' ? 'Especialidad General' : undefined,
+            patients: Math.floor(Math.random() * 50) + 10,
+            appointments: Math.floor(Math.random() * 20) + 5,
+          };
+        });
 
       setStaffMembers(activeStaff);
     } catch (err) {
@@ -101,60 +105,59 @@ export function StaffManagement() {
     fetchStaffMembers();
   }, [fetchStaffMembers]);
 
+  const handleSaveWorkingHours = async (doctorId: number, newWorkingHours: DoctorWorkingHoursType) => {
+    try {
+      const token = await getFirebaseAuthToken();
+      if (!token) {
+        toast.error("Error de autenticación");
+        return;
+      }
+
+      const response = await fetch(`/api/doctors/${doctorId}/working-hours`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newWorkingHours),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al guardar horarios');
+      }
+
+      setStaffMembers(prev => prev.map(member => 
+        member.idDoctor === doctorId 
+          ? { ...member, workingHours: newWorkingHours }
+          : member
+      ));
+
+      toast.success("Horarios guardados correctamente");
+      setSelectedDoctorForSchedule(null);
+    } catch (error) {
+      console.error('Error al guardar horarios:', error);
+      toast.error(error instanceof Error ? error.message : "Error desconocido al guardar");
+    }
+  };
+
   const handleViewMore = (member: StaffMember) => {
     setSelectedStaffForDetail(member);
     setIsDetailModalOpen(true);
   };
 
-  const handleCloseDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedStaffForDetail(null);
-  };
-
   const handleOpenSchedule = (member: StaffMember) => {
-    setSelectedDoctorForSchedule(member);
-  };
-
-  const handleSaveWorkingHours = async (doctorId: number, workingHours: WorkingHours) => {
-    try {
-      const response = await fetch(`/api/doctors/${doctorId}/working-hours`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ workingHours }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al guardar horarios');
-      }
-
-      // Actualizar el estado local usando idDoctor para encontrar el miembro correcto
-      setStaffMembers(prev => prev.map(member => 
-        member.idDoctor === doctorId 
-          ? { ...member, workingHours }
-          : member
-      ));
-
-      setSelectedDoctorForSchedule(null);
-    } catch (error) {
-      console.error('Error al guardar horarios:', error);
-      throw error;
+    if (member.role === 'medico' && member.idDoctor) {
+      setSelectedDoctorForSchedule(member);
     }
   };
 
-
-
-
-
-  const activeStaff = staffMembers.filter(member => member.status === 'active');
-  const doctorsCount = activeStaff.filter(member => member.role === 'medico').length;
-  const assistantsCount = activeStaff.filter(member => member.role === 'asistente').length;
+  const doctorsCount = staffMembers.filter(member => member.role === 'medico').length;
+  const assistantsCount = staffMembers.filter(member => member.role === 'asistente').length;
 
   return (
     <Card className="w-full max-w-full overflow-hidden">
       <CardContent className="space-y-6 p-4 sm:p-6">
-        {/* Lista de personal activo */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -163,40 +166,17 @@ export function StaffManagement() {
                 Personal Actual ({staffMembers.length})
               </h3>
               <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                <span className="flex items-center">
-                  <Stethoscope className="h-4 w-4 mr-1" />
-                  {doctorsCount} Médicos
-                </span>
-                <span className="flex items-center">
-                  <UserCheck className="h-4 w-4 mr-1" />
-                  {assistantsCount} Asistentes
-                </span>
+                <span className="flex items-center"><Stethoscope className="h-4 w-4 mr-1" />{doctorsCount} Médicos</span>
+                <span className="flex items-center"><UserCheck className="h-4 w-4 mr-1" />{assistantsCount} Asistentes</span>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={fetchStaffMembers}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Cargando
-                </>
-              ) : (
-                <>
-                <RefreshCw className="h-4 w-4 mr-2"/>
-                  Actualizar
-                </>
-              )}
+            <Button variant="outline" size="sm" onClick={fetchStaffMembers} disabled={isLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Cargando...' : 'Actualizar'}
             </Button>
           </div>
-          {error && (
-            <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-700">
-              {error}
-            </div>
-          )}
+          
+          {error && <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-700">{error}</div>}
           
           {isLoading ? (
             <div className="h-[400px] border rounded-lg flex items-center justify-center">
@@ -204,71 +184,33 @@ export function StaffManagement() {
             </div>
           ) : (
             <div className="h-[400px] border rounded-lg overflow-auto w-full">
-              <Table className="w-full table-auto">
-                  <TableHeader>
-                     <TableRow>
-                       <TableHead className="min-w-[200px] sm:min-w-[300px]">Personal</TableHead>
-                       <TableHead className="text-right min-w-[100px] sm:min-w-[150px]">Acciones</TableHead>
-                     </TableRow>
-                   </TableHeader>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Personal</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow></TableHeader>
                 <TableBody>
                   {staffMembers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
-                        No se encontraron miembros del personal
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={2} className="text-center py-8 text-muted-foreground">No se encontraron miembros del personal</TableCell></TableRow>
                   ) : (
                     staffMembers.map((member) => (
-                  <TableRow key={member.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <p className="font-medium">{member.name}</p>
-                            <Badge variant={
-                              member.role === 'medico' ? 'default' : 
-                              member.role === 'admin' ? 'destructive' : 
-                              member.role === 'asistente' ? 'secondary' : 
-                              'outline'
-                            }>
-                              {member.role === 'medico' ? 'Médico' : 
-                               member.role === 'admin' ? 'Admin' : 
-                               member.role === 'asistente' ? 'Asistente' : 
-                               member.role}
-                            </Badge>
-                          </div>
+                      <TableRow key={member.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <p className="font-medium">{member.name}</p>
                           <p className="text-sm text-muted-foreground mt-1">{member.email}</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleViewMore(member)}
-                          title="Ver más información"
-                          className="px-3 sm:px-4"
-                        >
-                          <Users className="h-4 w-4 sm:mr-2" />
-                          <span className="hidden sm:inline">Ver más</span>
-                        </Button>
-                        {member.role === 'medico' && member.idDoctor && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleOpenSchedule(member)}
-                            title="Configurar horarios"
-                            className="px-3 sm:px-4"
-                          >
-                            <Clock className="h-4 w-4 sm:mr-2" />
-                            <span className="hidden sm:inline">Horario</span>
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                          <Badge variant={member.role === 'medico' ? 'default' : member.role === 'admin' ? 'destructive' : 'secondary'} className="mt-2">
+                            {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => handleViewMore(member)}><Users className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Ver más</span></Button>
+                            {member.role === 'medico' && member.idDoctor && (
+                              <Button variant="outline" size="sm" onClick={() => handleOpenSchedule(member)}><Clock className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Horario</span></Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     ))
                   )}
                 </TableBody>
@@ -278,26 +220,19 @@ export function StaffManagement() {
         </div>
       </CardContent>
 
-      {/* Modal para mostrar detalles del personal */}
       <StaffDetailModal 
         isOpen={isDetailModalOpen}
-        onClose={handleCloseDetailModal}
+        onClose={() => setIsDetailModalOpen(false)}
         staffMember={selectedStaffForDetail}
         onUpdate={fetchStaffMembers}
       />
 
-      {/* Modal para horarios de médicos */}
       {selectedDoctorForSchedule && (
         <Dialog open={!!selectedDoctorForSchedule} onOpenChange={() => setSelectedDoctorForSchedule(null)}>
-          <DialogContent className="w-full h-full max-w-none max-h-none sm:max-w-5xl sm:max-h-[95vh] lg:max-w-7xl xl:max-w-[90vw] flex flex-col p-4 sm:p-6">
+          <DialogContent className="w-full h-full max-w-none sm:max-w-5xl sm:max-h-[95vh] flex flex-col p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
-                <Clock className="h-6 w-6 text-primary" />
-                Horarios de Trabajo - {selectedDoctorForSchedule?.name}
-              </DialogTitle>
-              <DialogDescription className="text-base">
-                Configure los días y horarios de atención del doctor. Los horarios se mostrarán en el calendario.
-              </DialogDescription>
+              <DialogTitle className="flex items-center gap-2 text-xl"><Clock className="h-6 w-6 text-primary" />Horarios de Trabajo - {selectedDoctorForSchedule.name}</DialogTitle>
+              <DialogDescription>Configure los días y horarios de atención del doctor.</DialogDescription>
             </DialogHeader>
             <DoctorWorkingHours
               doctorId={selectedDoctorForSchedule.idDoctor!}
@@ -308,7 +243,6 @@ export function StaffManagement() {
           </DialogContent>
         </Dialog>
       )}
-
     </Card>
   );
 }
