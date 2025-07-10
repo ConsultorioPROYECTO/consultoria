@@ -38,19 +38,19 @@ interface ConsultationAppointment extends Omit<Appointment, 'patientId' | 'servi
   };
 }
 
-interface ConsultationModalProps {
+interface MedicalConsultationWorkspaceProps {
   appointment: ConsultationAppointment | null; // La cita para la consulta actual
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveAndComplete: (appointmentId: number, notes: string) => void;
 }
 
-export function ConsultationModal({
+export function MedicalConsultationWorkspace({
   appointment,
   isOpen,
   onOpenChange,
   onSaveAndComplete,
-}: ConsultationModalProps) {
+}: MedicalConsultationWorkspaceProps) {
   const [notes, setNotes] = useState('');
   const [, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

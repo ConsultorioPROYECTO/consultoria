@@ -8,7 +8,7 @@ import { DateTime } from 'luxon';
 import { DailyAgendaView } from "./compo/DailyAgendaView";
 import { TodaysAppointments } from "./compo/TodaysAppointments";
 import { NextAppointment } from "./compo/NextAppointment";
-import { ConsultationModal } from "./compo/ConsultationModal";
+import { MedicalConsultationWorkspace } from "./compo/MedicalConsultationWorkspace";
 import { MonthlyAppointmentsSummary } from "./compo/MonthlyAppointmentsSummary";
 import { TodayIsDay } from "./compo/TodayIsDay";
 import { ImportantNotifications } from "./compo/ImportantNotifications";
@@ -21,7 +21,7 @@ type CalendarEvent = AppointmentEventData | BreakTimeEventData;
 // Importar tipos de la base de datos
 import { Appointment } from "@/db/schema";
 
-// Tipo específico para el modal de consulta (debe coincidir con ConsultationModal.tsx)
+// Tipo específico para el workspace de consulta médica (debe coincidir con MedicalConsultationWorkspace.tsx)
 type ConsultationAppointment = Omit<Appointment, 'patientId' | 'serviceId'> & {
   time: string;
   patient: {
@@ -41,7 +41,7 @@ export default function DoctorDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
   const [selectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
-  const [isConsultationModalOpen, setIsConsultationModalOpen] = useState(false);
+  const [isMedicalWorkspaceOpen, setIsMedicalWorkspaceOpen] = useState(false);
 
   const pendingAppointmentsCount = calendarEvents.filter(event => 'appointmentStatus' in event && event.appointmentStatus !== 'Completada').length;
 
@@ -118,10 +118,10 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        <ConsultationModal
+        <MedicalConsultationWorkspace
           appointment={selectedConsultationAppointment}
-          isOpen={isConsultationModalOpen}
-          onOpenChange={setIsConsultationModalOpen}
+          isOpen={isMedicalWorkspaceOpen}
+           onOpenChange={setIsMedicalWorkspaceOpen}
           onSaveAndComplete={() => {
             // Lógica de guardado
           }}

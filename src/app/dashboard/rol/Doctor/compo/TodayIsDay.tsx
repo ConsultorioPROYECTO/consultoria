@@ -2,10 +2,8 @@ import { Card, CardContent } from "@rutas/components/ui/card";
 
 export function TodayIsDay() {
   const today = new Date();
-//   const day = today.toLocaleString('default', { weekday: 'long' });
   const month = today.toLocaleString('default', { month: 'long' });
-  const shortMonth = month.slice(0, 3);
-  const capitalizedMonth = shortMonth.charAt(0).toUpperCase() + shortMonth.slice(1).toLowerCase();
+  const capitalizedMonth = month.charAt(0).toUpperCase() + month.slice(1).toLowerCase();
   const date = today.getDate();
 
   return (
