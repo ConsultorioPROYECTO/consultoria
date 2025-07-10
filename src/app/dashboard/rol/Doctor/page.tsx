@@ -40,10 +40,47 @@ export default function DoctorDashboard() {
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [, setError] = useState<string | null>(null);
-  const [selectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
+  const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isMedicalWorkspaceOpen, setIsMedicalWorkspaceOpen] = useState(false);
 
   const pendingAppointmentsCount = calendarEvents.filter(event => 'appointmentStatus' in event && event.appointmentStatus !== 'Completada').length;
+
+  // Función para manejar el inicio de consulta
+  const handleStartConsultation = (appointment: AppointmentEventData) => {
+    if (!doctorId) return;
+    
+    // Convertir AppointmentEventData a ConsultationAppointment
+    const startDateTime = typeof appointment.startDateTime === 'string' 
+      ? appointment.startDateTime 
+      : appointment.startDateTime.toISO();
+    
+    const consultationAppointment: ConsultationAppointment = {
+      id: parseInt(appointment.id || '0'),
+      doctorId: doctorId,
+      organizationId: appointment.organizationId,
+      google_event_id: appointment.id || '',
+      google_calendar_id: '',
+      time: startDateTime?.split('T')[1]?.substring(0, 5) || '',
+      status: 'pending' as const,
+      sync_status: 'not_synced' as const,
+      last_sync_attempt: null,
+      sync_error: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      patient: {
+        firstName: appointment.summary.split(' ')[0] || '',
+        lastName: appointment.summary.split(' ').slice(1).join(' ') || ''
+      },
+      service: {
+        id: appointment.serviceId,
+        name: 'Consulta General',
+        description: appointment.description
+      }
+    };
+    
+    setSelectedConsultationAppointment(consultationAppointment);
+    setIsMedicalWorkspaceOpen(true);
+  };
 
   const doctorNames = user?.displayName?.split(' ') || [];
   const formattedNames = doctorNames.slice(0, 2).map(name => {
@@ -106,7 +143,10 @@ export default function DoctorDashboard() {
               <div className="col-span-1"><TodaysAppointments appointmentCount={isLoading ? 0 : calendarEvents.length} /></div>
             </div>
             <div>
-               <DailyAgendaView calendarEvents={isLoading ? [] : calendarEvents} />
+               <DailyAgendaView 
+                 calendarEvents={isLoading ? [] : calendarEvents} 
+                 onStartConsultation={handleStartConsultation}
+               />
              </div>
            </div>
 
