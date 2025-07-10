@@ -5,14 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@rutas/components/ui/c
 import { Button } from '@rutas/components/ui/button';
 import { Input } from '@rutas/components/ui/input';
 import { Label } from '@rutas/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@rutas/components/ui/select';
 import { Textarea } from '@rutas/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@rutas/components/ui/dialog';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@rutas/components/ui/drawer';
-import { Switch } from '@rutas/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@rutas/components/ui/tabs';
 import { Calendar } from '@rutas/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@rutas/components/ui/popover';
-import { CalendarIcon, Plus, Loader2 } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@rutas/components/ui/command';
+import { CalendarIcon, Plus, Loader2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@rutas/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '@/app/context/AuthContext';
@@ -134,6 +135,11 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
   const [patients, setPatients] = useState<Patient[]>([]);
   const [medicalServices, setMedicalServices] = useState<MedicalService[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  
+  // Estados para los Combobox
+  const [openDoctorCombo, setOpenDoctorCombo] = useState(false);
+  const [openPatientCombo, setOpenPatientCombo] = useState(false);
+  const [openServiceCombo, setOpenServiceCombo] = useState(false);
 
 
 
@@ -419,65 +425,168 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
           <span className="ml-2">Cargando datos...</span>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="grid gap-4 px-4">
+        <form onSubmit={handleSubmit} className="grid gap-4">
           {/* Selección de Médico */}
           <div className="grid gap-2">
             <Label htmlFor="doctor">Médico *</Label>
-            <Select 
-              value={formData.doctorId > 0 ? formData.doctorId.toString() : ""} 
-              onValueChange={(value) => handleInputChange('doctorId', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar médico" />
-              </SelectTrigger>
-              <SelectContent>
-                {doctors.map((doctor) => (
-                  <SelectItem key={doctor.idDoctor} value={doctor.idDoctor.toString()}>
-                    {doctor.displayName} - {doctor.email}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={openDoctorCombo} onOpenChange={setOpenDoctorCombo}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openDoctorCombo}
+                  className="w-full justify-between"
+                >
+                  {formData.doctorId > 0
+                    ? doctors.find((doctor) => doctor.idDoctor === formData.doctorId)?.displayName
+                    : "Seleccionar médico..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[320px] p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar médico..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró ningún médico.</CommandEmpty>
+                    <CommandGroup>
+                      {doctors.map((doctor) => (
+                        <CommandItem
+                          key={doctor.idDoctor}
+                          value={`${doctor.displayName} ${doctor.email}`}
+                          onSelect={() => {
+                            handleInputChange('doctorId', doctor.idDoctor);
+                            setOpenDoctorCombo(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.doctorId === doctor.idDoctor ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="font-medium text-sm truncate">
+                              {doctor.displayName}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate">
+                              {doctor.email}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Selección de Paciente */}
           <div className="grid gap-2">
             <Label htmlFor="patient">Paciente *</Label>
-            <Select 
-              value={formData.patientId > 0 ? formData.patientId.toString() : ""} 
-              onValueChange={(value) => handleInputChange('patientId', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar paciente" />
-              </SelectTrigger>
-              <SelectContent>
-                {patients.map((patient) => (
-                  <SelectItem key={patient.id} value={patient.id.toString()}>
-                    {patient.firstName} {patient.lastName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={openPatientCombo} onOpenChange={setOpenPatientCombo}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openPatientCombo}
+                  className="w-full justify-between"
+                >
+                  {formData.patientId > 0
+                    ? (() => {
+                        const patient = patients.find((p) => p.id === formData.patientId);
+                        return patient ? `${patient.firstName} ${patient.lastName}` : "Seleccionar paciente...";
+                      })()
+                    : "Seleccionar paciente..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar paciente..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró ningún paciente.</CommandEmpty>
+                    <CommandGroup>
+                      {patients.map((patient) => (
+                        <CommandItem
+                          key={patient.id}
+                          value={`${patient.firstName} ${patient.lastName} ${patient.email || ''}`}
+                          onSelect={() => {
+                            handleInputChange('patientId', patient.id);
+                            setOpenPatientCombo(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.patientId === patient.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <span className="font-medium text-sm truncate">
+                            {patient.firstName} {patient.lastName}
+                          </span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Selección de Servicio */}
           <div className="grid gap-2">
             <Label htmlFor="service">Servicio Médico *</Label>
-            <Select 
-              value={formData.serviceId > 0 ? formData.serviceId.toString() : ""} 
-              onValueChange={(value) => handleInputChange('serviceId', parseInt(value))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar servicio" />
-              </SelectTrigger>
-              <SelectContent>
-                {medicalServices.map((service) => (
-                  <SelectItem key={service.id} value={service.id.toString()}>
-                    {service.name} ({service.durationMinutes} min)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={openServiceCombo} onOpenChange={setOpenServiceCombo}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openServiceCombo}
+                  className="w-full justify-between"
+                >
+                  {formData.serviceId > 0
+                    ? medicalServices.find((service) => service.id === formData.serviceId)?.name
+                    : "Seleccionar servicio..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar servicio..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró ningún servicio.</CommandEmpty>
+                    <CommandGroup>
+                      {medicalServices.map((service) => (
+                        <CommandItem
+                          key={service.id}
+                          value={`${service.name} ${service.description || ''}`}
+                          onSelect={() => {
+                            handleInputChange('serviceId', service.id);
+                            setOpenServiceCombo(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              formData.serviceId === service.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex items-center justify-between w-full">
+                            <span className="font-medium text-sm truncate flex-1 mr-3">
+                              {service.name}
+                            </span>
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md whitespace-nowrap">
+                              {service.durationMinutes}m
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Fecha */}
@@ -517,14 +626,35 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
             />
           </div>
 
-          {/* Cita Virtual */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="virtual"
-              checked={formData.isVirtual}
-              onCheckedChange={(checked) => handleInputChange('isVirtual', checked)}
-            />
-            <Label htmlFor="virtual">Cita Virtual</Label>
+          {/* Tipo de Cita */}
+          <div className="grid gap-2">
+            <Label>Tipo de Cita *</Label>
+            <Tabs
+              value={formData.isVirtual ? "virtual" : "presencial"}
+              onValueChange={(value) => {
+                handleInputChange('isVirtual', value === "virtual");
+                // Limpiar el enlace si cambia a presencial
+                if (value === "presencial") {
+                  handleInputChange('meetingLink', '');
+                }
+              }}
+              className="w-full"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger 
+                  value="presencial" 
+                  className="flex items-center gap-2"
+                >
+                  🏥 Presencial
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="virtual" 
+                  className="flex items-center gap-2"
+                >
+                  💻 Virtual
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           {/* Enlace de Reunión (solo si es virtual) */}
@@ -597,14 +727,14 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
                 </Button>
               </DrawerTrigger>
               <DrawerContent className="max-h-[90vh]">
-                <div className="overflow-y-auto px-4">
-                  <DrawerHeader className="text-left">
+                <div className="overflow-y-auto">
+                  <DrawerHeader className="text-left px-4">
                     <DrawerTitle>Crear Nueva Cita</DrawerTitle>
                     <DrawerDescription>
                       Complete los detalles para programar una nueva cita médica.
                     </DrawerDescription>
                   </DrawerHeader>
-                  <div className="pb-4">
+                  <div className="pb-4 px-4">
                     <FormContent />
                   </div>
                 </div>
