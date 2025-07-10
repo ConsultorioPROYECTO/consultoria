@@ -31,92 +31,19 @@ const DateRangePicker = dynamic(() => import("./date-range-picker"), {
   loading: () => <div className="w-[200px] h-8 bg-muted animate-pulse rounded-md" />
 });
 
-// Mock data for events with more realistic medical appointment data
-const events = [
-  { 
-    id: 1,
-    date: new Date(2025, 0, 1), 
-    title: "Amalia Solis", 
-    time: "09:00", 
-    endTime: "09:45",
-    type: "Consulta General",
-    color: "bg-blue-500",
-    status: "confirmada"
-  },
-  { 
-    id: 2,
-    date: new Date(2025, 0, 17), 
-    title: "Candelaria Luna", 
-    time: "10:00", 
-    endTime: "10:30",
-    type: "Cardiología",
-    color: "bg-pink-500",
-    status: "pendiente"
-  },
-  { 
-    id: 3,
-    date: new Date(2025, 0, 17), 
-    title: "Damián Prado", 
-    time: "11:00", 
-    endTime: "12:27",
-    type: "Dermatología",
-    color: "bg-green-500",
-    status: "confirmada"
-  },
-  { 
-    id: 4,
-    date: new Date(2025, 0, 17), 
-    title: "Elvira Montes", 
-    time: "14:00", 
-    endTime: "14:30",
-    type: "Neurología",
-    color: "bg-yellow-500",
-    status: "confirmada"
-  },
-  { 
-    id: 5,
-    date: new Date(2025, 0, 17), 
-    title: "Gema del Mar", 
-    time: "15:00", 
-    endTime: "15:30",
-    type: "Ginecología",
-    color: "bg-purple-500",
-    status: "cancelada"
-  },
-  { 
-    id: 6,
-    date: new Date(2025, 0, 17), 
-    title: "Irene Valle", 
-    time: "16:00", 
-    endTime: "16:30",
-    type: "Pediatría",
-    color: "bg-indigo-500",
-    status: "confirmada"
-  },
-  { 
-    id: 7,
-    date: new Date(2025, 0, 19), 
-    title: "Carlos Mendoza", 
-    time: "09:30", 
-    endTime: "10:00",
-    type: "Consulta General",
-    color: "bg-blue-500",
-    status: "confirmada"
-  },
-  { 
-    id: 8,
-    date: new Date(2025, 0, 19), 
-    title: "María González", 
-    time: "11:00", 
-    endTime: "11:30",
-    type: "Oftalmología",
-    color: "bg-orange-500",
-    status: "pendiente"
-  },
-];
+// Los eventos ahora se cargan dinámicamente desde la API
 
 type ViewMode = "month" | "week" | "day";
-type Event = typeof events[0];
+type Event = {
+  id: number;
+  date: Date;
+  title: string;
+  time: string;
+  endTime: string;
+  type: string;
+  color: string;
+  status: string;
+};
 
 export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
   // Hook de autenticación para obtener el doctorId
@@ -148,7 +75,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   
   // Estado para eventos del doctor
   const [doctorEvents, setDoctorEvents] = React.useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768); // md breakpoint
@@ -211,7 +138,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         const eventsData = await response.json();
         
         // Mapear eventos de la API al formato esperado
-        const mappedEvents = (eventsData.events || []).map((event: any, index: number) => ({
+        const mappedEvents = (eventsData.events || []).map((event: { id?: string; startDateTime: string; endDateTime: string; summary?: string; description?: string; location?: string }, index: number) => ({
           id: event.id || `event-${index}`,
           start: event.startDateTime, // La API devuelve startDateTime como string ISO
           end: event.endDateTime,     // La API devuelve endDateTime como string ISO
@@ -231,7 +158,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     };
 
     loadEvents();
-  }, [doctorId, user, currentDate, viewMode]);
+  }, [doctorId, user, currentDate, viewMode, consultorioId]);
 
   // Sincronizar sharedDisplayMonth cuando currentDate cambie
   React.useEffect(() => {
@@ -278,7 +205,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   };
 
   // Obtener el rango de fechas según la vista
-  const getDateRange = () => {
+  const getDateRange = React.useCallback(() => {
     if (viewMode === "week") {
       const start = startOfWeek(currentDate, { weekStartsOn: 0 });
       const end = endOfWeek(currentDate, { weekStartsOn: 0 });
@@ -288,31 +215,28 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     }
     // Para vista mensual, mantener la lógica existente
     return { start: currentDate, end: currentDate, days: [] };
-  };
+  }, [viewMode, currentDate]);
 
 
 
   // Obtener eventos para una fecha específica
   const getEventsForDate = (date: Date): Event[] => {
-    if (doctorEvents.length > 0) {
-      // Convertir eventos del doctor al formato local
-      return doctorEvents
-        .filter(event => {
-          const eventDate = new Date(event.start);
-          return isSameDay(eventDate, date);
-        })
-        .map((event, index) => ({
-          id: event.id ? parseInt(event.id.replace(/\D/g, '')) || index + 1000 : index + 1000,
-          date: new Date(event.start),
-          title: event.title || 'Cita médica',
-          time: format(new Date(event.start), 'HH:mm'),
-          endTime: format(new Date(event.end), 'HH:mm'),
-          type: 'Cita médica',
-          color: 'bg-blue-500', // Color único para todos los eventos
-          status: 'confirmada'
-        }));
-    }
-    return events.filter(event => isSameDay(event.date, date));
+    // Convertir eventos del doctor al formato local
+    return doctorEvents
+      .filter(event => {
+        const eventDate = new Date(event.start);
+        return isSameDay(eventDate, date);
+      })
+      .map((event, index) => ({
+        id: event.id ? parseInt(event.id.replace(/\D/g, '')) || index + 1000 : index + 1000,
+        date: new Date(event.start),
+        title: event.title || 'Cita médica',
+        time: format(new Date(event.start), 'HH:mm'),
+        endTime: format(new Date(event.end), 'HH:mm'),
+        type: 'Cita médica',
+        color: 'bg-blue-500', // Color único para todos los eventos
+        status: 'confirmada'
+      }));
   };
 
   // Formatear el título según la vista
@@ -355,9 +279,9 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const [endHour, endMinute] = endTime.split(':').map(Number);
     
-    // Calcular minutos desde las 8:00 AM
-    const startMinutes = (startHour - 8) * 60 + startMinute;
-    const endMinutes = (endHour - 8) * 60 + endMinute;
+    // Calcular minutos desde la 1:00 AM
+    const startMinutes = (startHour - 1) * 60 + startMinute;
+    const endMinutes = (endHour - 1) * 60 + endMinute;
     
     // Cada hora tiene 64px (h-16), entonces cada minuto es 64/60 = 1.067px
     const pixelsPerMinute = 64 / 60;
@@ -374,13 +298,13 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     
-    // Solo mostrar la línea si estamos en horario de trabajo (8 AM - 8 PM)
-    if (currentHour < 8 || currentHour >= 20) {
+    // Solo mostrar la línea si estamos en horario visible (1 AM - 11 PM)
+    if (currentHour < 1 || currentHour >= 23) {
       return null;
     }
     
-    // Calcular minutos desde las 8:00 AM
-    const minutesFromStart = (currentHour - 8) * 60 + currentMinute;
+    // Calcular minutos desde la 1:00 AM
+    const minutesFromStart = (currentHour - 1) * 60 + currentMinute;
     
     // Cada hora tiene 64px (h-16), entonces cada minuto es 64/60 = 1.067px
     const pixelsPerMinute = 64 / 60;
@@ -410,26 +334,33 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   // Renderizar vista semanal
   const renderWeekView = () => {
     const { days } = getDateRange();
-    const timeSlots = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM to 7 PM
+    const timeSlots = Array.from({ length: 23 }, (_, i) => i + 1); // 1 AM to 11 PM
 
     return (
       <div className="flex-1 overflow-auto">
         <div className="grid grid-cols-8 gap-0 min-h-full">
           {/* Columna de horas */}
-          <div className="border-r border-border">
+          <div className="border-r border-border relative">
             <div className="h-12 border-b border-border"></div>
-            {timeSlots.map((hour) => (
-              <div key={hour} className="h-16 border-b border-border flex items-start justify-end pr-2 pt-1">
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground">
-                    {hour.toString().padStart(2, '0')}:00
-                  </div>
-                  <div className="text-[10px] text-muted-foreground/70">
-                    {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : hour === 0 ? '12 AM' : `${hour} AM`}
+            {/* Fila adicional vacía */}
+            <div className="h-16 border-b border-border"></div>
+            <div className="relative" style={{ height: `${23 * 64}px` }}>
+              {timeSlots.map((hour, index) => (
+                <div key={hour} className="absolute w-full" style={{ top: `${index * 64}px` }}>
+                  <div className="h-16 border-b border-border relative">
+                    {/* Etiqueta de hora posicionada en la línea divisoria */}
+                    <div className="absolute -top-2 right-2 text-right bg-background px-1">
+                      <div className="text-xs text-muted-foreground">
+                        {hour.toString().padStart(2, '0')}:00
+                      </div>
+                      <div className="text-[10px] text-muted-foreground/70">
+                        {hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {/* Columnas de días */}
@@ -453,12 +384,14 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                     {format(day, "d")}
                   </div>
                 </div>
+                {/* Fila adicional vacía */}
+                <div className="h-16 border-b border-border"></div>
 
                 {/* Contenedor de eventos con posicionamiento absoluto */}
-                <div className="relative" style={{ height: `${12 * 64}px` }}>
+                <div className="relative" style={{ height: `${23 * 64}px` }}>
                   {/* Líneas de tiempo de fondo */}
                   {timeSlots.map((hour) => (
-                    <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 8) * 64}px` }}>
+                    <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 1) * 64}px` }}>
                     </div>
                   ))}
                   
@@ -506,32 +439,37 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   // Renderizar vista de día
   const renderDayView = () => {
     const dayEvents = getEventsForDate(currentDate);
-    const timeSlots = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM to 7 PM
+    const timeSlots = Array.from({ length: 23 }, (_, i) => i + 1); // 1 AM to 11 PM
 
     return (
       <div className="flex-1 overflow-auto">
         <div className="flex w-full">
           {/* Columna de horas */}
-          <div className="w-20 flex-shrink-0">
-            {timeSlots.map((hour) => (
-              <div key={hour} className="h-16 border-b border-border flex items-start justify-end pr-2 pt-1">
-                <div className="text-right">
-                  <div className="text-sm text-muted-foreground">
-                    {hour.toString().padStart(2, '0')}:00
-                  </div>
-                  <div className="text-xs text-muted-foreground/70">
-                    {hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : hour === 0 ? '12 AM' : `${hour} AM`}
+          <div className="w-20 flex-shrink-0 relative">
+            <div className="relative" style={{ height: `${23 * 64}px` }}>
+              {timeSlots.map((hour, index) => (
+                <div key={hour} className="absolute w-full" style={{ top: `${index * 64}px` }}>
+                  <div className="h-16 border-b border-border relative">
+                    {/* Etiqueta de hora posicionada en la línea divisoria */}
+                    <div className="absolute -top-2 right-2 text-right bg-background px-1">
+                      <div className="text-sm text-muted-foreground">
+                        {hour.toString().padStart(2, '0')}:00
+                      </div>
+                      <div className="text-xs text-muted-foreground/70">
+                        {hour === 0 ? '12 AM' : hour === 12 ? '12 PM' : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           
           {/* Área de eventos */}
-          <div className="flex-1 relative border-l border-border" style={{ height: `${12 * 64}px` }}>
+          <div className="flex-1 relative border-l border-border" style={{ height: `${23 * 64}px` }}>
             {/* Líneas de tiempo de fondo */}
             {timeSlots.map((hour) => (
-              <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 8) * 64}px` }}>
+              <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 1) * 64}px` }}>
               </div>
             ))}
             
