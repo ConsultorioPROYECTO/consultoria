@@ -1,4 +1,3 @@
-// src/app/dashboard/1/compo/FinancialMetrics.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
 
 export function FinancialMetrics() {
@@ -16,11 +15,11 @@ export function FinancialMetrics() {
         <div className="grid grid-cols-2 gap-6">
           <div className="grid grid-rows-2 gap-1">
             <p className="text-sm font-medium text-muted-foreground">Consultas Programadas</p>
-            <p className="text-3xl font-bold text-foreground">{scheduledAppointments}</p>
+            <p className="text-3xl font-bold text-foreground selection:bg-primary selection:text-primary-foreground">{scheduledAppointments}</p>
           </div>
           <div className="grid grid-rows-2 gap-1">
             <p className="text-sm font-medium text-muted-foreground">Consultas Completadas</p>
-            <p className="text-3xl font-bold text-foreground">{completedAppointments}</p>
+            <p className="text-3xl font-bold text-foreground selection:bg-primary selection:text-primary-foreground">{completedAppointments}</p>
           </div>
         </div>
       </CardContent>
