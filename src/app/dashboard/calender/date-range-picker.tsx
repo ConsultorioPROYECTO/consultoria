@@ -133,7 +133,7 @@ export function DateRangePicker({
                         }
                       }}
                     >
-                      <SelectTrigger className="w-[120px] h-8 capitalize">
+                      <SelectTrigger className="w-[130px] h-8 capitalize">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -179,7 +179,7 @@ export function DateRangePicker({
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm capitalize">
+                    <span className="text-sm capitalize px-2">
                       {format(selectedRange.from!, "d MMMM", { locale: es })} - {format(selectedRange.to!, "d MMMM", { locale: es })}
                     </span>
                     <Button
