@@ -18,7 +18,7 @@
  * - `EVOLUTION_API_KEY`: API key for authenticating with Evolution API
  * 
  * ## API Flow
- * 1. Authenticate user using JWT token
+ * 1. Authenticate user using Firebase ID token
  * 2. Get organization data from database using user's organizationId
  * 3. Extract instanceId from organization data
  * 4. Make request to Evolution API connectionState endpoint

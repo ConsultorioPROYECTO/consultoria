@@ -1,27 +1,28 @@
 /**
- * @fileoverview API route for generating QR codes by reconnecting Evolution API instances
+ * @fileoverview API route for generating QR codes by reconnecting Evolution API instances using authentication
  * @module api/evolutionAPI/generateQR
  * @author Santiago Prada
  * 
  * This module provides an endpoint for generating new QR codes by disconnecting and
- * reconnecting Evolution API instances. This is useful when a WhatsApp session needs
- * to be reset or when a new QR code is required for authentication.
+ * reconnecting Evolution API instances. It uses the user's authentication token to automatically
+ * retrieve the instanceId from the organization data in the database.
  * 
  * ## Key Features
+ * - **Token-based Authentication**: Uses JWT token to identify user and organization
+ * - **Automatic Instance Resolution**: Retrieves instanceId from organization data
  * - **Instance Management**: Safely disconnects and reconnects Evolution API instances
  * - **Error Handling**: Comprehensive error handling for both disconnect and connect operations
  * - **Environment Configuration**: Uses environment variables for secure API configuration
- * - **Response Validation**: Validates responses from Evolution API before proceeding
  * 
  * ## Environment Variables
  * - `EVOLUTION_API_SERVER_URL`: Base URL of the Evolution API server
  * - `EVOLUTION_API_KEY`: API key for authenticating with Evolution API
  * 
  * ## API Flow
- * 1. Validate environment configuration
- * 2. Validate request body (instance ID)
- * 3. Disconnect the specified instance
- * 4. Validate disconnect response
+ * 1. Authenticate user using Firebase ID token
+ * 2. Get organization data from database using user's organizationId
+ * 3. Extract instanceId from organization data
+ * 4. Disconnect the specified instance
  * 5. Reconnect the instance to generate new QR
  * 6. Return the connection response with QR data
  * 
@@ -33,42 +34,37 @@
  * 
  * @example
  * ```typescript
- * // Request body
- * {
- *   "instance": "my-whatsapp-instance"
- * }
- * 
- * // Success response
- * {
- *   "success": true,
- *   "data": {
- *     "qrcode": "data:image/png;base64,...",
- *     "code": "2@...",
- *     "base64": "iVBORw0KGgoAAAANSUhEUgAA..."
+ * // Generate QR with authentication
+ * const response = await fetch('/api/evolutionAPI/generateQR', {
+ *   method: 'POST',
+ *   headers: {
+ *     'Authorization': 'Bearer token'
  *   }
+ * });
+ * const result = await response.json();
+ * 
+ * if (result.success) {
+ *   console.log('QR Code:', result.data.qrcode);
  * }
  * ```
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { ApiResponse } from '@/types/api';
+
+import { db } from "@/db";
+import { users } from "@/db/schema";
+import { auth } from "@/app/lib/firebase/server/adminConfig";
+import type { DecodedIdToken } from "firebase-admin/auth";
+import { eq } from "drizzle-orm";
+import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from "@/types/api";
+import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import { getOrganizationInstance } from '@/lib/organization-utils';
 
 // === Environment Configuration ===
 const EVOLUTION_API_SERVER_URL = process.env.EVOLUTION_API_SERVER_URL;
 const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY;
 
-// === Request/Response Types ===
-
-/**
- * Request body for generating QR code.
- * 
- * @interface GenerateQRRequest
- * @property {string} instance - The Evolution API instance identifier
- */
-interface GenerateQRRequest {
-  /** Evolution API instance identifier */
-  instance: string;
-}
+// === Response Types ===
 
 /**
  * Evolution API connection response containing QR code data.
@@ -88,69 +84,72 @@ interface EvolutionConnectResponse {
 }
 
 /**
- * Generates a new QR code by reconnecting an Evolution API instance.
+ * Authenticates incoming requests by verifying Firebase ID tokens.
  * 
- * This endpoint performs a two-step process:
- * 1. **Disconnect**: Logs out the specified instance to clear existing session
- * 2. **Reconnect**: Connects the instance again to generate a fresh QR code
+ * Extracts the Bearer token from the Authorization header and validates it
+ * using Firebase Admin SDK. Returns the decoded token if valid, null otherwise.
+ * 
+ * @param request - The incoming Next.js request object
+ * @returns Promise resolving to decoded token on success, null on failure
+ * 
+ * @throws {Error} When token verification fails due to network or Firebase errors
+ * 
+ * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase ID Token Verification}
+ * 
+ * @internal
+ */
+async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken | null> {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return null;
+    }
+
+    const token = authHeader.substring(7);
+    return await auth.verifyIdToken(token);
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return null;
+  }
+}
+
+/**
+ * Generates a new QR code by reconnecting the authenticated user's Evolution API instance.
+ * 
+ * This function implements the core business logic for generating QR codes
+ * with proper authentication and organization isolation.
  * 
  * ## Business Logic
+ * - **Authentication Required**: User must provide valid JWT token
+ * - **Organization-based**: Uses user's organization to find instanceId
  * - **Session Reset**: Disconnecting ensures any existing WhatsApp session is cleared
  * - **Fresh Authentication**: Reconnecting generates a new QR code for device pairing
  * - **Error Recovery**: If disconnect fails, the process continues to attempt reconnection
- * - **Response Forwarding**: Returns the complete Evolution API response
  * 
  * ## Security Considerations
- * - API key is required and validated through environment variables
- * - Instance ID is validated to prevent empty or malformed requests
+ * - JWT token validation ensures only authenticated users can access
+ * - Organization isolation prevents cross-organization access
  * - All Evolution API responses are logged for debugging
  * 
  * ## Error Scenarios
- * - **500**: Missing environment configuration
- * - **400**: Missing or invalid instance ID
- * - **Evolution API errors**: Forwarded with original status codes
- * - **Network errors**: Handled as 500 internal server error
+ * - **401**: Missing or invalid authentication token
+ * - **403**: User doesn't have required permissions
+ * - **404**: Organization or instance not found
+ * - **500**: Missing environment configuration or Evolution API errors
  * 
- * @param {NextRequest} request - The incoming request with instance ID
- * @returns {Promise<NextResponse<ApiResponse<EvolutionConnectResponse>>>} QR code generation response
+ * @param {NextRequest} request - The incoming request with Authorization header
+ * @param {DecodedIdToken} decodedToken - Decoded Firebase authentication token
+ * @returns {Promise<NextResponse | Response>} QR code generation response
  * 
  * @throws {Error} When environment variables are not configured
  * @throws {Error} When Evolution API requests fail
  * 
- * @example
- * ```typescript
- * // Basic QR generation
- * const response = await fetch('/api/evolutionAPI/generateQR', {
- *   method: 'POST',
- *   headers: { 'Content-Type': 'application/json' },
- *   body: JSON.stringify({ instance: 'my-instance' })
- * });
- * 
- * const result = await response.json();
- * if (result.success) {
- *   console.log('QR Code:', result.data.qrcode);
- * }
- * ```
- * 
- * @example
- * ```typescript
- * // Error handling
- * try {
- *   const response = await fetch('/api/evolutionAPI/generateQR', {
- *     method: 'POST',
- *     body: JSON.stringify({ instance: 'test-instance' })
- *   });
- *   
- *   if (!response.ok) {
- *     const error = await response.json();
- *     console.error('QR generation failed:', error.error);
- *   }
- * } catch (error) {
- *   console.error('Network error:', error);
- * }
- * ```
+ * @internal
  */
-export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<EvolutionConnectResponse>>> {
+const generateQRHandler = async (
+  request: NextRequest,
+  decodedToken: DecodedIdToken
+): Promise<NextResponse | Response> => {
   // Validate environment configuration
   if (!EVOLUTION_API_SERVER_URL || !EVOLUTION_API_KEY) {
     console.error('Evolution API configuration missing:', {
@@ -158,37 +157,48 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       hasApiKey: !!EVOLUTION_API_KEY
     });
     
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Evolution API server configuration is incomplete',
-        details: 'Server URL or API Key is not configured in environment variables'
-      },
-      { status: 500 }
+    return createErrorResponse(
+      'Evolution API server configuration is incomplete',
+      'Server URL or API Key is not configured in environment variables',
+      HTTP_STATUS.INTERNAL_ERROR
     );
   }
 
   try {
-    // Parse and validate request body
-    const body: GenerateQRRequest = await request.json();
-    const { instance } = body;
+    // Get requesting user from database
+    const requestingUser = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid),
+      columns: { role: true, id: true, organizationId: true },
+    });
 
-    if (!instance || typeof instance !== 'string' || instance.trim() === '') {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'Invalid instance ID',
-          details: 'Instance ID is required and must be a non-empty string'
-        },
-        { status: 400 }
+    if (!requestingUser || !requestingUser.organizationId) {
+      return createErrorResponse('User not found', undefined, HTTP_STATUS.FORBIDDEN);
+    }
+
+    // Validate user role
+    const roleValidationError = validateUserRole(requestingUser.role, ["admin", "medico", "asistente"]);
+    if (roleValidationError) {
+      return roleValidationError;
+    }
+
+    console.log(`Starting QR generation for user: ${decodedToken.uid}, organization: ${requestingUser.organizationId}`);
+
+    // Get organization instance information
+    const orgResult = await getOrganizationInstance(requestingUser.organizationId);
+    
+    if (!orgResult.success || !orgResult.instanceId) {
+      return createErrorResponse(
+        'Instance not found',
+        orgResult.error || 'No instanceId found for organization',
+        HTTP_STATUS.NOT_FOUND
       );
     }
 
-    const trimmedInstance = instance.trim();
-    console.log(`Starting QR generation for instance: ${trimmedInstance}`);
+    const instanceId = orgResult.instanceId;
+    console.log(`Using instanceId: ${instanceId} for organization: ${requestingUser.organizationId}`);
 
     // Step 1: Disconnect the instance to clear existing session
-    const logoutUrl = `${EVOLUTION_API_SERVER_URL}/instance/logout/${trimmedInstance}`;
+    const logoutUrl = `${EVOLUTION_API_SERVER_URL}/instance/logout/${instanceId}`;
     console.log(`Attempting to disconnect instance at: ${logoutUrl}`);
     
     const logoutResponse = await fetch(logoutUrl, {
@@ -205,11 +215,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       console.warn(`Instance disconnect failed (${logoutResponse.status}):`, errorData);
       console.log('Proceeding with reconnection despite disconnect failure...');
     } else {
-      console.log(`Instance ${trimmedInstance} disconnected successfully`);
+      console.log(`Instance ${instanceId} disconnected successfully`);
     }
 
     // Step 2: Connect the instance to generate new QR code
-    const connectUrl = `${EVOLUTION_API_SERVER_URL}/instance/connect/${trimmedInstance}`;
+    const connectUrl = `${EVOLUTION_API_SERVER_URL}/instance/connect/${instanceId}`;
     console.log(`Attempting to connect instance at: ${connectUrl}`);
     
     const connectResponse = await fetch(connectUrl, {
@@ -228,45 +238,73 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       
       console.error(`Instance connection failed (${connectResponse.status}):`, errorData);
       
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'Failed to connect Evolution API instance',
-          details: errorData.message || `HTTP ${connectResponse.status}` 
-        },
-        { status: connectResponse.status }
+      return createErrorResponse(
+        'Failed to connect Evolution API instance',
+        errorData.message || `HTTP ${connectResponse.status}`,
+        connectResponse.status
       );
     }
 
     // Parse and return successful connection response
     const connectData: EvolutionConnectResponse = await connectResponse.json();
-    console.log(`Instance ${trimmedInstance} connected successfully:`, {
+    console.log(`Instance ${instanceId} connected successfully:`, {
       hasQrCode: !!connectData.qrcode,
       hasBase64: !!connectData.base64,
       status: connectData.status
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: connectData,
-        message: `QR code generated successfully for instance: ${trimmedInstance}`
-      },
-      { status: 200 }
+    return createSuccessResponse(
+      connectData,
+      `QR code generated successfully for instance: ${instanceId}`,
+      HTTP_STATUS.OK
     );
 
   } catch (error) {
-    console.error('Error in generateQR API:', error);
-    
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    
-    return NextResponse.json(
-      { 
-        success: false,
-        error: 'Internal server error during QR generation',
-        details: errorMessage
-      },
-      { status: 500 }
-    );
+    return handleDatabaseError(error, "generar código QR de Evolution API");
   }
+};
+
+/**
+ * Handles POST requests to generate QR codes for Evolution API instances.
+ * 
+ * Authenticates the request and delegates to the appropriate handler function.
+ * Uses Firebase authentication to identify the user and automatically
+ * determines the Evolution API instance based on organization membership.
+ * 
+ * @param request - The incoming Next.js POST request
+ * @returns Promise resolving to HTTP response with QR code data or error
+ * 
+ * @throws {Error} When authentication fails or handler execution encounters errors
+ * 
+ * @see {@link https://nextjs.org/docs/app/building-your-application/routing/route-handlers | Next.js Route Handlers}
+ * @see {@link generateQRHandler} for detailed implementation documentation
+ * 
+ * @example
+ * ```typescript
+ * // Generate QR code with authentication
+ * const response = await fetch('/api/evolutionAPI/generateQR', {
+ *   method: 'POST',
+ *   headers: {
+ *     'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+ *   }
+ * });
+ * const result = await response.json();
+ * 
+ * if (result.success && result.data.qrcode) {
+ *   console.log('QR Code generated:', result.data.qrcode);
+ * } else {
+ *   console.log('QR generation failed');
+ * }
+ * ```
+ * 
+ * @public
+ */
+export async function POST(request: NextRequest) {
+  const decodedToken = await authenticateRequest(request);
+  
+  if (!decodedToken) {
+    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  return generateQRHandler(request, decodedToken);
 }
