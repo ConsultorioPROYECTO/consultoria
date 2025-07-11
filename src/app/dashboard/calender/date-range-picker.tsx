@@ -121,7 +121,7 @@ export function DateRangePicker({
             components={{
               MonthCaption: () => (
                 <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 justify-between">
                     <Select
                       value={displayMonth.getMonth().toString()}
                       onValueChange={(value) => {
