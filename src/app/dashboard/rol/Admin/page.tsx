@@ -5,7 +5,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { FinancialMetrics } from "./_compo/FinancialMetrics";
 import { WorkloadOverview } from "./_compo/WorkloadOverview";
 import { CreateAppointmentModal } from "./_compo/CreateAppointmentModal";
-
+import { ChartAreaInteractive } from "./_compo/chart-area-interactive"; 
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -32,11 +32,11 @@ export default function AdminDashboard() {
               <FinancialMetrics />
                             <CreateAppointmentModal />
             </div>
-            
-            
             <div className="grid gap-6 lg:grid-rows">
               <WorkloadOverview />
-
+            </div>
+            <div className="grid gap-6 lg:grid-rows">
+              <ChartAreaInteractive />
             </div>
             
             {/* Podrías agregar más secciones aquí según sea necesario */}

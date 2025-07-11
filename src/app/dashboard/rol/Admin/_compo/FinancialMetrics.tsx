@@ -10,18 +10,18 @@ export function FinancialMetrics() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Métricas de Consultas</CardTitle>
+        <CardTitle className="text-2xl font-bold">Métricas de Consultas</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-            <div>
-                <p className="text-sm font-medium text-muted-foreground">Consultas Programadas</p>
-                <p className="text-2xl font-bold">{scheduledAppointments}</p>
-            </div>
-            <div>
-                <p className="text-sm font-medium text-muted-foreground">Consultas Completadas</p>
-                <p className="text-2xl font-bold">{completedAppointments}</p>
-            </div>
+      <CardContent className="grid gap-4">
+        <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-rows-2 gap-1">
+            <p className="text-sm font-medium text-muted-foreground">Consultas Programadas</p>
+            <p className="text-3xl font-bold text-foreground">{scheduledAppointments}</p>
+          </div>
+          <div className="grid grid-rows-2 gap-1">
+            <p className="text-sm font-medium text-muted-foreground">Consultas Completadas</p>
+            <p className="text-3xl font-bold text-foreground">{completedAppointments}</p>
+          </div>
         </div>
       </CardContent>
     </Card>

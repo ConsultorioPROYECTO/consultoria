@@ -1,6 +1,6 @@
 'use client';
 
-import { ChartAreaInteractive } from "@rutas/app/dashboard/com/chart-area-interactive"
+import { ChartAreaInteractive } from "@/app/dashboard/rol/Admin/_compo/chart-area-interactive"
 import { DataTable } from "@rutas/app/dashboard/com/data-table"
 import { SectionCards } from "@rutas/app/dashboard/com/section-cards"
 import { UpcomingAppointments } from "@/app/dashboard/com/AssistantDashboardAppointments"
