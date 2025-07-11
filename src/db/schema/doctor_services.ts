@@ -1,6 +1,6 @@
 // src/db/schema/doctor_services.ts
 
-import { mysqlTable, int, decimal, boolean, timestamp, index } from 'drizzle-orm/mysql-core';
+import { mysqlTable, int, decimal, boolean, timestamp, index, uniqueIndex } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { doctors } from './doctors';
 import { medicalServices } from './medical_services';
@@ -11,6 +11,7 @@ import { medicalServices } from './medical_services';
  * @description Define la relación muchos-a-muchos entre doctores y servicios médicos.
  * Permite que un doctor ofrezca múltiples servicios y que un servicio sea ofrecido por múltiples doctores.
  *
+ * @property {number} id - Clave primaria autoincremental única.
  * @property {number} doctorId - Clave foránea a la tabla 'doctors'.
  * @property {number} serviceId - Clave foránea a la tabla 'medical_services'.
  * @property {decimal} customPrice - Precio personalizado para este doctor (opcional, si difiere del precio base).
@@ -19,7 +20,10 @@ import { medicalServices } from './medical_services';
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
 export const doctorServices = mysqlTable('doctor_services', {
-  // Claves foráneas que forman la clave primaria compuesta
+  // Clave primaria autoincremental
+  id: int('id').autoincrement().primaryKey(),
+  
+  // Claves foráneas
   doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
   serviceId: int('service_id').references(() => medicalServices.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
   
@@ -31,12 +35,12 @@ export const doctorServices = mysqlTable('doctor_services', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (table) => [
+  // Índice único compuesto para evitar duplicados
+  uniqueIndex('doctor_services_unique_idx').on(table.doctorId, table.serviceId),
   // Índices para mejorar el rendimiento
   index('doctor_services_doctor_id_idx').on(table.doctorId),
   index('doctor_services_service_id_idx').on(table.serviceId),
   index('doctor_services_available_idx').on(table.isAvailable),
-  // Índice compuesto para la búsqueda por doctor y servicio
-  index('doctor_services_doctor_service_idx').on(table.doctorId, table.serviceId),
 ]);
 
 // Esquemas Zod para validación

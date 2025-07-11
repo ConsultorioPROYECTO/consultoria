@@ -39,7 +39,7 @@ export const patients = mysqlTable('patients', {
   // Información personal básica
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
-  // cedula de ciudadania, tarjeta de identidad, cédula de extranjería, pasaporte, regsitro civil, acta de nacimiento
+  // Documento Nacional de Identidad (DNI), cédula de ciudadanía (CC), tarjeta de identidad (TI), cédula de extranjería (CE), pasaporte (PP), regsitro civil (RC), acta de nacimiento (AS)
   identificationType: mysqlEnum('identification_type', ['DNI','CC', 'TI', 'CE', 'PP', 'RC', 'AS']).notNull(),
   identificationNumber: varchar('identification_number', { length: 50 }).notNull(),
   birthDate: mysqlDate('birth_date'),

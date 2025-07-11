@@ -232,6 +232,13 @@
       "when": 1752252282806,
       "tag": "0032_unusual_zombie",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1752274851324,
+      "tag": "0033_sticky_tombstone",
+      "breakpoints": true
     }
   ]
 }
