@@ -31,6 +31,8 @@ export const organization = mysqlTable('organization', {
   nit: varchar('nit', { length: 45 }),
   logo: varchar('logo', { length: 255 }),
   planId: int('plan_id', {unsigned : true}).references(() => plans.id, {onDelete : "no action", onUpdate : "cascade"}),
+  instanceId: varchar('instance_id', { length: 25 }),
+  apiKey: varchar('api_key', { length: 25 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (organization) => [
@@ -39,7 +41,9 @@ export const organization = mysqlTable('organization', {
     index('organization_phone_idx').on(organization.phone),
     index('organization_nit_idx').on(organization.nit),
     index('organization_invitation_code_idx').on(organization.invitationCode),
-  
+    index('organization_plan_id_idx').on(organization.planId),
+    index('organization_instance_id_idx').on(organization.instanceId),
+    index('organization_api_key_idx').on(organization.apiKey),
 ]);
 
 export const insertOrganizationSchema = createInsertSchema(organization);
