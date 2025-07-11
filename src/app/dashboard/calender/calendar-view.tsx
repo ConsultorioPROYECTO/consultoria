@@ -541,20 +541,21 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   return (
     <div className="flex flex-col h-full w-full bg-transparent text-card-foreground rounded-lg">
       {/* Header con controles */}
-      <div className="flex flex-col sm:flex-row justify-between lg:items-center mb-6 gap-2 md:gap-4">
-        <div className="flex items-center justify-between md:gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">
+      <div className="mb-6 space-y-4">
+        {/* Primera fila: Título y botón Hoy */}
+        <div className="flex items-end justify-between">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground capitalize">
             <div>{getMonthTitle().month}</div>
             <div className="text-2xl text-muted-foreground">{getMonthTitle().year}</div>
           </h1>
-
-          <div className="flex gap-2 md:gap-4">
+          
+          <div className="flex flex-col items-end gap-2">
             <Button 
               variant={isToday(currentDate) ? "default" : "outline"} 
               size="sm" 
               onClick={goToToday}
               className={cn(
-                "text-sm",
+                "w-16 h-7 px-2 py-1 text-xs flex-shrink-0",
                 isToday(currentDate) 
                   ? "bg-primary text-primary-foreground" 
                   : "text-muted-foreground"
@@ -562,75 +563,82 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
             >
               Hoy
             </Button>
-            {viewMode === "day" ? (
-              <DatePicker 
-                selectedDate={currentDate}
-                onDateSelect={(date) => {
-                  if (date) {
-                    setCurrentDate(date);
-                    setSelectedDate(date);
-                  }
-                }}
-                displayMonth={sharedDisplayMonth}
-                onMonthChange={handleSharedMonthChange}
-              />
-            ) : (
-              <DateRangePicker 
-                currentDate={currentDate}
-                onRangeSelect={(range) => {
-                  setCurrentDate(range.start);
-                }}
-                displayMonth={sharedDisplayMonth}
-                onMonthChange={handleSharedMonthChange}
-              />
-            )}
-          </div>
-
-          
+            {/* Selector de vista */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1 md:gap-2 flex-shrink-0">
+                    {viewMode === "month" && <LayoutGrid className="h-4 w-4" />}
+                    {viewMode === "week" && <CalendarDays className="h-4 w-4" />}
+                    {viewMode === "day" && <Clock className="h-4 w-4" />}
+                    {!isMobile && viewMode === "month" && "Mes"}
+                    {!isMobile && viewMode === "week" && "Semana"}
+                    {!isMobile && viewMode === "day" && "Día"}
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setViewMode("day")}>
+                    <Clock className="h-4 w-4 mr-2" />
+                    Día
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewMode("week")}>
+                    <CalendarDays className="h-4 w-4 mr-2" />
+                    Semana
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setViewMode("month")}>
+                    <LayoutGrid className="h-4 w-4 mr-2" />
+                    Mes
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
         </div>
-        
-        <div className="flex items-center justify-between gap-2 md:gap-4">
+
+        {/* Segunda fila: Controles de navegación y vista */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           {/* Navegación */}
-          <div className="flex items-center gap-1 md:gap-2 flex-1">
-            <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={goToPrevious}>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={goToPrevious} className="flex-shrink-0">
               <ChevronLeftIcon className="h-4 w-4" />
             </Button>
-            <div className="flex-1 min-w-0 text-center px-1 md:min-w-[200px] md:px-0">
+            <div className="flex-1 min-w-0 text-center px-2">
               <h2 className="text-sm md:text-lg font-medium capitalize text-muted-foreground truncate">{getViewTitle()}</h2>
             </div>
-            <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={goToNext}>
+            <Button variant="outline" size={isMobile ? "sm" : "icon"} onClick={goToNext} className="flex-shrink-0">
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
           </div>
           
-          {/* Selector de vista */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1 md:gap-2 flex-shrink-0">
-                {viewMode === "month" && <LayoutGrid className="h-4 w-4" />}
-                {viewMode === "week" && <CalendarDays className="h-4 w-4" />}
-                {viewMode === "day" && <Clock className="h-4 w-4" />}
-                {!isMobile && viewMode === "month" && "Mes"}
-                {!isMobile && viewMode === "week" && "Semana"}
-                {!isMobile && viewMode === "day" && "Día"}
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setViewMode("day")}>
-                <Clock className="h-4 w-4 mr-2" />
-                Día
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setViewMode("week")}>
-                <CalendarDays className="h-4 w-4 mr-2" />
-                Semana
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setViewMode("month")}>
-                <LayoutGrid className="h-4 w-4 mr-2" />
-                Mes
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Controles de fecha y vista */}
+          <div className="flex items-center gap-2 sm:gap-3 justify-between sm:justify-end">
+            {/* DatePicker/DateRangePicker */}
+            <div className="flex-shrink-0">
+              {viewMode === "day" ? (
+                <DatePicker 
+                  selectedDate={currentDate}
+                  onDateSelect={(date) => {
+                    if (date) {
+                      setCurrentDate(date);
+                      setSelectedDate(date);
+                    }
+                  }}
+                  displayMonth={sharedDisplayMonth}
+                  onMonthChange={handleSharedMonthChange}
+                />
+              ) : (
+                <DateRangePicker 
+                  currentDate={currentDate}
+                  onRangeSelect={(range) => {
+                    setCurrentDate(range.start);
+                  }}
+                  displayMonth={sharedDisplayMonth}
+                  onMonthChange={handleSharedMonthChange}
+                />
+              )}
+            </div>
+            
+            
+          </div>
         </div>
       </div>
 
