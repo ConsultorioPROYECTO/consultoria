@@ -95,8 +95,9 @@ export function DateRangePicker({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          size="sm"
           className={cn(
-            "w-auto justify-start text-left font-normal capitalize",
+            "justify-start text-left font-normal capitalize",
             !currentDate && "text-muted-foreground"
           )}
         >
