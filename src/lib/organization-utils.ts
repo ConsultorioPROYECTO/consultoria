@@ -1,6 +1,52 @@
-import { db } from '@rutas/db';
-import { organization } from '@rutas/db/schema/organization';
+import { db } from '@/db';
+import { organization } from '@/db/schema/organization';
 import { eq } from 'drizzle-orm';
+import type { Organization } from '@/db/schema/organization';
+
+/**
+ * Obtiene la información de la organización incluyendo instanceId basado en el organizationId del usuario autenticado.
+ * 
+ * @param organizationId - ID de la organización del usuario autenticado
+ * @returns Promise con la información de la organización o null si no se encuentra
+ */
+export async function getOrganizationInstance(organizationId: number): Promise<{
+  success: boolean;
+  organization?: Organization;
+  instanceId?: string;
+  error?: string;
+}> {
+  try {
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.id, organizationId),
+    });
+
+    if (!org) {
+      return {
+        success: false,
+        error: 'Organización no encontrada',
+      };
+    }
+
+    if (!org.instanceId) {
+      return {
+        success: false,
+        error: 'La organización no tiene una instancia de Evolution API configurada',
+      };
+    }
+
+    return {
+      success: true,
+      organization: org,
+      instanceId: org.instanceId,
+    };
+  } catch (error) {
+    console.error('Error obteniendo instancia de organización:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error desconocido',
+    };
+  }
+}
 
 /**
  * Funcion auxiliar para la creacion del codigo de invitacion aleatorio de 6 caracteres
