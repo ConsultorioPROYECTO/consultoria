@@ -236,22 +236,6 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       }));
   };
 
-  // Formatear el título según la vista
-  const getViewTitle = () => {
-    if (viewMode === "week") {
-      const { start, end } = getDateRange();
-      if (start.getMonth() === end.getMonth()) {
-        return format(start, "d", { locale: es }) + " - " + format(end, "d MMM yyyy", { locale: es });
-      } else {
-        return format(start, "d MMM", { locale: es }) + " - " + format(end, "d MMM yyyy", { locale: es });
-      }
-    } else if (viewMode === "day") {
-      return format(currentDate, "EEEE d MMM yyyy", { locale: es });
-    } else {
-      return format(currentDate, "MMMM yyyy", { locale: es });
-    }
-  };
-
   // Función para obtener solo el mes y año para el título principal
   const getMonthTitle = () => {
     return {
