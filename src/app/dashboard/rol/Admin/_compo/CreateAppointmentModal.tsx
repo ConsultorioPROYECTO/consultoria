@@ -716,12 +716,12 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
   return (
     <Card className="flex flex-col justify-between h-full">
       <CardHeader className="pb-3">
-        <CardTitle className="text-md font-semibold flex items-center justify-between">
+        <CardTitle className="text-2xl font-bold flex items-center justify-between">
           Crear Nueva Cita
           {isMobile ? (
             <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DrawerTrigger asChild>
-                <Button size="sm" className="ml-2" onClick={handleOpenDialog}>
+                <Button size="sm" className="ml-2 selection:bg-secondary selection:text-primary" onClick={handleOpenDialog}>
                   <Plus className="h-4 w-4 mr-1" />
                   Nueva Cita
                 </Button>
@@ -743,7 +743,7 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
           ) : (
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="ml-2" onClick={handleOpenDialog}>
+                <Button size="sm" className="ml-2 selection:bg-secondary selection:text-primary" onClick={handleOpenDialog}>
                   <Plus className="h-4 w-4 mr-1" />
                   Nueva Cita
                 </Button>

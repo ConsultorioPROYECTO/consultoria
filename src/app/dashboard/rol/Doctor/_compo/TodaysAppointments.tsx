@@ -12,7 +12,7 @@ export function TodaysAppointments({ appointmentCount }: TodaysAppointmentsProps
       <CardContent className="flex items-center justify-between py-1 px-8">
         <div className="flex flex-col">
           <span className="text-sm opacity-80">Tienes</span>
-          <span className="text-3xl lg:text-3xl font-bold mt-1">{appointmentCount} Cita{appointmentCount !== 1 ? 's' : ''}</span>
+          <span className="text-2xl lg:text-3xl font-bold mt-1 selection:bg-primary selection:text-primary-foreground">{appointmentCount} Cita{appointmentCount !== 1 ? 's' : ''}</span>
         </div>
       </CardContent>
     </Card>
