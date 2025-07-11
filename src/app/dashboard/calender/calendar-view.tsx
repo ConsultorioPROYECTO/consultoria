@@ -254,7 +254,10 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
 
   // Función para obtener solo el mes y año para el título principal
   const getMonthTitle = () => {
-    return format(currentDate, "MMMM yyyy", { locale: es });
+    return {
+      month: format(currentDate, "MMMM", { locale: es }),
+      year: format(currentDate, "yyyy", { locale: es })
+    };
   };
 
   // Función para abrir el modal con los eventos del día seleccionado
@@ -540,7 +543,10 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       {/* Header con controles */}
       <div className="flex flex-col sm:flex-row justify-between lg:items-center mb-6 gap-2 md:gap-4">
         <div className="flex items-center justify-between md:gap-4">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">{getMonthTitle()}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">
+            <div>{getMonthTitle().month}</div>
+            <div className="text-2xl text-muted-foreground">{getMonthTitle().year}</div>
+          </h1>
 
           <div className="flex gap-2 md:gap-4">
             <Button 
