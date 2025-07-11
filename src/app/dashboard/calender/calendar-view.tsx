@@ -528,7 +528,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       <div className="mb-6 space-y-4">
         {/* Primera fila: Título y botón Hoy */}
         <div className="flex justify-between">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground capitalize">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground capitalize">
             <div>{getMonthTitle().month}</div>
             <div className="text-muted-foreground">{getMonthTitle().year}</div>
           </h1>

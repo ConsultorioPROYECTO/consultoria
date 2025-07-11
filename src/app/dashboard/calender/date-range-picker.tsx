@@ -85,7 +85,7 @@ export function DateRangePicker({
   const getDisplayText = () => {
     const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-    return `${format(weekStart, "d MMM", { locale: es })} - ${format(weekEnd, "d MMM", { locale: es })}`;
+    return `${format(weekStart, "d MMMM", { locale: es })} - ${format(weekEnd, "d MMMM", { locale: es })}`;
   };
 
 
@@ -179,8 +179,8 @@ export function DateRangePicker({
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm font-medium capitalize">
-                      {format(selectedRange.from!, "d MMM", { locale: es })} - {format(selectedRange.to!, "d MMM", { locale: es })}
+                    <span className="text-sm capitalize">
+                      {format(selectedRange.from!, "d MMMM", { locale: es })} - {format(selectedRange.to!, "d MMMM", { locale: es })}
                     </span>
                     <Button
                       variant="outline"
