@@ -26,13 +26,13 @@ export default function AdminDashboard() {
             </p>
             </div>
 
-            {/* Sección de KPIs principales y análisis de negocio */}
+            <div className="grid gap-6 lg:grid-rows">
+              <ChartAreaInteractive />
+            </div>
+                        {/* Sección de KPIs principales y análisis de negocio */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
               <FinancialMetrics />
               <CreateAppointmentModal />
-            </div>
-            <div className="grid gap-6 lg:grid-rows">
-              <ChartAreaInteractive />
             </div>
             
             {/* Podrías agregar más secciones aquí según sea necesario */}
