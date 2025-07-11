@@ -85,7 +85,7 @@ export default function HomePage() {
         {/* Navegación Superior */}
         <nav className="relative flex justify-between items-center gap-4">
           {/* Logo o Título */}
-          <Link href="/" className="text-xl font-bold z-50">
+          <Link href="/" className="text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground">
             Irina 
           </Link>
           
@@ -104,7 +104,7 @@ export default function HomePage() {
             <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Iniciar sesión
             </Link>
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="selection:bg-secondary selection:text-primary">
               <Link href="/signup">Registro</Link>
             </Button>
           </div>
@@ -171,7 +171,7 @@ export default function HomePage() {
           }}
         >
           <motion.h1 
-            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter"
+            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter selection:bg-primary selection:text-primary-foreground"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             Irina
@@ -186,7 +186,7 @@ export default function HomePage() {
             className="mt-8"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
-            <Button asChild size="lg">
+            <Button asChild size="lg" className="selection:bg-secondary selection:text-primary">
               <Link href="/signup">Solicitar Acceso Beta</Link>
             </Button>
           </motion.div>
@@ -486,7 +486,7 @@ export default function HomePage() {
               show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
             }}
           >
-            <Button asChild size="lg" className="mt-8">
+            <Button asChild size="lg" className="mt-8 selection:bg-secondary selection:text-primary">
               <Link href="/signup">Solicitar Acceso Beta</Link>
             </Button>
           </motion.div>
@@ -547,7 +547,7 @@ export default function HomePage() {
 
           {/* Nueva Fila para Irina (Logo y Derechos) */}
           <div className="col-span-full flex flex-col items-end md:items-center">
-            <h3 className="text-2xl font-bold text-foreground mb-2">Irina</h3>
+            <h3 className="text-2xl font-bold text-foreground mb-2 selection:bg-primary selection:text-primary-foreground">Irina</h3>
             <p className="text-sm text-muted-foreground">
               © {new Date().getFullYear()} Irina. Todos los derechos reservados.
             </p>
