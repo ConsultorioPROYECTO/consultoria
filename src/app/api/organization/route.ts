@@ -44,7 +44,7 @@ import { DecodedIdToken } from 'firebase-admin/auth';
 import { users } from '@rutas/db/schema/users';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { generateRandomInvitationCode } from '@/lib/organization-utils';
+import { generateRandomInvitationCode, generateUniqueInstanceId, generateUniqueApiKey } from '@/lib/organization-utils';
 
 /**
  * Esquema de validación para la creación de organización
@@ -136,14 +136,18 @@ const postUserRoleHandler = async (
         .set({ role: "admin" })
         .where(eq(users.id, user.id));
 
-      // 3. Generar código de invitación
+      // 3. Generar código de invitación, instanceId y apiKey
       const invitacionCode = await generateRandomInvitationCode();
+      const instanceId = await generateUniqueInstanceId();
+      const apiKey = await generateUniqueApiKey();
       
       // 4. Crear la organización usando el ID numérico del plan encontrado
       const insertResult = await db.insert(organization).values({
         name: organizationName,
         invitationCode: invitacionCode,
         planId: plan.id, // Usar el ID numérico del plan
+        instanceId: instanceId,
+        apiKey: apiKey,
       });
 
       const newOrganizationId = insertResult[0].insertId;
@@ -163,7 +167,9 @@ const postUserRoleHandler = async (
       return NextResponse.json({ 
         message: 'Organización creada correctamente.',
         organizationId: newOrganizationId,
-        invitationCode: invitacionCode
+        invitationCode: invitacionCode,
+        instanceId: instanceId,
+        apiKey: apiKey
       });
     } catch (error) {
       console.error('Error en el servidor:', error);
