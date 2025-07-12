@@ -715,7 +715,7 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
 
   return (
     <Card className="flex flex-col justify-between h-full">
-      <CardHeader className="pb-3">
+      <CardHeader className="">
         <CardTitle className="text-2xl font-bold flex items-center justify-between">
           Crear Nueva Cita
           {isMobile ? (
