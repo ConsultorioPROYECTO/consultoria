@@ -35,6 +35,7 @@ interface GenerateQRResponse {
 }
 
 export function IntegrationsSection() {
+  const [showWhatsAppConfig, setShowWhatsAppConfig] = useState<boolean>(false)
   const [instanceId, setInstanceId] = useState<string>("")
   const [qrCodeData, setQrCodeData] = useState<string | null>(null)
   const [isLoadingQR, setIsLoadingQR] = useState<boolean>(false)
@@ -215,127 +216,182 @@ export function IntegrationsSection() {
   return (
     <div className="grid gap-6 py-4">
       <div>
-        <h3 className="text-lg font-medium mb-4">Integración de WhatsApp</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Genera un código QR para conectar tu instancia de WhatsApp.
+        <h3 className="text-lg font-medium mb-4">Integraciones Disponibles</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          Conecta tu IA con diferentes plataformas de mensajería.
         </p>
-        <div className="grid gap-4 max-w-md">
-          <div className="space-y-2">
-            <Label htmlFor="instanceId">ID de Instancia</Label>
-            <Input
-              id="instanceId"
-              placeholder="ej. mi-instancia-whatsapp"
-              value={instanceId}
-              onChange={(e) => {
-                setInstanceId(e.target.value);
-                // Stop auto-refresh when changing instance ID
-                if (autoRefreshInterval) {
-                  stopAutoRefresh();
-                }
-                setConnectionState(null);
-                setQrCodeData(null);
-              }}
-              disabled={isLoadingQR}
-            />
-          </div>
-          
-          {/* Connection Status */}
-          {instanceId && (
-            <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
-              <div className="flex items-center gap-2">
-                {isCheckingConnection ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : connectionState === 'open' ? (
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                ) : connectionState ? (
-                  <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                ) : (
-                  <div className="h-2 w-2 rounded-full bg-gray-400" />
-                )}
-                <span className="text-sm font-medium">
-                  Estado: {isCheckingConnection ? 'Verificando...' : connectionState === 'open' ? 'Conectado' : connectionState || 'Desconocido'}
-                </span>
+        
+        {/* Integration Cards */}
+        <div className="grid gap-4 mb-6">
+          {/* WhatsApp Integration Card */}
+          <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10  rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4 className="font-medium">WhatsApp</h4>
+                  <p className="text-sm text-muted-foreground">Conecta tu IA con WhatsApp Business</p>
+                </div>
               </div>
-              {instanceId && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => checkConnectionState(instanceId)}
-                  disabled={isCheckingConnection || !instanceId}
-                  className="ml-auto"
-                >
-                  {isCheckingConnection ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    'Verificar'
-                  )}
-                </Button>
-              )}
-            </div>
-          )}
-          
-          <Button onClick={handleGenerateQR} disabled={isLoadingQR || !instanceId}>
-            {isLoadingQR ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generando QR...
-              </>
-            ) : qrCodeData ? (
-              "Regenerar QR"
-            ) : (
-              "Generar QR"
-            )}
-          </Button>
-          
-          {autoRefreshInterval && (
-            <div className="flex items-center gap-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span className="text-xs">Verificando conexión cada 15 segundos...</span>
-              <Button
-                variant="ghost"
+              <Button 
+                variant="outline" 
                 size="sm"
-                onClick={stopAutoRefresh}
-                className="ml-auto h-6 px-2 text-xs"
+                onClick={() => setShowWhatsAppConfig(!showWhatsAppConfig)}
               >
-                Detener
+                {showWhatsAppConfig ? 'Ocultar' : 'Configurar'}
               </Button>
             </div>
-          )}
+          </div>
           
-          {qrError && (
-            <p className="text-sm text-red-500">{qrError}</p>
-          )}
-          
-          {qrCodeData && (
-            <div className="mt-4 text-center">
-              <p className="text-sm text-muted-foreground mb-2">Escanea este código QR con tu teléfono:</p>
-              <div className="relative inline-block">
-                <Image
-                  src={qrCodeData}
-                  alt="Código QR de WhatsApp"
-                  width={500}
-                  height={500}
-                  className="mx-auto border rounded-lg shadow-sm"
-                  priority
-                  onError={() => {
-                    console.error('Error loading QR image');
-                    setQrError("Error al cargar la imagen del código QR. Por favor, inténtalo de nuevo.");
+          {/* Coming Soon Card */}
+          <div className="border rounded-lg p-4 opacity-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-300 rounded-lg flex items-center justify-center">
+                  <span className="text-gray-600 text-lg">+</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-muted-foreground">Más integraciones</h4>
+                  <p className="text-sm text-muted-foreground">Próximamente: Telegram, Instagram, etc.</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" disabled>
+                Próximamente
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* WhatsApp Configuration Panel */}
+        {showWhatsAppConfig && (
+          <div className="border rounded-lg p-6 bg-muted/30">
+            <h4 className="text-md font-medium mb-4">Configuración de WhatsApp</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Genera un código QR para conectar tu instancia de WhatsApp.
+            </p>
+            <div className="grid gap-4 max-w-md">
+              <div className="space-y-2">
+                <Label htmlFor="instanceId">ID de Instancia</Label>
+                <Input
+                  id="instanceId"
+                  placeholder="ej. mi-instancia-whatsapp"
+                  value={instanceId}
+                  onChange={(e) => {
+                    setInstanceId(e.target.value);
+                    // Stop auto-refresh when changing instance ID
+                    if (autoRefreshInterval) {
+                      stopAutoRefresh();
+                    }
+                    setConnectionState(null);
                     setQrCodeData(null);
                   }}
-                  
-                  onLoad={() => {
-                    console.log('QR image loaded successfully');
-                  }}
+                  disabled={isLoadingQR}
                 />
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {connectionState === 'open' 
-                  ? 'WhatsApp conectado exitosamente.' 
-                  : 'El código se actualizará automáticamente cada 15 segundos hasta que se conecte.'}
-              </p>
+          
+              {/* Connection Status */}
+              {instanceId && (
+                <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    {isCheckingConnection ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : connectionState === 'open' ? (
+                      <div className="h-2 w-2 rounded-full bg-green-500" />
+                    ) : connectionState ? (
+                      <div className="h-2 w-2 rounded-full bg-yellow-500" />
+                    ) : (
+                      <div className="h-2 w-2 rounded-full bg-gray-400" />
+                    )}
+                    <span className="text-sm font-medium">
+                      Estado: {isCheckingConnection ? 'Verificando...' : connectionState === 'open' ? 'Conectado' : connectionState || 'Desconocido'}
+                    </span>
+                  </div>
+                  {instanceId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => checkConnectionState(instanceId)}
+                      disabled={isCheckingConnection || !instanceId}
+                      className="ml-auto"
+                    >
+                      {isCheckingConnection ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        'Verificar'
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+          
+              <Button onClick={handleGenerateQR} disabled={isLoadingQR || !instanceId}>
+                {isLoadingQR ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando QR...
+                  </>
+                ) : qrCodeData ? (
+                  "Regenerar QR"
+                ) : (
+                  "Generar QR"
+                )}
+              </Button>
+          
+              {autoRefreshInterval && (
+                <div className="flex items-center gap-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span className="text-xs">Verificando conexión cada 15 segundos...</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={stopAutoRefresh}
+                    className="ml-auto h-6 px-2 text-xs"
+                  >
+                    Detener
+                  </Button>
+                </div>
+              )}
+          
+              {qrError && (
+                <p className="text-sm text-red-500">{qrError}</p>
+              )}
+          
+              {qrCodeData && (
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-muted-foreground mb-2">Escanea este código QR con tu teléfono:</p>
+                  <div className="relative inline-block">
+                    <Image
+                      src={qrCodeData}
+                      alt="Código QR de WhatsApp"
+                      width={500}
+                      height={500}
+                      className="mx-auto border rounded-lg shadow-sm"
+                      priority
+                      onError={() => {
+                        console.error('Error loading QR image');
+                        setQrError("Error al cargar la imagen del código QR. Por favor, inténtalo de nuevo.");
+                        setQrCodeData(null);
+                      }}
+                      
+                      onLoad={() => {
+                        console.log('QR image loaded successfully');
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {connectionState === 'open' 
+                      ? 'WhatsApp conectado exitosamente.' 
+                      : 'El código se actualizará automáticamente cada 15 segundos hasta que se conecte.'}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
