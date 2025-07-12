@@ -2,10 +2,26 @@
 
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useCallback } from "react"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
+
+import { Loader2, X } from "lucide-react"
 import Image from "next/image"
+import { useAuth } from "@/app/context/AuthContext"
+import { useIsMobile } from "@/hooks/use-mobile"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerClose,
+} from "@/components/ui/drawer"
 
 // === Types ===
 
@@ -13,8 +29,6 @@ import Image from "next/image"
  * Response structure from the generateQR API endpoint.
  */
 interface GenerateQRResponse {
-  /** Indicates if the request was successful */
-  success: boolean;
   /** QR code data from Evolution API */
   data?: {
     /** QR code as data URL (data:image/png;base64,...) */
@@ -35,33 +49,44 @@ interface GenerateQRResponse {
 }
 
 export function IntegrationsSection() {
-  const [showWhatsAppConfig, setShowWhatsAppConfig] = useState<boolean>(false)
-  const [instanceId, setInstanceId] = useState<string>("")
+  const { user } = useAuth()
+  const isMobile = useIsMobile()
+
+
   const [qrCodeData, setQrCodeData] = useState<string | null>(null)
   const [isLoadingQR, setIsLoadingQR] = useState<boolean>(false)
   const [qrError, setQrError] = useState<string | null>(null)
   const [connectionState, setConnectionState] = useState<string | null>(null)
-  const [isCheckingConnection, setIsCheckingConnection] = useState<boolean>(false)
+
   const [autoRefreshInterval, setAutoRefreshInterval] = useState<NodeJS.Timeout | null>(null)
+  const [hasWhatsAppConnection, setHasWhatsAppConnection] = useState<boolean | null>(null)
+  const [isCheckingWhatsAppConnection, setIsCheckingWhatsAppConnection] = useState<boolean>(false)
+  const [showQRModal, setShowQRModal] = useState<boolean>(false)
 
   /**
-   * Checks the connection state of a WhatsApp instance.
+   * Checks if the organization has a WhatsApp connection using the connectionState API.
    * 
-   * @param instanceName - The name of the instance to check
-   * @returns Promise<string | null> - The connection state or null if error
+   * @returns Promise<boolean> - True if organization has a connection, false otherwise
    */
-  const checkConnectionState = async (instanceName: string): Promise<string | null> => {
-    if (!instanceName || instanceName.trim() === '') {
-      return null;
+  const checkOrganizationWhatsAppConnection = useCallback(async (): Promise<boolean> => {
+    if (!user) {
+      return false;
     }
 
     try {
-      setIsCheckingConnection(true);
-      const response = await fetch(`/api/evolutionAPI/connectionState/${instanceName.trim()}`);
+      setIsCheckingWhatsAppConnection(true);
+      const token = await user.getIdToken();
+      const response = await fetch('/api/evolutionAPI/connectionState', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
       
       if (!response.ok) {
-        console.error(`Error checking connection state: ${response.status}`);
-        return null;
+        console.error(`Error checking organization WhatsApp connection: ${response.status}`);
+        return false;
       }
 
       const data = await response.json();
@@ -69,22 +94,23 @@ export function IntegrationsSection() {
       if (data.success && data.data?.instance?.state) {
         const state = data.data.instance.state;
         setConnectionState(state);
-        console.log(`Connection state for ${instanceName}: ${state}`);
-        return state;
+        console.log(`Organization WhatsApp connection state: ${state}`);
+        return state === 'open';
       }
       
-      return null;
+      return false;
     } catch (error) {
-      console.error('Error checking connection state:', error);
-      return null;
+      console.error('Error checking organization WhatsApp connection:', error);
+      return false;
     } finally {
-      setIsCheckingConnection(false);
+      setIsCheckingWhatsAppConnection(false);
     }
-  };
+  }, [user]);
+
+
 
   /**
-   * Starts auto-refresh of QR code when instance is not connected.
-   * Checks connection state every 15 seconds and regenerates QR if needed.
+   * Starts auto-refresh to check connection state and regenerate QR every 20 seconds.
    */
   const startAutoRefresh = () => {
     if (autoRefreshInterval) {
@@ -92,22 +118,20 @@ export function IntegrationsSection() {
     }
 
     const interval = setInterval(async () => {
-      if (!instanceId || instanceId.trim() === '') {
-        return;
-      }
-
-      const state = await checkConnectionState(instanceId);
+      const hasConnection = await checkOrganizationWhatsAppConnection();
       
-      // If not connected (state is not 'open'), regenerate QR
-      if (state !== 'open' && !isLoadingQR) {
-        console.log('Instance not connected, regenerating QR...');
-        await handleGenerateQR();
-      } else if (state === 'open') {
-        // If connected, stop auto-refresh
-        console.log('Instance connected, stopping auto-refresh');
+      if (hasConnection) {
+        // If connected, stop auto-refresh and update connection status
+        console.log('WhatsApp connected, stopping auto-refresh');
+        setHasWhatsAppConnection(true);
+        setShowQRModal(false);
         stopAutoRefresh();
+      } else {
+        // If not connected, regenerate QR code
+        console.log('WhatsApp not connected, regenerating QR code...');
+        await generateQRCode(true); // Keep current QR visible during regeneration
       }
-    }, 20000); // 15 seconds
+    }, 20000); // 20 seconds
 
     setAutoRefreshInterval(interval);
   };
@@ -122,6 +146,18 @@ export function IntegrationsSection() {
     }
   }, [autoRefreshInterval]);
 
+  // Check organization WhatsApp connection on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      if (user) {
+        const hasConnection = await checkOrganizationWhatsAppConnection();
+        setHasWhatsAppConnection(hasConnection);
+      }
+    };
+    
+    checkConnection();
+  }, [user, checkOrganizationWhatsAppConnection]);
+
   // Cleanup interval on component unmount
   useEffect(() => {
     return () => {
@@ -130,32 +166,41 @@ export function IntegrationsSection() {
   }, [autoRefreshInterval, stopAutoRefresh]);
 
   /**
-   * Handles QR code generation with improved error handling and validation.
+   * Generates QR code without starting auto-refresh (used for regeneration).
    * 
+   * @param keepCurrentQR - Whether to keep the current QR visible during regeneration
    * @returns Promise<void>
    */
-  const handleGenerateQR = async (): Promise<void> => {
-    // Validate instance ID
-    if (!instanceId || instanceId.trim() === '') {
-      setQrError("Por favor, ingresa un ID de instancia válido.");
+  const generateQRCode = async (keepCurrentQR: boolean = false): Promise<void> => {
+    if (!user) {
+      setQrError("Usuario no autenticado.");
       return;
     }
 
-    setIsLoadingQR(true);
-    setQrCodeData(null);
+    // Clear any previous errors
     setQrError(null);
+    
+    // For regeneration, add a small delay before showing loading state to reduce flickering
+    let loadingTimeout: NodeJS.Timeout | null = null;
+    if (keepCurrentQR) {
+      loadingTimeout = setTimeout(() => setIsLoadingQR(true), 500); // 500ms delay
+    } else {
+      setIsLoadingQR(true);
+      setQrCodeData(null);
+    }
 
     try {
       // Add timeout for the request
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
+      const token = await user.getIdToken();
       const response = await fetch('/api/evolutionAPI/generateQR', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ instance: instanceId.trim() }),
         signal: controller.signal,
       });
 
@@ -164,10 +209,11 @@ export function IntegrationsSection() {
 
       // Log response for debugging (remove in production)
       console.log('QR Generation Response:', {
-        success: data.success,
+        responseOk: response.ok,
         hasData: !!data.data,
         hasQrCode: !!(data.data?.qrcode),
-        status: response.status
+        status: response.status,
+        message: data.message
       });
 
       if (!response.ok) {
@@ -175,19 +221,16 @@ export function IntegrationsSection() {
       }
 
       // Enhanced response validation
-      if (data.success && data.data) {
+      // The API returns { message, data } for success, { error, details } for errors
+      if (response.ok && data.data) {
         if (data.data.qrcode && data.data.qrcode.startsWith('data:image/')) {
           setQrCodeData(data.data.qrcode);
-          // Start auto-refresh to check connection state
-          startAutoRefresh();
         } else if (data.data.base64) {
           if (data.data.base64.startsWith('data:image/')) {
             setQrCodeData(data.data.base64);
           } else {
             setQrCodeData(`data:image/png;base64,${data.data.base64}`);
           }
-          // Start auto-refresh to check connection state
-          startAutoRefresh();
         } else {
           setQrError("No se recibió un código QR válido en la respuesta del servidor.");
         }
@@ -209,8 +252,124 @@ export function IntegrationsSection() {
       
       setQrError(errorMessage);
     } finally {
+      // Clear loading timeout if it exists
+      if (loadingTimeout) {
+        clearTimeout(loadingTimeout);
+      }
       setIsLoadingQR(false);
     }
+  };
+
+  /**
+   * Handles QR code generation using the organization's connection.
+   * 
+   * @returns Promise<void>
+   */
+  const handleConnectWhatsApp = async (): Promise<void> => {
+    await generateQRCode();
+    setShowQRModal(true);
+    // Start auto-refresh to check connection state
+    startAutoRefresh();
+  };
+
+
+
+  /**
+   * Componente que renderiza el código QR en un Dialog (desktop) o Drawer (móvil)
+   */
+  const QRCodeModal = () => {
+    const content = (
+      <>
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            Escanea este código QR con tu teléfono para conectar WhatsApp:
+          </p>
+          {qrCodeData && (
+            <div className="relative inline-block">
+              <Image
+                src={qrCodeData}
+                alt="Código QR de WhatsApp"
+                width={300}
+                height={300}
+                className="mx-auto border rounded-lg shadow-sm"
+                priority
+                onError={() => {
+                  console.error('Error loading QR image');
+                  setQrError("Error al cargar la imagen del código QR. Por favor, inténtalo de nuevo.");
+                  setQrCodeData(null);
+                  // Don't close modal on image error to prevent flickering
+                }}
+                onLoad={() => {
+                  console.log('QR image loaded successfully');
+                }}
+              />
+              {/* Loading overlay during regeneration */}
+              {isLoadingQR && (
+                <div className="absolute inset-0 bg-white/80 dark:bg-black/80 rounded-lg flex items-center justify-center transition-opacity duration-300 ease-in-out">
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    <span className="text-xs text-muted-foreground">Regenerando QR...</span>
+                  </div>
+                </div>
+              )}
+          {/* Loading state when no QR code yet */}
+          {!qrCodeData && isLoadingQR && (
+            <div className="w-[300px] h-[300px] mx-auto border rounded-lg shadow-sm flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="text-sm text-muted-foreground">Generando código QR...</span>
+              </div>
+            </div>
+          )}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground mt-4">
+            {connectionState === 'open' 
+              ? 'WhatsApp conectado exitosamente.' 
+              : 'El código se actualizará automáticamente cada 20 segundos hasta que se conecte.'}
+          </p>
+        </div>
+      </>
+    );
+
+    if (isMobile) {
+      return (
+        <Drawer open={showQRModal} onOpenChange={setShowQRModal}>
+          <DrawerContent>
+            <DrawerHeader>
+              <div className="flex items-center justify-between">
+                <DrawerTitle>Conectar WhatsApp</DrawerTitle>
+                <DrawerClose asChild>
+                  <Button variant="ghost" size="sm">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+              <DrawerDescription>
+                Usa tu teléfono para escanear el código QR
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="p-4">
+              {content}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      );
+    }
+
+    return (
+      <Dialog open={showQRModal} onOpenChange={setShowQRModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conectar WhatsApp</DialogTitle>
+            <DialogDescription>
+              Usa tu teléfono para escanear el código QR
+            </DialogDescription>
+          </DialogHeader>
+          {content}
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
@@ -237,13 +396,36 @@ export function IntegrationsSection() {
                   <p className="text-sm text-muted-foreground">Conecta tu IA con WhatsApp Business</p>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowWhatsAppConfig(!showWhatsAppConfig)}
-              >
-                {showWhatsAppConfig ? 'Ocultar' : 'Configurar'}
-              </Button>
+              {isCheckingWhatsAppConnection ? (
+                <Button variant="outline" size="sm" disabled>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Verificando...
+                </Button>
+              ) : hasWhatsAppConnection === false ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleConnectWhatsApp}
+                  disabled={isLoadingQR}
+                >
+                  {isLoadingQR ? (
+                    <>
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      Conectando...
+                    </>
+                  ) : (
+                    'Conectar'
+                  )}
+                </Button>
+              ) : hasWhatsAppConnection === true ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500" />
+                  <span className="text-sm text-green-600 font-medium">Conectado</span>
+                  {connectionState && (
+                    <span className="text-xs text-muted-foreground">({connectionState})</span>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
           
@@ -266,133 +448,30 @@ export function IntegrationsSection() {
           </div>
         </div>
         
-        {/* WhatsApp Configuration Panel */}
-        {showWhatsAppConfig && (
-          <div className="border rounded-lg p-6 bg-muted/30">
-            <h4 className="text-md font-medium mb-4">Configuración de WhatsApp</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Genera un código QR para conectar tu instancia de WhatsApp.
-            </p>
-            <div className="grid gap-4 max-w-md">
-              <div className="space-y-2">
-                <Label htmlFor="instanceId">ID de Instancia</Label>
-                <Input
-                  id="instanceId"
-                  placeholder="ej. mi-instancia-whatsapp"
-                  value={instanceId}
-                  onChange={(e) => {
-                    setInstanceId(e.target.value);
-                    // Stop auto-refresh when changing instance ID
-                    if (autoRefreshInterval) {
-                      stopAutoRefresh();
-                    }
-                    setConnectionState(null);
-                    setQrCodeData(null);
-                  }}
-                  disabled={isLoadingQR}
-                />
-              </div>
-          
-              {/* Connection Status */}
-              {instanceId && (
-                <div className="flex items-center gap-2 p-3 rounded-lg border bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    {isCheckingConnection ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    ) : connectionState === 'open' ? (
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                    ) : connectionState ? (
-                      <div className="h-2 w-2 rounded-full bg-yellow-500" />
-                    ) : (
-                      <div className="h-2 w-2 rounded-full bg-gray-400" />
-                    )}
-                    <span className="text-sm font-medium">
-                      Estado: {isCheckingConnection ? 'Verificando...' : connectionState === 'open' ? 'Conectado' : connectionState || 'Desconocido'}
-                    </span>
-                  </div>
-                  {instanceId && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => checkConnectionState(instanceId)}
-                      disabled={isCheckingConnection || !instanceId}
-                      className="ml-auto"
-                    >
-                      {isCheckingConnection ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        'Verificar'
-                      )}
-                    </Button>
-                  )}
-                </div>
-              )}
-          
-              <Button onClick={handleGenerateQR} disabled={isLoadingQR || !instanceId}>
-                {isLoadingQR ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generando QR...
-                  </>
-                ) : qrCodeData ? (
-                  "Regenerar QR"
-                ) : (
-                  "Generar QR"
-                )}
-              </Button>
-          
-              {autoRefreshInterval && (
-                <div className="flex items-center gap-2 p-2 rounded bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  <span className="text-xs">Verificando conexión cada 15 segundos...</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={stopAutoRefresh}
-                    className="ml-auto h-6 px-2 text-xs"
-                  >
-                    Detener
-                  </Button>
-                </div>
-              )}
-          
-              {qrError && (
-                <p className="text-sm text-red-500">{qrError}</p>
-              )}
-          
-              {qrCodeData && (
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-muted-foreground mb-2">Escanea este código QR con tu teléfono:</p>
-                  <div className="relative inline-block">
-                    <Image
-                      src={qrCodeData}
-                      alt="Código QR de WhatsApp"
-                      width={500}
-                      height={500}
-                      className="mx-auto border rounded-lg shadow-sm"
-                      priority
-                      onError={() => {
-                        console.error('Error loading QR image');
-                        setQrError("Error al cargar la imagen del código QR. Por favor, inténtalo de nuevo.");
-                        setQrCodeData(null);
-                      }}
-                      
-                      onLoad={() => {
-                        console.log('QR image loaded successfully');
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {connectionState === 'open' 
-                      ? 'WhatsApp conectado exitosamente.' 
-                      : 'El código se actualizará automáticamente cada 15 segundos hasta que se conecte.'}
-                  </p>
-                </div>
-              )}
-            </div>
+        {/* Error display for QR generation */}
+        {qrError && (
+          <div className="border rounded-lg p-4 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
+            <p className="text-sm text-red-600 dark:text-red-400">{qrError}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+              onClick={() => {
+                setQrError(null);
+                handleConnectWhatsApp();
+              }}
+              disabled={isLoadingQR}
+            >
+              Intentar de nuevo
+            </Button>
           </div>
         )}
+
+
       </div>
+      
+      {/* QR Code Modal/Drawer */}
+      <QRCodeModal />
     </div>
   );
 }
