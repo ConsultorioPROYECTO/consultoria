@@ -111,6 +111,76 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
 }
 
 /**
+ * Creates an Evolution API instance automatically when it doesn't exist.
+ * 
+ * This function is called when a 404 error is received during connection state check,
+ * indicating that the instance doesn't exist and needs to be created.
+ * 
+ * @param instanceId - The instance ID to create
+ * @param apiKey - The API key for webhook configuration
+ * @returns Promise resolving to creation result
+ * 
+ * @internal
+ */
+async function createInstanceAutomatically(instanceId: string, apiKey: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Prepare instance creation payload
+    const instancePayload = {
+      instanceName: instanceId,
+      qrcode: true,
+      integration: "WHATSAPP-BAILEYS",
+      groupsIgnore: true,
+      syncFullHistory: false,
+      webhook: {
+        url: "https://n8n.srv828784.hstgr.cloud/webhook/75372571-9d48-47fb-8e3b-a982ce2e798e",
+        byEvents: false,
+        base64: true,
+        headers: {
+          autorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        events: [
+          "MESSAGES_UPSERT"
+        ]
+      }
+    };
+
+    // Make request to Evolution API instance creation endpoint
+    const createInstanceUrl = `${EVOLUTION_API_SERVER_URL}/instance/create`;
+    console.log(`Creating instance automatically at: ${createInstanceUrl}`);
+    
+    const response = await fetch(createInstanceUrl, {
+       method: 'POST',
+       headers: {
+         'apikey': EVOLUTION_API_KEY!,
+         'Content-Type': 'application/json'
+       },
+       body: JSON.stringify(instancePayload)
+     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        message: `HTTP ${response.status}: ${response.statusText}` 
+      }));
+      
+      console.error(`Automatic instance creation failed (${response.status}):`, errorData);
+      return { success: false, error: errorData.message || `HTTP ${response.status}` };
+    }
+
+    const instanceData = await response.json();
+    console.log(`Instance ${instanceId} created automatically:`, {
+      instanceName: instanceData.instanceName,
+      status: instanceData.status
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in automatic instance creation:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
  * Checks the connection state of the authenticated user's Evolution API instance.
  * 
  * This function implements the core business logic for checking Evolution API
@@ -212,6 +282,48 @@ const getConnectionStateHandler = async (
       }));
       
       console.error(`Connection state check failed (${response.status}):`, errorData);
+
+      // If instance doesn't exist (404), try to create it automatically
+      if (response.status === 404) {
+        console.log(`Instance ${instanceId} not found, attempting to create it automatically...`);
+        
+        try {
+          const createResult = await createInstanceAutomatically(instanceId, orgResult.apiKey!);
+          if (createResult.success) {
+            console.log(`Instance ${instanceId} created successfully, now checking connection state again...`);
+            
+            // Wait a moment for the instance to initialize
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Try to get connection state again after creation
+            const retryResponse = await fetch(connectionStateUrl, {
+              method: 'GET',
+              headers: {
+                'apikey': EVOLUTION_API_KEY,
+                'Content-Type': 'application/json'
+              },
+            });
+            
+            if (retryResponse.ok) {
+              const retryConnectionData: EvolutionConnectionStateResponse = await retryResponse.json();
+              console.log(`Connection state retrieved after instance creation for ${instanceId}:`, {
+                instanceName: retryConnectionData.instance?.instanceName,
+                state: retryConnectionData.instance?.state
+              });
+              
+              return createSuccessResponse(
+                retryConnectionData,
+                `Instance created and connection state retrieved successfully for: ${instanceId}`,
+                HTTP_STATUS.OK
+              );
+            } else {
+              console.warn(`Instance created but connection state check still failed: ${retryResponse.status}`);
+            }
+          }
+        } catch (createError) {
+          console.error('Failed to create instance automatically:', createError);
+        }
+      }
 
       return createErrorResponse(
         'Failed to check Evolution API instance connection state',
