@@ -66,11 +66,11 @@ export function IntegrationsSection() {
   /**
    * Checks if the organization has a WhatsApp connection using the connectionState API.
    * 
-   * @returns Promise<boolean> - True if organization has a connection, false otherwise
+   * @returns Promise<{connected: boolean, state: string | null}> - Connection status and current state
    */
-  const checkOrganizationWhatsAppConnection = useCallback(async (): Promise<boolean> => {
+  const checkOrganizationWhatsAppConnection = useCallback(async (): Promise<{connected: boolean, state: string | null}> => {
     if (!user) {
-      return false;
+      return {connected: false, state: null};
     }
 
     try {
@@ -86,22 +86,31 @@ export function IntegrationsSection() {
       
       if (!response.ok) {
         console.error(`Error checking organization WhatsApp connection: ${response.status}`);
-        return false;
+        return {connected: false, state: null};
       }
 
       const data = await response.json();
+
+      console.log(`\n\n\n\n\n\tResponse from connectionState API: ${JSON.stringify(data)}\n\n\n\n`);
       
-      if (data.success && data.data?.instance?.state) {
+      // Check if the response has the expected structure
+      if (data.data?.instance?.state) {
         const state = data.data.instance.state;
         setConnectionState(state);
-        console.log(`Organization WhatsApp connection state: ${state}`);
-        return state === 'open';
+        console.log(`\n\n\n\n\n\tOrganization WhatsApp connection state: ${state}\n\n\n\n`);
+        console.log('Setting connectionState to:', state, 'Type:', typeof state);
+        
+        if (state === 'open'){
+          return {connected: true, state};
+        } else {
+          return {connected: false, state};
+        }
       }
       
-      return false;
+      return {connected: false, state: null};
     } catch (error) {
       console.error('Error checking organization WhatsApp connection:', error);
-      return false;
+      return {connected: false, state: null};
     } finally {
       setIsCheckingWhatsAppConnection(false);
     }
@@ -110,7 +119,7 @@ export function IntegrationsSection() {
 
 
   /**
-   * Starts auto-refresh to check connection state and regenerate QR every 20 seconds.
+   * Starts auto-refresh to check connection state and regenerate QR every 30 seconds.
    */
   const startAutoRefresh = () => {
     if (autoRefreshInterval) {
@@ -118,20 +127,31 @@ export function IntegrationsSection() {
     }
 
     const interval = setInterval(async () => {
-      const hasConnection = await checkOrganizationWhatsAppConnection();
+      const connectionResult = await checkOrganizationWhatsAppConnection();
       
-      if (hasConnection) {
+      console.log('Auto-refresh check - connectionResult:', {
+        connected: connectionResult.connected,
+        state: connectionResult.state,
+        stateType: typeof connectionResult.state
+      });
+      
+      if (connectionResult.connected) {
         // If connected, stop auto-refresh and update connection status
         console.log('WhatsApp connected, stopping auto-refresh');
         setHasWhatsAppConnection(true);
         setShowQRModal(false);
         stopAutoRefresh();
       } else {
-        // If not connected, regenerate QR code
-        console.log('WhatsApp not connected, regenerating QR code...');
-        await generateQRCode(true); // Keep current QR visible during regeneration
+        // Only regenerate QR if not in connecting or open state
+        const currentState = connectionResult.state;
+        if (currentState !== 'connecting' && currentState !== 'open') {
+          console.log(`WhatsApp not connected (state: ${currentState}), regenerating QR code...`);
+          await generateQRCode(true); // Keep current QR visible during regeneration
+        } else {
+          console.log(`WhatsApp is ${currentState}, keeping current QR...`);
+        }
       }
-    }, 20000); // 20 seconds
+    }, 30000); // 30 seconds
 
     setAutoRefreshInterval(interval);
   };
@@ -150,8 +170,12 @@ export function IntegrationsSection() {
   useEffect(() => {
     const checkConnection = async () => {
       if (user) {
-        const hasConnection = await checkOrganizationWhatsAppConnection();
-        setHasWhatsAppConnection(hasConnection);
+        const connectionResult = await checkOrganizationWhatsAppConnection();
+        setHasWhatsAppConnection(connectionResult.connected);
+        // Ensure connectionState is properly set from the result
+        if (connectionResult.state) {
+          setConnectionState(connectionResult.state);
+        }
       }
     };
     
@@ -164,6 +188,16 @@ export function IntegrationsSection() {
       stopAutoRefresh();
     };
   }, [autoRefreshInterval, stopAutoRefresh]);
+
+  // Debug useEffect to monitor connectionState changes
+  useEffect(() => {
+    console.log('connectionState changed in React:', {
+      value: connectionState,
+      type: typeof connectionState,
+      isNull: connectionState === null,
+      isStringNull: connectionState === 'null'
+    });
+  }, [connectionState]);
 
   /**
    * Generates QR code without starting auto-refresh (used for regeneration).
@@ -326,7 +360,9 @@ export function IntegrationsSection() {
           <p className="text-xs text-muted-foreground mt-4">
             {connectionState === 'open' 
               ? 'WhatsApp conectado exitosamente.' 
-              : 'El código se actualizará automáticamente cada 20 segundos hasta que se conecte.'}
+              : connectionState === 'connecting'
+              ? 'Conectando WhatsApp... Por favor espera.'
+              : 'El código se actualizará automáticamente cada 30 segundos hasta que se conecte.'}
           </p>
         </div>
       </>
@@ -421,7 +457,7 @@ export function IntegrationsSection() {
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500" />
                   <span className="text-sm text-green-600 font-medium">Conectado</span>
-                  {connectionState && (
+                  {connectionState && connectionState !== 'null' && (
                     <span className="text-xs text-muted-foreground">({connectionState})</span>
                   )}
                 </div>
