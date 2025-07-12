@@ -2,7 +2,7 @@
 
 import { Button } from "@rutas/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rutas/components/ui/card";
-import { Stethoscope, Plus, Settings, Heart } from "lucide-react";
+import { Stethoscope, Plus, Settings } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@rutas/components/ui/dialog";
 import { ServiceSpecialtyConfig } from "./ServiceSpecialtyConfig";
