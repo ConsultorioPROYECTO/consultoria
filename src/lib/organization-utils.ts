@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import type { Organization } from '@/db/schema/organization';
 
 /**
- * Obtiene la información de la organización incluyendo instanceId basado en el organizationId del usuario autenticado.
+ * Obtiene la información de la organización incluyendo instanceId y apiKey basado en el organizationId del usuario autenticado.
  * 
  * @param organizationId - ID de la organización del usuario autenticado
  * @returns Promise con la información de la organización o null si no se encuentra
@@ -13,6 +13,7 @@ export async function getOrganizationInstance(organizationId: number): Promise<{
   success: boolean;
   organization?: Organization;
   instanceId?: string;
+  apiKey?: string;
   error?: string;
 }> {
   try {
@@ -38,6 +39,7 @@ export async function getOrganizationInstance(organizationId: number): Promise<{
       success: true,
       organization: org,
       instanceId: org.instanceId,
+      apiKey: org.apiKey || undefined,
     };
   } catch (error) {
     console.error('Error obteniendo instancia de organización:', error);
