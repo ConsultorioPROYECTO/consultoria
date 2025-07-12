@@ -18,7 +18,7 @@ export function FinancialMetrics() {
             <p className="text-3xl font-bold text-foreground selection:bg-primary selection:text-primary-foreground">{scheduledAppointments}</p>
           </div>
           <div className="grid grid-rows-2 gap-1">
-            <p className="text-sm font-medium text-muted-foreground">Consultas Completadas</p>
+            <p className="text-sm font-medium text-muted-foreground">Consultas Atendidas</p>
             <p className="text-3xl font-bold text-foreground selection:bg-primary selection:text-primary-foreground">{completedAppointments}</p>
           </div>
         </div>
