@@ -10,9 +10,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@rutas/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@rutas/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@rutas/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday, startOfDay, endOfDay } from "date-fns";
-import { cn } from "@/lib/utils";
 import { EventModal } from "./event-modal";
 import { CalendarEvent } from "@/types/calendar";
 import { useAuth } from "../../context/AuthContext";
@@ -43,6 +57,13 @@ type Event = {
   type: string;
   color: string;
   status: string;
+};
+
+type Doctor = {
+  id: number;
+  displayName: string;
+  email: string;
+  idDoctor: number;
 };
 
 export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
@@ -76,6 +97,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   // Estado para eventos del doctor
   const [doctorEvents, setDoctorEvents] = React.useState<CalendarEvent[]>([]);
   const [, setLoading] = React.useState(true);
+  
+  // Estado para filtro de doctores
+  const [availableDoctors, setAvailableDoctors] = React.useState<Doctor[]>([]);
+  const [selectedDoctorId, setSelectedDoctorId] = React.useState<string>(""); // Doctor específico seleccionado
+  const [openDoctorCombo, setOpenDoctorCombo] = React.useState(false);
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768); // md breakpoint
@@ -83,6 +109,63 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Cargar doctores disponibles
+  React.useEffect(() => {
+    const loadDoctors = async () => {
+      if (!user) return;
+      
+      try {
+        const token = await getFirebaseAuthToken();
+        if (!token) return;
+        
+        const response = await fetch('/api/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        
+        const users = await response.json();
+        
+        // Filtrar solo usuarios con rol 'medico' y que tengan idDoctor
+        interface UserFromAPI {
+          id: string;
+          role: string;
+          idDoctor?: number;
+          displayName?: string;
+          email: string;
+        }
+        
+        const doctors = users
+          .filter((user: UserFromAPI) => user.role === 'medico' && user.idDoctor)
+          .map((user: UserFromAPI) => ({
+            id: user.id,
+            displayName: user.displayName || user.email,
+            email: user.email,
+            idDoctor: user.idDoctor!
+          }));
+        
+        setAvailableDoctors(doctors);
+        
+        // Si el usuario actual es doctor y no se ha seleccionado ninguno, seleccionarlo
+        if (!selectedDoctorId && doctorId) {
+          setSelectedDoctorId(doctorId.toString());
+        } else if (!selectedDoctorId && doctors.length > 0) {
+          // Si no hay doctor del usuario actual, seleccionar el primero disponible
+          setSelectedDoctorId(doctors[0].idDoctor.toString());
+        }
+      } catch (error) {
+        console.error('Error loading doctors:', error);
+      }
+    };
+    
+    loadDoctors();
+  }, [user, doctorId, selectedDoctorId]);
 
   // Actualizar la hora actual cada minuto
   React.useEffect(() => {
@@ -115,7 +198,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   // Cargar eventos del doctor
   React.useEffect(() => {
     const loadEvents = async () => {
-      if (!doctorId || !user) {
+      if (!user) {
         setLoading(false);
         return;
       }
@@ -132,8 +215,16 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         const startDate = startOfDay(start).toISOString();
         const endDate = endOfDay(end).toISOString();
         
+        // Cargar eventos del doctor seleccionado
+        const targetDoctorId = selectedDoctorId || doctorId;
+        
+        if (!targetDoctorId) {
+          setLoading(false);
+          return;
+        }
+        
         const response = await fetch(
-          `/api/doctors/${doctorId}/calendar/events?startDate=${startDate}&endDate=${endDate}&eventType=appointment`,
+          `/api/doctors/${targetDoctorId}/calendar/events?startDate=${startDate}&endDate=${endDate}&eventType=appointment`,
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -149,17 +240,17 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         const eventsData = await response.json();
         
         // Mapear eventos de la API al formato esperado
-        const mappedEvents = (eventsData.events || []).map((event: { id?: string; startDateTime: string; endDateTime: string; summary?: string; description?: string; location?: string }, index: number) => ({
+        const allEvents = (eventsData.events || []).map((event: { id?: string; startDateTime: string; endDateTime: string; summary?: string; description?: string; location?: string }, index: number) => ({
           id: event.id || `event-${index}`,
-          start: event.startDateTime, // La API devuelve startDateTime como string ISO
-          end: event.endDateTime,     // La API devuelve endDateTime como string ISO
+          start: event.startDateTime,
+          end: event.endDateTime,
           title: event.summary || 'Cita médica',
           description: event.description || '',
           location: event.location || '',
           type: 'appointment'
         }));
         
-        setDoctorEvents(mappedEvents);
+        setDoctorEvents(allEvents);
       } catch (error) {
         console.error('Error loading doctor events:', error);
         setDoctorEvents([]);
@@ -169,7 +260,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     };
 
     loadEvents();
-  }, [doctorId, user, currentDate, viewMode, consultorioId, getDateRange]);
+  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, getDateRange, availableDoctors]);
 
   // Sincronizar sharedDisplayMonth cuando currentDate cambie
   React.useEffect(() => {
@@ -610,6 +701,59 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
               <ChevronRightIcon className="h-4 w-4" />
             </Button>
           </div>
+          
+          {/* Filtro de Doctor */}
+          {availableDoctors.length > 0 && (
+             <div className="flex items-center gap-2 flex-shrink-0">
+               <span className="text-sm font-medium">Doctor:</span>
+               <Popover open={openDoctorCombo} onOpenChange={setOpenDoctorCombo}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openDoctorCombo}
+                    className="w-[250px] justify-between"
+                  >
+                    <span className="truncate">
+                      {availableDoctors.find((doctor) => doctor.idDoctor.toString() === selectedDoctorId)?.displayName || "Seleccionar doctor..."}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[320px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar por nombre o correo..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontró ningún doctor.</CommandEmpty>
+                      <CommandGroup>
+                         {availableDoctors.map((doctor) => (
+                          <CommandItem
+                            key={doctor.idDoctor}
+                            value={`${doctor.displayName} ${doctor.email}`}
+                            onSelect={() => {
+                              setSelectedDoctorId(doctor.idDoctor.toString());
+                              setOpenDoctorCombo(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4 shrink-0",
+                                selectedDoctorId === doctor.idDoctor.toString() ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-medium">{doctor.displayName}</span>
+                              <span className="text-xs text-muted-foreground">{doctor.email}</span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
         </div>
       </div>
 
