@@ -1,7 +1,7 @@
 'use client';
 
 import { StaffManagement } from "../rol/Admin/_compo/StaffManagement";
-import { ServiceSpecialtyConfig } from "../rol/Admin/_compo/ServiceSpecialtyConfig";
+import { CreateInvitationCard } from "../rol/Admin/_compo/CreateInvitationCard";
 import { AddStaffForm } from "../rol/Admin/_compo/AddStaffForm";
 import { ServiceManagement } from "../rol/Admin/_compo/ServiceManagement";
 
@@ -18,7 +18,7 @@ export default function OrganizationConfigView() {
       <div className="grid gap-6 lg:grid-cols-2 lg:col-span-2">
         {/* <WorkloadOverview /> */}
         <ServiceManagement />
-        <ServiceSpecialtyConfig />
+        <CreateInvitationCard />
       </div>
 
       {/* Formulario de Agregar Personal */}
