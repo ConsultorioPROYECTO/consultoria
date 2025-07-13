@@ -728,7 +728,7 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
               </DrawerTrigger>
               <DrawerContent className="max-h-[90vh]">
                 <div className="overflow-y-auto">
-                  <DrawerHeader className="text-left px-4">
+                  <DrawerHeader className="text-left">
                     <DrawerTitle>Crear Nueva Cita</DrawerTitle>
                     <DrawerDescription>
                       Complete los detalles para programar una nueva cita médica.
