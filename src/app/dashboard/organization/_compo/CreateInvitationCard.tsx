@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MailIcon, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { AddStaffForm } from './AddStaffForm';
+import { AddStaffForm } from './CreateInvitationModal';
 
 interface StaffMember {
   email: string;
@@ -37,7 +37,7 @@ export function CreateInvitationCard({ onStaffAdded }: CreateInvitationCardProps
   return (
     <>
       <Card className="flex flex-col justify-between h-full">
-        <CardHeader>
+        <CardHeader className="gap-0">
           <CardTitle className="text-2xl font-bold flex items-start justify-between">
             Invitar Personal
             <Button 

@@ -1,7 +1,7 @@
 'use client';
 
 import { StaffManagement } from "./_compo/StaffManagement";
-import { CreateInvitationCard } from "../rol/Admin/_compo/CreateInvitationCard";
+import { CreateInvitationCard } from "./_compo/CreateInvitationCard";
 import { ServiceManagement } from "./_compo/ServiceManagementCard";
 
 export default function OrganizationConfigView() {

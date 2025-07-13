@@ -13,7 +13,7 @@ export function ServiceManagement() {
   return (
     <>
       <Card className="flex flex-col justify-between h-full">
-        <CardHeader>
+        <CardHeader className="gap-0">
           <CardTitle className="text-2xl font-bold flex items-start justify-between">
             Gestión de Servicios Médicos
                   <Button 

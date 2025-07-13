@@ -21,7 +21,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { useAuth } from '../../../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 import {
   Dialog,
   DialogContent,
