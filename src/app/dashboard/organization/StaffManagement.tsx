@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Clock, RefreshCw } from "lucide-react";
@@ -156,26 +156,24 @@ export function StaffManagement() {
   const assistantsCount = staffMembers.filter(member => member.role === 'asistente').length;
 
   return (
-    <Card className="w-full max-w-full overflow-hidden">
-      <CardContent className="space-y-6 p-4 sm:p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h3 className="text-lg font-semibold flex items-center">
-                <Users className="h-5 w-5 mr-2" />
-                Personal Actual ({staffMembers.length})
-              </h3>
-              <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-                <span className="flex items-center"><Stethoscope className="h-4 w-4 mr-1" />{doctorsCount} Médicos</span>
-                <span className="flex items-center"><UserCheck className="h-4 w-4 mr-1" />{assistantsCount} Asistentes</span>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={fetchStaffMembers} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              {isLoading ? 'Cargando...' : 'Actualizar'}
-            </Button>
+    <Card className="w-full max-w-full overflow-hidden ">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold flex items-start justify-between">
+          <div>
+            Personal Actual ({staffMembers.length})
           </div>
-          
+          <Button variant="outline" size="sm" onClick={fetchStaffMembers} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Cargando...' : 'Actualizar'}
+          </Button>
+        </CardTitle>
+        <CardDescription className="flex items-center gap-4 text-sm font-medium">
+          <span className="flex items-center"><Stethoscope className="h-4 w-4 mr-1" />{doctorsCount} Médicos</span>
+          <span className="flex items-center"><UserCheck className="h-4 w-4 mr-1" />{assistantsCount} Asistentes</span>
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 px-4 sm:px-6">
+        <div className="space-y-4">
           {error && <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-700">{error}</div>}
           
           {isLoading ? (
