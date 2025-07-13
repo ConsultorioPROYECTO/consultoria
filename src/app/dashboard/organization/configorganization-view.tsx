@@ -1,6 +1,6 @@
 'use client';
 
-import { StaffManagement } from "../rol/Admin/_compo/StaffManagement";
+import { StaffManagement } from "./StaffManagement";
 import { CreateInvitationCard } from "../rol/Admin/_compo/CreateInvitationCard";
 import { ServiceManagement } from "../rol/Admin/_compo/ServiceManagement";
 
