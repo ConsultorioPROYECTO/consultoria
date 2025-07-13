@@ -4,7 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 // Componentes específicos del Dashboard Master
 import { FinancialMetrics } from "./_compo/FinancialMetrics";
 import { CreateAppointmentCard } from "./_compo/CreateAppointmentCard";
-import { ChartAreaInteractive } from "./_compo/chart-area-interactive"; 
+import { ChartBarInteractive } from "./_compo/chart-area-interactive"; 
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -27,7 +27,7 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid gap-6 lg:grid-rows">
-              <ChartAreaInteractive />
+              <ChartBarInteractive />
             </div>
                         {/* Sección de KPIs principales y análisis de negocio */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
