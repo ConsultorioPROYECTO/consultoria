@@ -45,7 +45,7 @@ const DateRangePicker = dynamic(() => import("./date-range-picker"), {
   loading: () => <div className="w-[200px] h-8 bg-muted animate-pulse rounded-md" />
 });
 
-// Los eventos ahora se cargan dinámicamente desde la API
+// Los eventos ahora se cargan dinámicamente desde la API http://localhost:3000/api/assitantants/doctors-with-appointments
 
 type ViewMode = "month" | "week" | "day";
 type Event = {
