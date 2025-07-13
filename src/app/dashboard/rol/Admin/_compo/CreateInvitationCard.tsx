@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MailIcon, Plus } from 'lucide-react';
 import { useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { AddStaffForm } from './AddStaffForm';
 
 interface StaffMember {
@@ -20,7 +19,6 @@ interface CreateInvitationCardProps {
 
 export function CreateInvitationCard({ onStaffAdded }: CreateInvitationCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isMobile = useIsMobile();
 
   const handleOpenModal = () => {
     setIsModalOpen(true);

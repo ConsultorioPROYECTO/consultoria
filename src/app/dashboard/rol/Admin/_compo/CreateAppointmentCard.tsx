@@ -5,15 +5,25 @@ import { Button } from '@/components/ui/button';
 import { CalendarIcon, Plus } from 'lucide-react';
 import { CreateAppointmentModal } from './CreateAppointmentModal';
 import { useState } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
+
+/**
+ * Interfaz para la respuesta de creación de cita
+ */
+interface CreateAppointmentResponse {
+  appointmentId: number;
+  googleEventId: string | null;
+  googleCalendarId: string | null;
+  status: string;
+  syncStatus: string;
+}
 
 interface CreateAppointmentCardProps {
-  onAppointmentCreated?: (appointment: any) => void;
+  onAppointmentCreated?: (appointment: CreateAppointmentResponse) => void;
 }
 
 export function CreateAppointmentCard({ onAppointmentCreated }: CreateAppointmentCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isMobile = useIsMobile();
+
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -23,7 +33,7 @@ export function CreateAppointmentCard({ onAppointmentCreated }: CreateAppointmen
     setIsModalOpen(false);
   };
 
-  const handleAppointmentCreated = (appointment: any) => {
+  const handleAppointmentCreated = (appointment: CreateAppointmentResponse) => {
     if (onAppointmentCreated) {
       onAppointmentCreated(appointment);
     }

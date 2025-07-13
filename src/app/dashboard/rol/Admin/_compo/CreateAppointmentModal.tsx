@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -147,7 +147,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
   /**
    * Obtener lista de pacientes
    */
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     try {
       const token = await user?.getIdToken();
       if (!token) {
@@ -175,12 +175,12 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       });
       return [];
     }
-  };
+  }, [user]);
 
   /**
    * Obtener lista de servicios médicos
    */
-  const fetchMedicalServices = async () => {
+  const fetchMedicalServices = useCallback(async () => {
     try {
       const token = await user?.getIdToken();
       if (!token) {
@@ -208,12 +208,12 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       });
       return [];
     }
-  };
+  }, [user]);
 
   /**
    * Obtener lista de médicos
    */
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
       const token = await user?.getIdToken();
       if (!token) {
@@ -243,12 +243,12 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       });
       return [];
     }
-  };
+  }, [user]);
 
   /**
    * Cargar datos iniciales cuando se abre el modal
    */
-  const loadInitialData = async () => {
+  const loadInitialData = useCallback(async () => {
     setIsLoadingData(true);
     try {
       const [patientsResult, servicesResult, doctorsResult] = await Promise.all([
@@ -275,7 +275,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
     } finally {
       setIsLoadingData(false);
     }
-  };
+  }, [contextDoctorId, fetchPatients, fetchMedicalServices, fetchDoctors]);
 
   /**
    * Efecto para cargar datos cuando se abre el modal
@@ -284,7 +284,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
     if (isOpen) {
       loadInitialData();
     }
-  }, [isOpen]);
+  }, [isOpen, loadInitialData]);
 
   /**
    * Manejar cambios en los campos del formulario

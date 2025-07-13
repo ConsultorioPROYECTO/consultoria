@@ -169,11 +169,6 @@ export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialt
     setIsModalOpen(true);
   };
 
-  const openCreateModal = () => {
-    setEditingService(null);
-    setIsModalOpen(true);
-  };
-
   const ContentComponent = () => (
     <>
       {isMobile ? (
