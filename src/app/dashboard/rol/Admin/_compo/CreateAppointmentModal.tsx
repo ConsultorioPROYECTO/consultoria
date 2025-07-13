@@ -721,14 +721,17 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
           {isMobile ? (
             <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DrawerTrigger asChild>
-                <Button size="sm" className="ml-2 selection:bg-secondary selection:text-primary" onClick={handleOpenDialog}>
+                <Button 
+                  size="sm" 
+                  className="ml-2 selection:bg-secondary selection:text-primary" onClick={handleOpenDialog}
+                >
                   <Plus className="h-4 w-4 mr-1" />
                   Nueva Cita
                 </Button>
               </DrawerTrigger>
               <DrawerContent className="max-h-[90vh]">
                 <div className="overflow-y-auto">
-                  <DrawerHeader className="text-left">
+                  <DrawerHeader className="text-left px-4">
                     <DrawerTitle>Crear Nueva Cita</DrawerTitle>
                     <DrawerDescription>
                       Complete los detalles para programar una nueva cita médica.
