@@ -21,7 +21,7 @@ export function ServiceManagement() {
                     onClick={() => setIsServiceConfigOpen(true)}
                   >
                     <Plus className="h-5 w-5" />
-                    Gestionar Servicio
+                    Servicios
                   </Button>
               </CardTitle>
         </CardHeader>
