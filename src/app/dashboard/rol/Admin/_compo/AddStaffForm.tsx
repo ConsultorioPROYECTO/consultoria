@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, ChevronsUpDown, Check } from 'lucide-react';
+import { UserPlus, ChevronsUpDown, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMedicalServices } from '@/hooks/useMedicalServices';
 import {
@@ -22,6 +22,19 @@ import {
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../../../../context/AuthContext';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StaffMember {
   email: string;
@@ -31,12 +44,15 @@ interface StaffMember {
 }
 
 interface AddStaffFormProps {
+  isOpen: boolean;
+  onClose: () => void;
   onAddStaff: (newMember: StaffMember) => void;
 }
 
-export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
+export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps) {
   const { user } = useAuth();
   const { services } = useMedicalServices();
+  const isMobile = useIsMobile();
   
   const showSuccessToast = (message: string) => toast.success(message);
   const showErrorToast = (message: string) => toast.error(message);
@@ -111,6 +127,7 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
       onAddStaff(newMember);
       setNewStaff({ role: '', serviceId: undefined, serviceName: '', email: '' });
       showSuccessToast("Invitación enviada correctamente.");
+      onClose();
       
     } catch (err) {
       console.error('Error sending invite:', err);
@@ -120,12 +137,10 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
     }
   };
 
-  return (
-    <div className="w-full max-w-full p-4 sm:p-6 border rounded-lg bg-muted/50 space-y-4 overflow-hidden">
-      <div className="flex items-center mb-4">
-        <UserPlus className="h-5 w-5 mr-2 text-primary" />
-        <h3 className="text-lg font-semibold">Agregar Nuevo Personal</h3>
-      </div>
+  const FormContent = () => (
+    <div className="space-y-4">
+
+        
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="staffEmail">Email</Label>
@@ -360,5 +375,48 @@ export function AddStaffForm({ onAddStaff }: AddStaffFormProps) {
        </div>
       </div>
     </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={isOpen} onOpenChange={onClose}>
+        <DrawerContent className="max-h-[90vh]">
+          <DrawerHeader>
+            <DrawerTitle>Agregar Nuevo Personal</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-4 overflow-y-auto">
+            <FormContent />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex flex-row items-center gap-2">
+                <UserPlus className="h-5 w-5 mr-2 text-primary" />
+                <h3 className="text-lg font-semibold">Agregar Nuevo Personal</h3>
+              </div>
+              {/*{!isMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                  className="bg-primary h-6 w-6 p-3"
+                >
+                  <X className="h-4 w-4 text-secondary" />
+                </Button>
+              )}*/}
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+        <FormContent />
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -2,7 +2,6 @@
 
 import { StaffManagement } from "../rol/Admin/_compo/StaffManagement";
 import { CreateInvitationCard } from "../rol/Admin/_compo/CreateInvitationCard";
-import { AddStaffForm } from "../rol/Admin/_compo/AddStaffForm";
 import { ServiceManagement } from "../rol/Admin/_compo/ServiceManagement";
 
 export default function OrganizationConfigView() {
@@ -23,7 +22,6 @@ export default function OrganizationConfigView() {
 
       {/* Formulario de Agregar Personal */}
       <div className="grid gap-6">
-        <AddStaffForm onAddStaff={() => {}} />
         <StaffManagement />
       </div>
     </div>

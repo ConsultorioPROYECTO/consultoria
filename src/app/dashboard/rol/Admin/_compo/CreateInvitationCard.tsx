@@ -5,12 +5,20 @@ import { Button } from '@/components/ui/button';
 import { MailIcon, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AddStaffForm } from './AddStaffForm';
 
-interface CreateInvitationCardProps {
-  onInvitationCreated?: (invitation: any) => void;
+interface StaffMember {
+  email: string;
+  role: 'Médico' | 'Asistente';
+  serviceId?: number;
+  serviceName?: string;
 }
 
-export function CreateInvitationCard({ onInvitationCreated }: CreateInvitationCardProps) {
+interface CreateInvitationCardProps {
+  onStaffAdded?: (staff: StaffMember) => void;
+}
+
+export function CreateInvitationCard({ onStaffAdded }: CreateInvitationCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const isMobile = useIsMobile();
 
@@ -22,11 +30,10 @@ export function CreateInvitationCard({ onInvitationCreated }: CreateInvitationCa
     setIsModalOpen(false);
   };
 
-  const handleInvitationCreated = (invitation: any) => {
-    if (onInvitationCreated) {
-      onInvitationCreated(invitation);
+  const handleStaffAdded = (staff: StaffMember) => {
+    if (onStaffAdded) {
+      onStaffAdded(staff);
     }
-    setIsModalOpen(false);
   };
 
   return (
@@ -34,31 +41,30 @@ export function CreateInvitationCard({ onInvitationCreated }: CreateInvitationCa
       <Card className="flex flex-col justify-between h-full">
         <CardHeader>
           <CardTitle className="text-2xl font-bold flex items-start justify-between">
-            Crear Nueva Invitación
+            Invitar Personal
             <Button 
               size="sm" 
               className="ml-2 selection:bg-secondary selection:text-primary" 
               onClick={handleOpenModal}
             >
               <Plus className="h-4 w-4 mr-1" />
-              Nueva Invitación
+              Invitar
             </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col justify-center items-center text-center space-y-4">
           <div className="text-muted-foreground">
             <MailIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Haga clic en &quot;Nueva Invitación&quot; para enviar una invitación.</p>
+            <p className="text-sm">Haga clic en &quot;Invitar&quot; para agregar nuevo personal a la organización.</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* TODO: Crear CreateInvitationModal component */}
-      {/* <CreateInvitationModal
+      <AddStaffForm
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onInvitationCreated={handleInvitationCreated}
-      /> */}
+        onAddStaff={handleStaffAdded}
+      />
     </>
   );
 }
