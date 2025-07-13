@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from "@rutas/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rutas/components/ui/card";
+
 import { Input } from "@rutas/components/ui/input";
 import { Switch } from "@rutas/components/ui/switch";
 import { Badge } from "@rutas/components/ui/badge";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Label } from "@rutas/components/ui/label";
 import { toast } from "sonner";
 import { Skeleton } from "@rutas/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
 
 // Tipos basados en la API
 interface MedicalService {
@@ -32,12 +33,18 @@ interface Specialty {
   services: MedicalService[];
 }
 
-export function ServiceSpecialtyConfig() {
+interface ServiceSpecialtyConfigProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}
+
+export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialtyConfigProps) {
   const { user, loading: authLoading } = useAuth();
   const [services, setServices] = useState<MedicalService[]>([]);
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('services');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<MedicalService | null>(null);
@@ -145,6 +152,11 @@ export function ServiceSpecialtyConfig() {
       setIsModalOpen(false);
       setEditingService(null);
       fetchServices();
+      
+      // Si se creó un nuevo servicio, cambiar al tab de servicios para mostrar el resultado
+      if (!isEditing) {
+        setActiveTab('services');
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Ocurrió un error desconocido");
     }
@@ -160,52 +172,70 @@ export function ServiceSpecialtyConfig() {
     setIsModalOpen(true);
   };
 
-  if (loading || authLoading) return <ServiceSpecialtySkeleton />;
-  if (error) return <p className="text-red-500">{error}</p>;
-
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Servicios y Categorías (Especialidades)</CardTitle>
-            <CardDescription>
-              Define los servicios ofrecidos y agrúpalos por categorías.
-            </CardDescription>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+        <DialogHeader>
+          <DialogTitle>Configuración de Servicios y Especialidades</DialogTitle>
+          <div className="text-sm text-muted-foreground">
+            Define los servicios ofrecidos y agrúpalos por categorías.
           </div>
-          <Button onClick={openCreateModal}>Agregar Nuevo Servicio</Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-8 h-[600px] overflow-y-auto">
-        {specialties.map((specialty) => (
-          <section key={specialty.name}>
-            <h3 className="text-xl font-semibold mb-3 capitalize">{specialty.name}</h3>
-            <div className="space-y-4">
-              {specialty.services.map((service) => (
-                <div key={service.id} className="flex items-center justify-between p-3 border rounded-md">
-                  <div>
-                    <p className="font-medium">{service.name} <Badge variant="outline">{service.code}</Badge></p>
-                    <p className="text-sm text-muted-foreground">
-                      Duración: {service.durationMinutes} min - Precio: ${service.basePrice}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <Switch checked={service.isActive} onCheckedChange={() => handleToggleService(service)} />
-                    <Button variant="outline" size="sm" onClick={() => openEditModal(service)}>Editar</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        ))}
-      </CardContent>
-      <ServiceFormModal
-        isOpen={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onSave={handleSaveService}
-        service={editingService}
-      />
-    </Card>
+        </DialogHeader>
+        
+        {loading || authLoading ? (
+          <ServiceSpecialtySkeleton />
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="services">Ver Servicios</TabsTrigger>
+              <TabsTrigger value="create">Crear Servicio</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="services" className="mt-6">
+              <div className="grid gap-8 max-h-[60vh] overflow-y-auto pr-2">
+                {specialties.map((specialty) => (
+                  <section key={specialty.name} className="grid gap-4">
+                    <h3 className="text-xl font-semibold capitalize">{specialty.name}</h3>
+                    <div className="grid gap-4">
+                      {specialty.services.map((service) => (
+                        <div key={service.id} className="grid grid-cols-[1fr_auto] items-center gap-4 p-3 border rounded-md">
+                          <div className="grid gap-1">
+                            <p className="font-medium flex items-center gap-2">
+                              {service.name} 
+                              <Badge variant="outline">{service.code}</Badge>
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Duración: {service.durationMinutes} min - Precio: ${service.basePrice}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Switch checked={service.isActive} onCheckedChange={() => handleToggleService(service)} />
+                            <Button variant="outline" size="sm" onClick={() => openEditModal(service)}>Editar</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="create" className="mt-6">
+              <ServiceCreateForm onSave={handleSaveService} />
+            </TabsContent>
+          </Tabs>
+        )}
+        
+        <ServiceFormModal
+          isOpen={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          onSave={handleSaveService}
+          service={editingService}
+        />
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -214,6 +244,84 @@ interface ServiceFormModalProps {
   onOpenChange: (isOpen: boolean) => void;
   onSave: (data: ServiceFormData) => void;
   service: MedicalService | null;
+}
+
+interface ServiceCreateFormProps {
+  onSave: (data: ServiceFormData) => void;
+}
+
+function ServiceCreateForm({ onSave }: ServiceCreateFormProps) {
+  const [formData, setFormData] = useState<ServiceFormData>({
+    name: '',
+    description: '',
+    code: '',
+    durationMinutes: 30,
+    basePrice: '0',
+    category: '',
+    isActive: true,
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+    // Reset form after submission
+    setFormData({
+      name: '',
+      description: '',
+      code: '',
+      durationMinutes: 30,
+      basePrice: '0',
+      category: '',
+      isActive: true,
+    });
+  };
+
+  return (
+    <div className="max-h-[60vh] overflow-y-auto pr-2">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 font-medium ">
+          <div className="grid gap-2">
+            <Label htmlFor="create-name" className="text-base font-medium">Nombre</Label>
+            <Input id="create-name" name="name" value={formData.name || ''} onChange={handleChange} required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="create-code" className="text-base font-medium">Código</Label>
+            <Input id="create-code" name="code" value={formData.code || ''} onChange={handleChange} required />
+          </div>
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="create-category" className="text-base font-medium">Categoría (Especialidad)</Label>
+          <Input id="create-category" name="category" value={formData.category || ''} onChange={handleChange} required />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor="create-description" className="text-base font-medium">Descripción</Label>
+          <Input id="create-description" name="description" value={formData.description || ''} onChange={handleChange} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="create-durationMinutes" className="text-base font-medium">Duración (min)</Label>
+            <Input id="create-durationMinutes" name="durationMinutes" type="number" value={formData.durationMinutes || ''} onChange={handleChange} required />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="create-basePrice" className="text-base font-medium">Precio ($)</Label>
+            <Input id="create-basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Switch id="create-isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
+          <Label htmlFor="create-isActive" className="text-base font-medium">Activo</Label>
+        </div>
+        <div className="flex justify-end pt-4">
+          <Button type="submit" className="w-full sm:w-auto">Crear Servicio</Button>
+        </div>
+      </form>
+    </div>
+  );
 }
 
 function ServiceFormModal({ isOpen, onOpenChange, onSave, service }: ServiceFormModalProps) {
@@ -254,35 +362,35 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service }: ServiceForm
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Nombre</Label>
+              <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
               <Input id="name" name="name" value={formData.name || ''} onChange={handleChange} required />
             </div>
             <div>
-              <Label htmlFor="code">Código</Label>
+              <Label htmlFor="code" className="text-base font-medium">Código</Label>
               <Input id="code" name="code" value={formData.code || ''} onChange={handleChange} required />
             </div>
           </div>
           <div>
-            <Label htmlFor="category">Categoría (Especialidad)</Label>
+            <Label htmlFor="category" className="text-base font-medium">Categoría (Especialidad)</Label>
             <Input id="category" name="category" value={formData.category || ''} onChange={handleChange} required />
           </div>
           <div>
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description" className="text-base font-medium">Descripción</Label>
             <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="durationMinutes">Duración (min)</Label>
+              <Label htmlFor="durationMinutes" className="text-base font-medium">Duración (min)</Label>
               <Input id="durationMinutes" name="durationMinutes" type="number" value={formData.durationMinutes || ''} onChange={handleChange} required />
             </div>
             <div>
-              <Label htmlFor="basePrice">Precio ($)</Label>
+              <Label htmlFor="basePrice" className="text-base font-medium">Precio ($)</Label>
               <Input id="basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
-            <Label htmlFor="isActive">Activo</Label>
+            <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
           </div>
           <DialogFooter>
             <DialogClose asChild>
@@ -298,17 +406,13 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service }: ServiceForm
 
 function ServiceSpecialtySkeleton() {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <Skeleton className="h-8 w-3/4 mb-2" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-          <Skeleton className="h-10 w-36" />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-8 h-[600px] overflow-y-auto">
+    <div className="w-full">
+      <div className="grid w-full grid-cols-2 mb-6">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      
+      <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2">
         {[...Array(3)].map((_, i) => (
           <section key={i}>
             <Skeleton className="h-7 w-1/4 mb-3" />
@@ -328,7 +432,7 @@ function ServiceSpecialtySkeleton() {
             </div>
           </section>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

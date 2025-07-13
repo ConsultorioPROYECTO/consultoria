@@ -4,7 +4,7 @@ import { Button } from "@rutas/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rutas/components/ui/card";
 import { Stethoscope, Plus, Settings } from "lucide-react";
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@rutas/components/ui/dialog";
+
 import { ServiceSpecialtyConfig } from "./ServiceSpecialtyConfig";
 
 export function ServiceManagement() {
@@ -54,17 +54,11 @@ export function ServiceManagement() {
         </CardContent>
       </Card>
 
-      {/* Dialog para configuración de servicios */}
-      <Dialog open={isServiceConfigOpen} onOpenChange={setIsServiceConfigOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Configuración de Servicios y Especialidades</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto">
-            <ServiceSpecialtyConfig />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Modal para configuración de servicios */}
+      <ServiceSpecialtyConfig 
+        isOpen={isServiceConfigOpen} 
+        onOpenChange={setIsServiceConfigOpen} 
+      />
     </>
   );
 }

@@ -127,7 +127,7 @@ export function IntegrationsSection() {
     if (!user) {
       return {connected: false, state: null};
     }
-
+    
     try {
       setIsCheckingWhatsAppConnection(true);
       const token = await user.getIdToken();
