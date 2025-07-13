@@ -187,7 +187,7 @@ export default function HomePage() {
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             <Button asChild size="lg" className="selection:bg-secondary selection:text-primary">
-              <Link href="/signup">Solicitar Acceso Beta</Link>
+              <Link href="/signup">Solicitar Acceso</Link>
             </Button>
           </motion.div>
         </motion.div>
@@ -487,7 +487,7 @@ export default function HomePage() {
             }}
           >
             <Button asChild size="lg" className="mt-8 selection:bg-secondary selection:text-primary">
-              <Link href="/signup">Solicitar Acceso Beta</Link>
+              <Link href="/signup">Solicitar Acceso</Link>
             </Button>
           </motion.div>
         </motion.div>
