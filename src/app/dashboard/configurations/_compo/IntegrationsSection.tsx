@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useCallback } from "react"
 
-import { Loader2, X } from "lucide-react"
+import { Loader2, X, ChevronDown, ChevronUp } from "lucide-react"
 import Image from "next/image"
 import { useAuth } from "@/app/context/AuthContext"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -48,6 +48,54 @@ interface GenerateQRResponse {
   details?: string;
 }
 
+/**
+ * Instance information structure from Evolution API.
+ */
+interface InstanceInfo {
+  /** Instance name */
+  instanceName?: string;
+  /** Instance ID */
+  instanceId?: string;
+  /** Owner information */
+  owner?: string;
+  /** Profile name */
+  profileName?: string;
+  /** Profile picture URL */
+  profilePictureUrl?: string;
+  /** Phone number */
+  number?: string;
+  /** Owner JID (contains phone number with @s.whatsapp.net suffix) */
+  ownerJid?: string;
+  /** Connection status */
+  status?: string;
+  /** Server URL */
+  serverUrl?: string;
+  /** API key */
+  apikey?: string;
+}
+
+/**
+ * Response structure from the instance info API endpoint.
+ */
+interface InstanceInfoResponse {
+  /** Success message */
+  message?: string;
+  /** Instance data from Evolution API */
+  data?: InstanceInfo[];
+  /** Error message if request failed */
+  error?: string;
+}
+
+/**
+ * Extracts phone number from WhatsApp JID format.
+ * @param ownerJid - JID in format "1234567890@s.whatsapp.net"
+ * @returns Phone number without the WhatsApp suffix
+ */
+const extractPhoneFromJid = (ownerJid: string): string => {
+  if (!ownerJid) return '';
+  return ownerJid.replace('@s.whatsapp.net', '');
+};
+
 export function IntegrationsSection() {
   const { user } = useAuth()
   const isMobile = useIsMobile()
@@ -62,9 +110,16 @@ export function IntegrationsSection() {
   const [hasWhatsAppConnection, setHasWhatsAppConnection] = useState<boolean | null>(null)
   const [isCheckingWhatsAppConnection, setIsCheckingWhatsAppConnection] = useState<boolean>(false)
   const [showQRModal, setShowQRModal] = useState<boolean>(false)
+  
+  // Estados para el desplegable de información de conexión
+  const [showConnectionInfo, setShowConnectionInfo] = useState<boolean>(false)
+  const [instanceInfo, setInstanceInfo] = useState<InstanceInfo | null>(null)
+  const [isLoadingInstanceInfo, setIsLoadingInstanceInfo] = useState<boolean>(false)
+  const [instanceInfoError, setInstanceInfoError] = useState<string | null>(null)
 
   /**
    * Checks if the organization has a WhatsApp connection using the connectionState API.
+   * Also loads instance info when connected.
    * 
    * @returns Promise<{connected: boolean, state: string | null}> - Connection status and current state
    */
@@ -101,8 +156,34 @@ export function IntegrationsSection() {
         console.log('Setting connectionState to:', state, 'Type:', typeof state);
         
         if (state === 'open'){
+          // If connected, also fetch instance info
+          try {
+            const infoResponse = await fetch('/api/evolutionAPI/connectionState/info', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (infoResponse.ok) {
+              const infoData: InstanceInfoResponse = await infoResponse.json();
+              if (infoData.data && infoData.data.length > 0) {
+                setInstanceInfo(infoData.data[0]);
+                setInstanceInfoError(null);
+                console.log('Instance info loaded automatically:', infoData.data[0]);
+              }
+            }
+          } catch (infoError) {
+            console.error('Error fetching instance info during connection check:', infoError);
+            // Don't fail the connection check if instance info fails
+          }
+          
           return {connected: true, state};
         } else {
+          // Clear instance info if not connected
+          setInstanceInfo(null);
+          setInstanceInfoError(null);
           return {connected: false, state};
         }
       }
@@ -306,6 +387,82 @@ export function IntegrationsSection() {
     startAutoRefresh();
   };
 
+  /**
+   * Fetches detailed information about the WhatsApp instance.
+   * 
+   * @returns Promise<void>
+   */
+  const fetchInstanceInfo = useCallback(async (): Promise<void> => {
+    if (!user) {
+      setInstanceInfoError("Usuario no autenticado.");
+      return;
+    }
+
+    try {
+      setIsLoadingInstanceInfo(true);
+      setInstanceInfoError(null);
+      
+      const token = await user.getIdToken();
+      const response = await fetch('/api/evolutionAPI/connectionState/info', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data: InstanceInfoResponse = await response.json();
+      
+      console.log('Raw API response:', data);
+      console.log('Response structure:', {
+        hasMessage: !!data.message,
+        hasData: !!data.data,
+        dataLength: data.data?.length,
+        firstItem: data.data?.[0]
+      });
+      
+      if (data.data && data.data.length > 0) {
+        setInstanceInfo(data.data[0]); // Tomar la primera instancia
+        console.log('Instance info loaded:', data.data[0]);
+      } else {
+        console.log('No valid data found:', {
+          hasMessage: !!data.message,
+          hasData: !!data.data,
+          dataLength: data.data?.length,
+          error: data.error
+        });
+        setInstanceInfoError(data.error || "No se pudo obtener la información de la instancia.");
+      }
+    } catch (error: unknown) {
+      console.error('Error fetching instance info:', error);
+      
+      let errorMessage = "Ocurrió un error inesperado.";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      setInstanceInfoError(errorMessage);
+    } finally {
+      setIsLoadingInstanceInfo(false);
+    }
+  }, [user]);
+
+  /**
+   * Toggles the connection info dropdown and fetches data if needed.
+   */
+  const toggleConnectionInfo = async () => {
+    if (!showConnectionInfo && !instanceInfo && !isLoadingInstanceInfo) {
+      // Only fetch if not already loaded automatically
+      await fetchInstanceInfo();
+    }
+    setShowConnectionInfo(!showConnectionInfo);
+  };
+
 
 
   /**
@@ -348,7 +505,7 @@ export function IntegrationsSection() {
               )}
           {/* Loading state when no QR code yet */}
           {!qrCodeData && isLoadingQR && (
-            <div className="w-[300px] h-[300px] mx-auto border rounded-lg shadow-sm flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+            <div className="w-[300px] h-[300px] mx-auto border rounded-lg shadow-sm flex items-center justify-center">
               <div className="flex flex-col items-center gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="text-sm text-muted-foreground">Generando código QR...</span>
@@ -419,57 +576,146 @@ export function IntegrationsSection() {
         {/* Integration Cards */}
         <div className="grid gap-4 mb-6">
           {/* WhatsApp Integration Card */}
-          <div className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10  rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
-                  </svg>
+          <div className="border rounded-lg hover:shadow-md transition-shadow">
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-medium">WhatsApp</h4>
+                    <p className="text-sm text-muted-foreground">Conecta tu IA con WhatsApp Business</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium">WhatsApp</h4>
-                  <p className="text-sm text-muted-foreground">Conecta tu IA con WhatsApp Business</p>
+                <div className="flex items-center gap-2">
+                  {isCheckingWhatsAppConnection ? (
+                    <Button variant="outline" size="sm" disabled>
+                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                      Verificando...
+                    </Button>
+                  ) : hasWhatsAppConnection === false ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleConnectWhatsApp}
+                      disabled={isLoadingQR}
+                    >
+                      {isLoadingQR ? (
+                        <>
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Conectando...
+                        </>
+                      ) : (
+                        'Conectar'
+                      )}
+                    </Button>
+                  ) : hasWhatsAppConnection === true ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="text-sm text-green-600 font-medium">Conectado</span>
+                        {connectionState && connectionState !== 'null' && connectionState !== 'open' && (
+                          <span className="text-xs text-muted-foreground">({connectionState})</span>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleConnectionInfo}
+                        className="ml-2 p-1 h-8 w-8"
+                      >
+                        {showConnectionInfo ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </>
+                  ) : null}
                 </div>
               </div>
-              {isCheckingWhatsAppConnection ? (
-                <Button variant="outline" size="sm" disabled>
-                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                  Verificando...
-                </Button>
-              ) : hasWhatsAppConnection === false ? (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleConnectWhatsApp}
-                  disabled={isLoadingQR}
-                >
-                  {isLoadingQR ? (
-                    <>
-                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                      Conectando...
-                    </>
-                  ) : (
-                    'Conectar'
-                  )}
-                </Button>
-              ) : hasWhatsAppConnection === true ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                  <span className="text-sm text-green-600 font-medium">Conectado</span>
-                  {connectionState && connectionState !== 'null' && (
-                    <span className="text-xs text-muted-foreground">({connectionState})</span>
-                  )}
-                </div>
-              ) : null}
             </div>
+            
+            {/* Información desplegable de la conexión */}
+            {hasWhatsAppConnection && showConnectionInfo && (
+              <div className="p-4">
+                {isLoadingInstanceInfo ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Cargando información...</span>
+                  </div>
+                ) : instanceInfoError ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-2">{instanceInfoError}</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={fetchInstanceInfo}
+                      disabled={isLoadingInstanceInfo}
+                    >
+                      Reintentar
+                    </Button>
+                  </div>
+                ) : instanceInfo ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      {instanceInfo.profilePictureUrl ? (
+                        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-green-200">
+                          <Image
+                            src={instanceInfo.profilePictureUrl}
+                            alt="Foto de perfil de WhatsApp"
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback si la imagen no carga
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                          </svg>
+                        </div>
+                      )}
+                      
+                      <div className="flex-1">
+                        <div className="grid gap-1">
+                          {instanceInfo.profileName && (
+                            <h4 className="font-medium">
+                              {instanceInfo.profileName}
+                            </h4>
+                          )}
+                          {(instanceInfo.ownerJid || instanceInfo.number) && (
+                            <p className="text-sm text-muted-foreground">
+                              +{instanceInfo.ownerJid ? extractPhoneFromJid(instanceInfo.ownerJid) : instanceInfo.number}
+                            </p>
+                          )}
+                          {instanceInfo.status && (
+                            <p className="text-xs text-muted-foreground capitalize">
+                              Estado: {instanceInfo.status}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
           
           {/* Coming Soon Card */}
           <div className="border rounded-lg p-4 opacity-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-300 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center">
                   <span className="text-gray-600 text-lg">+</span>
                 </div>
                 <div>
