@@ -14,15 +14,17 @@ export default function OrganizationConfigView() {
         </p>
       </div>
       
-      <div className="grid gap-6 lg:grid-cols-2 lg:col-span-2">
-        {/* <WorkloadOverview /> */}
-        <ServiceManagement />
-        <CreateInvitationCard />
-      </div>
-
-      {/* Formulario de Agregar Personal */}
       <div className="grid gap-6">
-        <StaffManagement />
+        {/*  */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ServiceManagement />
+          <CreateInvitationCard />
+        </div>
+
+        {/*  */}
+        <div className="grid gap-6">
+          <StaffManagement />
+        </div>
       </div>
     </div>
   );
