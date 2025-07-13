@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, ChevronsUpDown, Check, X } from 'lucide-react';
+import { UserPlus, ChevronsUpDown, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMedicalServices } from '@/hooks/useMedicalServices';
 import {
