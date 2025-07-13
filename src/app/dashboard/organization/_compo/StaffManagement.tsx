@@ -9,8 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Clock, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { DoctorWorkingHours } from "../rol/Admin/_compo/DoctorWorkingHours";
-import { StaffDetailModal } from "../rol/Admin/_compo/StaffDetailModal";
+import { DoctorWorkingHours } from "../../rol/Admin/_compo/DoctorWorkingHours";
+import { StaffDetailModal } from "../../rol/Admin/_compo/StaffDetailModal";
 import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
 import type { User } from '@/db/schema/users';
 import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/google-calendar-schemas";

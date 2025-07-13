@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/c
 import { Stethoscope, Plus } from "lucide-react";
 import { useState } from "react";
 
-import { ServiceSpecialtyConfig } from "./ServiceSpecialtyConfig";
+import { ServiceSpecialtyConfig } from "./ServiceManagementModal";
 
 export function ServiceManagement() {
   const [isServiceConfigOpen, setIsServiceConfigOpen] = useState(false);
@@ -14,8 +14,8 @@ export function ServiceManagement() {
     <>
       <Card className="flex flex-col justify-between h-full">
         <CardHeader>
-              <CardTitle className="text-2xl font-bold flex items-start justify-between">
-                Gestión de Servicios Médicos
+          <CardTitle className="text-2xl font-bold flex items-start justify-between">
+            Gestión de Servicios Médicos
                   <Button 
                     size="sm" className="ml-2 selection:bg-secondary selection:text-primary"
                     onClick={() => setIsServiceConfigOpen(true)}
@@ -23,7 +23,7 @@ export function ServiceManagement() {
                     <Plus className="h-5 w-5" />
                     Servicios
                   </Button>
-              </CardTitle>
+          </CardTitle>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col justify-center items-center text-center space-y-4">
           <div className="text-muted-foreground">
