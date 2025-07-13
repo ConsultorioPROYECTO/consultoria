@@ -1,19 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@rutas/components/ui/card';
-import { Button } from '@rutas/components/ui/button';
-import { Input } from '@rutas/components/ui/input';
-import { Label } from '@rutas/components/ui/label';
-import { Textarea } from '@rutas/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@rutas/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from '@rutas/components/ui/drawer';
-import { Tabs, TabsList, TabsTrigger } from '@rutas/components/ui/tabs';
-import { Calendar } from '@rutas/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@rutas/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@rutas/components/ui/command';
-import { CalendarIcon, Plus, Loader2, Check, ChevronsUpDown } from 'lucide-react';
-import { cn } from '@rutas/lib/utils';
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { CalendarIcon, Loader2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '@/app/context/AuthContext';
@@ -104,16 +103,18 @@ interface CreateAppointmentResponse {
  * Props del componente
  */
 interface CreateAppointmentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
   onAppointmentCreated?: (appointment: CreateAppointmentResponse) => void;
+  contextDoctorId?: number;
 }
 
 /**
  * Componente para crear citas médicas con integración completa al backend
  */
-export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointmentModalProps) {
-  const { user, doctorId: contextDoctorId } = useAuth();
+export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, contextDoctorId }: CreateAppointmentModalProps) {
+  const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -277,6 +278,15 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
   };
 
   /**
+   * Efecto para cargar datos cuando se abre el modal
+   */
+  useEffect(() => {
+    if (isOpen) {
+      loadInitialData();
+    }
+  }, [isOpen]);
+
+  /**
    * Manejar cambios en los campos del formulario
    */
   const handleInputChange = (field: keyof CreateAppointmentRequest, value: string | number | boolean) => {
@@ -370,7 +380,7 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
       }
       
       // Cerrar modal y resetear formulario
-      setIsDialogOpen(false);
+      onClose();
       resetForm();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -401,18 +411,10 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
   };
 
   /**
-   * Manejar apertura del modal
-   */
-  const handleOpenDialog = () => {
-    setIsDialogOpen(true);
-    loadInitialData();
-  };
-
-  /**
    * Manejar cierre del modal
    */
   const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+    onClose();
     resetForm();
   };
 
@@ -714,62 +716,36 @@ export function CreateAppointmentModal({ onAppointmentCreated }: CreateAppointme
   );
 
   return (
-    <Card className="flex flex-col justify-between h-full">
-      <CardHeader className="">
-        <CardTitle className="text-2xl font-bold flex items-center justify-between">
-          Crear Nueva Cita
-          {isMobile ? (
-            <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DrawerTrigger asChild>
-                <Button 
-                  size="sm" 
-                  className="ml-2 selection:bg-secondary selection:text-primary" onClick={handleOpenDialog}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nueva Cita
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent className="max-h-[90vh]">
-                <div className="overflow-y-auto">
-                  <DrawerHeader className="text-left px-4">
-                    <DrawerTitle>Crear Nueva Cita</DrawerTitle>
-                    <DrawerDescription>
-                      Complete los detalles para programar una nueva cita médica.
-                    </DrawerDescription>
-                  </DrawerHeader>
-                  <div className="pb-4 px-4">
-                    <FormContent />
-                  </div>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          ) : (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="ml-2 selection:bg-secondary selection:text-primary" onClick={handleOpenDialog}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nueva Cita
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Crear Nueva Cita</DialogTitle>
-                  <DialogDescription>
-                    Complete los detalles para programar una nueva cita médica.
-                  </DialogDescription>
-                </DialogHeader>
+    <>
+      {isMobile ? (
+        <Drawer open={isOpen} onOpenChange={onClose}>
+          <DrawerContent className="max-h-[90vh]">
+            <div className="overflow-y-auto">
+              <DrawerHeader className="text-left px-4">
+                <DrawerTitle>Crear Nueva Cita</DrawerTitle>
+                <DrawerDescription>
+                  Complete los detalles para programar una nueva cita médica.
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="pb-4 px-4">
                 <FormContent />
-              </DialogContent>
-            </Dialog>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow flex flex-col justify-center items-center text-center space-y-4">
-        <div className="text-muted-foreground">
-          <CalendarIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Haga clic en &quot;Nueva Cita&quot; para programar una cita médica.</p>
-        </div>
-      </CardContent>
-    </Card>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Crear Nueva Cita</DialogTitle>
+              <DialogDescription>
+                Complete los detalles para programar una nueva cita médica.
+              </DialogDescription>
+            </DialogHeader>
+            <FormContent />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }

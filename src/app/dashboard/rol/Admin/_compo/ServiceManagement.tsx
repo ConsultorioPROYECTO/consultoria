@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from "@rutas/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@rutas/components/ui/card";
-import { Stethoscope, Plus, Settings } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
+import { Stethoscope, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { ServiceSpecialtyConfig } from "./ServiceSpecialtyConfig";
@@ -14,14 +14,14 @@ export function ServiceManagement() {
     <>
       <Card className="flex flex-col justify-between h-full">
         <CardHeader>
-              <CardTitle className="text-2xl font-bold flex items-center justify-between">
+              <CardTitle className="text-2xl font-bold flex items-start justify-between">
                 Gestión de Servicios Médicos
                   <Button 
                     size="sm" className="ml-2 selection:bg-secondary selection:text-primary"
                     onClick={() => setIsServiceConfigOpen(true)}
                   >
                     <Plus className="h-5 w-5" />
-                    Nuevo Servicio
+                    Gestionar Servicio
                   </Button>
               </CardTitle>
         </CardHeader>
