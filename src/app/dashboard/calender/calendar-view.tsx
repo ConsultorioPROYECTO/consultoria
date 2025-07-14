@@ -98,7 +98,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   
   // Estado para eventos del doctor
   const [doctorEvents, setDoctorEvents] = React.useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(false);
   
   // Estado para filtro de doctores
   const [availableDoctors, setAvailableDoctors] = React.useState<Doctor[]>([]);
@@ -209,7 +209,10 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       }
     };
     
-    loadDoctors();
+    // Cargar doctores de forma asíncrona sin bloquear la interfaz inicial
+    setTimeout(() => {
+      loadDoctors();
+    }, 0);
   }, [user, doctorId, selectedDoctorId, userRole]);
 
   // Actualizar la hora actual cada minuto
@@ -244,11 +247,13 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   React.useEffect(() => {
     const loadEvents = async () => {
       if (!user) {
-        setLoading(false);
         return;
       }
       
-      setLoading(true);
+      // Solo mostrar loading para recargas posteriores, no para la carga inicial
+      if (doctorEvents.length > 0) {
+        setLoading(true);
+      }
       
       try {
         const token = await getFirebaseAuthToken();
@@ -334,8 +339,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       }
     };
 
-    loadEvents();
-  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, getDateRange, availableDoctors, userRole]);
+    // Cargar eventos de forma asíncrona sin bloquear la interfaz inicial
+    setTimeout(() => {
+      loadEvents();
+    }, 0);
+  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, getDateRange, availableDoctors, userRole, doctorEvents.length]);
 
   // Sincronizar sharedDisplayMonth cuando currentDate cambie
   React.useEffect(() => {
@@ -839,12 +847,12 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
 
       {/* Contenido principal según la vista seleccionada */}
       <div className="flex-1 overflow-hidden border border-border rounded-lg relative">
-        {/* Indicador de carga */}
+        {/* Indicador de carga discreto para recargas */}
         {loading && (
-          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="flex items-center gap-2 bg-background border rounded-lg px-4 py-2 shadow-lg">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-sm text-muted-foreground">Cargando eventos...</span>
+          <div className="absolute top-2 right-2 z-40">
+            <div className="flex items-center gap-2 bg-background/90 border rounded-lg px-3 py-1 shadow-sm">
+              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-xs text-muted-foreground">Actualizando...</span>
             </div>
           </div>
         )}
