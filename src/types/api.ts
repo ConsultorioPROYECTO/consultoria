@@ -148,6 +148,14 @@ export interface GetDoctorAssistantAssignmentsRequest {
 }
 
 /**
+ * Request para eliminar una asignación de doctor a asistente.
+ */
+export interface DeleteDoctorAssistantAssignmentRequest {
+  doctorId: number;
+  assistantId: number;
+}
+
+/**
  * Respuesta de asignación de doctor a asistente.
  */
 export interface DoctorAssistantAssignmentResponse {

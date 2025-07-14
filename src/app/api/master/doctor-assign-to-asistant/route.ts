@@ -34,7 +34,8 @@ import {
   type CreateDoctorAssistantAssignmentRequest,
   type GetDoctorAssistantAssignmentsRequest,
   type DoctorAssistantAssignmentResponse,
-  type DoctorAssistantAssignmentsResponse
+  type DoctorAssistantAssignmentsResponse,
+  type DeleteDoctorAssistantAssignmentRequest
 } from '@/types/api';
 import { withAuthentication } from '@lib/firebase/server/middleware/authMiddleware';
 import { DecodedIdToken } from 'firebase-admin/auth';
@@ -357,3 +358,130 @@ const postHandler = async (request: NextRequest, decodedToken: DecodedIdToken): 
   }
 };
 export const POST = withAuthentication(postHandler);
+
+/**
+ * Endpoint DELETE para eliminar una asignación de doctor a asistente.
+ * 
+ * @description
+ * Este endpoint permite eliminar una relación existente entre un doctor y un asistente.
+ * Requiere los parámetros doctorId y assistantId como query parameters.
+ * Valida que la asignación exista antes de eliminarla.
+ * Solo usuarios con rol de administrador pueden acceder.
+ * 
+ * @param request - Request de Next.js con query parameters doctorId y assistantId
+ * @returns Promise<NextResponse> - Confirmación de eliminación exitosa
+ * 
+ * @throws {400} Cuando faltan parámetros requeridos o son inválidos
+ * @throws {401} Cuando el usuario no está autenticado
+ * @throws {403} Cuando el usuario no tiene rol de administrador
+ * @throws {404} Cuando la asignación no existe
+ * @throws {500} Cuando ocurre un error interno del servidor
+ * 
+ * @example
+ * ```typescript
+ * // DELETE /api/master/doctor-assign-to-assistant?doctorId=1&assistantId=2
+ * 
+ * // Success response
+ * {
+ *   "message": "Asignación eliminada exitosamente",
+ *   "data": {
+ *     "doctorId": 1,
+ *     "assistantId": 2
+ *   }
+ * }
+ * ```
+ */
+const deleteHandler = async (request: NextRequest, decodedToken: DecodedIdToken): Promise<NextResponse> => {
+  try {
+    // Verificar permisos de administrador
+    const user = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid),
+      columns: { role: true }
+    });
+    
+    if (!user || user.role !== 'admin') {
+      return createErrorResponse(
+        API_ERRORS.FORBIDDEN, 
+        'Acceso denegado. Se requiere rol de administrador', 
+        HTTP_STATUS.FORBIDDEN
+      );
+    }
+
+    // Obtener y validar parámetros de query
+    const { searchParams } = new URL(request.url);
+    const doctorIdParam = searchParams.get('doctorId');
+    const assistantIdParam = searchParams.get('assistantId');
+
+    // Validar que ambos parámetros estén presentes
+    if (!doctorIdParam || !assistantIdParam) {
+      return createErrorResponse(
+        API_ERRORS.INVALID_REQUEST,
+        'Se requieren los parámetros doctorId y assistantId',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    // Validar que sean números enteros positivos
+    const doctorId = parseInt(doctorIdParam, 10);
+    const assistantId = parseInt(assistantIdParam, 10);
+
+    if (isNaN(doctorId) || doctorId <= 0) {
+      return createErrorResponse(
+        API_ERRORS.INVALID_REQUEST,
+        'doctorId debe ser un número entero positivo',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    if (isNaN(assistantId) || assistantId <= 0) {
+      return createErrorResponse(
+        API_ERRORS.INVALID_REQUEST,
+        'assistantId debe ser un número entero positivo',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    // Verificar que la asignación existe
+    const existingAssignment = await db.query.assistantDoctor.findFirst({
+      where: and(
+        eq(assistantDoctor.doctorId, doctorId),
+        eq(assistantDoctor.assistantId, assistantId)
+      ),
+    });
+
+    if (!existingAssignment) {
+      return createErrorResponse(
+        API_ERRORS.ASSIGNMENT_NOT_FOUND,
+        `No se encontró una asignación entre el doctor ${doctorId} y el asistente ${assistantId}`,
+        HTTP_STATUS.NOT_FOUND
+      );
+    }
+
+    // Eliminar la asignación
+    await db
+      .delete(assistantDoctor)
+      .where(
+        and(
+          eq(assistantDoctor.doctorId, doctorId),
+          eq(assistantDoctor.assistantId, assistantId)
+        )
+      );
+
+    const responseData: DeleteDoctorAssistantAssignmentRequest = {
+      doctorId,
+      assistantId
+    };
+
+    return createSuccessResponse(
+      responseData,
+      'Asignación eliminada exitosamente',
+      HTTP_STATUS.OK
+    );
+
+  } catch (error) {
+    console.error('Error in DELETE doctor-assign-to-assistant endpoint:', error);
+    return handleDatabaseError(error, 'eliminar asignación');
+  }
+};
+
+export const DELETE = withAuthentication(deleteHandler);
