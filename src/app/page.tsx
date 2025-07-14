@@ -15,7 +15,7 @@
  */
 
 import Link from 'next/link';
-import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Moon, Sun, Laptop, Menu, X, ArrowUpRight } from 'lucide-react';
+import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Moon, Sun, Laptop, Menu, X, ArrowUpRight, Mic, Building } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -176,6 +176,14 @@ export default function HomePage() {
           >
             Irina
           </motion.h1>
+          <motion.div 
+            className="mt-2 mb-1 px-3 py-1 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15"
+            variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+          >
+            <span className="text-[10px] md:text-xs font-medium text-primary/80 tracking-wide uppercase">
+              Ideal para tu consultorio • centro médico • clínica
+            </span>
+          </motion.div>
           <motion.p 
             className="mt-4 max-w-md md:max-w-xl text-muted-foreground md:text-lg"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
@@ -297,7 +305,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="mt-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+        <div className="mt-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
           {[ /* Placeholder para tus mockups */
             {
               icon: CalendarDays,
@@ -310,7 +318,7 @@ export default function HomePage() {
               description: "Accede al historial médico completo de tus pacientes, registra notas de consulta detalladas y adjunta documentos de forma segura.",
             },
             {
-              icon: MessageSquare,
+              icon: Mic,
               title: "AI-Care",
               description: "Utiliza inteligencia artificial para convertir voz a texto en consultas, obtén sugerencias inteligentes de diagnóstico y automatiza la documentación clínica.",
             },
@@ -318,6 +326,11 @@ export default function HomePage() {
               icon: BarChart2,
               title: "Análisis y Rendimiento de Clínica",
               description: "Obtén una visión clara del rendimiento de tu clínica con métricas financieras, análisis de carga de trabajo, seguimiento de la IA, y sugerencias inteligentes para optimizar la atención al paciente.",
+            },
+            {
+              icon: Building,
+              title: "Gestión Unificada de Sedes",
+              description: "Unifique el control y gestión de todas sus sedes en un solo sitio.",
             },
           ].map((feature, index) => (
             <motion.div
