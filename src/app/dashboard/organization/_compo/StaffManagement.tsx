@@ -9,16 +9,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Clock, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import WaveformLoader from '@/components/custom/WaveformLoader';
 import { DoctorWorkingHours } from "../../rol/Admin/_compo/DoctorWorkingHours";
 import { StaffDetailModal } from "../../rol/Admin/_compo/StaffDetailModal";
+import { AssignDoctorModal } from "./AssignDoctorModal";
 import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
 import type { User } from '@/db/schema/users';
 import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/google-calendar-schemas";
 import { toast } from 'sonner';
 
-// Tipo extendido para incluir datos del doctor desde la API
-type UserWithDoctor = User & {
+// Tipo extendido para incluir datos del doctor y asistente desde la API
+type UserWithDoctorAndAssistant = User & {
   idDoctor?: number | null;
+  idAssistant?: number | null;
   working_hours?: DoctorWorkingHoursType | string | null; // La API puede devolver JSON como string
 };
 
@@ -30,6 +33,7 @@ interface StaffMember {
   email: string;
   status: 'active' | 'inactive';
   idDoctor?: number | null;
+  idAssistant?: number | null;
   workingHours?: DoctorWorkingHoursType; // Usar el tipo correcto de la API
   specialty?: string;
   patients?: number;
@@ -40,7 +44,9 @@ export function StaffManagement() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [selectedDoctorForSchedule, setSelectedDoctorForSchedule] = useState<StaffMember | null>(null);
   const [selectedStaffForDetail, setSelectedStaffForDetail] = useState<StaffMember | null>(null);
+  const [selectedAssistantForDoctors, setSelectedAssistantForDoctors] = useState<StaffMember | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
+  const [isAssignDoctorModalOpen, setIsAssignDoctorModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,7 +67,7 @@ export function StaffManagement() {
         throw new Error(errorData.error || `Error ${response.status}`);
       }
 
-      const users: UserWithDoctor[] = await response.json();
+      const users: UserWithDoctorAndAssistant[] = await response.json();
       
       const activeStaff = users
         .filter(user => user.isActive && user.role !== 'N/A')
@@ -84,6 +90,7 @@ export function StaffManagement() {
             email: user.email || '',
             status: 'active',
             idDoctor: user.idDoctor,
+            idAssistant: user.idAssistant,
             workingHours: parsedWorkingHours,
             specialty: user.role === 'medico' ? 'Especialidad General' : undefined,
             patients: Math.floor(Math.random() * 50) + 10,
@@ -152,6 +159,19 @@ export function StaffManagement() {
     }
   };
 
+  const handleOpenDoctors = (member: StaffMember) => {
+    if (member.role === 'asistente') {
+      setSelectedAssistantForDoctors(member);
+      setIsAssignDoctorModalOpen(true);
+    }
+  };
+
+  const handleAssignmentComplete = () => {
+    // Refrescar la lista de personal después de asignar doctores
+    fetchStaffMembers();
+    toast.success('Doctores asignados correctamente');
+  };
+
   const doctorsCount = staffMembers.filter(member => member.role === 'medico').length;
   const assistantsCount = staffMembers.filter(member => member.role === 'asistente').length;
 
@@ -167,9 +187,15 @@ export function StaffManagement() {
             {isLoading ? 'Cargando...' : 'Actualizar'}
           </Button>
         </CardTitle>
-        <CardDescription className="flex items-center gap-4 text-sm font-medium">
-          <span className="flex items-center"><Stethoscope className="h-4 w-4 mr-1" />{doctorsCount} Médicos</span>
-          <span className="flex items-center"><UserCheck className="h-4 w-4 mr-1" />{assistantsCount} Asistentes</span>
+        <CardDescription className="flex items-center gap-2">
+          <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1 text-xs">
+            <Stethoscope className="h-3 w-3" />
+            {doctorsCount} Médicos
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1 px-2 py-1 text-xs">
+            <UserCheck className="h-3 w-3" />
+            {assistantsCount} Asistentes
+          </Badge>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 px-4 sm:px-6">
@@ -177,8 +203,8 @@ export function StaffManagement() {
           {error && <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-700">{error}</div>}
           
           {isLoading ? (
-            <div className="h-[400px] border rounded-lg flex items-center justify-center">
-              <p className="text-muted-foreground">Cargando personal...</p>
+            <div className="flex h-[400px] border rounded-lg flex-col items-center justify-center">
+              <WaveformLoader className="w-24 h-auto text-muted-foreground" />
             </div>
           ) : (
             <div className="h-[400px] border rounded-lg overflow-auto w-full">
@@ -194,17 +220,40 @@ export function StaffManagement() {
                     staffMembers.map((member) => (
                       <TableRow key={member.id} className="hover:bg-muted/50">
                         <TableCell>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-sm text-muted-foreground mt-1">{member.email}</p>
-                          <Badge variant={member.role === 'medico' ? 'default' : member.role === 'admin' ? 'destructive' : 'secondary'} className="mt-2">
-                            {member.role.charAt(0).toUpperCase() + member.role.slice(1)}
-                          </Badge>
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0 max-w-xs">
+                              <p className="font-medium truncate">{member.name}</p>
+                              <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                            </div>
+                            <Badge 
+                              variant="outline"
+                              className={`px-2.5 py-1 rounded-full text-xs font-semibold tracking-wide uppercase transition-all duration-200 border-0 whitespace-nowrap ${
+                                member.role === 'medico' 
+                                  ? 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-700 shadow-sm hover:shadow-md hover:from-blue-500/15 hover:to-cyan-500/15 dark:from-blue-400/10 dark:to-cyan-400/10 dark:text-blue-300' 
+                                  : member.role === 'admin' 
+                                  ? 'bg-gradient-to-r from-red-500/10 to-pink-500/10 text-red-700 shadow-sm hover:shadow-md hover:from-red-500/15 hover:to-pink-500/15 dark:from-red-400/10 dark:to-pink-400/10 dark:text-red-300'
+                                  : 'bg-gradient-to-r from-gray-500/10 to-slate-500/10 text-gray-700 shadow-sm hover:shadow-md hover:from-gray-500/15 hover:to-slate-500/15 dark:from-gray-400/10 dark:to-slate-400/10 dark:text-gray-300'
+                              }`}
+                            >
+                              <div className={`w-1.5 h-1.5 rounded-full mr-2 inline-block ${
+                                member.role === 'medico' 
+                                  ? 'bg-blue-500 shadow-sm' 
+                                  : member.role === 'admin' 
+                                  ? 'bg-red-500 shadow-sm'
+                                  : 'bg-gray-500 shadow-sm'
+                              }`} />
+                              {member.role === 'medico' ? 'Médico' : member.role === 'admin' ? 'Admin' : 'Asistente'}
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-2">
                             <Button variant="outline" size="sm" onClick={() => handleViewMore(member)}><Users className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Ver más</span></Button>
                             {member.role === 'medico' && member.idDoctor && (
                               <Button variant="outline" size="sm" onClick={() => handleOpenSchedule(member)}><Clock className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Horario</span></Button>
+                            )}
+                            {member.role === 'asistente' && (
+                              <Button variant="outline" size="sm" onClick={() => handleOpenDoctors(member)}><Stethoscope className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Doctores</span></Button>
                             )}
                           </div>
                         </TableCell>
@@ -240,6 +289,16 @@ export function StaffManagement() {
             />
           </DialogContent>
         </Dialog>
+      )}
+
+      {selectedAssistantForDoctors && (
+        <AssignDoctorModal
+          isOpen={isAssignDoctorModalOpen}
+          onOpenChange={setIsAssignDoctorModalOpen}
+          assistantId={selectedAssistantForDoctors.idAssistant}
+          assistantName={selectedAssistantForDoctors.name}
+          onAssignmentComplete={handleAssignmentComplete}
+        />
       )}
     </Card>
   );
