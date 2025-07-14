@@ -50,7 +50,7 @@ const DateRangePicker = dynamic(() => import("./date-range-picker"), {
 
 type ViewMode = "month" | "week" | "day";
 type Event = {
-  id: number;
+  id: string;
   date: Date;
   title: string;
   time: string;
@@ -58,6 +58,7 @@ type Event = {
   type: string;
   color: string;
   status: string;
+  doctorId?: number;
 };
 
 type Doctor = {
@@ -390,14 +391,15 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         return isSameDay(eventDate, date);
       })
       .map((event, index) => ({
-        id: event.id ? parseInt(event.id.replace(/\D/g, '')) || index + 1000 : index + 1000,
+        id: event.id || `event-${index + 1000}`,
         date: new Date(event.start),
         title: event.title || 'Cita médica',
         time: format(new Date(event.start), 'HH:mm'),
         endTime: format(new Date(event.end), 'HH:mm'),
         type: 'Cita médica',
         color: 'bg-blue-500', // Color único para todos los eventos
-        status: 'confirmada'
+        status: 'confirmada',
+        doctorId: selectedDoctorId ? parseInt(selectedDoctorId.toString()) : (doctorId ? parseInt(doctorId.toString()) : undefined)
       }));
   };
 
