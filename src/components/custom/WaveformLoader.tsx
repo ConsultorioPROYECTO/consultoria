@@ -7,6 +7,7 @@ interface WaveformLoaderProps {
 
 const WaveformLoader: React.FC<WaveformLoaderProps> = ({ className }) => {
   return (
+    
     <svg
       className={cn("animate-subtle-fade-in text-foreground", className)} // Aplicamos la animación de entrada y color del tema
       width="100"

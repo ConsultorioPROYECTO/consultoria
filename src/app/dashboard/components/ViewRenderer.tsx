@@ -7,27 +7,28 @@ import { useNavigation } from '@rutas/app/context/NavigationContext';
 import { useAuth } from '@/app/context/AuthContext';
 import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
-// Lazy load CalendarView solo cuando sea necesario
-const CalendarView = dynamic(() => import('../calender/calendar-view'), {
-  loading: () => <WaveformLoader className="w-16 h-auto text-muted-foreground" />,
-  ssr: false,
-});
-
-const OrganizationConfigView = dynamic(() => import('../organization/configorganization-view'), {
-  loading: () => <WaveformLoader className="w-16 h-auto text-muted-foreground" />,
-  ssr: false,
-});
-
-const ConfigurationView = dynamic(() => import('../configurations/config-view'), {
-  loading: () => <WaveformLoader className="w-16 h-auto text-muted-foreground" />,
-  ssr: false,
-});
-
+// Componente de loading centralizado
 const LoadingSpinner = () => (
   <div className="flex h-screen flex-col items-center justify-center">
     <WaveformLoader className="w-24 h-auto text-muted-foreground" />
   </div>
 );
+
+// Lazy load CalendarView solo cuando sea necesario
+const CalendarView = dynamic(() => import('../calender/calendar-view'), {
+  loading: LoadingSpinner,
+  ssr: false,
+});
+
+const OrganizationConfigView = dynamic(() => import('../organization/configorganization-view'), {
+  loading: LoadingSpinner,
+  ssr: false,
+});
+
+const ConfigurationView = dynamic(() => import('../configurations/config-view'), {
+  loading: LoadingSpinner,
+  ssr: false,
+});
 
 const CalendarWrapper = () => (
   <div className="flex flex-1 flex-col overflow-hidden">

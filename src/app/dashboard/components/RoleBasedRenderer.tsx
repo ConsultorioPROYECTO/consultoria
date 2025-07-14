@@ -13,7 +13,6 @@ interface RoleBasedRendererProps {
 
 const LoadingSpinner = () => (
   <div className="flex h-screen flex-col items-center justify-center">
-    {/* <p className="font-bold text-muted-foreground text-xl text-center mb-4">Cargando<br/>dashboard...</p> */}
     <WaveformLoader className="w-24 h-auto text-muted-foreground" />
   </div>
 );
