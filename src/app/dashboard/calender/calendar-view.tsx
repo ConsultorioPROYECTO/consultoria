@@ -120,37 +120,65 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         const token = await getFirebaseAuthToken();
         if (!token) return;
         
-        const response = await fetch('/api/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+        let doctors: Doctor[] = [];
+        
+        if (userRole === 'asistente') {
+          // Para asistentes, usar la API específica que obtiene solo doctores asignados
+          const response = await fetch('/api/assitantants/doctors-with-appointments', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            console.warn('Failed to fetch assigned doctors for assistant');
+            return;
           }
-        });
-        
-        if (!response.ok) {
-          console.warn('Failed to fetch users for doctor selection');
-          return;
-        }
-        
-        const users = await response.json();
-        
-        // Filtrar solo usuarios con rol 'medico' y que tengan idDoctor
-        interface UserFromAPI {
-          id: string;
-          role: string;
-          idDoctor?: number;
-          displayName?: string;
-          email: string;
-        }
-        
-        const doctors = users
-          .filter((user: UserFromAPI) => user.role === 'medico' && user.idDoctor)
-          .map((user: UserFromAPI) => ({
-            id: user.id,
-            displayName: user.displayName || user.email,
-            email: user.email,
-            idDoctor: user.idDoctor!
+          
+          const assistantData = await response.json();
+          
+          // Mapear los doctores asignados al formato esperado
+          doctors = (assistantData.data || []).map((doctor: any) => ({
+            id: doctor.userId?.toString() || doctor.idDoctor.toString(),
+            displayName: doctor.user?.displayName || doctor.user?.email || `Doctor ${doctor.idDoctor}`,
+            email: doctor.user?.email || '',
+            idDoctor: doctor.idDoctor
           }));
+        } else {
+          // Para administradores y otros roles, usar la API de usuarios
+          const response = await fetch('/api/users', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!response.ok) {
+            console.warn('Failed to fetch users for doctor selection');
+            return;
+          }
+          
+          const users = await response.json();
+          
+          // Filtrar solo usuarios con rol 'medico' y que tengan idDoctor
+          interface UserFromAPI {
+            id: string;
+            role: string;
+            idDoctor?: number;
+            displayName?: string;
+            email: string;
+          }
+          
+          doctors = users
+            .filter((user: UserFromAPI) => user.role === 'medico' && user.idDoctor)
+            .map((user: UserFromAPI) => ({
+              id: user.id,
+              displayName: user.displayName || user.email,
+              email: user.email,
+              idDoctor: user.idDoctor!
+            }));
+        }
         
         setAvailableDoctors(doctors);
         
@@ -171,7 +199,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     };
     
     loadDoctors();
-  }, [user, doctorId, selectedDoctorId]);
+  }, [user, doctorId, selectedDoctorId, userRole]);
 
   // Actualizar la hora actual cada minuto
   React.useEffect(() => {
