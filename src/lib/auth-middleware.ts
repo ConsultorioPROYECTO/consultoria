@@ -37,6 +37,7 @@ export interface AuthResult {
 
 /**
  * Middleware principal de autenticación.
+ * @debug modulo por revision, no funciona correctamente.
  */
 export async function authenticateRequest(
   request: NextRequest,
@@ -133,8 +134,7 @@ export async function authenticateRequest(
  */
 export async function requireAdmin(request: NextRequest): Promise<AuthResult> {
   return authenticateRequest(request, {
-    allowedRoles: ['admin'],
-    requiredPermissions: ['manageOrganization'],
+    allowedRoles: ['admin']
   });
 }
 

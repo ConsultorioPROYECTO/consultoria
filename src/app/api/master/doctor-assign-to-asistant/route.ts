@@ -16,12 +16,11 @@
  * @version 1.0.0
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { assistantDoctor } from '@/db/schema/assistant_doctor';
 import { doctors, assistants, users } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { requireAdmin } from '@/lib/auth-middleware';
 import {
   validateRequestBody,
   createDoctorAssistantAssignmentSchema,
@@ -37,6 +36,8 @@ import {
   type DoctorAssistantAssignmentResponse,
   type DoctorAssistantAssignmentsResponse
 } from '@/types/api';
+import { withAuthentication } from '@lib/firebase/server/middleware/authMiddleware';
+import { DecodedIdToken } from 'firebase-admin/auth';
 
 /**
  * Endpoint GET para obtener asignaciones de doctores a asistentes.
@@ -88,21 +89,19 @@ import {
  * }
  * ```
  */
-export async function GET(request: NextRequest) {
+const getHandler = async (request: NextRequest, decodedToken: DecodedIdToken): Promise<NextResponse> => {
   try {
-    // Verificar autenticación y rol de administrador
-    const authResult = await requireAdmin(request);
-    if (!authResult.success) {
-      return authResult.error;
+    const user = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid),
+      columns: { role: true }
+    });
+    if (!user || user.role !== 'admin') {
+      return createErrorResponse(API_ERRORS.FORBIDDEN, 'Acceso denegado. Se requiere rol de administrador', HTTP_STATUS.FORBIDDEN);
     }
-
-    // Obtener y validar query parameters
     const { searchParams } = new URL(request.url);
     const doctorIdParam = searchParams.get('doctorId');
     const assistantIdParam = searchParams.get('assistantId');
-
     const queryData: GetDoctorAssistantAssignmentsRequest = {};
-    
     if (doctorIdParam) {
       const doctorId = parseInt(doctorIdParam, 10);
       if (isNaN(doctorId) || doctorId <= 0) {
@@ -114,7 +113,6 @@ export async function GET(request: NextRequest) {
       }
       queryData.doctorId = doctorId;
     }
-
     if (assistantIdParam) {
       const assistantId = parseInt(assistantIdParam, 10);
       if (isNaN(assistantId) || assistantId <= 0) {
@@ -126,8 +124,6 @@ export async function GET(request: NextRequest) {
       }
       queryData.assistantId = assistantId;
     }
-
-    // Construir las condiciones de filtro
     const conditions = [];
     if (queryData.doctorId) {
       conditions.push(eq(assistantDoctor.doctorId, queryData.doctorId));
@@ -135,24 +131,17 @@ export async function GET(request: NextRequest) {
     if (queryData.assistantId) {
       conditions.push(eq(assistantDoctor.assistantId, queryData.assistantId));
     }
-
-    // Construir y ejecutar la consulta
     const queryBuilder = db
       .select({
         doctorId: assistantDoctor.doctorId,
         assistantId: assistantDoctor.assistantId,
       })
       .from(assistantDoctor);
-
     const assignments = conditions.length > 0 
       ? await queryBuilder.where(and(...conditions))
       : await queryBuilder;
-
-    // Obtener información completa de doctores y asistentes
     const formattedAssignments: DoctorAssistantAssignmentsResponse = [];
-    
     for (const assignment of assignments) {
-      // Obtener información del doctor
       const doctor = await db.query.doctors.findFirst({
         where: eq(doctors.idDoctor, assignment.doctorId),
         with: {
@@ -165,8 +154,6 @@ export async function GET(request: NextRequest) {
           },
         },
       });
-
-      // Obtener información del asistente
       const assistant = await db
         .select({
           idAssistant: assistants.idAssistant,
@@ -178,7 +165,6 @@ export async function GET(request: NextRequest) {
         .innerJoin(users, eq(assistants.userId, users.id))
         .where(eq(assistants.idAssistant, assignment.assistantId))
         .limit(1);
-
       if (doctor && assistant && assistant.length > 0) {
         const assistantData = assistant[0];
         formattedAssignments.push({
@@ -204,7 +190,6 @@ export async function GET(request: NextRequest) {
         });
       }
     }
-
     return createSuccessResponse(
       formattedAssignments,
       'Asignaciones obtenidas exitosamente',
@@ -214,7 +199,8 @@ export async function GET(request: NextRequest) {
     console.error('Error in GET doctor-assign-to-assistant endpoint:', error);
     return handleDatabaseError(error, 'obtener asignaciones');
   }
-}
+};
+export const GET = withAuthentication(getHandler);
 
 /**
  * Endpoint POST para crear una nueva asignación de doctor a asistente.
@@ -270,24 +256,20 @@ export async function GET(request: NextRequest) {
  * }
  * ```
  */
-export async function POST(request: NextRequest) {
+const postHandler = async (request: NextRequest, decodedToken: DecodedIdToken): Promise<NextResponse> => {
   try {
-    // Verificar autenticación y rol de administrador
-    const authResult = await requireAdmin(request);
-    if (!authResult.success) {
-      return authResult.error;
+    const user = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid),
+      columns: { role: true }
+    });
+    if (!user || user.role !== 'admin') {
+      return createErrorResponse(API_ERRORS.FORBIDDEN, 'Acceso denegado. Se requiere rol de administrador', HTTP_STATUS.FORBIDDEN);
     }
-
-    // Validar el cuerpo de la petición
     const validation = await validateRequestBody(request, createDoctorAssistantAssignmentSchema);
-    
     if (!validation.success) {
       return validation.error;
     }
-    
     const assignmentData: CreateDoctorAssistantAssignmentRequest = validation.data;
-
-    // Verificar que el doctor existe
     const doctor = await db.query.doctors.findFirst({
       where: eq(doctors.idDoctor, assignmentData.doctorId),
       with: {
@@ -300,7 +282,6 @@ export async function POST(request: NextRequest) {
         },
       },
     });
-
     if (!doctor) {
       return createErrorResponse(
         API_ERRORS.DOCTOR_NOT_FOUND,
@@ -308,8 +289,6 @@ export async function POST(request: NextRequest) {
         HTTP_STATUS.NOT_FOUND
       );
     }
-
-    // Verificar que el asistente existe
     const assistant = await db
       .select({
         idAssistant: assistants.idAssistant,
@@ -321,7 +300,6 @@ export async function POST(request: NextRequest) {
       .innerJoin(users, eq(assistants.userId, users.id))
       .where(eq(assistants.idAssistant, assignmentData.assistantId))
       .limit(1);
-
     if (!assistant || assistant.length === 0) {
       return createErrorResponse(
         API_ERRORS.ASSISTANT_NOT_FOUND,
@@ -329,17 +307,13 @@ export async function POST(request: NextRequest) {
         HTTP_STATUS.NOT_FOUND
       );
     }
-
     const assistantData = assistant[0];
-
-    // Verificar que la asignación no existe ya
     const existingAssignment = await db.query.assistantDoctor.findFirst({
       where: and(
         eq(assistantDoctor.doctorId, assignmentData.doctorId),
         eq(assistantDoctor.assistantId, assignmentData.assistantId)
       ),
     });
-
     if (existingAssignment) {
       return createErrorResponse(
         API_ERRORS.ASSIGNMENT_ALREADY_EXISTS,
@@ -347,14 +321,10 @@ export async function POST(request: NextRequest) {
         HTTP_STATUS.CONFLICT
       );
     }
-
-    // Crear la nueva asignación
     await db.insert(assistantDoctor).values({
       doctorId: assignmentData.doctorId,
       assistantId: assignmentData.assistantId,
     });
-
-    // Preparar la respuesta con información completa
     const responseData: DoctorAssistantAssignmentResponse = {
       doctorId: assignmentData.doctorId,
       assistantId: assignmentData.assistantId,
@@ -376,7 +346,6 @@ export async function POST(request: NextRequest) {
         },
       },
     };
-
     return createSuccessResponse(
       responseData,
       'Asignación creada exitosamente',
@@ -386,4 +355,5 @@ export async function POST(request: NextRequest) {
     console.error('Error in POST doctor-assign-to-assistant endpoint:', error);
     return handleDatabaseError(error, 'crear asignación');
   }
-}
+};
+export const POST = withAuthentication(postHandler);
