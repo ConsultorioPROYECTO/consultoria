@@ -25,8 +25,11 @@ export enum AppointmentStatus {
 
 /**
  * Creates a new appointment event in Google Calendar.
- * @param data - The appointment event data.
- * @returns The Google event ID and calendar ID.
+ * First checks availability, then creates the event with extended properties.
+ *
+ * @param data - The appointment event data including doctorId, patientId, startDateTime, etc.
+ * @returns Object with google_event_id and google_calendar_id.
+ * @throws Error if doctor not found, slot unavailable, or creation fails.
  */
 export async function createAppointmentEvent(data: {
   doctorId: number;
@@ -123,11 +126,12 @@ export async function createAppointmentEvent(data: {
 }
 
 /**
- * Creates a new break time event in Google Calendar to mark a doctor's unavailable time.
- * Uses a regular event with custom properties instead of 'outOfOffice' type to avoid
- * primary calendar restrictions.
- * @param data - The break time event data.
- * @returns The Google event ID and calendar ID.
+ * Creates a new break time event in Google Calendar to mark unavailable time.
+ * Uses regular event with custom properties.
+ *
+ * @param data - The break time event data including doctorId, startDateTime, breakTimeType, etc.
+ * @returns Object with google_event_id and google_calendar_id.
+ * @throws Error if doctor not found or creation fails.
  */
 export async function createBreakTimeEvent(data: {
   doctorId: number;
@@ -195,9 +199,13 @@ export async function createBreakTimeEvent(data: {
 }
 
 /**
- * Updates an existing appointment event in Google Calendar and the local database.
- * @param data - The data for updating the appointment.
+ * Updates an existing appointment event in Google Calendar and local DB.
+ * Checks availability if dates change, ignoring current event.
+ * Merges existing extended properties.
+ *
+ * @param data - Update data including eventId, doctorId, optional startDateTime, appointmentStatus, etc.
  * @returns The updated Google event data.
+ * @throws Error if doctor not found, slot unavailable, or update fails.
  */
 export async function updateAppointmentEvent(data: {
   eventId: string;
@@ -227,6 +235,23 @@ export async function updateAppointmentEvent(data: {
 
     if (!existingEvent.data) {
       throw new Error(`Event with ID ${data.eventId} not found.`);
+    }
+
+    // Verificar disponibilidad si se cambian fechas
+    if (data.startDateTime || data.endDateTime) {
+      const newStart = data.startDateTime || DateTime.fromISO(existingEvent.data.start?.dateTime || '', { zone: doctorTimezone });
+      const newEnd = data.endDateTime || DateTime.fromISO(existingEvent.data.end?.dateTime || '', { zone: doctorTimezone });
+      const availableSlots = await getDoctorAvailability(
+        data.doctorId,
+        newStart,
+        newEnd,
+        { ignoreEventId: data.eventId }
+      );
+      const requestedSlot = Interval.fromDateTimes(newStart, newEnd);
+      const isAvailable = availableSlots.some(slot => slot.engulfs(requestedSlot));
+      if (!isAvailable) {
+        throw new Error('The selected time slot is no longer available.');
+      }
     }
 
     const privateProperties = existingEvent.data.extendedProperties?.private || {};
@@ -272,8 +297,10 @@ export async function updateAppointmentEvent(data: {
 }
 
 /**
- * Deletes an appointment event from Google Calendar and the local database.
- * @param data - The data for deleting the appointment.
+ * Deletes an appointment event from Google Calendar and local DB.
+ *
+ * @param data - Deletion data including eventId and doctorId.
+ * @throws Error if doctor not found or deletion fails.
  */
 export async function deleteAppointmentEvent(data: {
   eventId: string;
@@ -308,8 +335,10 @@ export async function deleteAppointmentEvent(data: {
 
 /**
  * Updates an existing break time event in Google Calendar.
- * @param data - The data for updating the break time event.
+ *
+ * @param data - Update data including doctorId, eventId, optional startDateTime, breakTimeType, etc.
  * @returns The updated Google event data.
+ * @throws Error if doctor not found or update fails.
  */
 export async function updateBreakTimeEvent(data: {
   doctorId: number;
@@ -376,8 +405,10 @@ export async function updateBreakTimeEvent(data: {
 
 /**
  * Deletes a break time event from Google Calendar.
- * @param data - The data for deleting the break time event.
- * @returns An empty response if successful.
+ *
+ * @param data - Deletion data including doctorId and eventId.
+ * @returns Empty object on success.
+ * @throws Error if doctor not found or deletion fails.
  */
 export async function deleteBreakTimeEvent(data: {
   doctorId: number;

@@ -39,24 +39,10 @@ import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
  * - Por tipo de descanso: 'lunch', 'personal', 'meeting', 'other'
  * 
  * @example
- * ```typescript
  * // Obtener todas las citas y descansos para el doctor 123 en julio 2025
  * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31');
  * const data = await response.json();
  * console.log(`Encontrados ${data.eventCount} eventos`);
- * ```
- * 
- * @example
- * ```typescript
- * // Obtener solo citas confirmadas con filtrado específico
- * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=default&appointmentStatus=Confirmada');
- * ```
- * 
- * @example
- * ```typescript
- * // Obtener solo descansos de almuerzo
- * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31&eventType=break&breakTimeType=lunch');
- * ```
  * 
  * @author Santiago Prada - Backend Developer
  * @version 1.2.0
@@ -106,14 +92,12 @@ import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
  * - Retorna códigos de estado HTTP apropiados según el tipo de error
  * 
  * @example
- * ```typescript
  * // Petición típica para obtener eventos de un doctor
  * const response = await fetch('/api/doctors/123/calendar/events?startDate=2025-07-01&endDate=2025-07-31');
  * const result = await response.json();
  * // result.events contiene los eventos encontrados
  * // result.eventCount contiene el número total de eventos
  * // result.dateRange contiene el rango de fechas consultado
- * ```
  * 
  * @throws {Error} Cuando los parámetros de fecha son inválidos o malformados
  * @throws {Error} Cuando el doctorId no es un número válido

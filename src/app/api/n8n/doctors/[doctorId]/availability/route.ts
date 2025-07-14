@@ -1,26 +1,33 @@
 /**
  * @fileoverview API endpoint para obtener la disponibilidad de horarios de un doctor específico con autenticación API Key
- * @description Este endpoint calcula los horarios disponibles de un doctor para una fecha específica,
- * utilizando la lógica centralizada en `calendar-event-retriever.ts` que combina horarios de trabajo,
- * descansos y eventos existentes en Google Calendar. Requiere autenticación mediante API Key.
  * 
- * @route GET /api/n8n/doctors/[doctorId]/availability
- * @param {string} doctorId - ID del doctor (parámetro de ruta)
- * @param {string} date - Fecha en formato YYYY-MM-DD (parámetro de consulta)
- * @param {number} [interval] - Duración del intervalo en minutos (parámetro de consulta opcional, por defecto 30)
+ * Este módulo implementa el endpoint GET seguro para calcular y retornar los horarios disponibles de un doctor
+ * en una fecha específica, integrando datos de horarios de trabajo de la base de datos y eventos de Google Calendar.
+ * Requiere autenticación mediante API Key para acceso controlado desde sistemas externos como n8n.
  * 
- * @returns {Array<TimeSlot>} Array de horarios disponibles
- * @returns {Object} Error object en caso de fallo
+ * **Características clave:**
+ * - Autenticación segura con API Key
+ * - Cálculo dinámico de intervalos disponibles
+ * - Soporte para intervalos personalizables (5-120 minutos)
+ * - Manejo de zonas horarias con Luxon
+ * - Validación estricta y logging detallado
  * 
- * @example
- * // Obtener disponibilidad para el doctor con ID 123 el 2 de julio de 2025 con intervalos de 30 minutos
- * GET /api/n8n/doctors/123/availability?date=2025-07-02
- * Headers: { "X-API-Key": "your-api-key" }
+ * **Dependencias principales:**
+ * - `@/lib/calendar-event-retriever`: Lógica de disponibilidad
+ * - `luxon`: Manejo de fechas
+ * - `next/server`: Next.js API routes
  * 
- * @example
- * // Obtener disponibilidad con intervalos de 15 minutos
- * GET /api/n8n/doctors/123/availability?date=2025-07-02&interval=15
- * Headers: { "X-API-Key": "your-api-key" }
+ * **Endpoint disponible:**
+ * - GET /api/n8n/doctors/[doctorId]/availability?date=YYYY-MM-DD&interval=MINUTES
+ * 
+ * **Mejoras recientes:**
+ * - Añadida autenticación API Key (versión 1.2.0)
+ * - Integración con ignoreEventId (versión 1.3.0)
+ * - Optimizaciones de performance
+ * 
+ * @author Santiago Prada - Backend Developer
+ * @version 1.3.0
+ * @since 2025-07-02
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -30,10 +37,18 @@ import { getDoctorAvailability } from '@/lib/calendar-event-retriever';
 // === API Key Authentication ===
 
 /**
- * Authenticates requests using API Key from headers.
+ * Autentica solicitudes usando API Key de los headers.
  * 
- * @param {NextRequest} request - The incoming HTTP request
- * @returns {Promise<{success: boolean, error?: string}>} Authentication result
+ * Verifica la presencia y validez de la API Key contra la variable de entorno N8N_API_KEY.
+ * 
+ * @param {NextRequest} request - La solicitud HTTP entrante
+ * @returns {Promise<{success: boolean, error?: string}>} Resultado de la autenticación
+ * 
+ * @example
+ * const auth = await authenticateApiKey(request);
+ * if (!auth.success) {
+ *   return NextResponse.json({ error: auth.error }, { status: 401 });
+ * }
  */
 async function authenticateApiKey(request: NextRequest): Promise<{
   success: boolean;
@@ -80,85 +95,45 @@ async function authenticateApiKey(request: NextRequest): Promise<{
 }
 
 /**
- * Representa un horario disponible para citas
+ * Representa un horario disponible para citas.
+ * 
  * @interface TimeSlot
+ * @property {string} start - Fecha y hora de inicio en formato ISO 8601
+ * @property {string} end - Fecha y hora de fin en formato ISO 8601
  */
 type TimeSlot = {
-  /** Fecha y hora de inicio en formato ISO 8601 */
   start: string;
-  /** Fecha y hora de fin en formato ISO 8601 */
   end: string;
 };
 
 /**
- * @swagger
- * /api/n8n/doctors/{doctorId}/availability:
- *   get:
- *     summary: Obtiene la disponibilidad de horarios de un doctor con autenticación API Key
- *     description: Calcula los horarios disponibles considerando horarios de trabajo, descansos y eventos de Google Calendar
- *     security:
- *       - ApiKeyAuth: []
- *     parameters:
- *       - in: path
- *         name: doctorId
- *         required: true
- *         schema:
- *           type: string
- *         description: ID único del doctor
- *       - in: query
- *         name: date
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: Fecha para consultar disponibilidad (YYYY-MM-DD)
- *       - in: query
- *         name: interval
- *         required: false
- *         schema:
- *           type: integer
- *           minimum: 5
- *           maximum: 120
- *           default: 30
- *         description: Duración del intervalo en minutos (5-120 minutos)
- *     responses:
- *       200:
- *         description: Lista de horarios disponibles
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/TimeSlot'
- *       400:
- *         description: Parámetros inválidos
- *       401:
- *         description: API Key inválida o faltante
- *       404:
- *         description: Doctor no encontrado
- *       500:
- *         description: Error interno del servidor
+ * Endpoint GET para obtener la disponibilidad de horarios de un doctor con autenticación API Key.
+ * 
+ * @description Calcula horarios disponibles con autenticación segura. Utiliza getDoctorAvailability
+ * para la lógica principal.
+ * 
+ * **Proceso:**
+ * 1. Autenticar API Key
+ * 2. Validar parámetros
+ * 3. Calcular intervalos disponibles
+ * 4. Generar slots de tiempo
+ * 
+ * **Manejo de errores:**
+ * - 401: Autenticación fallida
+ * - 400: Parámetros inválidos
+ * - 500: Errores internos
+ * 
+ * @param {NextRequest} request - Solicitud con parámetros de consulta
+ * @param {Object} context - Contexto de ruta
+ * @param {Promise<{doctorId: string}>} context.params - ID del doctor
+ * 
+ * @returns {Promise<NextResponse<TimeSlot[] | {error: string}>>}
+ * 
+ * @example
+ * GET /api/n8n/doctors/123/availability?date=2025-07-02
+ * Headers: { "X-API-Key": "your-api-key" }
+ * Response: [{ start: "2025-07-02T09:00:00.000Z", end: "2025-07-02T09:30:00.000Z" }]
  */
-
-/**
- * Endpoint GET para obtener la disponibilidad de horarios de un doctor con autenticación API Key
- * 
- * @description Este endpoint utiliza la función `getDoctorAvailability`
- * de `src/lib/calendar-event-retriever.ts` para calcular la disponibilidad,
- * con autenticación mediante API Key para acceso desde sistemas externos.
- * 
- * @param {NextRequest} request - Objeto de solicitud de Next.js con parámetros de consulta
- * @param {Object} context - Contexto de la ruta dinámica
- * @param {Promise<{doctorId: string}>} context.params - Parámetros de ruta (ID del doctor)
- * 
- * @returns {Promise<NextResponse<TimeSlot[] | {error: string}>>} 
- * - 200: Array de horarios disponibles
- * - 400: Error de validación de parámetros
- * - 401: Error de autenticación API Key
- * - 404: Doctor no encontrado
- * - 500: Error interno del servidor
- */
-
 export async function GET(
   request: NextRequest, 
   { params }: { params: Promise<{ doctorId: string }> }

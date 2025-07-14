@@ -90,7 +90,6 @@ import { BreakTimeType } from '@/types/google-calendar';
  * - Retorna mensajes de error user-friendly sin exponer detalles internos
  * 
  * @example
- * ```typescript
  * // Crear un descanso para almuerzo del doctor con ID 123
  * const response = await fetch('/api/doctors/123/calendar/break-times', {
  *   method: 'POST',
@@ -102,7 +101,6 @@ import { BreakTimeType } from '@/types/google-calendar';
  *     summary: 'Almuerzo - Dr. García'
  *   })
  * });
- * ```
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -198,56 +196,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
  * - Excluye eventos cancelados o eliminados del calendario
  * 
  * **Optimizaciones implementadas:**
- * - Cache de eventos para reducir llamadas a Google Calendar API
- * - Paginación automática para rangos de fechas extensos
- * - Compresión de respuesta para mejorar performance
- * - Rate limiting para prevenir abuso de la API
+ * - Caché de consultas frecuentes
+ * - Paginación para rangos de fechas extensos
+ * - Compresión de respuesta para listas grandes
+ * - Rate limiting para prevenir abuso
  * 
- * @param req - Request object de Next.js con query parameters
+ * @param req - Request object de Next.js
  * @param context - Contexto de Next.js con parámetros de ruta
- * @param context.params.id - ID único del doctor obtenido del parámetro de ruta (requerido)
- * @param req.query.startDate - Fecha de inicio del rango en formato YYYY-MM-DD (requerido)
- * @param req.query.endDate - Fecha de fin del rango en formato YYYY-MM-DD (requerido)
+ * @param context.params.id - ID único del doctor (requerido)
+ * @param req.query.startDate - Fecha de inicio en formato ISO (requerido)
+ * @param req.query.endDate - Fecha de fin en formato ISO (requerido)
  * 
- * @returns {Promise<NextResponse>} Array de eventos de descanso o mensaje de error
- * 
- * **Estructura de respuesta exitosa (200):**
- * ```typescript
- * {
- *   id: string,                    // ID único del evento en Google Calendar
- *   summary: string,               // Título del evento de descanso
- *   start: { dateTime: string },   // Fecha/hora de inicio en ISO 8601
- *   end: { dateTime: string },     // Fecha/hora de fin en ISO 8601
- *   breakTimeType: BreakTimeType,  // Tipo de descanso (lunch, vacation, etc.)
- *   doctorId: number,              // ID del doctor asociado
- *   created: string,               // Timestamp de creación del evento
- *   updated: string                // Timestamp de última modificación
- * }[]
- * ```
+ * @returns {Promise<NextResponse>} Lista de eventos de descanso o error
  * 
  * **Códigos de respuesta:**
- * - 200: Consulta exitosa, retorna array de eventos (puede estar vacío)
- * - 400: Parámetros de consulta faltantes o formato de fecha inválido
- * - 500: Error interno, problemas con Google Calendar API o base de datos
- * 
- * **Validaciones de entrada:**
- * - Obtiene el doctorId del parámetro de ruta para mayor seguridad
- * - Confirma que las fechas estén en formato ISO válido
- * - Asegura que startDate sea anterior o igual a endDate
- * 
- * @example
- * ```typescript
- * // Obtener descansos del Dr. García (ID: 123) para enero 2024
- * const response = await fetch(
- *   '/api/doctors/123/calendar/break-times?startDate=2024-01-01&endDate=2024-01-31'
- * );
- * const breakEvents = await response.json();
- * 
- * // Filtrar solo almuerzos
- * const lunchBreaks = breakEvents.filter(event => 
- *   event.breakTimeType === 'lunch'
- * );
- * ```
+ * - 200: Lista de eventos encontrada
+ * - 400: Parámetros inválidos
+ * - 500: Error interno
  */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia

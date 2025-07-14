@@ -38,6 +38,9 @@ async function handlePatchRequest(
     return createSuccessResponse(updatedEvent, 'Appointment updated successfully');
   } catch (error) {
     console.error(`Error updating appointment ${params.eventId}:`, error);
+    if (error instanceof Error && error.message === 'The selected time slot is no longer available.') {
+      return createErrorResponse('APPOINTMENT_SLOT_UNAVAILABLE', error.message, HTTP_STATUS.CONFLICT);
+    }
     return handleDatabaseError(error, 'update appointment');
   }
 }

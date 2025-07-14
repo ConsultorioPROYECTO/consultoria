@@ -9,15 +9,21 @@ import type { calendar_v3 } from 'googleapis';
 /**
  * Calculates the available time slots for a doctor within a given date range.
  * Combines doctor's working hours from DB with busy times from Google Calendar.
- * @param doctorId The ID of the doctor.
- * @param startDate The start date for the availability check (Luxon DateTime).
- * @param endDate The end date for the availability check (Luxon DateTime).
- * @returns An array of available time intervals (Luxon Interval objects).
+ * Optionally ignores a specific event when checking busy intervals, useful for rescheduling.
+ *
+ * @param doctorId - The ID of the doctor whose availability is being checked.
+ * @param startDate - The start date for the availability check (Luxon DateTime).
+ * @param endDate - The end date for the availability check (Luxon DateTime).
+ * @param options - Optional parameters.
+ * @param options.ignoreEventId - Optional event ID to ignore in busy intervals (e.g., for rescheduling the current event).
+ * @returns A promise that resolves to an array of available time intervals (Luxon Interval objects).
+ * @throws Error if doctor not found, calendar ID missing, or invalid working hours.
  */
 export async function getDoctorAvailability(
   doctorId: number,
   startDate: DateTime,
-  endDate: DateTime
+  endDate: DateTime,
+  options?: { ignoreEventId?: string }
 ): Promise<Interval[]> {
   console.log('🔍 [getDoctorAvailability] Iniciando análisis de disponibilidad');
   console.log('📋 [getDoctorAvailability] Parámetros de entrada:', {
@@ -102,6 +108,34 @@ export async function getDoctorAvailability(
     const busyIntervals: Interval[] = [];
     const calendarBusy = freeBusyResponse.data.calendars?.[calendarId]?.busy;
     
+    if (calendarBusy) {
+      for (const busyTime of calendarBusy) {
+        if (busyTime.start && busyTime.end) {
+          const startDateTime = DateTime.fromISO(busyTime.start, { zone: doctorTimezone });
+          const endDateTime = DateTime.fromISO(busyTime.end, { zone: doctorTimezone });
+          
+          // Ignorar el intervalo si coincide con el ignoreEventId (opcional)
+          // Para esto, necesitaríamos obtener el evento, pero como freebusy no da IDs, 
+          // alternativamente, pasar ignoreInterval directamente. Ajustemos el signature.
+          // Mejor: cambiar a ignoreInterval: Interval | undefined
+          // Pero para precisión, obtengamos el evento si ignoreEventId proporcionado.
+          if (options?.ignoreEventId) {
+            const event = await googleCalendarService.calendar.events.get({
+              calendarId,
+              eventId: options.ignoreEventId,
+            });
+            const eventStart = DateTime.fromISO(event.data.start?.dateTime || '', { zone: doctorTimezone });
+            const eventEnd = DateTime.fromISO(event.data.end?.dateTime || '', { zone: doctorTimezone });
+            const busyStart = startDateTime;
+            const busyEnd = endDateTime;
+            if (busyStart.equals(eventStart) && busyEnd.equals(eventEnd)) {
+              continue; // Ignorar este busy interval
+            }
+          }
+          busyIntervals.push(Interval.fromDateTimes(startDateTime, endDateTime));
+        }
+      }
+    }
     console.debug('🔍 [getDoctorAvailability] Procesando intervalos ocupados...');
     if (calendarBusy) {
       console.log('⏰ [getDoctorAvailability] Intervalos ocupados encontrados:', calendarBusy.length);

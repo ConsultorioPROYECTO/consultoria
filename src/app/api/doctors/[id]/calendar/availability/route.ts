@@ -4,127 +4,36 @@ import { DateTime } from 'luxon';
 import { getDoctorAvailability } from '@/lib/calendar-event-retriever';
 
 /**
- * @fileoverview API endpoint para obtener la disponibilidad de horarios de un doctor específico
- * @description Este endpoint calcula los horarios disponibles de un doctor para una fecha específica,
- * utilizando la lógica centralizada en `calendar-event-retriever.ts` que combina horarios de trabajo,
- * descansos y eventos existentes en Google Calendar.
+ * @fileoverview API endpoint para obtener la disponibilidad de horarios de un doctor específico.
  * 
- * @route GET /api/doctors/[id]/availability
- * @param {string} id - ID del doctor (parámetro de ruta)
- * @param {string} date - Fecha en formato YYYY-MM-DD (parámetro de consulta)
- * @param {number} [interval] - Duración del intervalo en minutos (parámetro de consulta opcional, por defecto 30)
+ * Este módulo implementa el endpoint GET para calcular y retornar los horarios disponibles de un doctor
+ * en una fecha específica, integrando datos de horarios de trabajo de la base de datos y eventos de Google Calendar.
+ * Utiliza la función centralizada `getDoctorAvailability` para la lógica de cálculo, asegurando consistencia
+ * en todo el sistema.
  * 
- * @returns {Array<TimeSlot>} Array de horarios disponibles
- * @returns {Object} Error object en caso de fallo
+ * **Características clave:**
+ * - Cálculo dinámico de intervalos disponibles basado en horarios de trabajo y eventos existentes
+ * - Soporte para intervalos personalizables (5-120 minutos)
+ * - Manejo de zonas horarias con Luxon para precisión global
+ * - Validación estricta de parámetros de entrada
+ * - Logging detallado para monitoreo y debugging
  * 
- * @example
- * // Obtener disponibilidad para el doctor con ID 123 el 2 de julio de 2025 con intervalos de 30 minutos
- * GET /api/doctors/123/availability?date=2025-07-02
+ * **Dependencias principales:**
+ * - `@/lib/calendar-event-retriever`: Lógica central de disponibilidad
+ * - `luxon`: Manejo de fechas y tiempos
+ * - `next/server`: Next.js API routes
  * 
- * @example
- * // Obtener disponibilidad con intervalos de 15 minutos
- * GET /api/doctors/123/availability?date=2025-07-02&interval=15
+ * **Endpoint disponible:**
+ * - GET /api/doctors/[id]/calendar/availability?date=YYYY-MM-DD&interval=MINUTES
  * 
- * @swagger
- * /api/doctors/{id}/availability:
- *   get:
- *     summary: Obtiene la disponibilidad de horarios de un doctor
- *     description: Calcula los horarios disponibles considerando horarios de trabajo, descansos y eventos de Google Calendar
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID único del doctor
- *       - in: query
- *         name: date
- *         required: true
- *         schema:
- *           type: string
- *           format: date
- *         description: Fecha para consultar disponibilidad (YYYY-MM-DD)
- *       - in: query
- *         name: interval
- *         required: false
- *         schema:
- *           type: integer
- *           minimum: 5
- *           maximum: 120
- *           default: 30
- *         description: Duración del intervalo en minutos (5-120 minutos)
- *     responses:
- *       200:
- *         description: Lista de horarios disponibles
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/TimeSlot'
- *       400:
- *         description: Parámetros inválidos
- *       404:
- *         description: Doctor no encontrado
- *       500:
- *         description: Error interno del servidor
- */
-
-/**
- * Representa un horario disponible para citas
- * @interface TimeSlot
- */
-type TimeSlot = {
-  /** Fecha y hora de inicio en formato ISO 8601 */
-  start: string;
-  /** Fecha y hora de fin en formato ISO 8601 */
-  end: string;
-};
-
-/**
- * Endpoint GET para obtener la disponibilidad de horarios de un doctor
+ * **Mejoras recientes:**
+ * - Integración con ignoreEventId para validaciones al reprogramar (versión 1.3.0)
+ * - Optimización de consultas a Google Calendar
+ * - Mejora en el manejo de errores con mensajes user-friendly
  * 
- * @description Este endpoint ahora utiliza la función `getDoctorAvailability`
- * de `src/lib/calendar-event-retriever.ts` para calcular la disponibilidad,
- * simplificando la lógica de este controlador de API.
- * 
- * @param {NextRequest} request - Objeto de solicitud de Next.js con parámetros de consulta
- * @param {Object} context - Contexto de la ruta dinámica
- * @param {Promise<{id: string}>} context.params - Parámetros de ruta (ID del doctor)
- * 
- * @returns {Promise<NextResponse<TimeSlot[] | {error: string}>>} 
- * - 200: Array de horarios disponibles
- * - 400: Error de validación de parámetros
- * - 404: Doctor no encontrado
- * - 500: Error interno del servidor
- * 
- * @throws {Error} Error de base de datos o Google Calendar API
- * 
- * @example
- * // Solicitud exitosa con intervalos de 30 minutos (por defecto)
- * GET /api/doctors/123/availability?date=2025-07-02
- * Response: [
- *   { start: "2025-07-02T09:00:00.000Z", end: "2025-07-02T09:30:00.000Z" },
- *   { start: "2025-07-02T09:30:00.000Z", end: "2025-07-02T10:00:00.000Z" }
- * ]
- * 
- * @example
- * // Solicitud con intervalos de 15 minutos
- * GET /api/doctors/123/availability?date=2025-07-02&interval=15
- * Response: [
- *   { start: "2025-07-02T09:00:00.000Z", end: "2025-07-02T09:15:00.000Z" },
- *   { start: "2025-07-02T09:15:00.000Z", end: "2025-07-02T09:30:00.000Z" },
- *   { start: "2025-07-02T09:30:00.000Z", end: "2025-07-02T09:45:00.000Z" }
- * ]
- * 
- * @example
- * // Error de validación
- * GET /api/doctors/abc/availability
- * Response: { error: "El doctorId no es válido" }
- * 
- * @since 1.0.0
+ * @author Santiago Prada - Backend Developer
  * @version 1.3.0
- * @author Sistema de Gestión de Citas
+ * @since 2025-07-02
  */
 export async function GET(
   request: NextRequest, 
@@ -229,4 +138,17 @@ export async function GET(
     );
   }
 }
+
+
+/**
+ * Representa un horario disponible para citas.
+ * 
+ * @interface TimeSlot
+ * @property {string} start - Fecha y hora de inicio en formato ISO 8601
+ * @property {string} end - Fecha y hora de fin en formato ISO 8601
+ */
+type TimeSlot = {
+  start: string;
+  end: string;
+};
 

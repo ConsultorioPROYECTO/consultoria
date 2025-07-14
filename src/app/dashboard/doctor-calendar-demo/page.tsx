@@ -30,6 +30,47 @@ import {
 import { NavigationProvider } from "@/app/context/NavigationContext"
 
 // Tipos TypeScript para las APIs
+/**
+ * @fileoverview Página de demostración del calendario para doctores.
+ * 
+ * Este componente proporciona una interfaz interactiva para demostrar las funcionalidades
+ * de gestión de calendarios de doctores, incluyendo configuración, sincronización con Google Calendar,
+ * gestión de horarios de trabajo y verificación de disponibilidad.
+ * 
+ * **Características clave:**
+ * - Autenticación y redirección a login
+ * - Tabs para diferentes secciones: Configuración, Horarios, Eventos, Disponibilidad
+ * - Integración con APIs para fetch y update de datos
+ * - Manejo de estados con React hooks
+ * - UI moderna con componentes de shadcn/ui
+ * 
+ * **Dependencias principales:**
+ * - AuthContext para autenticación
+ * - Next.js navigation
+ * - Lucide-react icons
+ * - shadcn/ui components
+ * 
+ * **Mejoras recientes:**
+ * - Añadida verificación de disponibilidad con ignoreEventId
+ * - Mejora en el manejo de errores y loading states
+ * - Optimización de llamadas API
+ * 
+ * @author Brayan - Frontend Developer
+ * @version 1.2.0
+ * @since 2025-07-10
+ */
+
+
+/**
+ * Configuración del calendario para un doctor.
+ * 
+ * @interface DoctorCalendarSettings
+ * @property {string} [calendarId] - ID del calendario de Google
+ * @property {string} [calendarName] - Nombre del calendario
+ * @property {string} [timezone] - Zona horaria
+ * @property {string} [color] - Color del calendario
+ * @property {boolean} [syncEnabled] - Habilitar sincronización
+ */
 interface DoctorCalendarSettings {
   calendarId?: string
   calendarName?: string
@@ -73,6 +114,13 @@ interface ApiResponse<T> {
   error?: string
 }
 
+/**
+ * Componente principal de la página de demo del calendario del doctor.
+ * 
+ * Maneja la autenticación, estados y renderizado de la interfaz de demostración.
+ * 
+ * @returns {React.ReactElement} La página renderizada
+ */
 export default function DoctorCalendarDemoPage(): React.ReactElement {
   const { user, loading } = useAuth()
   const router = useRouter()
