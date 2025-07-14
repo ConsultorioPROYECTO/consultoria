@@ -32,6 +32,7 @@ import { CalendarEvent } from "@/types/calendar";
 import { useAuth } from "../../context/AuthContext";
 import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils";
 import dynamic from "next/dynamic";
+import { toast } from "sonner";
 
 // Importación dinámica del DatePicker
 const DatePicker = dynamic(() => import("./date-picker"), {
@@ -68,7 +69,7 @@ type Doctor = {
 
 export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
   // Hook de autenticación para obtener el doctorId
-  const { doctorId, user } = useAuth();
+  const { doctorId, user, userRole } = useAuth();
   
   // Determinar si es vista móvil para ajustar la altura de las celdas
   const [isMobile, setIsMobile] = React.useState(false);
@@ -96,7 +97,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   
   // Estado para eventos del doctor
   const [doctorEvents, setDoctorEvents] = React.useState<CalendarEvent[]>([]);
-  const [, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState(true);
   
   // Estado para filtro de doctores
   const [availableDoctors, setAvailableDoctors] = React.useState<Doctor[]>([]);
@@ -127,7 +128,8 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         });
         
         if (!response.ok) {
-          throw new Error('Failed to fetch users');
+          console.warn('Failed to fetch users for doctor selection');
+          return;
         }
         
         const users = await response.json();
@@ -161,6 +163,10 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         }
       } catch (error) {
         console.error('Error loading doctors:', error);
+        // En caso de error, si el usuario es doctor, usar su propio ID
+        if (doctorId && !selectedDoctorId) {
+          setSelectedDoctorId(doctorId.toString());
+        }
       }
     };
     
@@ -204,10 +210,15 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       }
       
       setLoading(true);
+      
       try {
         const token = await getFirebaseAuthToken();
         if (!token) {
-          throw new Error('No authentication token available');
+          console.warn('No authentication token available');
+          setDoctorEvents([]);
+          toast.error('No se pudo obtener el token de autenticación');
+          setLoading(false);
+          return;
         }
         
         // Obtener rango de fechas para la vista actual
@@ -216,9 +227,19 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         const endDate = endOfDay(end).toISOString();
         
         // Cargar eventos del doctor seleccionado
-        const targetDoctorId = selectedDoctorId || doctorId;
+        let targetDoctorId = selectedDoctorId || doctorId;
+        
+        // Si el usuario es un médico, solo puede ver sus propios eventos
+        if (userRole === 'medico' && doctorId) {
+          targetDoctorId = doctorId;
+        }
         
         if (!targetDoctorId) {
+          console.info('No doctor ID available for loading events');
+          setDoctorEvents([]);
+          if (userRole === 'medico') {
+            toast.error('No se encontró información del doctor');
+          }
           setLoading(false);
           return;
         }
@@ -234,7 +255,21 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
         );
         
         if (!response.ok) {
-          throw new Error('Failed to fetch doctor events');
+          if (response.status === 404) {
+            console.info(`No calendar events found for doctor ${targetDoctorId}`);
+            setDoctorEvents([]);
+            // No mostrar toast para 404, es normal no tener eventos
+          } else if (response.status === 403) {
+            console.warn('Access denied to doctor events');
+            setDoctorEvents([]);
+            toast.error('No tiene permisos para ver los eventos de este doctor');
+          } else {
+            console.warn(`Failed to fetch doctor events: ${response.status} ${response.statusText}`);
+            setDoctorEvents([]);
+            toast.error('Error al cargar los eventos del calendario');
+          }
+          setLoading(false);
+          return;
         }
         
         const eventsData = await response.json();
@@ -254,13 +289,14 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       } catch (error) {
         console.error('Error loading doctor events:', error);
         setDoctorEvents([]);
+        toast.error('Error de conexión al cargar eventos');
       } finally {
         setLoading(false);
       }
     };
 
     loadEvents();
-  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, getDateRange, availableDoctors]);
+  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, getDateRange, availableDoctors, userRole]);
 
   // Sincronizar sharedDisplayMonth cuando currentDate cambie
   React.useEffect(() => {
@@ -702,8 +738,8 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
             </Button>
           </div>
           
-          {/* Filtro de Doctor */}
-          {availableDoctors.length > 0 && (
+          {/* Filtro de Doctor - Solo mostrar si hay múltiples doctores disponibles o el usuario no es doctor */}
+          {availableDoctors.length > 1 || (availableDoctors.length > 0 && userRole !== 'medico') ? (
              <div className="flex items-center gap-2 flex-shrink-0">
                <span className="text-sm font-medium">Doctor:</span>
                <Popover open={openDoctorCombo} onOpenChange={setOpenDoctorCombo}>
@@ -753,12 +789,26 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                 </PopoverContent>
               </Popover>
             </div>
-          )}
+          ) : userRole === 'medico' && availableDoctors.length === 1 ? (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-sm font-medium text-muted-foreground">Mi calendario</span>
+            </div>
+          ) : null}
         </div>
       </div>
 
       {/* Contenido principal según la vista seleccionada */}
-      <div className="flex-1 overflow-hidden border border-border rounded-lg">
+      <div className="flex-1 overflow-hidden border border-border rounded-lg relative">
+        {/* Indicador de carga */}
+        {loading && (
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="flex items-center gap-2 bg-background border rounded-lg px-4 py-2 shadow-lg">
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-sm text-muted-foreground">Cargando eventos...</span>
+            </div>
+          </div>
+        )}
+        
         {viewMode === "week" && renderWeekView()}
         {viewMode === "day" && renderDayView()}
         {viewMode === "month" && (
