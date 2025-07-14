@@ -138,8 +138,18 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           
           const assistantData = await response.json();
           
+          // Definir interfaz para los datos de doctores asignados
+          interface AssignedDoctor {
+            idDoctor: number;
+            userId?: string;
+            user?: {
+              displayName?: string;
+              email?: string;
+            };
+          }
+          
           // Mapear los doctores asignados al formato esperado
-          doctors = (assistantData.data || []).map((doctor: any) => ({
+          doctors = (assistantData.data || []).map((doctor: AssignedDoctor) => ({
             id: doctor.userId?.toString() || doctor.idDoctor.toString(),
             displayName: doctor.user?.displayName || doctor.user?.email || `Doctor ${doctor.idDoctor}`,
             email: doctor.user?.email || '',
