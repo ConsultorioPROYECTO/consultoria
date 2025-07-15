@@ -794,9 +794,10 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
+                    size="sm"
                     role="combobox"
                     aria-expanded={openDoctorCombo}
-                    className="w-[250px] justify-between"
+                    className="flex-1 md:w-[250px] justify-between"
                   >
                     <span className="truncate">
                       {availableDoctors.find((doctor) => doctor.idDoctor.toString() === selectedDoctorId)?.displayName || "Seleccionar doctor..."}
