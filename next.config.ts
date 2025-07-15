@@ -4,7 +4,15 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
 
-
+  /* Configuración para imágenes, directorios y URLs externas
+  * @link https://nextjs.org/docs/messages/next-image-unconfigured-host
+  * domains: Define los dominios permitidos para imágenes.
+  * remotePatterns: Define patrones de URLs externas permitidas.
+  */
+  images: {
+    domains: ['lh3.googleusercontent.com'],
+    remotePatterns: [new URL('https://lh3.googleusercontent.com/**')],
+  },
 
 /**
  * Next.js configuration for security headers.
