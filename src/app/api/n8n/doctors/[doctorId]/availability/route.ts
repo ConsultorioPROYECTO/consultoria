@@ -167,7 +167,7 @@ export async function GET(
   let intervalMinutes = 30;
   if (intervalParam) {
     const parsedInterval = parseInt(intervalParam, 10);
-    if (isNaN(parsedInterval) || parsedInterval < 5 || parsedInterval > 120) {
+    if (isNaN(parsedInterval) || parsedInterval < 5) {
       console.error(`Validation Error: Invalid "interval" parameter: ${intervalParam}`);
       return NextResponse.json(
         { error: 'El parámetro "interval" debe ser un número entre 5 y 120 minutos' }, 
