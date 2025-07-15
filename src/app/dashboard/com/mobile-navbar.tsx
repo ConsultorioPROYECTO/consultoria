@@ -78,22 +78,25 @@ const navItems: NavItem[] = useMemo(() => [
   }, [navItems, isItemActive, currentView]);
 
   // Memoize handle item click function
-  const debounce = (func: () => void, delay: number) => {
-  let timeout: NodeJS.Timeout | null = null;
+  const throttle = (func: () => void, limit: number) => {
+  let inThrottle: boolean;
   return () => {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(func, delay);
+    if (!inThrottle) {
+      func();
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
   };
 };
-const DEBOUNCE_DELAY = 300; // Retraso de debounce en ms para prevenir clics rápidos
+const THROTTLE_LIMIT = 200; // Límite de throttle en ms para permitir clics rápidos pero prevenir spam
 const handleItemClick = useCallback((index: number) => {
-  const debouncedClick = debounce(() => {
+  const throttledClick = throttle(() => {
     const item = navItems[index];
     if (item.onClick) {
       item.onClick();
     }
-  }, DEBOUNCE_DELAY);
-  debouncedClick();
+  }, THROTTLE_LIMIT);
+  throttledClick();
 }, [navItems]);
 
   const configIndicatorVariants = useMemo(() => ({
