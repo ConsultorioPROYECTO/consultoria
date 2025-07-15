@@ -70,7 +70,7 @@ export function StaffDetailModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl overflow-y-auto sm:max-w-2xl sm:max-h-[90vh] max-sm:fixed max-sm:inset-0 max-sm:w-screen max-sm:h-dvh max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:m-0 max-sm:p-0">
         {/* Header con imagen de perfil para móviles */}
-        <div className="max-sm:h-[300px] max-sm:relative sm:hidden">
+        <div className="max-sm:h-[550px] max-sm:relative sm:hidden">
           {/* Usamos una etiqueta <img> para mayor fiabilidad */}
           <Image 
             src="/img/avatar_1.webp" 
