@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -422,9 +423,8 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
   const FormContent = () => (
     <>
       {isLoadingData ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Cargando datos...</span>
+        <div className="flex h-screen flex-col items-center justify-center">
+          <WaveformLoader className="w-24 h-auto text-muted-foreground" />
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="grid gap-4">

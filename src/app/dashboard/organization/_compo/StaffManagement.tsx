@@ -1,5 +1,3 @@
-// src/app/dashboard/1/compo/StaffManagement.tsx
-// src/app/dashboard/rol/Admin/_compo/StaffManagement.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -8,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Clock, RefreshCw } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import WaveformLoader from '@/components/custom/WaveformLoader';
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
 import { StaffDetailModal } from "../../rol/Admin/_compo/StaffDetailModal";
@@ -275,20 +272,14 @@ export function StaffManagement() {
       />
 
       {selectedDoctorForSchedule && (
-        <Dialog open={!!selectedDoctorForSchedule} onOpenChange={() => setSelectedDoctorForSchedule(null)}>
-          <DialogContent className="w-full h-full max-w-none sm:max-w-5xl sm:max-h-[95vh] flex flex-col p-4 sm:p-6">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl"><Clock className="h-6 w-6 text-primary" />Horarios de Trabajo - {selectedDoctorForSchedule.name}</DialogTitle>
-              <DialogDescription>Configure los días y horarios de atención del doctor.</DialogDescription>
-            </DialogHeader>
-            <DoctorWorkingHours
-              doctorId={selectedDoctorForSchedule.idDoctor!}
-              doctorName={selectedDoctorForSchedule.name}
-              initialWorkingHours={selectedDoctorForSchedule.workingHours}
-              onSave={handleSaveWorkingHours}
-            />
-          </DialogContent>
-        </Dialog>
+        <DoctorWorkingHours
+          doctorId={selectedDoctorForSchedule.idDoctor!}
+          doctorName={selectedDoctorForSchedule.name}
+          initialWorkingHours={selectedDoctorForSchedule.workingHours}
+          isOpen={!!selectedDoctorForSchedule}
+          onClose={() => setSelectedDoctorForSchedule(null)}
+          onSave={handleSaveWorkingHours}
+        />
       )}
 
       {selectedAssistantForDoctors && (

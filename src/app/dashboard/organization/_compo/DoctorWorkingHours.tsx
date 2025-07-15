@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react';
 import WaveformLoader from '@/components/custom/WaveformLoader';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Clock, Save, AlertCircle, Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { DAYS_OF_WEEK } from "@rutas/types/working-hours";
 import type { 
   DoctorWorkingHours, 
@@ -78,6 +80,8 @@ interface DoctorWorkingHoursProps {
   doctorId: number;
   doctorName: string;
   initialWorkingHours?: DoctorWorkingHours;
+  isOpen: boolean;
+  onClose: () => void;
   onSave?: (doctorId: number, workingHours: DoctorWorkingHours) => Promise<void>;
 }
 
@@ -85,9 +89,13 @@ interface DoctorWorkingHoursProps {
 
 export function DoctorWorkingHours({ 
   doctorId, 
+  doctorName,
   initialWorkingHours,
+  isOpen,
+  onClose,
   onSave 
 }: DoctorWorkingHoursProps) {
+  const isMobile = useIsMobile();
   const [workingHours, setWorkingHours] = useState<DailyWorkingHours[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -237,6 +245,7 @@ export function DoctorWorkingHours({
       if (onSave) {
         await onSave(doctorId, finalPayload);
       }
+      onClose(); // Cerrar el modal después de guardar exitosamente
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error desconocido';
       setErrors([errorMessage]);
@@ -246,82 +255,127 @@ export function DoctorWorkingHours({
     }
   };
 
-  
-  if (isLoading) {
+  // Contenido compartido entre Dialog y Drawer
+  const renderHeader = () => (
+    <>
+      <div className="flex items-center gap-2 text-xl font-semibold">
+        <Clock className="h-6 w-6 text-primary" />
+        Horarios de Trabajo - {doctorName}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Configure los días y horarios de atención del doctor.
+      </p>
+    </>
+  );
+
+  const renderContent = () => (
+    <>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <WaveformLoader className="w-24 h-auto text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto space-y-6">
+          {errors.length > 0 && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <ul className="list-disc list-inside space-y-1">
+                  {errors.map((error, index) => <li key={index}>{error}</li>)}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            {DAYS_OF_WEEK.map(({ label, apiValue }) => {
+              const daySchedule = workingHours.find(d => d.dayOfWeek === apiValue);
+              const isActive = !!daySchedule;
+
+              return (
+                <div key={apiValue} className="p-4 border rounded-lg bg-card transition-colors">
+                  <div className="grid gap-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="font-medium text-base">{label}</Label>
+                      <Switch checked={isActive} onCheckedChange={(checked) => handleDayToggle(apiValue, checked)} />
+                    </div>
+
+                    {isActive && (
+                      <div className="grid gap-3 pl-2 border-l-2 border-primary/20">
+                        {daySchedule.intervals.map((interval, index) => (
+                          <div key={index} className="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2 pl-4">
+                            <Input type="time" value={interval.start} onChange={(e) => handleIntervalChange(apiValue, index, 'start', e.target.value)} className="w-32 h-9" />
+                            <span>-</span>
+                            <Input type="time" value={interval.end} onChange={(e) => handleIntervalChange(apiValue, index, 'end', e.target.value)} className="w-32 h-9" />
+                            <Button variant="ghost" size="icon" onClick={() => removeInterval(apiValue, index)} className="text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button variant="outline" size="sm" onClick={() => addInterval(apiValue)} className="ml-4 mt-2">
+                          <PlusCircle className="h-4 w-4 mr-2" />Añadir Intervalo
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-4 bg-muted/30 rounded-lg border">
+            <h4 className="font-semibold mb-2 text-base">Resumen:</h4>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {formatHoursForDisplay(workingHours)}
+            </p>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={isSaving} className="px-8 py-2.5">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />} 
+              {isSaving ? 'Guardando...' : 'Guardar Horarios'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  // Renderizado condicional: Drawer para móvil, Dialog para desktop
+  if (isMobile) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center min-h-[400px]">
-              <WaveformLoader className="w-24 h-auto text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <Drawer open={isOpen} onOpenChange={onClose}>
+        <DrawerContent className="flex flex-col max-h-[95vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle asChild>
+              <div>{renderHeader()}</div>
+            </DrawerTitle>
+            <DrawerDescription>
+              Configure los días y horarios de atención del doctor.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="flex-1 overflow-auto px-4 pb-4">
+            {renderContent()}
+          </div>
+        </DrawerContent>
+      </Drawer>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" />Configuración de Horarios</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {errors.length > 0 && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <ul className="list-disc list-inside space-y-1">
-                {errors.map((error, index) => <li key={index}>{error}</li>)}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="space-y-4">
-          {DAYS_OF_WEEK.map(({ label, apiValue }) => {
-            const daySchedule = workingHours.find(d => d.dayOfWeek === apiValue);
-            const isActive = !!daySchedule;
-
-            return (
-              <div key={apiValue} className="p-4 border rounded-lg bg-card transition-colors">
-                <div className="flex items-center justify-between mb-4">
-                  <Label className="font-medium text-base">{label}</Label>
-                  <Switch checked={isActive} onCheckedChange={(checked) => handleDayToggle(apiValue, checked)} />
-                </div>
-
-                {isActive && (
-                  <div className="space-y-3 pl-2 border-l-2 border-primary/20">
-                    {daySchedule.intervals.map((interval, index) => (
-                      <div key={index} className="flex items-center gap-2 pl-4">
-                        <Input type="time" value={interval.start} onChange={(e) => handleIntervalChange(apiValue, index, 'start', e.target.value)} className="w-32 h-9" />
-                        <span>-</span>
-                        <Input type="time" value={interval.end} onChange={(e) => handleIntervalChange(apiValue, index, 'end', e.target.value)} className="w-32 h-9" />
-                        <Button variant="ghost" size="icon" onClick={() => removeInterval(apiValue, index)} className="text-muted-foreground hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={() => addInterval(apiValue)} className="ml-4 mt-2">
-                      <PlusCircle className="h-4 w-4 mr-2" />Añadir Intervalo
-                    </Button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="p-4 bg-muted/30 rounded-lg border">
-          <h4 className="font-semibold mb-2 text-base">Resumen:</h4>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {formatHoursForDisplay(workingHours)}
-          </p>
-        </div>
-
-        <div className="flex justify-end pt-4 border-t">
-          <Button onClick={handleSave} disabled={isSaving} className="px-8 py-2.5">
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />} 
-            {isSaving ? 'Guardando...' : 'Guardar Horarios'}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="w-full h-full max-w-none sm:max-w-5xl sm:max-h-[95vh] flex flex-col p-4 sm:p-6">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Clock className="h-6 w-6 text-primary" />
+            Horarios de Trabajo - {doctorName}
+          </DialogTitle>
+          <DialogDescription>
+            Configure los días y horarios de atención del doctor.
+          </DialogDescription>
+        </DialogHeader>
+        {renderContent()}
+      </DialogContent>
+    </Dialog>
   );
 }
