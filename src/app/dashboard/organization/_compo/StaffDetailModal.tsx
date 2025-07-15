@@ -73,7 +73,7 @@ export function StaffDetailModal({
         <div className="max-sm:h-[300px] max-sm:relative sm:hidden">
           {/* Usamos una etiqueta <img> para mayor fiabilidad */}
           <Image 
-            src="/img/default.jpeg" 
+            src="/img/avatar_1.webp" 
             alt="Perfil" 
             width={500}
             height={500}
