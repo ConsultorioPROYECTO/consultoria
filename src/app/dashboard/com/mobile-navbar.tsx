@@ -1,7 +1,6 @@
 'use client'
 
 import { memo, useCallback, useMemo, useTransition, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from "@rutas/app/context/NavigationContext"
 import dynamic from 'next/dynamic';
@@ -21,7 +20,6 @@ const MobileNavbar = memo(() => {
   const [isPending, startTransition] = useTransition();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const { setCurrentView, currentView } = useNavigation()
-  const currentPath = usePathname();
 
   // Memoize function to handle view changes with useTransition
   const handleViewChange = useCallback((view: 'dashboard' | 'calendar') => {
@@ -31,31 +29,37 @@ const MobileNavbar = memo(() => {
   }, [setCurrentView]);
 
   // Memoize navItems to prevent recreation on every render (only main navigation items)
-  const navItems = useMemo(() => [
+  interface NavItem {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  onClick: () => void;
+}
+
+const navItems: NavItem[] = useMemo(() => [
     { 
       title: 'Dashboard', 
       icon: Home, 
-
       onClick: () => handleViewChange('dashboard')
     },
     { 
       title: 'Calendario', 
       icon: CalendarClock, 
-
       onClick: () => handleViewChange('calendar')
     },
   ], [handleViewChange]);
 
   // Separate config button
-  const configButton = useMemo(() => ({
+  const configButton: Omit<NavItem, 'title'> & { title: string } = useMemo(() => ({
     title: '',
     icon: Ellipsis,
-
     onClick: () => setIsDrawerOpen(true)
   }), []);
 
   // Memoize helper function to determine if an item is active
   const isItemActive = useCallback((item: { title: string }) => {
+    if (!currentView || !['dashboard', 'calendar', 'configuration', 'organization'].includes(currentView)) {
+      return false;
+    }
     if (item.title === 'Calendario') {
       return currentView === 'calendar';
     }
@@ -74,12 +78,23 @@ const MobileNavbar = memo(() => {
   }, [navItems, isItemActive, currentView]);
 
   // Memoize handle item click function
-  const handleItemClick = useCallback((index: number) => {
+  const debounce = (func: () => void, delay: number) => {
+  let timeout: NodeJS.Timeout | null = null;
+  return () => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(func, delay);
+  };
+};
+const DEBOUNCE_DELAY = 300; // Retraso de debounce en ms para prevenir clics rápidos
+const handleItemClick = useCallback((index: number) => {
+  const debouncedClick = debounce(() => {
     const item = navItems[index];
     if (item.onClick) {
       item.onClick();
     }
-  }, [navItems]);
+  }, DEBOUNCE_DELAY);
+  debouncedClick();
+}, [navItems]);
 
   const configIndicatorVariants = useMemo(() => ({
     hidden: { opacity: 0, scale: 0.5 },
@@ -105,19 +120,26 @@ const MobileNavbar = memo(() => {
           <div className="relative">
             <AnimatePresence>
               {activeIndex !== -1 && (
-                <motion.div
-                   key={activeIndex}
-                   className="absolute inset-0 bg-primary rounded-full z-0"
-                   style={{
-                     width: `${100 / navItems.length}%`,
-                     left: `${activeIndex * (100 / navItems.length)}%`,
-                   }}
-                   variants={navIndicatorVariants}
-                   initial="hidden"
-                   animate="visible"
-                   exit="exit"
-                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                 />
+                (() => {
+                  const itemCount = navItems.length;
+                  const indicatorWidth = `${100 / itemCount}%`;
+                  const indicatorLeft = `${activeIndex * (100 / itemCount)}%`;
+                  return (
+                    <motion.div
+                      key={activeIndex}
+                      className="absolute inset-0 bg-primary rounded-full z-0"
+                      style={{
+                        width: indicatorWidth,
+                        left: indicatorLeft,
+                      }}
+                      variants={navIndicatorVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    />
+                  );
+                })()
               )}
             </AnimatePresence>
             <TabsList className="w-full h-10 p-0 bg-transparent grid grid-cols-2 gap-0 relative z-10">
