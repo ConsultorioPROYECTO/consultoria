@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Stethoscope, UserCheck, Clock, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import WaveformLoader from '@/components/custom/WaveformLoader';
-import { DoctorWorkingHours } from "../../rol/Admin/_compo/DoctorWorkingHours";
+import { DoctorWorkingHours } from "./DoctorWorkingHours";
 import { StaffDetailModal } from "../../rol/Admin/_compo/StaffDetailModal";
 import { AssignDoctorModal } from "./AssignDoctorModal";
 import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';

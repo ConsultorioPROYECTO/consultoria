@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -245,11 +246,14 @@ export function DoctorWorkingHours({
     }
   };
 
+  
   if (isLoading) {
     return (
-      <Card><CardContent className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-6 w-6 animate-spin mr-2" /> Cargando horarios...
-      </CardContent></Card>
+      <Card>
+        <CardContent className="flex items-center justify-center min-h-[400px]">
+              <WaveformLoader className="w-24 h-auto text-muted-foreground" />
+        </CardContent>
+      </Card>
     );
   }
 
