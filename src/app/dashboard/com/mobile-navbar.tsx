@@ -35,13 +35,13 @@ const MobileNavbar = memo(() => {
     { 
       title: 'Dashboard', 
       icon: Home, 
-      url: '/dashboard', 
+
       onClick: () => handleViewChange('dashboard')
     },
     { 
       title: 'Calendario', 
       icon: CalendarClock, 
-      url: '/dashboard/calender', 
+
       onClick: () => handleViewChange('calendar')
     },
   ], [handleViewChange]);
@@ -50,23 +50,20 @@ const MobileNavbar = memo(() => {
   const configButton = useMemo(() => ({
     title: '',
     icon: Ellipsis,
-    url: '/dashboard/config',
+
     onClick: () => setIsDrawerOpen(true)
   }), []);
 
   // Memoize helper function to determine if an item is active
-  const isItemActive = useCallback((item: { title: string; url: string }) => {
-    // For calendar, check both URL and currentView
+  const isItemActive = useCallback((item: { title: string }) => {
     if (item.title === 'Calendario') {
       return currentView === 'calendar';
     }
-    // For dashboard, check if we're on dashboard view
     if (item.title === 'Dashboard') {
       return currentView === 'dashboard';
     }
-    // For other items, use URL comparison
-    return item.url === currentPath;
-  }, [currentView, currentPath]);
+    return false;
+  }, [currentView]);
 
   // Memoize active index calculation
   const activeIndex = useMemo(() => {
