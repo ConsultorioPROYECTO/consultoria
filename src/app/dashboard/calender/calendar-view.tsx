@@ -715,8 +715,8 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
               onClick={goToToday}
               className={cn(
                 isToday(currentDate) 
-                  ? "bg-primary text-primary-foreground" 
-                  : "text-muted-foreground"
+                  ? "bg-primary text-sm text-primary-foreground" 
+                  : "text-muted-foreground text-sm"
               )}
             >
               Hoy
@@ -724,7 +724,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
             {/* Selector de vista */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1 md:gap-2 flex-shrink-0">
+                  <Button variant="outline" size="sm" className="gap-1 justify-start font-normal text-sm md:gap-2 flex-shrink-0 px-3">
                     {viewMode === "month" && <LayoutGrid className="h-4 w-4" />}
                     {viewMode === "week" && <CalendarDays className="h-4 w-4" />}
                     {viewMode === "day" && <Clock className="h-4 w-4" />}
