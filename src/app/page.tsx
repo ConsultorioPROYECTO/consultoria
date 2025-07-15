@@ -19,6 +19,7 @@ import { ArrowDown, CalendarDays, User, MessageSquare, FileText, BarChart2, Moon
 import { useTheme } from 'next-themes';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -171,18 +172,21 @@ export default function HomePage() {
           }}
         >
           <motion.h1 
-            className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter selection:bg-primary selection:text-primary-foreground"
+            className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tighter selection:bg-primary selection:text-primary-foreground"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             Irina
           </motion.h1>
           <motion.div 
-            className="mt-2 mb-1 px-3 py-1 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15"
+            className="mt-2 mb-1"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
-            <span className="text-[10px] md:text-xs font-medium text-primary/80 tracking-wide uppercase">
+            <Badge 
+              variant="outline"
+              className="px-3 py-1 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15 text-[10px] md:text-xs font-medium text-primary/80 tracking-wide uppercase"
+            >
               Ideal para tu consultorio • centro médico • clínica
-            </span>
+            </Badge>
           </motion.div>
           <motion.p 
             className="mt-4 max-w-md md:max-w-xl text-muted-foreground md:text-lg"

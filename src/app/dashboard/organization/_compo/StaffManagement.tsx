@@ -220,14 +220,12 @@ export function StaffManagement() {
                       <TableRow key={member.id} className="hover:bg-muted/50">
                         <TableCell>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{member.name}</p>
-                                    <p className="text-sm text-muted-foreground truncate">{member.email}</p>
-                                  </div>
-                                  {!isMobile && (
+                            {isMobile ? (
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{member.name}</p>
+                                  <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                                  <div className="mt-2">
                                     <Badge 
                                       variant="outline"
                                       className={`px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 border-0 whitespace-nowrap ${
@@ -247,41 +245,48 @@ export function StaffManagement() {
                                       }`} />
                                       {member.role === 'medico' ? 'Médico' : member.role === 'admin' ? 'Admin' : 'Asistente'}
                                     </Badge>
-                                  )}
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleViewMore(member)}
+                                  className="p-2 flex-shrink-0 ml-3"
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium truncate">{member.name}</p>
+                                      <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                                    </div>
+                                    <Badge 
+                                      variant="outline"
+                                      className={`px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 border-0 whitespace-nowrap ${
+                                        member.role === 'medico' 
+                                          ? 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-700 shadow-sm hover:shadow-md hover:from-blue-500/15 hover:to-cyan-500/15 dark:from-blue-400/10 dark:to-cyan-400/10 dark:text-blue-300' 
+                                          : member.role === 'admin' 
+                                          ? 'bg-gradient-to-r from-red-500/10 to-pink-500/10 text-red-700 shadow-sm hover:shadow-md hover:from-red-500/15 hover:to-pink-500/15 dark:from-red-400/10 dark:to-pink-400/10 dark:text-red-300'
+                                          : 'bg-gradient-to-r from-gray-500/10 to-slate-500/10 text-gray-700 shadow-sm hover:shadow-md hover:from-gray-500/15 hover:to-slate-500/15 dark:from-gray-400/10 dark:to-slate-400/10 dark:text-gray-300'
+                                      }`}
+                                    >
+                                      <div className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${
+                                        member.role === 'medico' 
+                                          ? 'bg-blue-500 shadow-sm' 
+                                          : member.role === 'admin' 
+                                          ? 'bg-red-500 shadow-sm'
+                                          : 'bg-gray-500 shadow-sm'
+                                      }`} />
+                                      {member.role === 'medico' ? 'Médico' : member.role === 'admin' ? 'Admin' : 'Asistente'}
+                                    </Badge>
+                                  </div>
                                 </div>
                               </div>
-                              {isMobile && (
-                                <div className="flex items-center gap-3">
-                                  <Badge 
-                                    variant="outline"
-                                    className={`px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 border-0 whitespace-nowrap ${
-                                      member.role === 'medico' 
-                                        ? 'bg-gradient-to-r from-blue-500/10 to-cyan-500/10 text-blue-700 shadow-sm hover:shadow-md hover:from-blue-500/15 hover:to-cyan-500/15 dark:from-blue-400/10 dark:to-cyan-400/10 dark:text-blue-300' 
-                                        : member.role === 'admin' 
-                                        ? 'bg-gradient-to-r from-red-500/10 to-pink-500/10 text-red-700 shadow-sm hover:shadow-md hover:from-red-500/15 hover:to-pink-500/15 dark:from-red-400/10 dark:to-pink-400/10 dark:text-red-300'
-                                        : 'bg-gradient-to-r from-gray-500/10 to-slate-500/10 text-gray-700 shadow-sm hover:shadow-md hover:from-gray-500/15 hover:to-slate-500/15 dark:from-gray-400/10 dark:to-slate-400/10 dark:text-gray-300'
-                                    }`}
-                                  >
-                                    <div className={`w-1.5 h-1.5 rounded-full mr-1.5 inline-block ${
-                                      member.role === 'medico' 
-                                        ? 'bg-blue-500 shadow-sm' 
-                                        : member.role === 'admin' 
-                                        ? 'bg-red-500 shadow-sm'
-                                        : 'bg-gray-500 shadow-sm'
-                                    }`} />
-                                    {member.role === 'medico' ? 'Médico' : member.role === 'admin' ? 'Admin' : 'Asistente'}
-                                  </Badge>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => handleViewMore(member)}
-                                    className="p-2 flex-shrink-0"
-                                  >
-                                    <ChevronRight className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </TableCell>
                         {!isMobile && (
