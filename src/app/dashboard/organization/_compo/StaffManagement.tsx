@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Stethoscope, UserCheck, Clock, RefreshCw } from "lucide-react";
+import { Users, Stethoscope, UserCheck, Clock, RefreshCw, ChevronRight } from "lucide-react";
 import WaveformLoader from '@/components/custom/WaveformLoader';
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
-import { StaffDetailModal } from "../../rol/Admin/_compo/StaffDetailModal";
+import { StaffDetailModal } from "./StaffDetailModal";
 import { AssignDoctorModal } from "./AssignDoctorModal";
 import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
 import type { User } from '@/db/schema/users';
 import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/google-calendar-schemas";
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Tipo extendido para incluir datos del doctor y asistente desde la API
 type UserWithDoctorAndAssistant = User & {
@@ -46,6 +47,7 @@ export function StaffManagement() {
   const [isAssignDoctorModalOpen, setIsAssignDoctorModalOpen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const fetchStaffMembers = useCallback(async () => {
     setIsLoading(true);
@@ -244,15 +246,26 @@ export function StaffManagement() {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end space-x-2">
-                            <Button variant="outline" size="sm" onClick={() => handleViewMore(member)}><Users className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Ver más</span></Button>
-                            {member.role === 'medico' && member.idDoctor && (
-                              <Button variant="outline" size="sm" onClick={() => handleOpenSchedule(member)}><Clock className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Horario</span></Button>
-                            )}
-                            {member.role === 'asistente' && (
-                              <Button variant="outline" size="sm" onClick={() => handleOpenDoctors(member)}><Stethoscope className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Doctores</span></Button>
-                            )}
-                          </div>
+                          {isMobile ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleViewMore(member)}
+                              className="p-2"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <div className="flex justify-end space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => handleViewMore(member)}><Users className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Ver más</span></Button>
+                              {member.role === 'medico' && member.idDoctor && (
+                                <Button variant="outline" size="sm" onClick={() => handleOpenSchedule(member)}><Clock className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Horario</span></Button>
+                              )}
+                              {member.role === 'asistente' && (
+                                <Button variant="outline" size="sm" onClick={() => handleOpenDoctors(member)}><Stethoscope className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Doctores</span></Button>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))
