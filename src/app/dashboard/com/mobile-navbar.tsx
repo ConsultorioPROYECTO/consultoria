@@ -102,7 +102,7 @@ const MobileNavbar = memo(() => {
         isPending ? 'opacity-90' : ''
       }`}>
         <Tabs 
-          value={navItems[activeIndex]?.title.toLowerCase() || 'dashboard'} 
+          value={navItems[activeIndex]?.title.toLowerCase() || ''} 
           className="relative z-10"
         >
           <div className="relative">
