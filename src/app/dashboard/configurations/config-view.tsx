@@ -17,7 +17,7 @@ import { useTheme } from "next-themes"
 import { useUIStyle } from "@/app/context/UIStyleContext"
 import { useAuth } from "@/app/context/AuthContext"
 import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"
-import { AccountSection } from "../com/AccountSection"
+import { AccountSection } from "./_compo/AccountSection"
 import { IntegrationsSection } from "./_compo/IntegrationsSection"
 
 const navAccount = [
