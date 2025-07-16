@@ -101,6 +101,14 @@ interface CreateAppointmentResponse {
 }
 
 /**
+ * Interfaz para intervalos de tiempo disponibles
+ */
+interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+/**
  * Props del componente
  */
 interface CreateAppointmentModalProps {
@@ -142,6 +150,11 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
   const [openDoctorCombo, setOpenDoctorCombo] = useState(false);
   const [openPatientCombo, setOpenPatientCombo] = useState(false);
   const [openServiceCombo, setOpenServiceCombo] = useState(false);
+  const [openTimeSlotCombo, setOpenTimeSlotCombo] = useState(false);
+  
+  // Estados para intervalos de disponibilidad
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
+  const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
 
 
 
@@ -255,7 +268,79 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       });
       return [];
     }
+  }, [user, userRole]);
+
+  /**
+   * Obtener intervalos de disponibilidad del doctor
+   */
+  const fetchDoctorAvailability = useCallback(async (doctorId: number, date: string, intervalMinutes: number) => {
+    try {
+      const token = await user?.getIdToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+
+      const response = await fetch(`/api/doctors/${doctorId}/calendar/availability?date=${date}&interval=${intervalMinutes}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener disponibilidad del doctor');
+      }
+
+      const data = await response.json();
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching doctor availability:', error);
+      toast.error('Error al cargar disponibilidad', {
+        description: 'No se pudo cargar la disponibilidad del doctor',
+        duration: 4000,
+      });
+      return [];
+    }
   }, [user]);
+
+  /**
+   * Cargar intervalos de disponibilidad
+   */
+  const loadAvailableTimeSlots = useCallback(async () => {
+    if (!formData.doctorId || !formData.date || !formData.serviceId) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    const selectedService = medicalServices.find(service => service.id === formData.serviceId);
+    if (!selectedService) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    setIsLoadingTimeSlots(true);
+    try {
+      const timeSlots = await fetchDoctorAvailability(
+        formData.doctorId,
+        formData.date,
+        selectedService.durationMinutes
+      );
+      setAvailableTimeSlots(timeSlots);
+      
+      // Limpiar la hora seleccionada si ya no está disponible
+      if (formData.time && !timeSlots.some((slot: TimeSlot) => {
+        const slotTime = new Date(slot.start).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        return slotTime === formData.time;
+      })) {
+        setFormData(prev => ({ ...prev, time: '' }));
+      }
+    } catch (error) {
+      console.error('Error loading time slots:', error);
+      setAvailableTimeSlots([]);
+    } finally {
+      setIsLoadingTimeSlots(false);
+    }
+  }, [formData.doctorId, formData.date, formData.serviceId, formData.time, medicalServices, fetchDoctorAvailability]);
 
   /**
    * Cargar datos iniciales cuando se abre el modal
@@ -297,6 +382,15 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       loadInitialData();
     }
   }, [isOpen, loadInitialData]);
+
+  /**
+   * Efecto para cargar intervalos de disponibilidad cuando cambien los datos relevantes
+   */
+  useEffect(() => {
+    if (isOpen) {
+      loadAvailableTimeSlots();
+    }
+  }, [isOpen, loadAvailableTimeSlots]);
 
   /**
    * Manejar cambios en los campos del formulario
@@ -420,6 +514,12 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       notes: ''
     });
     setSelectedDate(undefined);
+    setAvailableTimeSlots([]);
+    setOpenTimeSlotCombo(false);
+    setOpenDoctorCombo(false);
+    setOpenPatientCombo(false);
+    setOpenServiceCombo(false);
+    setIsCalendarOpen(false);
   };
 
   /**
@@ -459,6 +559,10 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
                   setOpenServiceCombo={setOpenServiceCombo}
                   isCalendarOpen={isCalendarOpen}
                   setIsCalendarOpen={setIsCalendarOpen}
+                  openTimeSlotCombo={openTimeSlotCombo}
+                  setOpenTimeSlotCombo={setOpenTimeSlotCombo}
+                  availableTimeSlots={availableTimeSlots}
+                  isLoadingTimeSlots={isLoadingTimeSlots}
                   handleInputChange={handleInputChange}
                   handleDateSelect={handleDateSelect}
                   handleSubmit={handleSubmit}
@@ -493,6 +597,10 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
               setOpenServiceCombo={setOpenServiceCombo}
               isCalendarOpen={isCalendarOpen}
               setIsCalendarOpen={setIsCalendarOpen}
+              openTimeSlotCombo={openTimeSlotCombo}
+              setOpenTimeSlotCombo={setOpenTimeSlotCombo}
+              availableTimeSlots={availableTimeSlots}
+              isLoadingTimeSlots={isLoadingTimeSlots}
               handleInputChange={handleInputChange}
               handleDateSelect={handleDateSelect}
               handleSubmit={handleSubmit}
@@ -521,6 +629,10 @@ interface FormContentProps {
   setOpenServiceCombo: React.Dispatch<React.SetStateAction<boolean>>;
   isCalendarOpen: boolean;
   setIsCalendarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  openTimeSlotCombo: boolean;
+  setOpenTimeSlotCombo: React.Dispatch<React.SetStateAction<boolean>>;
+  availableTimeSlots: TimeSlot[];
+  isLoadingTimeSlots: boolean;
   handleInputChange: (field: keyof CreateAppointmentRequest, value: string | number | boolean) => void;
   handleDateSelect: (date: Date | undefined) => void;
   handleSubmit: (e: React.FormEvent) => void;
@@ -544,6 +656,10 @@ const FormContent = React.memo<FormContentProps>(({
   setOpenServiceCombo,
   isCalendarOpen,
   setIsCalendarOpen,
+  openTimeSlotCombo,
+  setOpenTimeSlotCombo,
+  availableTimeSlots,
+  isLoadingTimeSlots,
   handleInputChange,
   handleDateSelect,
   handleSubmit,
@@ -746,14 +862,75 @@ const FormContent = React.memo<FormContentProps>(({
 
           {/* Hora */}
           <div className="grid gap-2">
-            <Label htmlFor="time">Hora *</Label>
-            <Input
-              id="time"
-              type="time"
-              value={formData.time}
-              onChange={(e) => handleInputChange('time', e.target.value)}
-              required
-            />
+            <Label htmlFor="time">Hora Disponible *</Label>
+            <Popover open={openTimeSlotCombo} onOpenChange={setOpenTimeSlotCombo} modal={false}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openTimeSlotCombo}
+                  className="w-full justify-between"
+                  disabled={!formData.doctorId || !formData.date || !formData.serviceId || isLoadingTimeSlots}
+                >
+                  {formData.time || "Seleccionar hora disponible..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[280px] p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar hora..." />
+                  <CommandList>
+                    {isLoadingTimeSlots ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <span className="text-sm text-muted-foreground">Cargando horarios...</span>
+                      </div>
+                    ) : availableTimeSlots.length === 0 ? (
+                      <CommandEmpty>
+                        {!formData.doctorId || !formData.date || !formData.serviceId
+                          ? "Seleccione médico, fecha y servicio primero"
+                          : "No hay horarios disponibles para esta fecha"}
+                      </CommandEmpty>
+                    ) : (
+                      <CommandGroup>
+                        {availableTimeSlots.map((slot, index) => {
+                          const startTime = new Date(slot.start).toLocaleTimeString('en-GB', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          });
+                          const endTime = new Date(slot.end).toLocaleTimeString('en-GB', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          });
+                          const timeDisplay = `${startTime} - ${endTime}`;
+                          
+                          return (
+                            <CommandItem
+                              key={index}
+                              value={timeDisplay}
+                              onSelect={() => {
+                                handleInputChange('time', startTime);
+                                setOpenTimeSlotCombo(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.time === startTime ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="font-medium text-sm">
+                                {timeDisplay}
+                              </span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Tipo de Cita */}
