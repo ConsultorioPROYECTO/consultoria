@@ -114,7 +114,7 @@ interface CreateAppointmentModalProps {
  * Componente para crear citas médicas con integración completa al backend
  */
 export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, contextDoctorId }: CreateAppointmentModalProps) {
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const isMobile = useIsMobile();
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -221,7 +221,12 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
         throw new Error('No se pudo obtener el token de autenticación');
       }
 
-      const response = await fetch('/api/users', {
+      // Determinar el endpoint basado en el rol del usuario
+      const endpoint = userRole === 'asistente'
+        ? '/api/assistants/doctors-with-appointments'
+        : '/api/users';
+
+      const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -233,7 +238,13 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       }
 
       const data = await response.json();
-      // Filtrar solo usuarios con rol 'medico' y que tengan idDoctor
+      
+      // Si el endpoint es el de asistentes, la data ya viene lista
+      if (userRole === 'asistente') {
+        return data.doctors || [];
+      }
+
+      // Para admin, filtrar solo usuarios con rol 'medico' y que tengan idDoctor
       const doctorsOnly = data.filter((user: User) => user.role === 'medico' && user.idDoctor) || [];
       return doctorsOnly;
     } catch (error) {
@@ -414,13 +425,130 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
   /**
    * Manejar cierre del modal
    */
-  const handleCloseDialog = () => {
+  const handleCloseDialog = useCallback(() => {
     onClose();
     resetForm();
-  };
+  }, [onClose]);
 
-  // Componente del contenido del formulario
-  const FormContent = () => (
+  return (
+    <>
+      {isMobile ? (
+        <Drawer open={isOpen} onOpenChange={onClose}>
+          <DrawerContent className="max-h-[90vh]">
+            <div className="overflow-y-auto">
+              <DrawerHeader className="text-left px-4">
+                <DrawerTitle>Crear Nueva Cita</DrawerTitle>
+                <DrawerDescription>
+                  Complete los detalles para programar una nueva cita médica.
+                </DrawerDescription>
+              </DrawerHeader>
+              <div className="pb-4 px-4">
+                <FormContent
+                  formData={formData}
+                  doctors={doctors}
+                  patients={patients}
+                  medicalServices={medicalServices}
+                  selectedDate={selectedDate}
+                  isLoading={isLoading}
+                  isLoadingData={isLoadingData}
+                  openDoctorCombo={openDoctorCombo}
+                  setOpenDoctorCombo={setOpenDoctorCombo}
+                  openPatientCombo={openPatientCombo}
+                  setOpenPatientCombo={setOpenPatientCombo}
+                  openServiceCombo={openServiceCombo}
+                  setOpenServiceCombo={setOpenServiceCombo}
+                  isCalendarOpen={isCalendarOpen}
+                  setIsCalendarOpen={setIsCalendarOpen}
+                  handleInputChange={handleInputChange}
+                  handleDateSelect={handleDateSelect}
+                  handleSubmit={handleSubmit}
+                  handleCloseDialog={handleCloseDialog}
+                />
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Crear Nueva Cita</DialogTitle>
+              <DialogDescription>
+                Complete los detalles para programar una nueva cita médica.
+              </DialogDescription>
+            </DialogHeader>
+            <FormContent
+              formData={formData}
+              doctors={doctors}
+              patients={patients}
+              medicalServices={medicalServices}
+              selectedDate={selectedDate}
+              isLoading={isLoading}
+              isLoadingData={isLoadingData}
+              openDoctorCombo={openDoctorCombo}
+              setOpenDoctorCombo={setOpenDoctorCombo}
+              openPatientCombo={openPatientCombo}
+              setOpenPatientCombo={setOpenPatientCombo}
+              openServiceCombo={openServiceCombo}
+              setOpenServiceCombo={setOpenServiceCombo}
+              isCalendarOpen={isCalendarOpen}
+              setIsCalendarOpen={setIsCalendarOpen}
+              handleInputChange={handleInputChange}
+              handleDateSelect={handleDateSelect}
+              handleSubmit={handleSubmit}
+              handleCloseDialog={handleCloseDialog}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}
+
+interface FormContentProps {
+  formData: CreateAppointmentRequest;
+  doctors: Doctor[];
+  patients: Patient[];
+  medicalServices: MedicalService[];
+  selectedDate: Date | undefined;
+  isLoading: boolean;
+  isLoadingData: boolean;
+  openDoctorCombo: boolean;
+  setOpenDoctorCombo: React.Dispatch<React.SetStateAction<boolean>>;
+  openPatientCombo: boolean;
+  setOpenPatientCombo: React.Dispatch<React.SetStateAction<boolean>>;
+  openServiceCombo: boolean;
+  setOpenServiceCombo: React.Dispatch<React.SetStateAction<boolean>>;
+  isCalendarOpen: boolean;
+  setIsCalendarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  handleInputChange: (field: keyof CreateAppointmentRequest, value: string | number | boolean) => void;
+  handleDateSelect: (date: Date | undefined) => void;
+  handleSubmit: (e: React.FormEvent) => void;
+  handleCloseDialog: () => void;
+}
+
+// Componente del contenido del formulario
+const FormContent = React.memo<FormContentProps>(({ 
+  formData,
+  doctors,
+  patients,
+  medicalServices,
+  selectedDate,
+  isLoading,
+  isLoadingData,
+  openDoctorCombo,
+  setOpenDoctorCombo,
+  openPatientCombo,
+  setOpenPatientCombo,
+  openServiceCombo,
+  setOpenServiceCombo,
+  isCalendarOpen,
+  setIsCalendarOpen,
+  handleInputChange,
+  handleDateSelect,
+  handleSubmit,
+  handleCloseDialog
+}) => (
     <>
       {isLoadingData ? (
         <div className="flex h-screen flex-col items-center justify-center">
@@ -431,7 +559,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
           {/* Selección de Médico */}
           <div className="grid gap-2">
             <Label htmlFor="doctor">Médico *</Label>
-            <Popover open={openDoctorCombo} onOpenChange={setOpenDoctorCombo}>
+            <Popover open={openDoctorCombo} onOpenChange={setOpenDoctorCombo} modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -486,7 +614,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
           {/* Selección de Paciente */}
           <div className="grid gap-2">
             <Label htmlFor="patient">Paciente *</Label>
-            <Popover open={openPatientCombo} onOpenChange={setOpenPatientCombo}>
+            <Popover open={openPatientCombo} onOpenChange={setOpenPatientCombo} modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -539,7 +667,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
           {/* Selección de Servicio */}
           <div className="grid gap-2">
             <Label htmlFor="service">Servicio Médico *</Label>
-            <Popover open={openServiceCombo} onOpenChange={setOpenServiceCombo}>
+            <Popover open={openServiceCombo} onOpenChange={setOpenServiceCombo} modal={false}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -713,39 +841,6 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
         </form>
       )}
     </>
-  );
+  ));
 
-  return (
-    <>
-      {isMobile ? (
-        <Drawer open={isOpen} onOpenChange={onClose}>
-          <DrawerContent className="max-h-[90vh]">
-            <div className="overflow-y-auto">
-              <DrawerHeader className="text-left px-4">
-                <DrawerTitle>Crear Nueva Cita</DrawerTitle>
-                <DrawerDescription>
-                  Complete los detalles para programar una nueva cita médica.
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="pb-4 px-4">
-                <FormContent />
-              </div>
-            </div>
-          </DrawerContent>
-        </Drawer>
-      ) : (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Crear Nueva Cita</DialogTitle>
-              <DialogDescription>
-                Complete los detalles para programar una nueva cita médica.
-              </DialogDescription>
-            </DialogHeader>
-            <FormContent />
-          </DialogContent>
-        </Dialog>
-      )}
-    </>
-  );
-}
+FormContent.displayName = 'FormContent';
