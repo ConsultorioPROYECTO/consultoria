@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, Stethoscope, UserCheck, Clock, RefreshCw, ChevronRight } from "lucide-react";
+import { Users, Stethoscope, UserCheck, Clock, RefreshCw, ChevronRight, Search, Shield } from "lucide-react";
 import WaveformLoader from '@/components/custom/WaveformLoader';
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
 import { StaffDetailModal } from "./StaffDetailModal";
@@ -15,6 +15,8 @@ import type { User } from '@/db/schema/users';
 import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/google-calendar-schemas";
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Tipo extendido para incluir datos del doctor y asistente desde la API
 type UserWithDoctorAndAssistant = User & {
@@ -40,6 +42,9 @@ interface StaffMember {
 
 export function StaffManagement() {
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [filteredStaffMembers, setFilteredStaffMembers] = useState<StaffMember[]>([]);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('todos');
   const [selectedDoctorForSchedule, setSelectedDoctorForSchedule] = useState<StaffMember | null>(null);
   const [selectedStaffForDetail, setSelectedStaffForDetail] = useState<StaffMember | null>(null);
   const [selectedAssistantForDoctors, setSelectedAssistantForDoctors] = useState<StaffMember | null>(null);
@@ -95,9 +100,23 @@ export function StaffManagement() {
             patients: Math.floor(Math.random() * 50) + 10,
             appointments: Math.floor(Math.random() * 20) + 5,
           };
+        })
+        .sort((a, b) => {
+          // Ordenar por prioridad: admin > medico > asistente
+          const roleOrder = { 'admin': 1, 'medico': 2, 'asistente': 3 };
+          const aOrder = roleOrder[a.role] || 4;
+          const bOrder = roleOrder[b.role] || 4;
+          
+          if (aOrder !== bOrder) {
+            return aOrder - bOrder;
+          }
+          
+          // Si tienen el mismo rol, ordenar alfabéticamente por nombre
+          return a.name.localeCompare(b.name);
         });
 
       setStaffMembers(activeStaff);
+      setFilteredStaffMembers(activeStaff);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Un error desconocido ocurrió.';
       console.error('Error al obtener miembros del personal:', errorMessage);
@@ -106,6 +125,26 @@ export function StaffManagement() {
       setIsLoading(false);
     }
   }, []);
+
+  // Efecto para filtrar miembros del personal basado en el término de búsqueda y tab activo
+  useEffect(() => {
+    let filtered = staffMembers;
+    
+    // Filtrar por rol según el tab activo
+    if (activeTab !== 'todos') {
+      filtered = filtered.filter(member => member.role === activeTab);
+    }
+    
+    // Filtrar por término de búsqueda
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(member => 
+        member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    setFilteredStaffMembers(filtered);
+  }, [staffMembers, searchTerm, activeTab]);
 
   useEffect(() => {
     fetchStaffMembers();
@@ -171,6 +210,7 @@ export function StaffManagement() {
     toast.success('Doctores asignados correctamente');
   };
 
+  const adminsCount = staffMembers.filter(member => member.role === 'admin').length;
   const doctorsCount = staffMembers.filter(member => member.role === 'medico').length;
   const assistantsCount = staffMembers.filter(member => member.role === 'asistente').length;
 
@@ -179,25 +219,47 @@ export function StaffManagement() {
       <CardHeader>
         <CardTitle className="text-2xl font-bold flex items-start justify-between">
           <div>
-            Personal Actual ({staffMembers.length})
+            Personal Actual
           </div>
           <Button variant="outline" size="sm" onClick={fetchStaffMembers} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             {isLoading ? 'Cargando...' : 'Actualizar'}
           </Button>
         </CardTitle>
-        <CardDescription className="flex items-center gap-2">
-          <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1 text-xs">
-            <Stethoscope className="h-3 w-3" />
-            {doctorsCount} Médicos
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-1 px-2 py-1 text-xs">
-            <UserCheck className="h-3 w-3" />
-            {assistantsCount} Asistentes
-          </Badge>
+        <CardDescription>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="todos" className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                Todos ({staffMembers.length})
+              </TabsTrigger>
+              <TabsTrigger value="admin" className="flex items-center gap-1">
+                <Shield className="h-3 w-3" />
+                Admins ({adminsCount})
+              </TabsTrigger>
+              <TabsTrigger value="medico" className="flex items-center gap-1">
+                <Stethoscope className="h-3 w-3" />
+                Médicos ({doctorsCount})
+              </TabsTrigger>
+              <TabsTrigger value="asistente" className="flex items-center gap-1">
+                <UserCheck className="h-3 w-3" />
+                Asistentes ({assistantsCount})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 px-4 sm:px-6">
+        {/* Campo de búsqueda */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder={`Buscar ${activeTab === 'todos' ? 'personal' : activeTab === 'admin' ? 'administradores' : activeTab === 'medico' ? 'médicos' : 'asistentes'} por nombre o correo...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
         <div className="space-y-4">
           {error && <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-700">{error}</div>}
           
@@ -213,10 +275,12 @@ export function StaffManagement() {
                   {!isMobile && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
-                  {staffMembers.length === 0 ? (
-                    <TableRow><TableCell colSpan={2} className="text-center py-8 text-muted-foreground">No se encontraron miembros del personal</TableCell></TableRow>
+                  {filteredStaffMembers.length === 0 ? (
+                    <TableRow><TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
+                      {searchTerm ? 'No se encontraron resultados para la búsqueda' : 'No se encontraron miembros del personal'}
+                    </TableCell></TableRow>
                   ) : (
-                    staffMembers.map((member) => (
+                    filteredStaffMembers.map((member) => (
                       <TableRow key={member.id} className="hover:bg-muted/50">
                         <TableCell>
                           <div className="flex-1 min-w-0">
