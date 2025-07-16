@@ -97,7 +97,7 @@ const FormContent = React.memo(({ formData, handleInputChange, handleSubmit, han
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Información Personal Básica */}
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Información Personal</h3>
+        <h3 className="text-foreground font-semibold">Información Personal</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
