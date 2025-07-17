@@ -72,12 +72,12 @@ type TimeSlot = {
  * @description Obtiene los slots de disponibilidad para un doctor y servicio específico en una fecha dada.
  * @param {NextRequest} request - La solicitud entrante.
  * @param {{ params: Promise<{ doctorId: string, serviceId: string }> }} context - Contexto con parámetros.
- * @returns {Promise<NextResponse<TimeSlot[] | { error: string }>>} Respuesta con slots disponibles o error.
+ * @returns {Promise<NextResponse<{ intervals: TimeSlot[]; timezone: string } | { error: string }>>} Respuesta con slots disponibles o error.
  */
 export async function GET(
   request: NextRequest, 
   { params }: { params: Promise<{ doctorId: string, serviceId: string }> }
-): Promise<NextResponse<TimeSlot[] | { error: string }>> {
+): Promise<NextResponse<{ intervals: TimeSlot[]; timezone: string } | { error: string }>> {
   console.log('API: /api/n8n/doctors/[doctorId]/availability/[serviceId] - Request received');
   
   // 1. Autenticar usando API Key
@@ -177,8 +177,8 @@ export async function GET(
       while (currentSlotStart.plus({ minutes: intervalMinutes }) <= interval.end!) {
         const currentSlotEnd = currentSlotStart.plus({ minutes: intervalMinutes });
         availableSlots.push({
-          start: currentSlotStart.toISO() || '',
-          end: currentSlotEnd.toISO() || '',
+          start: currentSlotStart.toISO({ includeOffset: false }) || '',
+          end: currentSlotEnd.toISO({ includeOffset: false }) || '',
         });
         console.debug(`Generated slot: ${currentSlotStart.toISO()} - ${currentSlotEnd.toISO()}`);
         currentSlotStart = currentSlotEnd;
@@ -187,7 +187,10 @@ export async function GET(
     console.log(`Generated ${availableSlots.length} final available slots.`);
     console.debug('Final available slots:', availableSlots);
 
-    return NextResponse.json(availableSlots);
+    return NextResponse.json({
+      intervals: availableSlots,
+      timezone: doctorTimezone
+    });
 
   } catch (error) {
     console.error('Error al obtener la disponibilidad del doctor:', {
