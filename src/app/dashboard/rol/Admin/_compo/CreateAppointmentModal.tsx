@@ -528,7 +528,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
   const handleCloseDialog = useCallback(() => {
     onClose();
     resetForm();
-  }, [onClose]);
+  }, [onClose, resetForm]);
 
   return (
     <>
@@ -969,6 +969,7 @@ const FormContent = React.memo<FormContentProps>(({
             <div className="grid gap-2">
               <Label htmlFor="meetingLink">Enlace de Reunión *</Label>
               <Input
+                disabled
                 id="meetingLink"
                 type="url"
                 placeholder="https://meet.google.com/..."

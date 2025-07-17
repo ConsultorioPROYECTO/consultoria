@@ -16,7 +16,7 @@ import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/googl
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Tipo extendido para incluir datos del doctor y asistente desde la API
 type UserWithDoctorAndAssistant = User & {
