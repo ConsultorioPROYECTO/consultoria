@@ -16,7 +16,6 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { useTheme } from "next-themes"
 import { useUIStyle } from "@/app/context/UIStyleContext"
 import { useAuth } from "@/app/context/AuthContext"
-import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"
 import { AccountSection } from "./_compo/AccountSection"
 import { IntegrationsSection } from "./_compo/IntegrationsSection"
 
@@ -50,10 +49,9 @@ const navWorkspace = [
 export default function ConfigView() {
   const { theme, setTheme } = useTheme()
   const { uiStyle } = useUIStyle()
-  const { user } = useAuth()
+  const { user, userRole } = useAuth()
   const [activeSection, setActiveSection] = useState("Preferencias")
   const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system")
-  const [userRole, setUserRole] = useState<string>("")
   const isMobile = useIsMobile()
   const [showMobileNav, setShowMobileNav] = useState(true)
 
@@ -63,39 +61,7 @@ export default function ConfigView() {
     }
   }, [theme]);
 
-  // Efecto para obtener el rol del usuario
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        const token = await getFirebaseAuthToken();
-        if (!token) {
-          console.error('No se pudo obtener el token de autenticación.');
-          return;
-        }
 
-        const response = await fetch('/api/users/rol', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setUserRole(data.role);
-      } catch (error) {
-        console.error('Error al obtener el rol del usuario:', error);
-      }
-    };
-
-    if (user) {
-      fetchUserRole();
-    }
-  }, [user]);
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section)
@@ -132,7 +98,7 @@ export default function ConfigView() {
           <div className="grid gap-6 py-4">
             <AccountSection 
                   user={user}
-                  userRole={userRole}
+                  userRole={userRole || undefined}
                 />
           </div>
         );
