@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
 
 interface DoctorService {
@@ -34,7 +34,7 @@ export function useDoctorServicesForStaff(doctorId: number | null): UseDoctorSer
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchDoctorServices = async () => {
+  const fetchDoctorServices = useCallback(async () => {
     if (!doctorId || !user) {
       setServices([]);
       return;
@@ -73,11 +73,11 @@ export function useDoctorServicesForStaff(doctorId: number | null): UseDoctorSer
     } finally {
       setLoading(false);
     }
-  };
+  }, [doctorId, user]);
 
   useEffect(() => {
     fetchDoctorServices();
-  }, [doctorId, user]);
+  }, [fetchDoctorServices]);
 
   return {
     services,
