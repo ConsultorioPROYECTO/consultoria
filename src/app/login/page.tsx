@@ -10,7 +10,7 @@ import { geistFont } from '../fonts';
 import { FeatureCarousel } from '../auth-components/FeatureCarousel';
 
 function Login() {
-    const { user } = useAuth();
+    const { user, userRole, organizationId } = useAuth();
     const router = useRouter();
 
     const syncUser = useCallback(async (currentUser: typeof user) => {
@@ -50,25 +50,11 @@ function Login() {
             
             await response.json();
 
-            const token = await currentUser.getIdToken();
-            const roleResponse = await fetch('/api/users/rol', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (roleResponse.ok) {
-                const roleData = await roleResponse.json();
-                if (roleData.role === 'N/A' || roleData.organizationId === null) {
-                    router.push('/onboard');
-                } else {
-                    router.push('/dashboard');
-                }
-            } else {
-                console.error('Error al obtener el rol del usuario');
+            // Usar userRole y organizationId del contexto si están disponibles
+            if (userRole === 'N/A' || organizationId === null) {
                 router.push('/onboard');
+            } else {
+                router.push('/dashboard');
             }
         } catch (error) {
             console.error('Error en la llamada de sincronización:', error);
