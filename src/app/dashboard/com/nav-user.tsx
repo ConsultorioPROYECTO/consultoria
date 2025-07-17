@@ -32,7 +32,7 @@ import {
 import { useAuth } from "../../context/AuthContext"
 import { useNavigation } from "../../context/NavigationContext"
 
-import { SettingsDialog } from "./SettingsModal"
+
 
 
 
@@ -50,16 +50,11 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { signOut } = useAuth()
   const { setCurrentView } = useNavigation()
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleOpenSettingsModal = () => {
     setIsDropdownOpen(false); // Cerrar dropdown explícitamente
     setCurrentView('configuration');
-  };
-
-  const handleCloseSettingsModal = (open: boolean) => {
-    setIsSettingsModalOpen(open);
   };
 
 
@@ -137,10 +132,7 @@ export function NavUser({
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <SettingsDialog
-        isOpen={isSettingsModalOpen}
-        onOpenChange={handleCloseSettingsModal}
-      />
+
     </>
   )
 }
