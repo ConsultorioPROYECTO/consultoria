@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useStaffActions } from './useStaffActions';
+import { useDoctorServicesForStaff } from '@/hooks/useDoctorServicesForStaff';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Shield, Stethoscope, Building, PencilLine, Trash2, Loader2 } from "lucide-react";
+import { User, Mail, Shield, Stethoscope, Building, PencilLine, Trash2, Loader2, Activity, Clock, DollarSign } from "lucide-react";
 
 import Image from 'next/image';
 
@@ -22,6 +23,8 @@ interface StaffMember {
   email: string;
   patients?: number;
   appointments?: number;
+  idDoctor?: number | null;
+  idAssistant?: number | null;
 }
 
 interface StaffDetailModalProps {
@@ -39,6 +42,9 @@ export function StaffDetailModal({
 }: StaffDetailModalProps) {
   const [currentRole, setCurrentRole] = useState(staffMember?.role);
   const { isChangingRole, isDeleting, handleChangeRole, handleDeleteStaff } = useStaffActions();
+  const { services, loading: servicesLoading, error: servicesError } = useDoctorServicesForStaff(
+    staffMember?.role === 'medico' ? (staffMember.idDoctor ?? null) : null
+  );
 
   useEffect(() => {
     if (staffMember) {
@@ -142,12 +148,75 @@ export function StaffDetailModal({
 
           {/* Información específica del rol (DISEÑO ORIGINAL RESTAURADO) */}
           {staffMember.role === 'medico' && (
-            <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Stethoscope className="h-5 w-5" />Información Médica</CardTitle></CardHeader>
-              <CardContent>
-                <p><strong>Especialidad:</strong> {staffMember.specialty || 'N/A'}</p>
-              </CardContent>
-            </Card>
+            <>
+              <Card>
+                <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Stethoscope className="h-5 w-5" />Información Médica</CardTitle></CardHeader>
+                <CardContent>
+                  <p><strong>Especialidad:</strong> {staffMember.specialty || 'N/A'}</p>
+                </CardContent>
+              </Card>
+              
+              {/* Servicios Médicos Asignados */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Activity className="h-5 w-5" />
+                    Servicios Médicos Asignados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {servicesLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-muted-foreground">Cargando servicios...</span>
+                    </div>
+                  ) : servicesError ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-destructive">Error al cargar servicios: {servicesError}</p>
+                    </div>
+                  ) : services.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">No hay servicios asignados</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {services.map((doctorService) => (
+                        <div key={doctorService.serviceId} className="border rounded-lg p-3 bg-muted/30">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm">{doctorService.service.name}</h4>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {doctorService.service.description || 'Sin descripción'}
+                              </p>
+                              <div className="flex items-center gap-4 mt-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {doctorService.service.category}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {doctorService.service.durationMinutes} min
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex items-center gap-1 text-sm font-medium">
+                                <DollarSign className="h-3 w-3" />
+                                {doctorService.customPrice || doctorService.service.basePrice}
+                              </div>
+                              {doctorService.customPrice && (
+                                <p className="text-xs text-muted-foreground">
+                                  Precio personalizado
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
           {staffMember.role === 'asistente' && (
             <Card>
