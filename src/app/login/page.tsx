@@ -60,7 +60,7 @@ function Login() {
             console.error('Error en la llamada de sincronización:', error);
             router.push('/onboard');
         }
-    }, [router]);
+    }, [router, organizationId, userRole]);
 
     useEffect(() => {
         if (user) {
