@@ -32,10 +32,10 @@ export function useDoctorServicesForStaff(doctorId: number | null): UseDoctorSer
   const [services, setServices] = useState<DoctorService[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { getAuthToken } = useAuth();
 
   const fetchDoctorServices = useCallback(async () => {
-    if (!doctorId || !user) {
+    if (!doctorId) {
       setServices([]);
       return;
     }
@@ -44,7 +44,11 @@ export function useDoctorServicesForStaff(doctorId: number | null): UseDoctorSer
     setError(null);
 
     try {
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+      
       const response = await fetch(`/api/doctor-services/${doctorId}`, {
         method: 'GET',
         headers: {
@@ -73,7 +77,7 @@ export function useDoctorServicesForStaff(doctorId: number | null): UseDoctorSer
     } finally {
       setLoading(false);
     }
-  }, [doctorId, user]);
+  }, [doctorId, getAuthToken]);
 
   useEffect(() => {
     fetchDoctorServices();

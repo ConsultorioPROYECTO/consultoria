@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/app/context/AuthContext';
 import { Patient } from '@/db/schema';
 
 // Tipo extendido para el hook que incluye relaciones
@@ -30,13 +30,18 @@ export function usePatients(): UsePatientsReturn {
   const [patients, setPatients] = useState<PatientWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getAuthToken } = useAuth();
 
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const token = await getFirebaseAuthToken();
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+      
       const response = await fetch('/api/patients', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -55,11 +60,11 @@ export function usePatients(): UsePatientsReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthToken]);
 
   useEffect(() => {
     fetchPatients();
-  }, []);
+  }, [fetchPatients]);
 
   return {
     patients,

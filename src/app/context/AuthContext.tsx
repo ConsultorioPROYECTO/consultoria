@@ -62,6 +62,7 @@ export interface EmailPasswordCredentials {
  * @property {number | null} organizationId - ID de la organización del usuario.
  * @property {number | null} doctorId - ID del doctor si el usuario es médico.
  * @property {number | null} assistantId - ID del asistente si el usuario es asistente.
+ * @property {() => Promise<string | null>} getAuthToken - Función para obtener el token de autenticación.
  * @property {() => Promise<void>} signInWithGoogle - Función para iniciar sesión con Google.
  * @property {(credentials: EmailPasswordCredentials) => Promise<void>} signInWithEmail - Función para iniciar sesión con email/contraseña.
  * @property {(credentials: EmailPasswordCredentials) => Promise<void>} signUpWithEmail - Función para registrarse con email/contraseña.
@@ -76,6 +77,7 @@ interface AuthContextType {
   organizationId: number | null;
   doctorId: number | null;
   assistantId: number | null;
+  getAuthToken: () => Promise<string | null>;
   signInWithGoogle: () => Promise<void>;
   signInWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>;
   signUpWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>;
@@ -254,6 +256,24 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
 
 
   /**
+   * Obtiene el token de autenticación del usuario actual.
+   * @async
+   * @returns {Promise<string | null>} El token de autenticación o null si no hay usuario.
+   * @throws {Error} Si ocurre un error al obtener el token.
+   */
+  const getAuthToken = async (): Promise<string | null> => {
+    if (!user) {
+      return null;
+    }
+    try {
+      return await user.getIdToken();
+    } catch (error) {
+      console.error('Error al obtener el token de autenticación:', error);
+      throw error;
+    }
+  };
+
+  /**
    * Cierra la sesión del usuario actual.
    * @async
    * @returns {Promise<void>} Promesa que se resuelve cuando el cierre de sesión es exitoso o falla.
@@ -289,6 +309,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     organizationId,
     doctorId,
     assistantId,
+    getAuthToken,
     signInWithGoogle,
     signInWithEmail,
     signUpWithEmail, 

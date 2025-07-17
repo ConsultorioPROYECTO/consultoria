@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getFirebaseAuthToken } from '@lib/firebase/clientUtils';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/app/context/AuthContext';
 import type { OrganizationAssistantDoctorAppointmentsResponse } from '@/app/api/master/organization-asistant-doctor-appointments/route';
 
 interface UseDoctorsWithAppointmentsReturn {
@@ -13,13 +13,18 @@ export function useDoctorsWithAppointments(): UseDoctorsWithAppointmentsReturn {
   const [doctors, setDoctors] = useState<OrganizationAssistantDoctorAppointmentsResponse>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getAuthToken } = useAuth();
 
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const token = await getFirebaseAuthToken();
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+      
       const response = await fetch('/api/master/organization-asistant-doctor-appointments', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -38,11 +43,11 @@ export function useDoctorsWithAppointments(): UseDoctorsWithAppointmentsReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthToken]);
 
   useEffect(() => {
     fetchDoctors();
-  }, []);
+  }, [fetchDoctors]);
 
   return {
     doctors,

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '@/app/context/AuthContext';
 import { MedicalService } from '@/db/schema';
 
 // Tipo extendido para el hook que incluye relaciones
@@ -40,13 +40,18 @@ export function useMedicalServices(): UseMedicalServicesReturn {
   const [services, setServices] = useState<MedicalServiceWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getAuthToken } = useAuth();
 
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const token = await getFirebaseAuthToken();
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+      
       const response = await fetch('/api/medical-services', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -65,11 +70,11 @@ export function useMedicalServices(): UseMedicalServicesReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthToken]);
 
   useEffect(() => {
     fetchServices();
-  }, []);
+  }, [fetchServices]);
 
   return {
     services,
