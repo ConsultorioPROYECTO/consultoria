@@ -502,7 +502,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
   /**
    * Resetear formulario
    */
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({
       doctorId: contextDoctorId || 0,
       patientId: 0,
@@ -520,7 +520,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
     setOpenPatientCombo(false);
     setOpenServiceCombo(false);
     setIsCalendarOpen(false);
-  };
+  }, [contextDoctorId]);
 
   /**
    * Manejar cierre del modal
