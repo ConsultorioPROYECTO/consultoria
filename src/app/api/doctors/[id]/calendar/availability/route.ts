@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DateTime } from 'luxon';
 import { getDoctorAvailability } from '@/lib/calendar-event-retriever';
+import { db } from '@/db';
+import { doctors } from '@/db/schema/doctors';
+import { eq } from 'drizzle-orm';
 
 /**
  * @fileoverview API endpoint para obtener la disponibilidad de horarios de un doctor específico.
@@ -82,7 +85,17 @@ export async function GET(
 
   try {
     console.log(`Attempting to get availability for doctor ${doctorId} on ${dateParam}`);
-    const targetDate = DateTime.fromISO(dateParam, { zone: 'utc' });
+
+    // Fetch doctor's timezone
+    const doctor = await db.query.doctors.findFirst({
+      where: eq(doctors.idDoctor, doctorId),
+    });
+    if (!doctor || !doctor.calendar_timezone) {
+      throw new Error('Doctor or timezone not found');
+    }
+    const doctorTimezone = doctor.calendar_timezone;
+
+    const targetDate = DateTime.fromISO(dateParam, { zone: doctorTimezone });
     if (!targetDate.isValid) {
       console.error(`Validation Error: Invalid date format for ${dateParam}`);
       return NextResponse.json(
@@ -93,7 +106,7 @@ export async function GET(
 
     const startDate = targetDate.startOf('day');
     const endDate = targetDate.endOf('day');
-    console.debug(`Date Range: startDate=${startDate.toISO()}, endDate=${endDate.toISO()}`);
+    console.debug(`Date Range: startDate=${startDate.toISO()}, endDate=${endDate.toISO()}, timezone=${doctorTimezone}`);
 
     console.log('Calling getDoctorAvailability...');
     const availableIntervals = await getDoctorAvailability(

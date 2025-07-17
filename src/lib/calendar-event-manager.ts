@@ -66,17 +66,25 @@ export async function createAppointmentEvent(data: {
       data.startDateTime,
       data.endDateTime
     );
+    console.log('Doctor ID:', data.doctorId);
+    console.log('Doctor Timezone:', doctorTimezone);
+    console.log('Requested Start:', data.startDateTime.toISO());
+    console.log('Requested End:', data.endDateTime.toISO());
+    console.log('Available Slots:', availableSlots.map(slot => ({ start: slot.start?.toISO() ?? 'null', end: slot.end?.toISO() ?? 'null' })));
 
     const requestedSlot = Interval.fromDateTimes(
       data.startDateTime.setZone(doctorTimezone),
       data.endDateTime.setZone(doctorTimezone)
     );
+    console.log('Requested Slot:', { start: requestedSlot.start?.toISO() ?? 'null', end: requestedSlot.end?.toISO() ?? 'null' });
 
     const isAvailable = availableSlots.some(slot =>
       slot.engulfs(requestedSlot)
     );
+    console.log('Is Available:', isAvailable);
 
     if (!isAvailable) {
+      console.log('Availability check failed. Throwing error.');
       throw new Error('The selected time slot is no longer available.');
     }
 
