@@ -442,8 +442,8 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     const startMinutes = (startHour - 1) * 60 + startMinute;
     const endMinutes = (endHour - 1) * 60 + endMinute;
     
-    // Cada hora tiene 64px (h-16), entonces cada minuto es 64/60 = 1.067px
-    const pixelsPerMinute = 64 / 60;
+    // Cada hora tiene 48px (h-12), entonces cada minuto es 48/60 = 0.8px
+    const pixelsPerMinute = 48 / 60;
     
     const top = startMinutes * pixelsPerMinute;
     const height = (endMinutes - startMinutes) * pixelsPerMinute;
@@ -465,8 +465,8 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     // Calcular minutos desde la 1:00 AM
     const minutesFromStart = (currentHour - 1) * 60 + currentMinute;
     
-    // Cada hora tiene 64px (h-16), entonces cada minuto es 64/60 = 1.067px
-    const pixelsPerMinute = 64 / 60;
+    // Cada hora tiene 48px (h-12), entonces cada minuto es 48/60 = 0.8px
+    const pixelsPerMinute = 48 / 60;
     
     return minutesFromStart * pixelsPerMinute;
   };
@@ -502,11 +502,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           <div className="border-r border-border relative">
             <div className="h-12 border-b border-border"></div>
             {/* Fila adicional vacía */}
-            <div className="h-16 border-b border-border"></div>
-            <div className="relative" style={{ height: `${23 * 64}px` }}>
+            <div className="h-12 border-b border-border"></div>
+            <div className="relative" style={{ height: `${23 * 48}px` }}>
               {timeSlots.map((hour, index) => (
-                <div key={hour} className="absolute w-full" style={{ top: `${index * 64}px` }}>
-                  <div className="h-16 border-b border-border relative">
+                <div key={hour} className="absolute w-full" style={{ top: `${index * 48}px` }}>
+                  <div className="h-12 border-b border-border relative">
                     {/* Etiqueta de hora posicionada en la línea divisoria */}
                     <div className="absolute -top-2 right-2 text-right bg-background px-1">
                       <div className="text-xs text-muted-foreground">
@@ -544,13 +544,13 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
                   </div>
                 </div>
                 {/* Fila adicional vacía */}
-                <div className="h-16 border-b border-border"></div>
+                <div className="h-12 border-b border-border"></div>
 
                 {/* Contenedor de eventos con posicionamiento absoluto */}
-                <div className="relative" style={{ height: `${23 * 64}px` }}>
+                <div className="relative" style={{ height: `${23 * 48}px` }}>
                   {/* Líneas de tiempo de fondo */}
                   {timeSlots.map((hour) => (
-                    <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 1) * 64}px` }}>
+                    <div key={hour} className="h-12 border-b border-border absolute w-full" style={{ top: `${(hour - 1) * 48}px` }}>
                     </div>
                   ))}
                   
@@ -608,11 +608,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
             {/* Header vacío para alineación */}
             <div className="h-12 border-b border-border"></div>
             {/* Fila adicional vacía */}
-            <div className="h-16 border-b border-border"></div>
-            <div className="relative" style={{ height: `${23 * 64}px` }}>
+            <div className="h-12 border-b border-border"></div>
+            <div className="relative" style={{ height: `${23 * 48}px` }}>
               {timeSlots.map((hour, index) => (
-                <div key={hour} className="absolute w-full" style={{ top: `${index * 64}px` }}>
-                  <div className="h-16 border-b border-border relative">
+                <div key={hour} className="absolute w-full" style={{ top: `${index * 48}px` }}>
+                  <div className="h-12 border-b border-border relative">
                     {/* Etiqueta de hora posicionada en la línea divisoria */}
                     <div className="absolute -top-2 right-2 text-right bg-background px-1">
                       <div className="text-sm text-muted-foreground">
@@ -646,12 +646,12 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
               </div>
             </div>
             {/* Fila adicional vacía */}
-            <div className="h-16 border-b border-border"></div>
+            <div className="h-12 border-b border-border"></div>
             
-            <div className="relative" style={{ height: `${23 * 64}px` }}>
+            <div className="relative" style={{ height: `${23 * 48}px` }}>
             {/* Líneas de tiempo de fondo */}
             {timeSlots.map((hour) => (
-              <div key={hour} className="h-16 border-b border-border absolute w-full" style={{ top: `${(hour - 1) * 64}px` }}>
+              <div key={hour} className="h-12 border-b border-border absolute w-full" style={{ top: `${(hour - 1) * 48}px` }}>
               </div>
             ))}
             
