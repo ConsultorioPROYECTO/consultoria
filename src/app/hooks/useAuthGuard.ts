@@ -1,56 +1,39 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import { useUserRole } from './useUserRole';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export const useAuthGuard = () => {
-  const { user, loading } = useAuth();
-  const { userRole, userOrganizationId, isLoadingRole, error } = useUserRole();
+  const { user, loading, userRole, organizationId, isLoadingRole } = useAuth();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      // Si aún está cargando la autenticación o el rol, esperar
-      if (loading || isLoadingRole) {
-        setIsLoading(true);
-        return;
-      }
+    if (loading || isLoadingRole) return;
 
-      // Si no hay usuario, redirigir al login
-      if (!user) {
-        router.push('/login');
-        setIsLoading(false);
-        return;
-      }
+    if (!user) {
+      router.push('/login');
+      return;
+    }
 
-      // Si hay error obteniendo el rol, redirigir al login
-      if (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Error during authentication check:', error);
-        }
-        router.push('/login');
-        setIsLoading(false);
-        return;
-      }
+    if (!userRole || !organizationId) {
+      console.error('Error al obtener el rol del usuario');
+      router.push('/login');
+      return;
+    }
 
-      // Si el rol es N/A o no tiene organización, redirigir al onboarding
-      if (userRole === 'N/A') {
-        router.push('/onboard');
-        setIsLoading(false);
-        return;
-      }
+    if (userRole === 'N/A') {
+      router.push('/onboard');
+      return;
+    }
 
-      // Si hay usuario, rol válido y organización, autenticar
-      if (userRole && userOrganizationId) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-      }
-    };
+    setIsAuthenticated(true);
+  }, [user, userRole, organizationId, loading, isLoadingRole, router]);
 
-    checkAuth();
-  }, [user, loading, userRole, userOrganizationId, isLoadingRole, error, router]);
-
-  return { isAuthenticated, isLoading };
+  return {
+    isAuthenticated,
+    isLoading: loading || isLoadingRole,
+    user,
+    userRole,
+    organizationId,
+  };
 };
