@@ -3,13 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import { useStaffActions } from './useStaffActions';
 import { useDoctorServicesForStaff } from '@/hooks/useDoctorServicesForStaff';
+import { useMedicalServices } from '@/hooks/useMedicalServices';
+import { useAuth } from '@/app/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Shield, Stethoscope, Building, PencilLine, Trash2, Loader2, Activity, Clock, DollarSign } from "lucide-react";
+import { User, Mail, Shield, Stethoscope, Building, PencilLine, Trash2, Loader2, Activity, Clock, DollarSign, Plus, Check } from "lucide-react";
 
 import Image from 'next/image';
 
@@ -41,10 +43,13 @@ export function StaffDetailModal({
   onUpdate
 }: StaffDetailModalProps) {
   const [currentRole, setCurrentRole] = useState(staffMember?.role);
+  const [isAssigningService, setIsAssigningService] = useState(false);
   const { isChangingRole, isDeleting, handleChangeRole, handleDeleteStaff } = useStaffActions();
-  const { services, loading: servicesLoading, error: servicesError } = useDoctorServicesForStaff(
+  const { user } = useAuth();
+  const { services, loading: servicesLoading, error: servicesError, refetch: refetchDoctorServices } = useDoctorServicesForStaff(
     staffMember?.role === 'medico' ? (staffMember.idDoctor ?? null) : null
   );
+  const { services: allMedicalServices, loading: allServicesLoading, error: allServicesError } = useMedicalServices();
 
   useEffect(() => {
     if (staffMember) {
@@ -62,6 +67,50 @@ export function StaffDetailModal({
   const handleDelete = async () => {
     await handleDeleteStaff(staffMember, onUpdate, onClose);
   };
+
+  const handleAssignService = async (serviceId: number) => {
+    if (!staffMember?.idDoctor || !user) return;
+
+    setIsAssigningService(true);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/doctor-services', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          doctorId: staffMember.idDoctor,
+          serviceId: serviceId,
+          isAvailable: true
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Refrescar la lista de servicios del doctor
+      await refetchDoctorServices();
+    } catch (error) {
+      console.error('Error asignando servicio:', error);
+    } finally {
+      setIsAssigningService(false);
+    }
+  };
+
+  // Filtrar servicios que el doctor no tiene asignados
+  const getAvailableServices = () => {
+    if (!allMedicalServices || !services) return [];
+    
+    const assignedServiceIds = services.map(ds => ds.serviceId);
+    return allMedicalServices.filter(service => 
+      service.isActive && !assignedServiceIds.includes(service.id)
+    );
+  };
+
+  const availableServices = getAvailableServices();
 
   const getRoleDisplayName = (role: string) => {
     const roles: { [key: string]: string } = {
@@ -209,6 +258,70 @@ export function StaffDetailModal({
                                 </p>
                               )}
                             </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Servicios Disponibles para Asignar */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Plus className="h-5 w-5" />
+                    Asignar Nuevos Servicios
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {allServicesLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="ml-2 text-sm text-muted-foreground">Cargando servicios disponibles...</span>
+                    </div>
+                  ) : allServicesError ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-destructive">Error al cargar servicios: {allServicesError}</p>
+                    </div>
+                  ) : availableServices.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-muted-foreground">No hay servicios disponibles para asignar</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {availableServices.map((service) => (
+                        <div key={service.id} className="border rounded-lg p-3 bg-muted/20 hover:bg-muted/40 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-sm">{service.name}</h4>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {service.description || 'Sin descripción'}
+                              </p>
+                              <div className="flex items-center gap-4 mt-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {service.category}
+                                </Badge>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {service.durationMinutes} min
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <DollarSign className="h-3 w-3" />
+                                  {service.basePrice}
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAssignService(service.id)}
+                              disabled={isAssigningService}
+                              className="ml-2"
+                            >
+                              <Check className="h-3 w-3 mr-1" />
+                              Asignar
+                            </Button>
                           </div>
                         </div>
                       ))}
