@@ -97,7 +97,7 @@ const extractPhoneFromJid = (ownerJid: string): string => {
 };
 
 export function IntegrationsSection() {
-  const { user } = useAuth()
+  const { user, getAuthToken } = useAuth()
   const isMobile = useIsMobile()
 
 
@@ -130,7 +130,11 @@ export function IntegrationsSection() {
     
     try {
       setIsCheckingWhatsAppConnection(true);
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
+      if (!token) {
+        console.error('No se pudo obtener el token de autenticación');
+        return {connected: false, state: null};
+      }
       const response = await fetch('/api/evolutionAPI/connectionState', {
         method: 'GET',
         headers: {
@@ -195,7 +199,7 @@ export function IntegrationsSection() {
     } finally {
       setIsCheckingWhatsAppConnection(false);
     }
-  }, [user]);
+  }, [user, getAuthToken]);
 
 
 
@@ -309,7 +313,11 @@ export function IntegrationsSection() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
+      if (!token) {
+        setQrError("No se pudo obtener el token de autenticación.");
+        return;
+      }
       const response = await fetch('/api/evolutionAPI/generateQR', {
         method: 'POST',
         headers: {
@@ -402,7 +410,11 @@ export function IntegrationsSection() {
       setIsLoadingInstanceInfo(true);
       setInstanceInfoError(null);
       
-      const token = await user.getIdToken();
+      const token = await getAuthToken();
+      if (!token) {
+        setInstanceInfoError("No se pudo obtener el token de autenticación.");
+        return;
+      }
       const response = await fetch('/api/evolutionAPI/connectionState/info', {
         method: 'GET',
         headers: {
@@ -450,7 +462,7 @@ export function IntegrationsSection() {
     } finally {
       setIsLoadingInstanceInfo(false);
     }
-  }, [user]);
+  }, [user, getAuthToken]);
 
   /**
    * Toggles the connection info dropdown and fetches data if needed.

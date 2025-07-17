@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Check, ChevronsUpDown, X, UserPlus, Stethoscope } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/app/context/AuthContext';
 
 // Tipos de datos
 interface User {
@@ -55,6 +56,7 @@ export function AssignDoctorModal({
   assistantName,
   onAssignmentComplete
 }: AssignDoctorModalProps) {
+  const { getAuthToken } = useAuth();
   const [availableDoctors, setAvailableDoctors] = useState<Doctor[]>([]);
   const [assignedDoctors, setAssignedDoctors] = useState<Doctor[]>([]);
   const [selectedDoctors, setSelectedDoctors] = useState<Doctor[]>([]);
@@ -66,9 +68,14 @@ export function AssignDoctorModal({
   const loadDoctors = useCallback(async () => {
     setIsLoading(true);
     try {
+      const token = await getAuthToken();
+      if (!token) {
+        console.error('No se pudo obtener el token de autenticación');
+        return;
+      }
       const response = await fetch('/api/users', {
         headers: {
-          'Authorization': `Bearer ${await getAuthToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -94,13 +101,18 @@ export function AssignDoctorModal({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getAuthToken]);
 
   const loadAssignedDoctors = useCallback(async () => {
     try {
+      const token = await getAuthToken();
+      if (!token) {
+        console.error('No se pudo obtener el token de autenticación');
+        return;
+      }
       const response = await fetch(`/api/master/doctor-assign-to-asistant?assistantId=${assistantId}`, {
         headers: {
-          'Authorization': `Bearer ${await getAuthToken()}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -140,7 +152,7 @@ export function AssignDoctorModal({
       console.error('Error loading assigned doctors:', error);
       setAssignedDoctors([]);
     }
-  }, [assistantId]);
+  }, [assistantId, getAuthToken]);
 
   // Cargar doctores disponibles y asignados
   useEffect(() => {
@@ -150,10 +162,7 @@ export function AssignDoctorModal({
     }
   }, [isOpen, assistantId, loadDoctors, loadAssignedDoctors]);
 
-  const getAuthToken = async () => {
-    const { getFirebaseAuthToken } = await import('@/app/lib/firebase/clientUtils');
-    return await getFirebaseAuthToken();
-  };
+
 
   const handleDoctorSelect = (doctor: Doctor) => {
     const isAlreadySelected = selectedDoctors.some(d => d.idDoctor === doctor.idDoctor);
@@ -186,11 +195,15 @@ export function AssignDoctorModal({
       }));
 
       for (const assignment of assignments) {
+        const token = await getAuthToken();
+        if (!token) {
+          throw new Error('No se pudo obtener el token de autenticación');
+        }
         const response = await fetch('/api/master/doctor-assign-to-asistant', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await getAuthToken()}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(assignment)
         });

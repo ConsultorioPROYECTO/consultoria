@@ -10,7 +10,7 @@ import WaveformLoader from '@/components/custom/WaveformLoader';
 import { DoctorWorkingHours } from "./DoctorWorkingHours";
 import { StaffDetailModal } from "./StaffDetailModal";
 import { AssignDoctorModal } from "./AssignDoctorModal";
-import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+import { useAuth } from '@/app/context/AuthContext';
 import type { User } from '@/db/schema/users';
 import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/google-calendar-schemas";
 import { toast } from 'sonner';
@@ -41,6 +41,7 @@ interface StaffMember {
 }
 
 export function StaffManagement() {
+  const { getAuthToken } = useAuth();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [filteredStaffMembers, setFilteredStaffMembers] = useState<StaffMember[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -59,7 +60,7 @@ export function StaffManagement() {
     setError(null);
 
     try {
-      const token = await getFirebaseAuthToken();
+      const token = await getAuthToken();
       if (!token) throw new Error('Autenticación requerida. Por favor, inicia sesión.');
 
       const response = await fetch('/api/users', {
@@ -124,7 +125,7 @@ export function StaffManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getAuthToken]);
 
   // Efecto para filtrar miembros del personal basado en el término de búsqueda y tab activo
   useEffect(() => {
@@ -152,7 +153,7 @@ export function StaffManagement() {
 
   const handleSaveWorkingHours = async (doctorId: number, newWorkingHours: DoctorWorkingHoursType) => {
     try {
-      const token = await getFirebaseAuthToken();
+      const token = await getAuthToken();
       if (!token) {
         toast.error("Error de autenticación");
         return;
