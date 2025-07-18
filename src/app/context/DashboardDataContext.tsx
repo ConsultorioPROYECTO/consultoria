@@ -1,7 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react';
 import { useAuth } from './AuthContext';
+
+// Mapa de promesas pendientes para evitar peticiones duplicadas
+const pendingRequests = new Map<string, Promise<any>>();
 
 // Tipos de datos
 interface MedicalService {
@@ -251,9 +254,16 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     return Date.now() - lastFetch < CACHE_DURATION;
   };
 
-  // Función para obtener servicios médicos
+  // Función para obtener servicios médicos con prevención de duplicados
   const fetchMedicalServices = useCallback(async (force = false) => {
     if (!user) return;
+    
+    const requestKey = `medicalServices-${force}`;
+    
+    // Si hay una petición pendiente, esperar a que termine
+    if (pendingRequests.has(requestKey)) {
+      return await pendingRequests.get(requestKey);
+    }
     
     // Si los datos están frescos y no se fuerza la actualización, no hacer nada
     if (!force && isDataFresh(state.medicalServices.lastFetch) && state.medicalServices.data.length > 0) {
@@ -263,29 +273,45 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     // Si ya está cargando, no hacer otra petición
     if (state.medicalServices.loading) return;
 
-    dispatch({ type: 'SET_MEDICAL_SERVICES_LOADING', payload: true });
+    const fetchPromise = (async () => {
+      dispatch({ type: 'SET_MEDICAL_SERVICES_LOADING', payload: true });
 
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/medical-services?active=false', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/medical-services?active=false', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-      if (!response.ok) {
-        throw new Error('Error al obtener servicios médicos');
+        if (!response.ok) {
+          throw new Error('Error al obtener servicios médicos');
+        }
+
+        const data = await response.json();
+        dispatch({ type: 'SET_MEDICAL_SERVICES_SUCCESS', payload: data.data.services || [] });
+        return data.data.services || [];
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        dispatch({ type: 'SET_MEDICAL_SERVICES_ERROR', payload: errorMessage });
+        throw error;
+      } finally {
+        pendingRequests.delete(requestKey);
       }
+    })();
 
-      const data = await response.json();
-      dispatch({ type: 'SET_MEDICAL_SERVICES_SUCCESS', payload: data.data.services || [] });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      dispatch({ type: 'SET_MEDICAL_SERVICES_ERROR', payload: errorMessage });
-    }
+    pendingRequests.set(requestKey, fetchPromise);
+    return await fetchPromise;
   }, [user]);
 
-  // Función para obtener servicios de doctores
+  // Función para obtener servicios de doctores con prevención de duplicados
   const fetchDoctorServices = useCallback(async (force = false) => {
     if (!user) return;
+    
+    const requestKey = `doctorServices-${force}`;
+    
+    // Si hay una petición pendiente, esperar a que termine
+    if (pendingRequests.has(requestKey)) {
+      return await pendingRequests.get(requestKey);
+    }
     
     if (!force && isDataFresh(state.doctorServices.lastFetch) && state.doctorServices.data.length > 0) {
       return;
@@ -293,29 +319,45 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
     if (state.doctorServices.loading) return;
 
-    dispatch({ type: 'SET_DOCTOR_SERVICES_LOADING', payload: true });
+    const fetchPromise = (async () => {
+      dispatch({ type: 'SET_DOCTOR_SERVICES_LOADING', payload: true });
 
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/doctor-services', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/doctor-services', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-      if (!response.ok) {
-        throw new Error('Error al obtener servicios de doctores');
+        if (!response.ok) {
+          throw new Error('Error al obtener servicios de doctores');
+        }
+
+        const data = await response.json();
+        dispatch({ type: 'SET_DOCTOR_SERVICES_SUCCESS', payload: data.data || [] });
+        return data.data || [];
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        dispatch({ type: 'SET_DOCTOR_SERVICES_ERROR', payload: errorMessage });
+        throw error;
+      } finally {
+        pendingRequests.delete(requestKey);
       }
+    })();
 
-      const data = await response.json();
-      dispatch({ type: 'SET_DOCTOR_SERVICES_SUCCESS', payload: data.data || [] });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      dispatch({ type: 'SET_DOCTOR_SERVICES_ERROR', payload: errorMessage });
-    }
+    pendingRequests.set(requestKey, fetchPromise);
+    return await fetchPromise;
   }, [user]);
 
-  // Función para obtener pacientes
+  // Función para obtener pacientes con prevención de duplicados
   const fetchPatients = useCallback(async (force = false) => {
     if (!user) return;
+    
+    const requestKey = `patients-${force}`;
+    
+    // Si hay una petición pendiente, esperar a que termine
+    if (pendingRequests.has(requestKey)) {
+      return await pendingRequests.get(requestKey);
+    }
     
     if (!force && isDataFresh(state.patients.lastFetch) && state.patients.data.length > 0) {
       return;
@@ -323,29 +365,45 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
     if (state.patients.loading) return;
 
-    dispatch({ type: 'SET_PATIENTS_LOADING', payload: true });
+    const fetchPromise = (async () => {
+      dispatch({ type: 'SET_PATIENTS_LOADING', payload: true });
 
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/patients', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/patients', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-      if (!response.ok) {
-        throw new Error('Error al obtener pacientes');
+        if (!response.ok) {
+          throw new Error('Error al obtener pacientes');
+        }
+
+        const data = await response.json();
+        dispatch({ type: 'SET_PATIENTS_SUCCESS', payload: data.data || [] });
+        return data.data || [];
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        dispatch({ type: 'SET_PATIENTS_ERROR', payload: errorMessage });
+        throw error;
+      } finally {
+        pendingRequests.delete(requestKey);
       }
+    })();
 
-      const data = await response.json();
-      dispatch({ type: 'SET_PATIENTS_SUCCESS', payload: data.data || [] });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      dispatch({ type: 'SET_PATIENTS_ERROR', payload: errorMessage });
-    }
+    pendingRequests.set(requestKey, fetchPromise);
+    return await fetchPromise;
   }, [user]);
 
-  // Función para obtener usuarios
+  // Función para obtener usuarios con prevención de duplicados
   const fetchUsers = useCallback(async (force = false) => {
     if (!user) return;
+    
+    const requestKey = `users-${force}`;
+    
+    // Si hay una petición pendiente, esperar a que termine
+    if (pendingRequests.has(requestKey)) {
+      return await pendingRequests.get(requestKey);
+    }
     
     if (!force && isDataFresh(state.users.lastFetch) && state.users.data.length > 0) {
       return;
@@ -353,24 +411,33 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
     if (state.users.loading) return;
 
-    dispatch({ type: 'SET_USERS_LOADING', payload: true });
+    const fetchPromise = (async () => {
+      dispatch({ type: 'SET_USERS_LOADING', payload: true });
 
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/users', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      try {
+        const token = await user.getIdToken();
+        const response = await fetch('/api/users', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-      if (!response.ok) {
-        throw new Error('Error al obtener usuarios');
+        if (!response.ok) {
+          throw new Error('Error al obtener usuarios');
+        }
+
+        const data = await response.json();
+        dispatch({ type: 'SET_USERS_SUCCESS', payload: data.data || [] });
+        return data.data || [];
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+        dispatch({ type: 'SET_USERS_ERROR', payload: errorMessage });
+        throw error;
+      } finally {
+        pendingRequests.delete(requestKey);
       }
+    })();
 
-      const data = await response.json();
-      dispatch({ type: 'SET_USERS_SUCCESS', payload: data.data || [] });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      dispatch({ type: 'SET_USERS_ERROR', payload: errorMessage });
-    }
+    pendingRequests.set(requestKey, fetchPromise);
+    return await fetchPromise;
   }, [user]);
 
   // Función para invalidar cache
@@ -386,7 +453,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       fetchPatients(true),
       fetchUsers(true),
     ]);
-  }, []);
+  }, [fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
 
   // Cargar datos iniciales cuando el usuario esté disponible
   useEffect(() => {
@@ -399,7 +466,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         fetchUsers(),
       ]).catch(console.error);
     }
-  }, [user]);
+  }, [user]); // Solo depende del usuario para evitar cambios de tamaño en las dependencias
 
   const value: DashboardDataContextType = {
     state,

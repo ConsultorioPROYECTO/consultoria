@@ -51,45 +51,51 @@ export function useDashboardOptimized() {
     state.users.error
   ]);
 
-  // Función para cargar datos específicos
+  // Función para cargar datos específicos con verificación de estado
   const loadData = useCallback(async (dataTypes: Array<'medicalServices' | 'doctorServices' | 'patients' | 'users'>) => {
     const promises = [];
     
-    if (dataTypes.includes('medicalServices')) {
+    // Solo cargar si no está ya cargando y no tiene datos
+    if (dataTypes.includes('medicalServices') && !state.medicalServices.loading) {
       promises.push(fetchMedicalServices());
     }
-    if (dataTypes.includes('doctorServices')) {
+    if (dataTypes.includes('doctorServices') && !state.doctorServices.loading) {
       promises.push(fetchDoctorServices());
     }
-    if (dataTypes.includes('patients')) {
+    if (dataTypes.includes('patients') && !state.patients.loading) {
       promises.push(fetchPatients());
     }
-    if (dataTypes.includes('users')) {
+    if (dataTypes.includes('users') && !state.users.loading) {
       promises.push(fetchUsers());
     }
 
-    await Promise.all(promises);
-  }, [fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
+  }, [state.medicalServices.loading, state.doctorServices.loading, state.patients.loading, state.users.loading, fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
 
-  // Función para refrescar datos específicos
+  // Función para refrescar datos específicos con verificación de estado
   const refreshData = useCallback(async (dataTypes: Array<'medicalServices' | 'doctorServices' | 'patients' | 'users'>) => {
     const promises = [];
     
-    if (dataTypes.includes('medicalServices')) {
+    // Solo refrescar si no está ya cargando
+    if (dataTypes.includes('medicalServices') && !state.medicalServices.loading) {
       promises.push(fetchMedicalServices(true));
     }
-    if (dataTypes.includes('doctorServices')) {
+    if (dataTypes.includes('doctorServices') && !state.doctorServices.loading) {
       promises.push(fetchDoctorServices(true));
     }
-    if (dataTypes.includes('patients')) {
+    if (dataTypes.includes('patients') && !state.patients.loading) {
       promises.push(fetchPatients(true));
     }
-    if (dataTypes.includes('users')) {
+    if (dataTypes.includes('users') && !state.users.loading) {
       promises.push(fetchUsers(true));
     }
 
-    await Promise.all(promises);
-  }, [fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
+    if (promises.length > 0) {
+      await Promise.all(promises);
+    }
+  }, [state.medicalServices.loading, state.doctorServices.loading, state.patients.loading, state.users.loading, fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
 
   // Estadísticas de datos
   const stats = useMemo(() => {
