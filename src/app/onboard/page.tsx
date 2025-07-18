@@ -10,7 +10,7 @@ import { Step3PlanSelect } from "./com/Step3PlanSelect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@rutas/app/context/AuthContext";
-import { getFirebaseAuthToken } from "../lib/firebase/clientUtils";
+
 
 function OnboardContent() {
     const roles = [
@@ -25,7 +25,7 @@ function OnboardContent() {
     const searchParams = useSearchParams();
     const initialInvitationCode = searchParams.get('invitacionCode');
     const initialRole = searchParams.get('role');
-    const { signOut } = useAuth();
+    const { signOut, getAuthToken } = useAuth();
 
     useEffect(() => {
         // Verificar que los parámetros no sean null ni la cadena "null"
@@ -83,7 +83,7 @@ function OnboardContent() {
       setIsLoading(true);
       
       try {
-        const token = await getFirebaseAuthToken();
+        const token = await getAuthToken();
         let organizationResponse;
 
         if (selectedRole === 'Admin') {

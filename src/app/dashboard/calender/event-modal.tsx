@@ -12,7 +12,7 @@ import { es } from "date-fns/locale";
 import { CalendarIcon, Edit2, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/context/AuthContext";
-import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils";
+// import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"; // Removido - usando contexto centralizado
 
 type Event = {
   id: string; // Corregido: Google Calendar IDs son strings
@@ -35,7 +35,7 @@ interface EventModalProps {
 }
 
 export function EventModal({ isOpen, onClose, date, events, onEventUpdate }: EventModalProps) {
-  const { userRole } = useAuth();
+  const { userRole, getAuthToken } = useAuth();
   const [editingEventId, setEditingEventId] = React.useState<string | null>(null);
   const [editingData, setEditingData] = React.useState<{ date: Date; time: string }>({ date: new Date(), time: '' });
   const [isCalendarOpen, setIsCalendarOpen] = React.useState(false);
@@ -67,7 +67,7 @@ export function EventModal({ isOpen, onClose, date, events, onEventUpdate }: Eve
 
     setIsUpdating(true);
     try {
-      const token = await getFirebaseAuthToken();
+      const token = await getAuthToken();
       
       // Validar que la fecha no sea en el pasado
       const today = new Date();

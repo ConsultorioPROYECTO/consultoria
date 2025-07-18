@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Clock, Save, AlertCircle, Loader2, PlusCircle, Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+// import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils'; // Removido - usando contexto centralizado
+import { useAuth } from '@/app/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DAYS_OF_WEEK } from "@rutas/types/working-hours";
 import type { 
@@ -96,6 +97,7 @@ export function DoctorWorkingHours({
   onSave 
 }: DoctorWorkingHoursProps) {
   const isMobile = useIsMobile();
+  const { getAuthToken } = useAuth();
   const [workingHours, setWorkingHours] = useState<DailyWorkingHours[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +112,7 @@ export function DoctorWorkingHours({
       }
 
       try {
-        const token = await getFirebaseAuthToken();
+        const token = await getAuthToken();
         if (!token) {
           setErrors(['Autenticación requerida']);
           return;
@@ -225,7 +227,7 @@ export function DoctorWorkingHours({
     const finalPayload: DoctorWorkingHours = { workingHours: validatedHours };
 
     try {
-      const token = await getFirebaseAuthToken();
+      const token = await getAuthToken();
       if (!token) throw new Error('Autenticación requerida');
 
       console.log('Payload final a enviar a la API:', JSON.stringify(finalPayload, null, 2));

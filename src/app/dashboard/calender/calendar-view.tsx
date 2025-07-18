@@ -30,7 +30,7 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, 
 import { EventModal } from "./event-modal";
 import { CalendarEvent } from "@/types/calendar";
 import { useAuth } from "../../context/AuthContext";
-import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils";
+// import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"; // Removido - usando contexto centralizado
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 
@@ -70,7 +70,7 @@ type Doctor = {
 
 export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
   // Hook de autenticación para obtener el doctorId
-  const { doctorId, user, userRole } = useAuth();
+  const { doctorId, user, userRole, getAuthToken } = useAuth();
   
   // Determinar si es vista móvil para ajustar la altura de las celdas
   const [isMobile, setIsMobile] = React.useState(false);
@@ -118,7 +118,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       if (!user) return;
       
       try {
-        const token = await getFirebaseAuthToken();
+        const token = await getAuthToken();
         if (!token) return;
         
         let doctors: Doctor[] = [];
@@ -256,7 +256,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       }
       
       try {
-        const token = await getFirebaseAuthToken();
+        const token = await getAuthToken();
         if (!token) {
           console.warn('No authentication token available');
           setDoctorEvents([]);
