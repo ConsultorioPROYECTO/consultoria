@@ -4,8 +4,9 @@ import { Button } from "@rutas/components/ui/button";
 import { Input } from "@rutas/components/ui/input";
 import { Switch } from "@rutas/components/ui/switch";
 import { Badge } from "@rutas/components/ui/badge";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
+import { useMedicalServicesData } from "@/app/context/DashboardDataContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@rutas/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerClose } from "@rutas/components/ui/drawer";
 import { Label } from "@rutas/components/ui/label";
@@ -40,44 +41,17 @@ interface ServiceSpecialtyConfigProps {
 }
 
 export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialtyConfigProps) {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [services, setServices] = useState<MedicalService[]>([]);
+  const { medicalServices, loading, error, refetch } = useMedicalServicesData();
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('services');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<MedicalService | null>(null);
 
-  const fetchServices = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const token = await user.getIdToken();
-      const response = await fetch('/api/medical-services?active=false', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!response.ok) throw new Error('Failed to fetch services');
-      const data = await response.json();
-      setServices(data.data.services || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
-      toast.error("Error al cargar los servicios.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
   useEffect(() => {
-    if (!authLoading && user) {
-      fetchServices();
-    }
-  }, [authLoading, user, fetchServices]);
-
-  useEffect(() => {
-    const groupedBySpecialty = services.reduce((acc, service) => {
+    const groupedBySpecialty = medicalServices.reduce((acc, service) => {
       const specialtyName = service.category;
       if (!acc[specialtyName]) {
         acc[specialtyName] = [];
@@ -91,7 +65,7 @@ export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialt
       services,
     }));
     setSpecialties(specialtiesArray);
-  }, [services]);
+  }, [medicalServices]);
 
   const handleToggleService = async (service: MedicalService) => {
     if (!user) return;
@@ -121,8 +95,8 @@ export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialt
         throw new Error(responseData.message || `Failed to ${isActivating ? 'activate' : 'deactivate'} service`);
       }
       
-      const updatedService = { ...service, isActive: isActivating };
-      setServices(prev => prev.map(s => s.id === service.id ? updatedService : s));
+      // Refrescar los datos usando el hook centralizado
+      await refetch();
       toast.success(`Servicio "${service.name}" ${isActivating ? 'activado' : 'desactivado'}.`);
 
     } catch (err) {
@@ -153,7 +127,7 @@ export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialt
       toast.success(`Servicio "${serviceData.name}" ${isEditing ? 'actualizado' : 'creado'} exitosamente.`);
       setIsModalOpen(false);
       setEditingService(null);
-      fetchServices();
+      await refetch();
       
       // Si se creó un nuevo servicio, cambiar al tab de servicios para mostrar el resultado
       if (!isEditing) {
@@ -187,7 +161,7 @@ export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialt
         </DialogHeader>
       )}
       
-      {loading || authLoading ? (
+      {loading ? (
         <ServiceSpecialtySkeleton />
       ) : error ? (
         <p className="text-red-500">{error}</p>

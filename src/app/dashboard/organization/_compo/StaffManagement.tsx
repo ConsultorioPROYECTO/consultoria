@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,30 +11,28 @@ import { DoctorWorkingHours } from "./DoctorWorkingHours";
 import { StaffDetailModal } from "./StaffDetailModal";
 import { AssignDoctorModal } from "./AssignDoctorModal";
 import { useAuth } from '@/app/context/AuthContext';
-import type { User } from '@/db/schema/users';
+import { useUsersData } from '@/app/context/DashboardDataContext';
 import type { DoctorWorkingHours as DoctorWorkingHoursType } from "@/types/google-calendar-schemas";
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Tipo extendido para incluir datos del doctor y asistente desde la API
-type UserWithDoctorAndAssistant = User & {
-  idDoctor?: number | null;
-  idAssistant?: number | null;
-  working_hours?: DoctorWorkingHoursType | string | null; // La API puede devolver JSON como string
-};
-
 // Tipo interno para el estado del componente
 interface StaffMember {
   id: number;
-  name: string;
-  role: 'admin' | 'medico' | 'asistente';
+  firstName: string;
+  lastName: string;
   email: string;
+  role: 'admin' | 'medico' | 'asistente' | 'N/A';
+  organizationId: number;
+  name: string;
+  displayName: string;
+  isActive: boolean;
   status: 'active' | 'inactive';
   idDoctor?: number | null;
   idAssistant?: number | null;
-  workingHours?: DoctorWorkingHoursType; // Usar el tipo correcto de la API
+  workingHours?: DoctorWorkingHoursType;
   specialty?: string;
   patients?: number;
   appointments?: number;
@@ -42,6 +40,7 @@ interface StaffMember {
 
 export function StaffManagement() {
   const { getAuthToken } = useAuth();
+  const { users, loading, error, refetch } = useUsersData();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [filteredStaffMembers, setFilteredStaffMembers] = useState<StaffMember[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -51,81 +50,35 @@ export function StaffManagement() {
   const [selectedAssistantForDoctors, setSelectedAssistantForDoctors] = useState<StaffMember | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
   const [isAssignDoctorModalOpen, setIsAssignDoctorModalOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
-  const fetchStaffMembers = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const token = await getAuthToken();
-      if (!token) throw new Error('Autenticación requerida. Por favor, inicia sesión.');
-
-      const response = await fetch('/api/users', {
-        headers: { 'Authorization': `Bearer ${token}` },
+  // Procesar usuarios del hook centralizado para convertirlos a StaffMembers
+  useEffect(() => {
+    if (users && users.length > 0) {
+      const processedUsers: StaffMember[] = users.map(user => {
+        // Convertir el role de string a uno de los valores permitidos
+        const normalizedRole = (['admin', 'medico', 'asistente'].includes(user.role)) 
+          ? user.role as 'admin' | 'medico' | 'asistente'
+          : 'N/A' as const;
+        
+        return {
+          ...user,
+          role: normalizedRole,
+          name: `${user.firstName} ${user.lastName}`,
+          displayName: `${user.firstName} ${user.lastName}`,
+          isActive: true, // Asumimos que todos los usuarios están activos
+          status: 'active' as const,
+          idDoctor: undefined,
+          idAssistant: undefined,
+          workingHours: undefined,
+          specialty: normalizedRole === 'medico' ? 'Especialidad General' : undefined,
+          patients: Math.floor(Math.random() * 50) + 10,
+          appointments: Math.floor(Math.random() * 20) + 5,
+        };
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Error ${response.status}`);
-      }
-
-      const users: UserWithDoctorAndAssistant[] = await response.json();
-      
-      const activeStaff = users
-        .filter(user => user.isActive && user.role !== 'N/A')
-        .map((user): StaffMember => {
-          let parsedWorkingHours: DoctorWorkingHoursType | undefined = undefined;
-          if (typeof user.working_hours === 'string') {
-            try {
-              parsedWorkingHours = JSON.parse(user.working_hours);
-            } catch (e) {
-              console.error('Error parsing working_hours JSON:', e);
-            }
-          } else if (user.working_hours) {
-            parsedWorkingHours = user.working_hours;
-          }
-
-          return {
-            id: user.id,
-            name: user.displayName || user.email || 'Usuario sin nombre',
-            role: user.role as 'admin' | 'medico' | 'asistente',
-            email: user.email || '',
-            status: 'active',
-            idDoctor: user.idDoctor,
-            idAssistant: user.idAssistant,
-            workingHours: parsedWorkingHours,
-            specialty: user.role === 'medico' ? 'Especialidad General' : undefined,
-            patients: Math.floor(Math.random() * 50) + 10,
-            appointments: Math.floor(Math.random() * 20) + 5,
-          };
-        })
-        .sort((a, b) => {
-          // Ordenar por prioridad: admin > medico > asistente
-          const roleOrder = { 'admin': 1, 'medico': 2, 'asistente': 3 };
-          const aOrder = roleOrder[a.role] || 4;
-          const bOrder = roleOrder[b.role] || 4;
-          
-          if (aOrder !== bOrder) {
-            return aOrder - bOrder;
-          }
-          
-          // Si tienen el mismo rol, ordenar alfabéticamente por nombre
-          return a.name.localeCompare(b.name);
-        });
-
-      setStaffMembers(activeStaff);
-      setFilteredStaffMembers(activeStaff);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Un error desconocido ocurrió.';
-      console.error('Error al obtener miembros del personal:', errorMessage);
-      setError(`No se pudieron cargar los miembros del personal: ${errorMessage}`);
-    } finally {
-      setIsLoading(false);
+      setStaffMembers(processedUsers);
     }
-  }, [getAuthToken]);
+  }, [users]);
 
   // Efecto para filtrar miembros del personal basado en el término de búsqueda y tab activo
   useEffect(() => {
@@ -147,9 +100,7 @@ export function StaffManagement() {
     setFilteredStaffMembers(filtered);
   }, [staffMembers, searchTerm, activeTab]);
 
-  useEffect(() => {
-    fetchStaffMembers();
-  }, [fetchStaffMembers]);
+
 
   const handleSaveWorkingHours = async (doctorId: number, newWorkingHours: DoctorWorkingHoursType) => {
     try {
@@ -207,7 +158,7 @@ export function StaffManagement() {
 
   const handleAssignmentComplete = () => {
     // Refrescar la lista de personal después de asignar doctores
-    fetchStaffMembers();
+    refetch();
     toast.success('Doctores asignados correctamente');
   };
 
@@ -222,9 +173,9 @@ export function StaffManagement() {
           <div>
             Personal Actual
           </div>
-          <Button variant="outline" size="sm" onClick={fetchStaffMembers} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? 'Cargando...' : 'Actualizar'}
+          <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Cargando...' : 'Actualizar'}
           </Button>
         </CardTitle>
         <CardDescription>
@@ -264,7 +215,7 @@ export function StaffManagement() {
         <div className="space-y-4">
           {error && <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-700">{error}</div>}
           
-          {isLoading ? (
+          {loading ? (
             <div className="flex h-[400px] border rounded-lg flex-col items-center justify-center">
               <WaveformLoader className="w-24 h-auto text-muted-foreground" />
             </div>
@@ -381,7 +332,7 @@ export function StaffManagement() {
         isOpen={isDetailModalOpen}
         onClose={() => setIsDetailModalOpen(false)}
         staffMember={selectedStaffForDetail}
-        onUpdate={fetchStaffMembers}
+        onUpdate={refetch}
       />
 
       {selectedDoctorForSchedule && (

@@ -105,7 +105,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     user: {
       name: user.displayName || "Usuario",
       email: user.email || "m@example.com",
-      avatar: user.photoURL || "/avatars/shadcn.jpg",
+      avatar: user.photoURL || "/img/avatar_1.webp",
     },
     navMain: navMain,
     navSecondary: [
