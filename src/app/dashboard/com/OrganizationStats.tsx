@@ -5,9 +5,7 @@ import { Users, Stethoscope, UserCheck, Calendar, TrendingUp, Activity } from "l
 
 import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"
 import { Badge } from "@rutas/components/ui/badge"
-import { usePatients } from "@/hooks/usePatients"
-import { useMedicalServices } from "@/hooks/useMedicalServices"
-import { useDoctorServices } from "@/hooks/useDoctorServices"
+import { useDashboardOptimized } from "@/hooks/useDashboardOptimized"
 import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments"
 
 interface StatCardProps {
@@ -46,13 +44,20 @@ function StatCard({ title, value, description, icon, trend, className }: StatCar
 }
 
 export function OrganizationStats() {
-  const { patients, loading: patientsLoading, error: patientsError } = usePatients();
-  const { services, loading: servicesLoading, error: servicesError } = useMedicalServices();
-  const { doctorServices, total: totalRelations, loading: relationsLoading, error: relationsError } = useDoctorServices();
+  const {
+    medicalServices: services,
+    doctorServices,
+    patients,
+    isLoading: dashboardLoading,
+    hasErrors: dashboardHasErrors,
+    errors: dashboardErrors
+  } = useDashboardOptimized();
+  
   const { doctors: assistantsData, loading: doctorsLoading, error: doctorsError } = useDoctorsWithAppointments();
 
-  const isLoading = patientsLoading || servicesLoading || relationsLoading || doctorsLoading;
-  const hasError = patientsError || servicesError || relationsError || doctorsError;
+  const isLoading = dashboardLoading || doctorsLoading;
+  const hasError = dashboardHasErrors || !!doctorsError;
+  const totalRelations = doctorServices.length;
 
   // Calcular estadísticas
   const stats = React.useMemo(() => {
@@ -70,7 +75,7 @@ export function OrganizationStats() {
     const serviceCategories = [...new Set(services.map(s => s.category))].length;
 
     // Extraer todos los doctores de todos los asistentes
-    const allDoctors = assistantsData.flatMap(assistant => assistant.doctors || []);
+    const allDoctors = assistantsData?.flatMap(assistant => assistant.doctors || []) || [];
     
     // Estadísticas de doctores
     const totalDoctors = allDoctors.length;
@@ -84,7 +89,7 @@ export function OrganizationStats() {
     const confirmedAppointments = allAppointments.filter(a => a.status === 'Confirmada').length;
 
     // Estadísticas de relaciones doctor-servicio
-    const availableRelations = doctorServices.filter(ds => ds.isAvailable).length;
+    const availableRelations = doctorServices.filter(ds => ds.isActive).length;
 
     // Calcular precio promedio de servicios
     const avgServicePrice = services.length > 0 
@@ -119,8 +124,8 @@ export function OrganizationStats() {
         available: availableRelations,
       },
       assistants: {
-        total: assistantsData.length,
-        withDoctors: assistantsData.filter(a => a.doctors && a.doctors.length > 0).length,
+        total: assistantsData?.length || 0,
+        withDoctors: assistantsData?.filter(a => a.doctors && a.doctors.length > 0).length || 0,
       },
     };
   }, [patients, services, assistantsData, doctorServices, totalRelations, isLoading]);
@@ -154,7 +159,7 @@ export function OrganizationStats() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            {patientsError || servicesError || relationsError || doctorsError}
+            {dashboardErrors.length > 0 ? dashboardErrors.join(', ') : doctorsError}
           </p>
         </CardContent>
       </Card>

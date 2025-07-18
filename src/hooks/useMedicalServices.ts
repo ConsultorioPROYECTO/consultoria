@@ -1,30 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/app/context/AuthContext';
-import { MedicalService } from '@/db/schema';
+import { useMedicalServicesData } from '@/app/context/DashboardDataContext';
 
-// Tipo extendido para el hook que incluye relaciones
-export interface MedicalServiceWithRelations extends MedicalService {
-  doctorServices?: Array<{
-    doctorId: number;
-    customPrice?: string;
-    isAvailable: boolean;
-    doctor: {
-      idDoctor: number;
-      speciality: string;
-      user: {
-        displayName: string;
-      };
-    };
-  }>;
+interface MedicalServiceWithRelations {
+  id: number;
+  name: string;
+  description: string | null;
+  code: string;
+  durationMinutes: number;
+  basePrice: string;
+  category: string;
+  isActive: boolean;
+  organizationId: number;
   appointments?: Array<{
-    id: number;
-    date: Date;
-    time: string;
-    status: 'Confirmada' | 'Completada' | 'Pendiente' | 'Llegó';
-    patient: {
+    id: string;
+    status: string;
+    scheduledAt: string;
+    patient?: {
       firstName: string;
       lastName: string;
-      patientCode: string;
+    };
+  }>;
+  doctorServices?: Array<{
+    id: string;
+    customPrice?: number;
+    isActive: boolean;
+    doctor: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      specialty?: string;
     };
   }>;
 }
@@ -33,53 +36,23 @@ interface UseMedicalServicesReturn {
   services: MedicalServiceWithRelations[];
   loading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
+  refetch: () => void;
 }
 
 export function useMedicalServices(): UseMedicalServicesReturn {
-  const [services, setServices] = useState<MedicalServiceWithRelations[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { getAuthToken } = useAuth();
-
-  const fetchServices = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const token = await getAuthToken();
-      if (!token) {
-        throw new Error('No se pudo obtener el token de autenticación');
-      }
-      
-      const response = await fetch('/api/medical-services', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      setServices(result.data?.services || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido al cargar servicios médicos');
-      setServices([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [getAuthToken]);
-
-  useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
-
-  return {
-    services,
+  const {
+    medicalServices,
     loading,
     error,
-    refetch: fetchServices,
+    refetch
+  } = useMedicalServicesData();
+
+  return {
+    services: medicalServices,
+    loading,
+    error,
+    refetch
   };
 }
+
+export type { MedicalServiceWithRelations };

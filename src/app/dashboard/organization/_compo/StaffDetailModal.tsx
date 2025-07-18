@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useStaffActions } from './useStaffActions';
 import { useDoctorServicesForStaff } from '@/hooks/useDoctorServicesForStaff';
-import { useMedicalServices } from '@/hooks/useMedicalServices';
+import { useServicesData } from '@/hooks/useDashboardOptimized';
 import { useAuth } from '@/app/context/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -49,7 +49,8 @@ export function StaffDetailModal({
   const { services, loading: servicesLoading, error: servicesError, refetch: refetchDoctorServices } = useDoctorServicesForStaff(
     staffMember?.role === 'medico' ? (staffMember.idDoctor ?? null) : null
   );
-  const { services: allMedicalServices, loading: allServicesLoading, error: allServicesError } = useMedicalServices();
+  const { medicalServices: allMedicalServices, isLoading: allServicesLoading, errors } = useServicesData();
+  const allServicesError = errors.medicalServices;
 
   useEffect(() => {
     if (staffMember) {

@@ -5,6 +5,7 @@ import { AppSidebar } from '@rutas/app/dashboard/com/app-sidebar';
 import { SiteHeader } from '@rutas/app/dashboard/com/site-header';
 import { SidebarInset, SidebarProvider } from '@rutas/components/ui/sidebar';
 import { NavigationProvider } from '@rutas/app/context/NavigationContext';
+import { DashboardDataProvider } from '@rutas/app/context/DashboardDataContext';
 import { useAuthGuard } from '@rutas/app/hooks/useAuthGuard';
 import ViewRenderer from './components/ViewRenderer';
 import { LoadingScreen } from './com/loadingScreen';
@@ -18,27 +19,29 @@ const DashboardLayout: React.FC = () => {
 
   return (
     <NavigationProvider>
-      {isMobile ? (
-        // Layout para móvil
-        <>
-          <ViewRenderer />
-          <MobileNavbar />
-        </>
-      ) : (
-        // Layout para escritorio
-        <SidebarProvider
-          style={{
-            '--sidebar-width': 'calc(var(--spacing) * 72)',
-            '--header-height': 'calc(var(--spacing) * 12)',
-          } as React.CSSProperties}
-        >
-          <AppSidebar variant="inset" />
-          <SidebarInset>
-            <SiteHeader />
+      <DashboardDataProvider>
+        {isMobile ? (
+          // Layout para móvil
+          <>
             <ViewRenderer />
-          </SidebarInset>
-        </SidebarProvider>
-      )}
+            <MobileNavbar />
+          </>
+        ) : (
+          // Layout para escritorio
+          <SidebarProvider
+            style={{
+              '--sidebar-width': 'calc(var(--spacing) * 72)',
+              '--header-height': 'calc(var(--spacing) * 12)',
+            } as React.CSSProperties}
+          >
+            <AppSidebar variant="inset" />
+            <SidebarInset>
+              <SiteHeader />
+              <ViewRenderer />
+            </SidebarInset>
+          </SidebarProvider>
+        )}
+      </DashboardDataProvider>
     </NavigationProvider>
   );
 };

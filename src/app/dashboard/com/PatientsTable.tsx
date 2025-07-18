@@ -36,7 +36,8 @@ import {
   TableHeader,
   TableRow,
 } from "@rutas/components/ui/table"
-import { usePatients, type PatientWithRelations } from "@/hooks/usePatients"
+import { usePatientsOnly } from "@/hooks/useDashboardOptimized"
+import { type PatientWithRelations } from "@/hooks/usePatients"
 
 // Definir columnas para la tabla de pacientes
 const columns: ColumnDef<PatientWithRelations>[] = [
@@ -61,7 +62,8 @@ const columns: ColumnDef<PatientWithRelations>[] = [
     ),
   },
   {
-    accessorKey: "fullName",
+    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    id: "fullName",
     header: ({ column }) => {
       return (
         <Button
@@ -176,7 +178,7 @@ const columns: ColumnDef<PatientWithRelations>[] = [
 ]
 
 export function PatientsTable() {
-  const { patients, loading, error } = usePatients()
+  const { patients, isLoading: loading, error } = usePatientsOnly()
   const [genderFilter, setGenderFilter] = React.useState<string>("all")
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -186,19 +188,11 @@ export function PatientsTable() {
     pageSize: 10,
   })
 
-  // Procesar datos para incluir nombre completo para búsqueda
-  const processedPatients = React.useMemo(() => {
-    return patients.map(patient => ({
-      ...patient,
-      fullName: `${patient.firstName} ${patient.lastName}`,
-    }))
-  }, [patients])
-
   // Aplicar filtro de género
   const filteredPatients = React.useMemo(() => {
-    if (genderFilter === "all") return processedPatients
-    return processedPatients.filter(patient => patient.gender === genderFilter)
-  }, [processedPatients, genderFilter])
+    if (genderFilter === "all") return patients
+    return patients.filter(patient => patient.gender === genderFilter)
+  }, [patients, genderFilter])
 
   const table = useReactTable({
     data: filteredPatients,
@@ -245,7 +239,7 @@ export function PatientsTable() {
           <CardTitle className="text-sm font-medium">Pacientes</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-red-500">Error: {error}</p>
+          <p className="text-sm text-red-500">Error: {error || 'Error desconocido'}</p>
         </CardContent>
       </Card>
     )

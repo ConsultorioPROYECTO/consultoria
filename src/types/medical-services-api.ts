@@ -1,5 +1,5 @@
 // Tipos para la respuesta del método GET de /api/medical-services
-import { MedicalServiceWithRelations } from "@/hooks/useMedicalServices";
+import { MedicalServiceWithRelations } from "@/hooks/useDashboardOptimized";
 
 /**
  *  @fileoverview Tipos para la respuesta del método GET de /api/medical-services
