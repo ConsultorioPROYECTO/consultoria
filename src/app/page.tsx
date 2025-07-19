@@ -183,7 +183,7 @@ export default function HomePage() {
           >
             <Badge 
               variant="outline"
-              className="px-3 py-1 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15 text-[10px] md:text-xs font-medium text-primary/80 tracking-wide uppercase"
+              className="px-3 py-1 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15 text-lg font-medium text-primary/80 tracking-wide uppercase"
             >
               Ideal para tu consultorio • centro médico • clínica
             </Badge>
