@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -123,10 +123,17 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
     }
   };
 
-  const FormContent = () => (
-    <div className="space-y-4">
+  const handleEmailChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewStaff(prev => ({ ...prev, email: e.target.value }));
+  }, []);
 
-        
+  const handleRoleSelect = useCallback((role: 'Médico' | 'Asistente') => {
+    setNewStaff(prev => ({ ...prev, role }));
+    setRoleOpen(false);
+  }, []);
+
+  const formContent = (
+    <div className="space-y-4">
       <div className="grid gap-4">
         <div className="grid gap-2">
           <Label htmlFor="staffEmail">Email</Label>
@@ -135,9 +142,7 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
             type="email"
             placeholder="email@clinica.com" 
             value={newStaff.email}
-            onChange={(e) => {
-              setNewStaff({...newStaff, email: e.target.value});
-            }}
+            onChange={handleEmailChange}
             className="w-full"
           />
         </div>
@@ -164,10 +169,7 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
                   <CommandGroup>
                     <CommandItem
                       value="Médico"
-                      onSelect={() => {
-                        setNewStaff({...newStaff, role: 'Médico'})
-                        setRoleOpen(false)
-                      }}
+                      onSelect={() => handleRoleSelect('Médico')}
                     >
                       <Check
                         className={cn(
@@ -179,10 +181,7 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
                     </CommandItem>
                     <CommandItem
                       value="Asistente"
-                      onSelect={() => {
-                        setNewStaff({...newStaff, role: 'Asistente'})
-                        setRoleOpen(false)
-                      }}
+                      onSelect={() => handleRoleSelect('Asistente')}
                     >
                       <Check
                         className={cn(
@@ -198,8 +197,6 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
             </PopoverContent>
           </Popover>
         </div>
-       
-
        
        <div className="grid">
          <div className="justify-self-end">
@@ -230,7 +227,7 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
             <DrawerTitle>Agregar Nuevo Personal</DrawerTitle>
           </DrawerHeader>
           <div className="px-4 pb-4 overflow-y-auto">
-            <FormContent />
+            {formContent}
           </div>
         </DrawerContent>
       </Drawer>
@@ -260,7 +257,7 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
             </div>
           </DialogTitle>
         </DialogHeader>
-        <FormContent />
+        {formContent}
       </DialogContent>
     </Dialog>
   );
