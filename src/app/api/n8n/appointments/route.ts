@@ -20,7 +20,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { appointments, doctors, medicalServices, patients } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { AppointmentStatus, createAppointmentEvent } from '@/lib/calendar-event-manager';
 import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
 import { handleDatabaseError } from '@/lib/api-helpers';
@@ -103,7 +103,8 @@ async function authenticateApiKey(request: NextRequest): Promise<{
  * 
  * @interface CreateAppointmentRequest
  * @property {number} doctorId - Unique identifier of the doctor for the appointment
- * @property {number} patientId - Unique identifier of the patient for the appointment
+ * @property {"DNI" | "CC" | "TI" | "CE" | "PP" | "RC" | "AS"} identificationType - Type of patient identification
+ * @property {string} identificationNumber - Patient identification number
  * @property {number} serviceId - Unique identifier of the medical service
  * @property {string} date - Date of the appointment in ISO format (YYYY-MM-DD)
  * @property {string} time - Time of the appointment in 24-hour format (HH:MM)
@@ -115,7 +116,8 @@ async function authenticateApiKey(request: NextRequest): Promise<{
  * ```typescript
  * const appointmentData: CreateAppointmentRequest = {
  *   doctorId: 1,
- *   patientId: 123,
+ *   identificationType: "CC",
+ *   identificationNumber: "123456789",
  *   serviceId: 5,
  *   date: "2024-01-15",
  *   time: "14:30",
@@ -128,8 +130,10 @@ async function authenticateApiKey(request: NextRequest): Promise<{
 export interface CreateAppointmentRequest {
   /** Unique identifier of the doctor */
   doctorId: number;
-  /** Unique identifier of the patient */
-  patientId: number;
+  /** Type of patient identification */
+  identificationType: "DNI" | "CC" | "TI" | "CE" | "PP" | "RC" | "AS";
+  /** Patient identification number */
+  identificationNumber: string;
   /** Unique identifier of the medical service */
   serviceId: number;
   /** Date in YYYY-MM-DD format */
@@ -251,13 +255,13 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { doctorId, patientId, serviceId, date, time, isVirtual = false, meetingLink, notes } = body;
+    const { doctorId, identificationType, identificationNumber, serviceId, date, time, isVirtual = false, meetingLink, notes } = body;
 
     // Validate required fields
-    if (!doctorId || !patientId || !serviceId || !date || !time) {
+    if (!doctorId || !identificationType || !identificationNumber || !serviceId || !date || !time) {
       return createErrorResponse(
         API_ERRORS.INVALID_REQUEST,
-        'Campos requeridos faltantes: doctorId, patientId, serviceId, date, time',
+        'Campos requeridos faltantes: doctorId, identificationType, identificationNumber, serviceId, date, time',
         HTTP_STATUS.BAD_REQUEST
       );
     }
@@ -318,13 +322,17 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
 
     // Verify patient exists and belongs to the organization
     const patient = await db.query.patients.findFirst({
-      where: eq(patients.id, patientId),
+      where: and(
+        eq(patients.identificationType, identificationType),
+        eq(patients.identificationNumber, identificationNumber),
+        eq(patients.organizationId, defaultOrganizationId)
+      ),
     });
 
     if (!patient) {
       return createErrorResponse(
         'Paciente no encontrado',
-        `No se encontró un paciente con ID ${patientId}`,
+        `No se encontró un paciente con tipo ${identificationType} y número ${identificationNumber}`,
         HTTP_STATUS.NOT_FOUND
       );
     }
@@ -463,7 +471,8 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
  * 
  * @param {CreateAppointmentRequest} request.body - Appointment creation data
  * @param {number} request.body.doctorId - Doctor's unique identifier
- * @param {number} request.body.patientId - Patient's unique identifier
+ * @param {"DNI" | "CC" | "TI" | "CE" | "PP" | "RC" | "AS"} request.body.identificationType - Type of patient identification
+ * @param {string} request.body.identificationNumber - Patient identification number
  * @param {number} request.body.serviceId - Medical service identifier
  * @param {string} request.body.date - Appointment date (YYYY-MM-DD)
  * @param {string} request.body.time - Appointment time (HH:MM)
@@ -487,7 +496,8 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
  * 
  * {
  *   "doctorId": 1,
- *   "patientId": 123,
+ *   "identificationType": "CC",
+ *   "identificationNumber": "123456789",
  *   "serviceId": 5,
  *   "date": "2024-01-15",
  *   "time": "14:30",
