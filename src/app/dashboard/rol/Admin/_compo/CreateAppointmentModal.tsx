@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import WaveformLoader from '@/components/custom/WaveformLoader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '@/app/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useMedicalServicesData, usePatientsData, useUsersData } from '@/app/context/DashboardDataContext';
 import { toast } from 'sonner';
 
 /**
@@ -35,58 +36,67 @@ interface CreateAppointmentRequest {
 }
 
 /**
- * Interfaz para pacientes
+ * Interfaz para pacientes (compatible con DashboardDataContext)
  */
 interface Patient {
   id: number;
   firstName: string;
   lastName: string;
-  email?: string;
-  phone?: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  identificationType: string;
+  identificationNumber: string;
+  isActive: boolean;
+  organizationId: number;
 }
 
 /**
- * Interfaz para servicios médicos
+ * Interfaz para servicios médicos (compatible con DashboardDataContext)
  */
 interface MedicalService {
   id: number;
   name: string;
-  description?: string;
+  description: string | null;
+  code: string;
   durationMinutes: number;
-  basePrice?: number;
+  basePrice: string;
+  category: string;
+  isActive: boolean;
+  organizationId: number;
 }
 
 /**
- * Interfaz para usuarios del sistema
+ * Interfaz para usuarios del sistema (compatible con DashboardDataContext)
  */
 interface User {
   id: number;
-  firebaseUid: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  emailVerified: boolean | null;
-  phoneNumber: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  providerId: string | null;
   role: string;
-  isActive: boolean;
-  organizationId: number | null;
-  lastLoginAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  idDoctor: number | null;
-  idAssistant: number | null;
+  organizationId: number;
+  displayName?: string | null;
+  isActive?: boolean;
+  idDoctor?: number | null;
+  idAssistant?: number | null;
 }
 
 /**
- * Interfaz para médicos
+ * Interfaz para médicos (compatible con User del contexto)
  */
 interface Doctor {
   id: number;
-  idDoctor: number;
-  displayName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: string;
+  organizationId: number;
+  displayName?: string | null;
+  isActive?: boolean;
+  idDoctor?: number | null;
+  idAssistant?: number | null;
 }
 
 /**
@@ -124,10 +134,16 @@ interface CreateAppointmentModalProps {
 export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, contextDoctorId }: CreateAppointmentModalProps) {
   const { user, userRole } = useAuth();
   const isMobile = useIsMobile();
+  
+  // Hooks del contexto
+  const { medicalServices: allMedicalServices, loading: loadingServices } = useMedicalServicesData();
+  const { patients, loading: loadingPatients } = usePatientsData();
+  const { users, loading: loadingUsers } = useUsersData();
+  
   const [selectedDate, setSelectedDate] = useState<Date>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
   
   // Estados para los datos del formulario
   const [formData, setFormData] = useState<CreateAppointmentRequest>({
@@ -141,10 +157,8 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
     notes: ''
   });
 
-  // Estados para los datos de las APIs
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [medicalServices, setMedicalServices] = useState<MedicalService[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  // Estados para los datos específicos de asistentes
+  const [assistantDoctors, setAssistantDoctors] = useState<Doctor[]>([]);
   
   // Estados para los Combobox
   const [openDoctorCombo, setOpenDoctorCombo] = useState(false);
@@ -156,90 +170,43 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
   const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
   const [isLoadingTimeSlots, setIsLoadingTimeSlots] = useState(false);
 
+  // Filtrar servicios médicos activos usando useMemo
+  const medicalServices = useMemo(() => {
+    return allMedicalServices.filter(service => service.isActive);
+  }, [allMedicalServices]);
 
-
-  /**
-   * Obtener lista de pacientes
-   */
-  const fetchPatients = useCallback(async () => {
-    try {
-      const token = await user?.getIdToken();
-      if (!token) {
-        throw new Error('No se pudo obtener el token de autenticación');
-      }
-
-      const response = await fetch('/api/patients', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al obtener pacientes');
-      }
-
-      const data = await response.json();
-      return data.data || [];
-    } catch (error) {
-      console.error('Error fetching patients:', error);
-      toast.error('Error al cargar pacientes', {
-        description: 'No se pudieron cargar los pacientes disponibles',
-        duration: 4000,
-      });
-      return [];
+  // Procesar doctores basado en el rol del usuario
+  const doctors = useMemo(() => {
+    if (userRole === 'asistente') {
+      return assistantDoctors;
     }
-  }, [user]);
+    
+    // Para admin, filtrar solo usuarios con rol 'medico' y que tengan idDoctor
+    return users.filter((user: User) => user.role === 'medico' && user.idDoctor) as Doctor[];
+  }, [userRole, assistantDoctors, users]);
 
-  /**
-   * Obtener lista de servicios médicos
-   */
-  const fetchMedicalServices = useCallback(async () => {
-    try {
-      const token = await user?.getIdToken();
-      if (!token) {
-        throw new Error('No se pudo obtener el token de autenticación');
-      }
-
-      const response = await fetch('/api/medical-services', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al obtener servicios médicos');
-      }
-
-      const data = await response.json();
-      return data.data.services || [];
-    } catch (error) {
-      console.error('Error fetching medical services:', error);
-      toast.error('Error al cargar servicios médicos', {
-        description: 'No se pudieron cargar los servicios disponibles',
-        duration: 4000,
-      });
-      return [];
+  // Determinar si está cargando datos
+  const isLoadingData = useMemo(() => {
+    if (userRole === 'asistente') {
+      return loadingServices || loadingPatients || isLoadingDoctors;
     }
-  }, [user]);
+    return loadingServices || loadingPatients || loadingUsers;
+  }, [userRole, loadingServices, loadingPatients, loadingUsers, isLoadingDoctors]);
 
   /**
-   * Obtener lista de médicos
+   * Obtener lista de médicos para asistentes
    */
-  const fetchDoctors = useCallback(async () => {
+  const fetchAssistantDoctors = useCallback(async () => {
+    if (userRole !== 'asistente') return;
+    
+    setIsLoadingDoctors(true);
     try {
       const token = await user?.getIdToken();
       if (!token) {
         throw new Error('No se pudo obtener el token de autenticación');
       }
 
-      // Determinar el endpoint basado en el rol del usuario
-      const endpoint = userRole === 'asistente'
-        ? '/api/assistants/doctors-with-appointments'
-        : '/api/users';
-
-      const response = await fetch(endpoint, {
+      const response = await fetch('/api/assistants/doctors-with-appointments', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -251,22 +218,16 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       }
 
       const data = await response.json();
-      
-      // Si el endpoint es el de asistentes, la data ya viene lista
-      if (userRole === 'asistente') {
-        return data.doctors || [];
-      }
-
-      // Para admin, filtrar solo usuarios con rol 'medico' y que tengan idDoctor
-      const doctorsOnly = data.filter((user: User) => user.role === 'medico' && user.idDoctor) || [];
-      return doctorsOnly;
+      setAssistantDoctors(data.doctors || []);
     } catch (error) {
-      console.error('Error fetching doctors:', error);
+      console.error('Error fetching assistant doctors:', error);
       toast.error('Error al cargar médicos', {
         description: 'No se pudieron cargar los médicos disponibles',
         duration: 4000,
       });
-      return [];
+      setAssistantDoctors([]);
+    } finally {
+      setIsLoadingDoctors(false);
     }
   }, [user, userRole]);
 
@@ -346,33 +307,17 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
    * Cargar datos iniciales cuando se abre el modal
    */
   const loadInitialData = useCallback(async () => {
-    setIsLoadingData(true);
-    try {
-      const [patientsResult, servicesResult, doctorsResult] = await Promise.all([
-        fetchPatients(),
-        fetchMedicalServices(),
-        fetchDoctors()
-      ]);
-
-      setPatients(patientsResult);
-      setMedicalServices(servicesResult);
-      setDoctors(doctorsResult);
-      
-      // Actualizar el doctorId en el formulario usando el contexto
-      setFormData(prev => ({
-        ...prev,
-        doctorId: contextDoctorId || 0
-      }));
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-      toast.error('Error al cargar datos iniciales', {
-        description: 'No se pudieron cargar los datos necesarios. Por favor, intente nuevamente.',
-        duration: 5000,
-      });
-    } finally {
-      setIsLoadingData(false);
+    // Para asistentes, cargar doctores específicos
+    if (userRole === 'asistente') {
+      await fetchAssistantDoctors();
     }
-  }, [contextDoctorId, fetchPatients, fetchMedicalServices, fetchDoctors]);
+    
+    // Actualizar el doctorId en el formulario usando el contexto
+    setFormData(prev => ({
+      ...prev,
+      doctorId: contextDoctorId || 0
+    }));
+  }, [contextDoctorId, userRole, fetchAssistantDoctors]);
 
   /**
    * Efecto para cargar datos cuando se abre el modal
@@ -684,7 +629,10 @@ const FormContent = React.memo<FormContentProps>(({
                   className="w-full justify-between"
                 >
                   {formData.doctorId > 0
-                    ? doctors.find((doctor) => doctor.idDoctor === formData.doctorId)?.displayName
+                    ? (() => {
+                        const doctor = doctors.find((d) => (d.idDoctor || d.id) === formData.doctorId);
+                        return doctor ? (doctor.displayName || `${doctor.firstName} ${doctor.lastName}`) : "Seleccionar médico...";
+                      })()
                     : "Seleccionar médico..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -697,22 +645,22 @@ const FormContent = React.memo<FormContentProps>(({
                     <CommandGroup>
                       {doctors.map((doctor) => (
                         <CommandItem
-                          key={doctor.idDoctor}
-                          value={`${doctor.displayName} ${doctor.email}`}
+                          key={doctor.idDoctor || doctor.id}
+                          value={`${doctor.displayName || `${doctor.firstName} ${doctor.lastName}`} ${doctor.email}`}
                           onSelect={() => {
-                            handleInputChange('doctorId', doctor.idDoctor);
+                            handleInputChange('doctorId', doctor.idDoctor || doctor.id);
                             setOpenDoctorCombo(false);
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              formData.doctorId === doctor.idDoctor ? "opacity-100" : "opacity-0"
+                              formData.doctorId === (doctor.idDoctor || doctor.id) ? "opacity-100" : "opacity-0"
                             )}
                           />
                           <div className="flex flex-col min-w-0 flex-1">
                             <span className="font-medium text-sm truncate">
-                              {doctor.displayName}
+                              {doctor.displayName || `${doctor.firstName} ${doctor.lastName}`}
                             </span>
                             <span className="text-xs text-muted-foreground truncate">
                               {doctor.email}
