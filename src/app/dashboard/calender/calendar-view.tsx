@@ -30,6 +30,7 @@ import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, 
 import { EventModal } from "./event-modal";
 import { CalendarEvent } from "@/types/calendar";
 import { useAuth } from "../../context/AuthContext";
+import { useUsersData } from "../../context/DashboardDataContext";
 // import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"; // Removido - usando contexto centralizado
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
@@ -62,7 +63,7 @@ type Event = {
 };
 
 type Doctor = {
-  id: number;
+  id: string;
   displayName: string;
   email: string;
   idDoctor: number;
@@ -71,6 +72,9 @@ type Doctor = {
 export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
   // Hook de autenticación para obtener el doctorId
   const { doctorId, user, userRole, getAuthToken } = useAuth();
+  
+  // Hook para obtener usuarios del contexto
+  const { users: contextUsers } = useUsersData();
   
   // Referencias estables para evitar bucles infinitos
   const getAuthTokenRef = React.useRef(getAuthToken);
@@ -166,34 +170,12 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
             idDoctor: doctor.idDoctor
           }));
         } else {
-          // Para administradores y otros roles, usar la API de usuarios
-          const response = await fetch('/api/users', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (!response.ok) {
-            console.warn('Failed to fetch users for doctor selection');
-            return;
-          }
-          
-          const users = await response.json();
-          
+          // Para administradores y otros roles, usar el contexto de usuarios
           // Filtrar solo usuarios con rol 'medico' y que tengan idDoctor
-          interface UserFromAPI {
-            id: string;
-            role: string;
-            idDoctor?: number;
-            displayName?: string;
-            email: string;
-          }
-          
-          doctors = users
-            .filter((user: UserFromAPI) => user.role === 'medico' && user.idDoctor)
-            .map((user: UserFromAPI) => ({
-              id: user.id,
+          doctors = contextUsers
+            .filter((user) => user.role === 'medico' && user.idDoctor)
+            .map((user) => ({
+              id: user.id.toString(),
               displayName: user.displayName || user.email,
               email: user.email,
               idDoctor: user.idDoctor!
@@ -222,7 +204,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     setTimeout(() => {
       loadDoctors();
     }, 0);
-  }, [user, doctorId, selectedDoctorId, userRole]);
+  }, [user, doctorId, selectedDoctorId, userRole, contextUsers]);
 
   // Actualizar la hora actual cada minuto
   React.useEffect(() => {
