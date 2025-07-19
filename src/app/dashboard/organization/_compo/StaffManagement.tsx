@@ -61,21 +61,33 @@ export function StaffManagement() {
           ? user.role as 'admin' | 'medico' | 'asistente'
           : 'N/A' as const;
         
-        return {
+        const processedUser = {
           ...user,
           role: normalizedRole,
-          name: `${user.firstName} ${user.lastName}`,
-          displayName: `${user.firstName} ${user.lastName}`,
-          isActive: true, // Asumimos que todos los usuarios están activos
-          status: 'active' as const,
-          idDoctor: undefined,
-          idAssistant: undefined,
+          name: `${user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim()}`,
+          displayName: user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          isActive: user.isActive ?? true,
+          status: (user.isActive ?? true) ? 'active' as const : 'inactive' as const,
+          idDoctor: user.idDoctor || null,
+          idAssistant: user.idAssistant || null,
           workingHours: undefined,
           specialty: normalizedRole === 'medico' ? 'Especialidad General' : undefined,
           patients: Math.floor(Math.random() * 50) + 10,
           appointments: Math.floor(Math.random() * 20) + 5,
         };
+        
+        console.log(`Usuario procesado - ${user.email}:`, {
+          role: processedUser.role,
+          idDoctor: processedUser.idDoctor,
+          idAssistant: processedUser.idAssistant,
+          originalIdDoctor: user.idDoctor,
+          originalIdAssistant: user.idAssistant
+        });
+        
+        return processedUser;
       });
+      
+      console.log('Usuarios procesados:', processedUsers);
       setStaffMembers(processedUsers);
     }
   }, [users]);
@@ -145,14 +157,38 @@ export function StaffManagement() {
 
   const handleOpenSchedule = (member: StaffMember) => {
     if (member.role === 'medico' && member.idDoctor) {
+      console.log('Abriendo horario para médico:', {
+        name: member.name,
+        idDoctor: member.idDoctor,
+        role: member.role
+      });
       setSelectedDoctorForSchedule(member);
+    } else {
+      console.warn('No se puede abrir el horario:', {
+        name: member.name,
+        role: member.role,
+        idDoctor: member.idDoctor,
+        reason: !member.idDoctor ? 'No tiene idDoctor' : 'Rol incorrecto'
+      });
     }
   };
 
   const handleOpenDoctors = (member: StaffMember) => {
-    if (member.role === 'asistente') {
+    if (member.role === 'asistente' && member.idAssistant) {
+      console.log('Abriendo modal para asistente:', {
+        name: member.name,
+        idAssistant: member.idAssistant,
+        role: member.role
+      });
       setSelectedAssistantForDoctors(member);
       setIsAssignDoctorModalOpen(true);
+    } else {
+      console.warn('No se puede abrir el modal de doctores:', {
+        name: member.name,
+        role: member.role,
+        idAssistant: member.idAssistant,
+        reason: !member.idAssistant ? 'No tiene idAssistant' : 'Rol incorrecto'
+      });
     }
   };
 
@@ -312,7 +348,7 @@ export function StaffManagement() {
                                {member.role === 'medico' && member.idDoctor && (
                                  <Button variant="outline" size="sm" onClick={() => handleOpenSchedule(member)}><Clock className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Horario</span></Button>
                                )}
-                               {member.role === 'asistente' && (
+                               {member.role === 'asistente' && member.idAssistant && (
                                  <Button variant="outline" size="sm" onClick={() => handleOpenDoctors(member)}><Stethoscope className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Doctores</span></Button>
                                )}
                              </div>

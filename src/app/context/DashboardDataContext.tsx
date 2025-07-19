@@ -57,6 +57,10 @@ interface User {
   email: string;
   role: string;
   organizationId: number;
+  displayName?: string | null;
+  isActive?: boolean;
+  idDoctor?: number | null;
+  idAssistant?: number | null;
 }
 
 // Estado del contexto
