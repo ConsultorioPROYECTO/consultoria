@@ -3,8 +3,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon, Plus } from 'lucide-react';
-import { CreateAppointmentModal } from './CreateAppointmentModal';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import WaveformLoader from '@/components/custom/WaveformLoader';
+
+// Lazy load del modal para evitar problemas de prerender
+const CreateAppointmentModal = dynamic(() => import('./CreateAppointmentModal').then(mod => ({ default: mod.CreateAppointmentModal })), {
+  loading: () => (
+    <div className="flex items-center justify-center p-4">
+      <WaveformLoader className="w-12 h-12 text-muted-foreground" />
+    </div>
+  ),
+  ssr: false
+});
 
 /**
  * Interfaz para la respuesta de creación de cita

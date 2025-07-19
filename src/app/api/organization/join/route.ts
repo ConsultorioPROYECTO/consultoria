@@ -246,7 +246,7 @@ const postOrganizationJoinHandler = async (
         }
       }).onDuplicateKeyUpdate({
         set: {
-          speciality: 'General',
+          speciality: '',
           calendar_id: '',
           privatePhone: '',
           nitId: '',
