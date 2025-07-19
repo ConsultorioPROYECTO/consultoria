@@ -20,8 +20,7 @@ const nextConfig: NextConfig = {
  * It includes headers for DNS prefetch control, HSTS, X-Frame-Options,
  * X-Content-Type-Options, X-XSS-Protection, Referrer-Policy, Permissions-Policy,
  * and Content-Security-Policy.
- 
-
+ */
   headers: async () => {
     return [
       {
@@ -76,7 +75,7 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
-  },*/
+  },
 };
 
 export default nextConfig;
