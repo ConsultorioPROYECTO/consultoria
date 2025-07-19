@@ -4,7 +4,7 @@ import React, { createContext, useContext, useReducer, useCallback, useEffect, u
 import { useAuth } from './AuthContext';
 
 // Mapa de promesas pendientes para evitar peticiones duplicadas
-const pendingRequests = new Map<string, Promise<any>>();
+const pendingRequests = new Map<string, Promise<unknown>>();
 
 // Tipos de datos
 interface MedicalService {
@@ -247,6 +247,10 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 export function DashboardDataProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(dashboardDataReducer, initialState);
   const { user } = useAuth();
+  const stateRef = useRef(state);
+  
+  // Mantener la referencia del estado actualizada
+  stateRef.current = state;
 
   // Función helper para verificar si los datos están frescos
   const isDataFresh = (lastFetch: number | null): boolean => {
@@ -266,12 +270,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     }
     
     // Si los datos están frescos y no se fuerza la actualización, no hacer nada
-    if (!force && isDataFresh(state.medicalServices.lastFetch) && state.medicalServices.data.length > 0) {
+    if (!force && isDataFresh(stateRef.current.medicalServices.lastFetch) && stateRef.current.medicalServices.data.length > 0) {
       return;
     }
 
     // Si ya está cargando, no hacer otra petición
-    if (state.medicalServices.loading) return;
+    if (stateRef.current.medicalServices.loading) return;
 
     const fetchPromise = (async () => {
       dispatch({ type: 'SET_MEDICAL_SERVICES_LOADING', payload: true });
@@ -313,11 +317,11 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       return await pendingRequests.get(requestKey);
     }
     
-    if (!force && isDataFresh(state.doctorServices.lastFetch) && state.doctorServices.data.length > 0) {
+    if (!force && isDataFresh(stateRef.current.doctorServices.lastFetch) && stateRef.current.doctorServices.data.length > 0) {
       return;
     }
 
-    if (state.doctorServices.loading) return;
+    if (stateRef.current.doctorServices.loading) return;
 
     const fetchPromise = (async () => {
       dispatch({ type: 'SET_DOCTOR_SERVICES_LOADING', payload: true });
@@ -359,11 +363,11 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       return await pendingRequests.get(requestKey);
     }
     
-    if (!force && isDataFresh(state.patients.lastFetch) && state.patients.data.length > 0) {
+    if (!force && isDataFresh(stateRef.current.patients.lastFetch) && stateRef.current.patients.data.length > 0) {
       return;
     }
 
-    if (state.patients.loading) return;
+    if (stateRef.current.patients.loading) return;
 
     const fetchPromise = (async () => {
       dispatch({ type: 'SET_PATIENTS_LOADING', payload: true });
@@ -405,11 +409,11 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
       return await pendingRequests.get(requestKey);
     }
     
-    if (!force && isDataFresh(state.users.lastFetch) && state.users.data.length > 0) {
+    if (!force && isDataFresh(stateRef.current.users.lastFetch) && stateRef.current.users.data.length > 0) {
       return;
     }
 
-    if (state.users.loading) return;
+    if (stateRef.current.users.loading) return;
 
     const fetchPromise = (async () => {
       dispatch({ type: 'SET_USERS_LOADING', payload: true });
@@ -455,8 +459,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     ]);
   }, [fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
 
-  // Cargar datos iniciales cuando el usuario esté disponible
-  useEffect(() => {
+  // Función estable para cargar datos iniciales
+  const loadInitialData = useCallback(() => {
     if (user) {
       // Cargar datos de forma paralela pero sin bloquear la UI
       Promise.all([
@@ -466,7 +470,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         fetchUsers(),
       ]).catch(console.error);
     }
-  }, [user]); // Solo depende del usuario para evitar cambios de tamaño en las dependencias
+  }, [user, fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
+
+  // Cargar datos iniciales cuando el usuario esté disponible
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const value: DashboardDataContextType = {
     state,

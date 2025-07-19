@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import WaveformLoader from '@/components/custom/WaveformLoader';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -98,10 +98,16 @@ export function DoctorWorkingHours({
 }: DoctorWorkingHoursProps) {
   const isMobile = useIsMobile();
   const { getAuthToken } = useAuth();
+  const getAuthTokenRef = useRef(getAuthToken);
   const [workingHours, setWorkingHours] = useState<DailyWorkingHours[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errors, setErrors] = useState<string[]>([]);
+
+  // Mantener la referencia de getAuthToken actualizada
+  useEffect(() => {
+    getAuthTokenRef.current = getAuthToken;
+  }, [getAuthToken]);
 
   useEffect(() => {
     const loadWorkingHours = async () => {
@@ -112,7 +118,7 @@ export function DoctorWorkingHours({
       }
 
       try {
-        const token = await getAuthToken();
+        const token = await getAuthTokenRef.current();
         if (!token) {
           setErrors(['Autenticación requerida']);
           return;
@@ -227,7 +233,7 @@ export function DoctorWorkingHours({
     const finalPayload: DoctorWorkingHours = { workingHours: validatedHours };
 
     try {
-      const token = await getAuthToken();
+      const token = await getAuthTokenRef.current();
       if (!token) throw new Error('Autenticación requerida');
 
       console.log('Payload final a enviar a la API:', JSON.stringify(finalPayload, null, 2));

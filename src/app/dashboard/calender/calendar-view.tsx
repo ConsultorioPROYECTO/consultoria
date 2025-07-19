@@ -72,6 +72,15 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
   // Hook de autenticación para obtener el doctorId
   const { doctorId, user, userRole, getAuthToken } = useAuth();
   
+  // Referencias estables para evitar bucles infinitos
+  const getAuthTokenRef = React.useRef(getAuthToken);
+  const doctorEventsRef = React.useRef<CalendarEvent[]>([]);
+
+  // Mantener referencias actualizadas
+  React.useEffect(() => {
+    getAuthTokenRef.current = getAuthToken;
+  }, [getAuthToken]);
+  
   // Determinar si es vista móvil para ajustar la altura de las celdas
   const [isMobile, setIsMobile] = React.useState(false);
   // Estado para controlar la vista (mes, semana, día) - día en móvil, semana en desktop
@@ -118,7 +127,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       if (!user) return;
       
       try {
-        const token = await getAuthToken();
+        const token = await getAuthTokenRef.current();
         if (!token) return;
         
         let doctors: Doctor[] = [];
@@ -243,6 +252,11 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     return { start: currentDate, end: currentDate, days: [] };
   }, [viewMode, currentDate]);
 
+  // Actualizar referencia de doctorEvents
+  React.useEffect(() => {
+    doctorEventsRef.current = doctorEvents;
+  }, [doctorEvents]);
+
   // Cargar eventos del doctor
   React.useEffect(() => {
     const loadEvents = async () => {
@@ -251,12 +265,12 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
       }
       
       // Solo mostrar loading para recargas posteriores, no para la carga inicial
-      if (doctorEvents.length > 0) {
+      if (doctorEventsRef.current.length > 0) {
         setLoading(true);
       }
       
       try {
-        const token = await getAuthToken();
+        const token = await getAuthTokenRef.current();
         if (!token) {
           console.warn('No authentication token available');
           setDoctorEvents([]);
@@ -265,8 +279,18 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
           return;
         }
         
-        // Obtener rango de fechas para la vista actual
-        const { start, end } = getDateRange();
+        // Obtener rango de fechas para la vista actual usando valores estables
+        let start: Date, end: Date;
+        if (viewMode === "week") {
+          start = startOfWeek(currentDate, { weekStartsOn: 0 });
+          end = endOfWeek(currentDate, { weekStartsOn: 0 });
+        } else if (viewMode === "day") {
+          start = currentDate;
+          end = currentDate;
+        } else {
+          start = currentDate;
+          end = currentDate;
+        }
         const startDate = startOfDay(start).toISOString();
         const endDate = endOfDay(end).toISOString();
         
@@ -343,7 +367,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     setTimeout(() => {
       loadEvents();
     }, 0);
-  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, getDateRange, availableDoctors, userRole, doctorEvents.length]);
+  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, userRole]);
 
   // Sincronizar sharedDisplayMonth cuando currentDate cambie
   React.useEffect(() => {
