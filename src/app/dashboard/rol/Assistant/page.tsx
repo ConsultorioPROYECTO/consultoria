@@ -1,6 +1,6 @@
 'use client';
 
-import { CreateAppointmentCard } from "./_compo/CreateAppointmentCard";
+import { CreateAppointmentCard } from "../Admin/_compo/CreateAppointmentCard";
 import { CreatePatientModal } from "./_compo/CreatePatientModal";
 
 export default function AssistantDashboard() {

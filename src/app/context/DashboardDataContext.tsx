@@ -246,7 +246,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 // Provider
 export function DashboardDataProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(dashboardDataReducer, initialState);
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const stateRef = useRef(state);
   
   // Mantener la referencia del estado actualizada
@@ -402,6 +402,13 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
   const fetchUsers = useCallback(async (force = false) => {
     if (!user) return;
     
+    // Solo los administradores pueden obtener la lista de usuarios
+    if (userRole !== 'admin') {
+      console.log('Usuario no es administrador, no se cargarán usuarios');
+      dispatch({ type: 'SET_USERS_SUCCESS', payload: [] });
+      return [];
+    }
+    
     const requestKey = `users-${force}`;
     
     // Si hay una petición pendiente, esperar a que termine
@@ -429,12 +436,13 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         }
 
         const data = await response.json();
-        dispatch({ type: 'SET_USERS_SUCCESS', payload: data.data || [] });
-        return data.data || [];
+        dispatch({ type: 'SET_USERS_SUCCESS', payload: data || [] });
+        return data || [];
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         dispatch({ type: 'SET_USERS_ERROR', payload: errorMessage });
-        throw error;
+        console.warn('Error al obtener usuarios:', errorMessage);
+        return [];
       } finally {
         pendingRequests.delete(requestKey);
       }
@@ -442,7 +450,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
     pendingRequests.set(requestKey, fetchPromise);
     return await fetchPromise;
-  }, [user]);
+  }, [user, userRole]);
 
   // Función para invalidar cache
   const invalidateCache = useCallback((dataType: keyof DashboardDataState) => {
@@ -451,26 +459,61 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
   // Función para refrescar todos los datos
   const refreshAll = useCallback(async () => {
-    await Promise.all([
+    // Crear array de promesas basado en el rol del usuario
+    const promises = [
       fetchMedicalServices(true),
       fetchDoctorServices(true),
       fetchPatients(true),
-      fetchUsers(true),
-    ]);
-  }, [fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
+    ];
+    
+    const dataTypes = ['servicios médicos', 'servicios de doctores', 'pacientes'];
+    
+    // Solo agregar fetchUsers si el usuario es admin
+    if (userRole === 'admin') {
+      promises.push(fetchUsers(true));
+      dataTypes.push('usuarios');
+    }
+    
+    // Ejecutar todas las peticiones de forma independiente para que si una falla, las otras continúen
+    const results = await Promise.allSettled(promises);
+    
+    // Log de errores si los hay, pero no fallar completamente
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.warn(`Error al refrescar ${dataTypes[index]}:`, result.reason);
+      }
+    });
+  }, [fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers, userRole]);
 
   // Función estable para cargar datos iniciales
   const loadInitialData = useCallback(() => {
     if (user) {
-      // Cargar datos de forma paralela pero sin bloquear la UI
-      Promise.all([
+      // Crear array de promesas basado en el rol del usuario
+      const promises = [
         fetchMedicalServices(),
         fetchDoctorServices(),
         fetchPatients(),
-        fetchUsers(),
-      ]).catch(console.error);
+      ];
+      
+      const dataTypes = ['servicios médicos', 'servicios de doctores', 'pacientes'];
+      
+      // Solo agregar fetchUsers si el usuario es admin
+      if (userRole === 'admin') {
+        promises.push(fetchUsers());
+        dataTypes.push('usuarios');
+      }
+      
+      // Cargar datos de forma paralela pero sin bloquear la UI
+      // Usar Promise.allSettled para que si una petición falla, las otras continúen
+      Promise.allSettled(promises).then((results) => {
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            console.warn(`Error al cargar ${dataTypes[index]}:`, result.reason);
+          }
+        });
+      });
     }
-  }, [user, fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
+  }, [user, userRole, fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers]);
 
   // Cargar datos iniciales cuando el usuario esté disponible
   useEffect(() => {
