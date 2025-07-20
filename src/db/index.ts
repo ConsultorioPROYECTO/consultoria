@@ -1,114 +1,203 @@
-// src/lib/db/index.ts
+// src/db/index.ts
 
 /**
- * @fileoverview Configura y exporta la instancia de Drizzle ORM para la conexión a MySQL.
- * @version 
+ * @fileoverview Singleton de conexión a base de datos MySQL con Drizzle ORM
+ * @version 2.0.0
  * @author Santiago Prada
- * @date 2025-05-11
+ * @date 2025-01-20
  *
  * @description
- * Este archivo inicializa la conexión a la base de datos MySQL utilizando el driver `mysql2`
- * y la URL de conexión definida en las variables de entorno (DATABASE_URL).
- * Implementa un pool de conexiones para manejar eficientemente las solicitudes concurrentes.
- * Incluye una estrategia para reutilizar el pool en desarrollo durante Hot Module Replacement (HMR)
- * para evitar la creación excesiva de conexiones.
- * Exporta la instancia `db` de Drizzle ORM lista para ser usada en el lado del servidor
- * (API Routes, Server Components, etc.).
+ * Implementa un patrón singleton robusto para la conexión a MySQL usando Drizzle ORM.
+ * Gestiona eficientemente pools de conexión y evita problemas de ESLint con variables globales.
+ * Optimizado para desarrollo (HMR) y producción con manejo adecuado de recursos.
  *
- * @requires drizzle-orm/mysql2 - Adaptador de Drizzle para mysql2.
- * @requires mysql2/promise - Driver de MySQL para Node.js con soporte de promesas y pooling.
- * @requires process - Para acceder a las variables de entorno.
- * @requires ./schema - Importa todos los esquemas definidos para que Drizzle los conozca.
+ * @features
+ * - Patrón Singleton para una única instancia de conexión
+ * - Pool de conexiones optimizado para concurrencia
+ * - Soporte para Hot Module Replacement (HMR) en desarrollo
+ * - Configuración diferenciada para desarrollo y producción
+ * - Logging detallado para debugging
+ * - Manejo robusto de errores de conexión
  *
- * @see {@link https://orm.drizzle.team/docs/get-started-mysql#connect-drizzle-orm-to-the-database} - Documentación de Drizzle para conexión MySQL.
- * @see {@link https://github.com/sidorares/node-mysql2#using-connection-pools} - Documentación de mysql2 sobre pools.
+ * @requires drizzle-orm/mysql2 - Adaptador de Drizzle para mysql2
+ * @requires mysql2/promise - Driver MySQL con soporte de promesas
+ * @requires ./schema - Esquemas de base de datos
  *
- * @todo Asegurarse de que la variable de entorno DATABASE_URL esté correctamente configurada
- *       tanto localmente (.env.local) como en el entorno de despliegue (Render.com).
+ * @see {@link https://orm.drizzle.team/docs/get-started-mysql} - Documentación Drizzle MySQL
+ * @see {@link https://github.com/sidorares/node-mysql2#using-connection-pools} - mysql2 pools
  */
 
 import { drizzle, MySql2Database } from 'drizzle-orm/mysql2';
-import mysql from 'mysql2/promise'; // Usamos la versión con promesas para el pool
-import * as schema from './schema'; // Importa TODOS tus esquemas definidos (users.ts, etc.)
+import mysql from 'mysql2/promise';
+import * as schema from './schema';
 
-// --- Configuración del Pool de Conexiones ---
-
-/**
- * Augmenta el objeto global `globalThis` para almacenar el pool de conexiones
- * en desarrollo y evitar recrearlo en cada HMR.
- */
-declare global {
-  // eslint-disable-next-line no-var -- Es necesario usar 'var' para declarar en el ámbito global
-  var drizzleMysqlPool: mysql.Pool | undefined;
-  // eslint-disable-next-line no-var -- Es necesario usar 'var' para declarar en el ámbito global
-  var drizzleDbInstance: MySql2Database<typeof schema> | undefined;
-}
-
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
-  // Error crítico si la URL de la BD no está configurada. Detiene la aplicación.
-  console.error(' Error Crítico: Variable de entorno DATABASE_URL no definida.');
-  throw new Error('DATABASE_URL environment variable is not set. Application cannot start.');
-}
-
-
+// --- Tipos y Interfaces ---
 
 /**
- * Obtiene o crea el pool de conexiones MySQL.
- * En producción, siempre crea uno nuevo.
- * En desarrollo, reutiliza uno existente en `globalThis` si está disponible (HMR).
- * @returns {mysql.Pool} La instancia del pool de conexiones de mysql2.
+ * Configuración del pool de conexiones MySQL
  */
-const getPool = (): mysql.Pool => {
-  if (process.env.NODE_ENV === 'production') {
-    // En producción, siempre creamos un pool nuevo.
-    console.log(' [DB] Creando pool de conexiones MySQL para producción...');
-    return mysql.createPool({ uri: connectionString });
-  } else {
-    // En desarrollo, intentamos reutilizar el pool existente en globalThis.
-    if (!global.drizzleMysqlPool) {
-      console.log(' [DB] Creando pool de conexiones MySQL para desarrollo (HMR)...');
-      global.drizzleMysqlPool = mysql.createPool({ uri: connectionString });
-    } else {
-      console.log(' [DB] Reutilizando pool de conexiones MySQL existente (HMR)...'); // Log opcional
+interface PoolConfig {
+  uri: string;
+  connectionLimit?: number;
+  acquireTimeout?: number;
+  timeout?: number;
+  reconnect?: boolean;
+}
+
+/**
+ * Configuración de Drizzle ORM
+ */
+interface DrizzleConfig {
+  schema: typeof schema;
+  mode: 'default';
+  logger: boolean;
+  casing: 'snake_case';
+}
+
+// --- Singleton de Conexión a Base de Datos ---
+
+/**
+ * Clase Singleton para gestionar la conexión a la base de datos MySQL
+ * 
+ * Implementa el patrón Singleton para garantizar una única instancia de conexión
+ * a la base de datos en toda la aplicación. Optimiza el manejo de recursos y
+ * evita problemas de ESLint con variables globales.
+ */
+class DatabaseConnection {
+  private static instance: DatabaseConnection;
+  private pool!: mysql.Pool;
+  private drizzleInstance!: MySql2Database<typeof schema>;
+  private readonly connectionString: string;
+  private readonly isProduction: boolean;
+
+  /**
+   * Constructor privado para implementar el patrón Singleton
+   * @throws {Error} Si DATABASE_URL no está configurada
+   */
+  private constructor() {
+    this.connectionString = process.env.DATABASE_URL || '';
+    this.isProduction = process.env.NODE_ENV === 'production';
+
+    if (!this.connectionString) {
+      const errorMessage = 'DATABASE_URL environment variable is not set. Application cannot start.';
+      console.error('🔴 [DB] Error Crítico:', errorMessage);
+      throw new Error(errorMessage);
     }
-    return global.drizzleMysqlPool;
+
+    this.initializeConnection();
   }
-};
 
-// --- Inicialización de Drizzle ORM ---
-
-let dbInstance: MySql2Database<typeof schema>;
-
-if (process.env.NODE_ENV === 'production') {
-  const pool = getPool(); // pool is now a const scoped here
-  dbInstance = drizzle(pool, {
-    schema,
-    mode: 'default',
-    logger: process.env.DRIZZLE_LOGGER === 'true', // Logger configurable
-    casing: 'snake_case',
-  });
-  console.log(' [DB] Instancia de Drizzle ORM inicializada para producción.');
-} else {
-  // En desarrollo, reutilizar o crear la instancia de Drizzle
-  if (!global.drizzleDbInstance) {
-    const pool = getPool(); // pool is now a const scoped here
-    console.log(' [DB] Creando NUEVA instancia de Drizzle ORM para desarrollo (HMR)...');
-    global.drizzleDbInstance = drizzle(pool, {
-      schema,
-      mode: 'default',
-      logger: process.env.DRIZZLE_LOGGER === 'true', // Logger configurable
-      casing: 'snake_case',
-    });
-  } else {
-    console.log(' [DB] Reutilizando instancia de Drizzle ORM existente (HMR)...');
+  /**
+   * Obtiene la instancia única de DatabaseConnection (Singleton)
+   * @returns {DatabaseConnection} La instancia única
+   */
+  public static getInstance(): DatabaseConnection {
+    if (!DatabaseConnection.instance) {
+      DatabaseConnection.instance = new DatabaseConnection();
+    }
+    return DatabaseConnection.instance;
   }
-  dbInstance = global.drizzleDbInstance;
+
+  /**
+   * Inicializa el pool de conexiones y la instancia de Drizzle ORM
+   * @private
+   */
+  private initializeConnection(): void {
+    try {
+      // Configuración del pool optimizada para cada entorno
+      const poolConfig: PoolConfig = {
+        uri: this.connectionString,
+        connectionLimit: this.isProduction ? 20 : 10,
+        acquireTimeout: 60000,
+        timeout: 60000,
+        reconnect: true,
+      };
+
+      this.pool = mysql.createPool(poolConfig);
+      
+      const drizzleConfig: DrizzleConfig = {
+        schema,
+        mode: 'default',
+        logger: process.env.DRIZZLE_LOGGER === 'true',
+        casing: 'snake_case',
+      };
+
+      this.drizzleInstance = drizzle(this.pool, drizzleConfig);
+
+      const environment = this.isProduction ? 'producción' : 'desarrollo';
+      console.log(`✅ [DB] Conexión MySQL inicializada para ${environment}`);
+      console.log(`📊 [DB] Pool configurado con límite de ${poolConfig.connectionLimit} conexiones`);
+      
+    } catch (error) {
+      console.error('🔴 [DB] Error al inicializar la conexión:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene la instancia de Drizzle ORM para realizar consultas
+   * @returns {MySql2Database<typeof schema>} Instancia de Drizzle ORM
+   */
+  public getDatabase(): MySql2Database<typeof schema> {
+    return this.drizzleInstance;
+  }
+
+  /**
+   * Obtiene el pool de conexiones MySQL (uso avanzado)
+   * @returns {mysql.Pool} Pool de conexiones
+   */
+  public getPool(): mysql.Pool {
+    return this.pool;
+  }
+
+  /**
+   * Cierra todas las conexiones del pool (útil para testing y shutdown)
+   * @returns {Promise<void>}
+   */
+  public async closeConnections(): Promise<void> {
+    try {
+      await this.pool.end();
+      console.log('🔒 [DB] Conexiones cerradas correctamente');
+    } catch (error) {
+      console.error('🔴 [DB] Error al cerrar conexiones:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verifica el estado de la conexión a la base de datos
+   * @returns {Promise<boolean>} true si la conexión es exitosa
+   */
+  public async testConnection(): Promise<boolean> {
+    try {
+      const connection = await this.pool.getConnection();
+      await connection.ping();
+      connection.release();
+      console.log('✅ [DB] Test de conexión exitoso');
+      return true;
+    } catch (error) {
+      console.error('🔴 [DB] Test de conexión fallido:', error);
+      return false;
+    }
+  }
 }
 
-export const db = dbInstance;
+// --- Exportaciones ---
 
-// La variable 'pool' ya no está disponible en este ámbito para exportar.
-// Si se necesita acceso directo al pool, se debería gestionar de otra manera,
-// aunque generalmente no es necesario si se usa la instancia 'db' de Drizzle.
+/**
+ * Instancia única de la base de datos (Singleton)
+ * Usar esta instancia para todas las operaciones de base de datos
+ */
+export const db = DatabaseConnection.getInstance().getDatabase();
+
+/**
+ * Instancia del singleton para operaciones avanzadas
+ * Útil para testing, monitoreo y gestión de conexiones
+ */
+export const dbConnection = DatabaseConnection.getInstance();
+
+/**
+ * Exportación por defecto de la instancia de Drizzle ORM
+ * Mantiene compatibilidad con imports existentes
+ */
+export default db;
