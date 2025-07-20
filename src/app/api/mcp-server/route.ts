@@ -524,10 +524,80 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Bad Request' }, { status: 400 });
   }
 
-  // Handle the request
-  const res = NextResponse.next();
-  await transport.handleRequest(req as unknown as IncomingMessage, res as unknown as ServerResponse, body);
-  return res;
+  // Create a mock response object that mimics ServerResponse
+  const mockResponse = {
+    writeHead: (statusCode: number, headers?: Record<string, string>) => {
+      // Store status and headers for later use
+      mockResponse._statusCode = statusCode;
+      mockResponse._headers = { ...mockResponse._headers, ...headers };
+      return mockResponse; // Return this for method chaining
+    },
+    setHeader: (name: string, value: string) => {
+      mockResponse._headers[name] = value;
+      return mockResponse;
+    },
+    write: (chunk: string) => {
+      mockResponse._body += chunk;
+      return mockResponse;
+    },
+    end: (chunk?: string) => {
+      if (chunk) mockResponse._body += chunk;
+      mockResponse._finished = true;
+      return mockResponse;
+    },
+    // Add EventEmitter methods
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    on: (_event: string, _listener: (...args: unknown[]) => void) => {
+      // Mock implementation - just store listeners if needed
+      return mockResponse;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    once: (_event: string, _listener: (...args: unknown[]) => void) => {
+      return mockResponse;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    emit: (_event: string, ..._args: unknown[]) => {
+      return true;
+    },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    removeListener: (_event: string, _listener: (...args: unknown[]) => void) => {
+      return mockResponse;
+    },
+    // Add additional properties that ServerResponse might have
+    headersSent: false,
+    statusCode: 200,
+    statusMessage: 'OK',
+    _statusCode: 200,
+    _headers: {} as Record<string, string>,
+    _body: '',
+    _finished: false,
+  };
+
+  // Create a mock request object that mimics IncomingMessage
+  const mockRequest = {
+    headers: {
+      accept: req.headers.get('accept'),
+      'content-type': req.headers.get('content-type'),
+      ...Object.fromEntries(req.headers.entries())
+    },
+    method: req.method,
+    url: req.url,
+  };
+
+  // Handle the request with the mock response
+  await transport.handleRequest(
+    mockRequest as unknown as IncomingMessage,
+    mockResponse as unknown as ServerResponse,
+    body
+  );
+
+
+
+  // Return the response using Next.js Response API
+  return new Response(mockResponse._body, {
+    status: mockResponse._statusCode,
+    headers: mockResponse._headers,
+  });
 }
 
 export async function GET(req: NextRequest) {
@@ -544,7 +614,46 @@ async function handleSessionRequest(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid or missing session ID' }, { status: 400 });
   }
   const transport = transports[sessionId];
-  const res = NextResponse.next();
-  await transport.handleRequest(req as unknown as IncomingMessage, res as unknown as ServerResponse);
-  return res;
+  
+  // Create a mock response object that mimics ServerResponse
+  const mockResponse = {
+    writeHead: (statusCode: number, headers?: Record<string, string>) => {
+      mockResponse._statusCode = statusCode;
+      mockResponse._headers = { ...mockResponse._headers, ...headers };
+      return mockResponse; // Return this for method chaining
+    },
+    setHeader: (name: string, value: string) => {
+      mockResponse._headers[name] = value;
+      return mockResponse;
+    },
+    write: (chunk: string) => {
+      mockResponse._body += chunk;
+      return mockResponse;
+    },
+    end: (chunk?: string) => {
+      if (chunk) mockResponse._body += chunk;
+      mockResponse._finished = true;
+      return mockResponse;
+    },
+    // Add additional properties that ServerResponse might have
+    headersSent: false,
+    statusCode: 200,
+    statusMessage: 'OK',
+    _statusCode: 200,
+    _headers: {} as Record<string, string>,
+    _body: '',
+    _finished: false,
+  };
+
+  // Handle the request with the mock response
+  await transport.handleRequest(
+    req as unknown as IncomingMessage,
+    mockResponse as unknown as ServerResponse
+  );
+
+  // Return the response using Next.js Response API
+  return new Response(mockResponse._body, {
+    status: mockResponse._statusCode,
+    headers: mockResponse._headers,
+  });
 }
