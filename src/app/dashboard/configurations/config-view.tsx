@@ -11,7 +11,7 @@ import {
   Plug
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AppearanceSection } from "../com/AppearanceSection"
+import { AppearanceSection } from "./_compo/AppearanceSection"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useTheme } from "next-themes"
 import { useUIStyle } from "@/app/context/UIStyleContext"
@@ -57,7 +57,12 @@ export default function ConfigView() {
 
   useEffect(() => {
     if (theme) {
-      setSelectedTheme(theme?.replace('-dark', '') || 'system');
+      // Handle 'system' theme separately
+      if (theme === 'system') {
+        setSelectedTheme('system');
+      } else {
+        setSelectedTheme(theme?.replace('-dark', '') || 'system');
+      }
     }
   }, [theme]);
 
@@ -77,8 +82,13 @@ export default function ConfigView() {
   const handleThemeChange = (value: string) => {
     setSelectedTheme(value);
     // Apply the theme immediately while preserving the current mode (light/dark)
-    const newTheme = theme?.endsWith('-dark') ? `${value}-dark` : value;
-    setTheme(newTheme);
+    // For 'system' theme, don't append '-dark' suffix
+    if (value === 'system') {
+      setTheme('system');
+    } else {
+      const newTheme = theme?.endsWith('-dark') ? `${value}-dark` : value;
+      setTheme(newTheme);
+    }
   };
 
   const renderSectionContent = () => {

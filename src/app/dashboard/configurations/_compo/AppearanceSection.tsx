@@ -44,6 +44,13 @@ export function AppearanceSection({ selectedTheme, onThemeChange }: AppearanceSe
             >
               Vercel
             </Button>
+            <Button
+              variant={selectedTheme === 'system' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onThemeChange('system')}
+            >
+              Sistema
+            </Button>
           </div>
         </div>
         
@@ -57,17 +64,19 @@ export function AppearanceSection({ selectedTheme, onThemeChange }: AppearanceSe
           </div>
           <div className="flex gap-2 justify-self-end">
             <Button
-              variant={!theme?.endsWith('-dark') ? 'default' : 'outline'}
+              variant={!theme?.endsWith('-dark') && selectedTheme !== 'system' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTheme(selectedTheme)}
+              onClick={() => selectedTheme === 'system' ? setTheme('system') : setTheme(selectedTheme)}
+              disabled={selectedTheme === 'system'}
             >
               <Sun className="h-4 w-4 mr-2" />
               Claro
             </Button>
             <Button
-              variant={theme?.endsWith('-dark') ? 'default' : 'outline'}
+              variant={theme?.endsWith('-dark') && selectedTheme !== 'system' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setTheme(`${selectedTheme}-dark`)}
+              onClick={() => selectedTheme === 'system' ? setTheme('system') : setTheme(`${selectedTheme}-dark`)}
+              disabled={selectedTheme === 'system'}
             >
               <Moon className="h-4 w-4 mr-2" />
               Oscuro

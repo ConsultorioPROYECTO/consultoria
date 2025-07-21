@@ -587,8 +587,30 @@ function ThemeSwitcher() {
     return null;
   }
 
+  // Determine if current theme is dark mode
+  const isDarkMode = theme?.endsWith('-dark');
+
+  const handleThemeChange = (value: string) => {
+    if (value === 'system') {
+      setTheme('system');
+    } else if (value === 'light') {
+      setTheme('theme-vercel');
+    } else if (value === 'dark') {
+      setTheme('theme-vercel-dark');
+    }
+  };
+
+  // Determine active tab based on current theme
+  const getActiveTab = () => {
+    if (theme === 'system') return 'system';
+    if (theme?.includes('vercel')) {
+      return isDarkMode ? 'dark' : 'light';
+    }
+    return 'system';
+  };
+
   return (
-    <Tabs defaultValue={theme} onValueChange={setTheme} className="w-[200px]">
+    <Tabs defaultValue={getActiveTab()} onValueChange={handleThemeChange} className="w-[200px]">
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="light" title="Cambiar a tema claro">
           <Sun className="h-4 w-4" />
