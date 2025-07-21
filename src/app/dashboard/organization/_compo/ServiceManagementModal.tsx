@@ -354,81 +354,102 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
     onSave(formData);
   };
 
-  const FormContent = () => (
-    <>
-      {isMobile ? (
-        <DrawerHeader>
-          <DrawerTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DrawerTitle>
-        </DrawerHeader>
-      ) : (
-        <DialogHeader>
-          <DialogTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DialogTitle>
-        </DialogHeader>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-4 p-4">
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-          <div>
-            <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
-            <Input id="name" name="name" value={formData.name || ''} onChange={handleChange} required />
-          </div>
-          <div>
-            <Label htmlFor="code" className="text-base font-medium">Código</Label>
-            <Input id="code" name="code" value={formData.code || ''} onChange={handleChange} required />
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="category" className="text-base font-medium">Categoría (Especialidad)</Label>
-          <Input id="category" name="category" value={formData.category || ''} onChange={handleChange} required />
-        </div>
-        <div>
-          <Label htmlFor="description" className="text-base font-medium">Descripción</Label>
-          <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} />
-        </div>
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
-          <div>
-            <Label htmlFor="durationMinutes" className="text-base font-medium">Duración (min)</Label>
-            <Input id="durationMinutes" name="durationMinutes" type="number" value={formData.durationMinutes || ''} onChange={handleChange} required />
-          </div>
-          <div>
-            <Label htmlFor="basePrice" className="text-base font-medium">Precio ($)</Label>
-            <Input id="basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
-          <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
-        </div>
-        {isMobile ? (
-          <DrawerFooter className="flex flex-row gap-2 pt-4">
-            <DrawerClose asChild>
-              <Button type="button" variant="outline" className="flex-1">Cancelar</Button>
-            </DrawerClose>
-            <Button type="submit" className="flex-1">Guardar</Button>
-          </DrawerFooter>
-        ) : (
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Cancelar</Button>
-            </DialogClose>
-            <Button type="submit">Guardar</Button>
-          </DialogFooter>
-        )}
-      </form>
-    </>
-  );
-
   return (
     <>
       {isMobile ? (
         <Drawer open={isOpen} onOpenChange={onOpenChange}>
           <DrawerContent className="max-h-[90vh] overflow-hidden">
-            <FormContent />
+            <DrawerHeader>
+              <DrawerTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DrawerTitle>
+            </DrawerHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 p-4">
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                <div>
+                  <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
+                  <Input id="name" name="name" value={formData.name || ''} onChange={handleChange} required />
+                </div>
+                <div>
+                  <Label htmlFor="code" className="text-base font-medium">Código</Label>
+                  <Input id="code" name="code" value={formData.code || ''} onChange={handleChange} required />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="category" className="text-base font-medium">Categoría (Especialidad)</Label>
+                <Input id="category" name="category" value={formData.category || ''} onChange={handleChange} required />
+              </div>
+              <div>
+                <Label htmlFor="description" className="text-base font-medium">Descripción</Label>
+                <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} />
+              </div>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                <div>
+                  <Label htmlFor="durationMinutes" className="text-base font-medium">Duración (min)</Label>
+                  <Input id="durationMinutes" name="durationMinutes" type="number" value={formData.durationMinutes || ''} onChange={handleChange} required />
+                </div>
+                <div>
+                  <Label htmlFor="basePrice" className="text-base font-medium">Precio ($)</Label>
+                  <Input id="basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
+                <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
+              </div>
+              <DrawerFooter className="flex flex-row gap-2 pt-4">
+                <DrawerClose asChild>
+                  <Button type="button" variant="outline" className="flex-1">Cancelar</Button>
+                </DrawerClose>
+                <Button type="submit" className="flex-1">Guardar</Button>
+              </DrawerFooter>
+            </form>
           </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
           <DialogContent>
-            <FormContent />
+            <DialogHeader>
+              <DialogTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4 p-4">
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                <div>
+                  <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
+                  <Input id="name" name="name" value={formData.name || ''} onChange={handleChange} required />
+                </div>
+                <div>
+                  <Label htmlFor="code" className="text-base font-medium">Código</Label>
+                  <Input id="code" name="code" value={formData.code || ''} onChange={handleChange} required />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="category" className="text-base font-medium">Categoría (Especialidad)</Label>
+                <Input id="category" name="category" value={formData.category || ''} onChange={handleChange} required />
+              </div>
+              <div>
+                <Label htmlFor="description" className="text-base font-medium">Descripción</Label>
+                <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} />
+              </div>
+              <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+                <div>
+                  <Label htmlFor="durationMinutes" className="text-base font-medium">Duración (min)</Label>
+                  <Input id="durationMinutes" name="durationMinutes" type="number" value={formData.durationMinutes || ''} onChange={handleChange} required />
+                </div>
+                <div>
+                  <Label htmlFor="basePrice" className="text-base font-medium">Precio ($)</Label>
+                  <Input id="basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
+                <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Cancelar</Button>
+                </DialogClose>
+                <Button type="submit">Guardar</Button>
+              </DialogFooter>
+            </form>
           </DialogContent>
         </Dialog>
       )}
