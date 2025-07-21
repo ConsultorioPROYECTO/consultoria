@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus, ChevronsUpDown, Check } from 'lucide-react';
+import { UserPlus, ChevronsUpDown, Check, Mail, UserCog } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Popover,
@@ -24,12 +24,14 @@ import { useAuth } from '../../../context/AuthContext';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
   Drawer,
   DrawerContent,
+  DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
@@ -133,10 +135,12 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
   }, []);
 
   const formContent = (
-    <div className="space-y-4">
       <div className="grid gap-4">
         <div className="grid gap-2">
-          <Label htmlFor="staffEmail">Email</Label>
+          <Label htmlFor="staffEmail">
+            <Mail className="w-4 h-4" />
+            Email
+          </Label>
           <Input 
             id="staffEmail" 
             type="email"
@@ -148,7 +152,10 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
         </div>
         
         <div className="grid gap-2">
-          <Label htmlFor="staffRole">Rol</Label>
+          <Label htmlFor="staffRole">
+            <UserCog className="w-4 h-4" />
+            Rol
+          </Label>
           <Popover open={roleOpen} onOpenChange={setRoleOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -216,7 +223,6 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
          </div>
        </div>
       </div>
-    </div>
   );
 
   if (isMobile) {
@@ -225,6 +231,9 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
         <DrawerContent className="max-h-[90vh]">
           <DrawerHeader>
             <DrawerTitle>Agregar Nuevo Personal</DrawerTitle>
+            <DrawerDescription>
+              Invita a nuevos personal a tu organización.
+            </DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4 overflow-y-auto">
             {formContent}
@@ -238,12 +247,11 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            <div className="flex items-center justify-between">
-              <div className="flex flex-row items-center gap-2">
-                <UserPlus className="h-5 w-5 mr-2 text-primary" />
-                <h3 className="text-lg font-semibold">Agregar Nuevo Personal</h3>
-              </div>
+          <DialogTitle>Agregar Nuevo Personal</DialogTitle>
+          <DialogDescription>
+            Invita a nuevos personal a tu organización.
+          </DialogDescription>
+
               {/*{!isMobile && (
                 <Button
                   variant="ghost"
@@ -254,8 +262,7 @@ export function AddStaffForm({ isOpen, onClose, onAddStaff }: AddStaffFormProps)
                   <X className="h-4 w-4 text-secondary" />
                 </Button>
               )}*/}
-            </div>
-          </DialogTitle>
+          
         </DialogHeader>
         {formContent}
       </DialogContent>

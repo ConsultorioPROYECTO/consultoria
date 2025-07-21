@@ -55,8 +55,8 @@ function ContactForm({ onSubmit }: { onSubmit: (data: ContactFormData) => void }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit} className="grid gap-4">
+      <div className="grid gap-2">
         <Label htmlFor="name" className="text-sm font-medium">
           <User className="w-4 h-4" />
           Nombre completo
@@ -70,7 +70,7 @@ function ContactForm({ onSubmit }: { onSubmit: (data: ContactFormData) => void }
         />
       </div>
       
-      <div className="space-y-2">
+      <div className="grid gap-2">
         <Label htmlFor="email" className="text-sm font-medium">
           <Mail className="w-4 h-4" />
           Correo electrónico
@@ -85,7 +85,7 @@ function ContactForm({ onSubmit }: { onSubmit: (data: ContactFormData) => void }
         />
       </div>
       
-      <div className="space-y-2">
+      <div className="grid gap-2">
         <Label htmlFor="company" className="text-sm font-medium">
           <Building className="w-4 h-4" />
           Empresa u organización
@@ -99,7 +99,7 @@ function ContactForm({ onSubmit }: { onSubmit: (data: ContactFormData) => void }
         />
       </div>
       
-      <div className="space-y-2">
+      <div className="grid gap-2">
         <Label htmlFor="message" className="text-sm font-medium">
           <MessageSquare className="w-4 h-4" />
           Mensaje
