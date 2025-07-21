@@ -4,7 +4,7 @@
  * @fileoverview Singleton de conexión a base de datos MySQL con Drizzle ORM
  * @version 2.0.0
  * @author Santiago Prada
- * @date 2025-01-20
+ * @date 2025-07-20
  *
  * @description
  * Implementa un patrón singleton robusto para la conexión a MySQL usando Drizzle ORM.

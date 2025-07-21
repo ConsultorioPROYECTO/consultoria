@@ -10,14 +10,21 @@ Esta API permite consultar la disponibilidad de horarios de un doctor específic
 - **Método**: `GET`
 - **Autenticación**: API Key (Header: `X-API-Key`)
 - **Formato de Respuesta**: JSON
-- **Versión**: 1.1.0
+- **Versión**: 1.3.0
+
+**Mejoras recientes:**
+- Añadida autenticación API Key (versión 1.2.0)
+- Integración con ignoreEventId (versión 1.3.0)
+- Optimizaciones de performance
+- Mejoras en validación y manejo de errores (versión 1.3.0)
+- Logging detallado para debugging
 
 ## Autenticación
 
 ### Requerimientos de API Key
 
 ```http
-GET /api/n8n/doctors/123/availability?date=2024-01-15&interval=30
+GET /api/n8n/doctors/123/availability?date=2025-01-15&interval=30
 Headers:
   X-API-Key: your-api-key-here
   Content-Type: application/json
@@ -25,7 +32,6 @@ Headers:
 
 **Variables de Entorno Requeridas:**
 - `N8N_API_KEY`: La API key válida para autenticación
-- `DEFAULT_ORGANIZATION_ID`: ID de la organización por defecto (opcional, default: 1)
 
 ## Parámetros de Entrada
 
@@ -40,7 +46,7 @@ Headers:
 | Parámetro | Tipo | Requerido | Default | Descripción | Validación |
 |-----------|------|-----------|---------|-------------|------------|
 | `date` | string | ✅ | - | Fecha para consultar disponibilidad | Formato YYYY-MM-DD, no puede ser en el pasado |
-| `interval` | string/number | ❌ | 30 | Duración del intervalo en minutos | Entre 5 y 120 minutos, acepta string o number |
+| `interval` | string/number | ❌ | 30 | Duración del intervalo en minutos | Mínimo 5 minutos, acepta string o number |
 
 ### Validaciones Detalladas
 
@@ -55,17 +61,17 @@ Headers:
 - **Validación**: 
   - Formato de fecha válido
   - No puede ser una fecha pasada
-  - Debe ser una fecha real (no 2024-02-30)
+  - Debe ser una fecha real (no 2025-02-30)
 - **Ejemplos**: 
-  - ✅ `"2024-01-15"`
-  - ✅ `"2024-12-31"`
-  - ❌ `"2024-13-01"` (mes inválido)
-  - ❌ `"2023-01-01"` (fecha pasada)
+  - ✅ `"2025-01-15"`
+  - ✅ `"2025-12-31"`
+  - ❌ `"2025-13-01"` (mes inválido)
+  - ❌ `"2024-01-01"` (fecha pasada)
 
 #### interval
 - **Acepta**: String numérico ("30") o number (30)
 - **Conversión**: Automática de string a number
-- **Rango**: 5-120 minutos
+- **Rango**: Mínimo 5 minutos
 - **Default**: 30 minutos
 - **Ejemplos**: `"15"` → `15`, `60` → `60`
 
@@ -76,16 +82,16 @@ Headers:
 ```json
 [
   {
-    "start": "2024-01-15T09:00:00.000Z",
-    "end": "2024-01-15T09:30:00.000Z"
+    "start": "2025-01-15T09:00:00.000Z",
+    "end": "2025-01-15T09:30:00.000Z"
   },
   {
-    "start": "2024-01-15T09:30:00.000Z",
-    "end": "2024-01-15T10:00:00.000Z"
+    "start": "2025-01-15T09:30:00.000Z",
+    "end": "2025-01-15T10:00:00.000Z"
   },
   {
-    "start": "2024-01-15T10:30:00.000Z",
-    "end": "2024-01-15T11:00:00.000Z"
+    "start": "2025-01-15T10:30:00.000Z",
+    "end": "2025-01-15T11:00:00.000Z"
   }
 ]
 ```
@@ -113,27 +119,45 @@ Headers:
 }
 ```
 
+```json
+{
+  "error": "Configuración de API Key no disponible"
+}
+```
+
+```json
+{
+  "error": "Error interno de autenticación"
+}
+```
+
 ### Errores de Validación (400)
 
 ```json
 {
-  "error": "Errores de validación: doctorId: Doctor ID debe ser un número válido, date: Fecha debe estar en formato YYYY-MM-DD"
+  "error": "El parámetro \"date\" es requerido"
 }
 ```
 
 ```json
 {
-  "error": "Errores de validación: interval: Interval debe estar entre 5 y 120 minutos"
+  "error": "El parámetro \"interval\" debe ser un número entre 5 y 120 minutos"
 }
 ```
-
-### Errores de Recurso No Encontrado (404)
 
 ```json
 {
-  "error": "Doctor no encontrado o sin configuración de calendario/horario"
+  "error": "El doctorId no es válido"
 }
 ```
+
+```json
+{
+  "error": "Formato de fecha inválido. Use YYYY-MM-DD."
+}
+```
+
+
 
 ### Errores del Servidor (500)
 
@@ -149,7 +173,7 @@ Headers:
 
 ```bash
 curl -X GET \
-  "https://your-domain.com/api/n8n/doctors/123/availability?date=2024-01-15" \
+  "https://your-domain.com/api/n8n/doctors/123/availability?date=2025-01-15" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json"
 ```
@@ -158,7 +182,7 @@ curl -X GET \
 
 ```bash
 curl -X GET \
-  "https://your-domain.com/api/n8n/doctors/123/availability?date=2024-01-15&interval=15" \
+  "https://your-domain.com/api/n8n/doctors/123/availability?date=2025-01-15&interval=15" \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json"
 ```
@@ -267,15 +291,16 @@ async function getDoctorAvailability(doctorId: string, date: string, interval?: 
    - Confirmar que el header `X-API-Key` esté presente
    - Validar que la API Key sea correcta
 
-2. **Error 404 - Doctor No Encontrado**
+2. **Error 500 - Error Interno del Servidor**
    - Verificar que el doctor existe en la base de datos
    - Confirmar que tiene `calendar_id` configurado
    - Validar que tiene `working_hours` definidos
+   - Revisar logs del servidor para más detalles
 
 3. **Error 400 - Validación**
    - Revisar formato de fecha (YYYY-MM-DD)
    - Verificar que la fecha no sea pasada
-   - Confirmar que el interval esté en rango 5-120
+   - Confirmar que el interval sea mínimo 5 minutos
 
 4. **Array Vacío en Respuesta**
    - El doctor no trabaja ese día
@@ -287,13 +312,15 @@ async function getDoctorAvailability(doctorId: string, date: string, interval?: 
 La API incluye logs detallados para debugging:
 
 ```
-=== DEBUG AVAILABILITY API (N8N) ===
-Doctor ID: 123
-Organization ID: 1
-Calendar ID: doctor@example.com
-Doctor timezone: America/Bogota
-Fecha solicitada: 2024-01-15
-Interval minutes: 30
+API: /api/n8n/doctors/[doctorId]/availability - Request received
+Request Params: date=2025-01-15, interval=30
+Parsed intervalMinutes: 30
+Parsed doctorId: 123
+Attempting to get availability for doctor 123 on 2025-01-15
+Date Range: startDate=2025-01-15T00:00:00.000Z, endDate=2025-01-15T23:59:59.999Z
+Calling getDoctorAvailability...
+Received X available intervals from getDoctorAvailability.
+Generated X final available slots.
 ```
 
 ## Seguridad
@@ -310,7 +337,7 @@ Interval minutes: 30
    - Monitorear uso de Google Calendar API
 
 3. **Validación de Entrada**:
-   - Toda entrada es validada con Zod
+   - Validación estricta de parámetros
    - Sanitización automática de datos
    - Prevención de inyección de código
 
