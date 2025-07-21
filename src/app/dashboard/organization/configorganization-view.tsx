@@ -5,7 +5,6 @@ import { CreateInvitationCard } from "./_compo/CreateInvitationCard";
 import { ServiceManagement } from "./_compo/ServiceManagementCard";
 import { useAuth } from "../../context/AuthContext";
 
-
 export default function OrganizationConfigView() {
   const { user } = useAuth();
   // Obtener y formatear los dos primeros nombres del usuario (primera letra en mayúscula, resto en minúscula)
