@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import Image from 'next/image';
+import { ContactModal } from './components/contact-modal';
 
 // Datos para la sección de beneficios
 const benefits = [
@@ -198,9 +199,11 @@ export default function HomePage() {
             className="mt-8"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
-            <Button asChild size="lg" className="selection:bg-secondary selection:text-primary">
-              <Link href="/signup">Solicitar Acceso</Link>
-            </Button>
+            <ContactModal>
+              <Button size="lg" className="selection:bg-secondary selection:text-primary">
+                Solicitar Acceso
+              </Button>
+            </ContactModal>
           </motion.div>
         </motion.div>
 
@@ -503,9 +506,11 @@ export default function HomePage() {
               show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
             }}
           >
-            <Button asChild size="lg" className="mt-8 selection:bg-secondary selection:text-primary">
-              <Link href="/signup">Solicitar Acceso</Link>
-            </Button>
+            <ContactModal>
+              <Button size="lg" className="mt-8 selection:bg-secondary selection:text-primary">
+                Solicitar Acceso
+              </Button>
+            </ContactModal>
           </motion.div>
         </motion.div>
       </section>
