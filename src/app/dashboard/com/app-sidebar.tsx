@@ -110,7 +110,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     navMain: navMain,
     navSecondary: [
       {
-        title: "Get Help",
+        title: "Obtener ayuda",
         url: "#",
         icon: HelpCircle,
       },
