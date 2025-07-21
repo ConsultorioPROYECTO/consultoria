@@ -57,6 +57,15 @@ export function NavUser({
     setCurrentView('configuration');
   };
 
+  const handleSignOut = async () => {
+    try {
+      setIsDropdownOpen(false); // Cerrar dropdown antes de cerrar sesión
+      await signOut();
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
+  };
+
 
   return (
     <>
@@ -123,7 +132,7 @@ export function NavUser({
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={signOut}>
+                onClick={handleSignOut}>
                 <LogOut />
                 Cerrar sesión
               </DropdownMenuItem>

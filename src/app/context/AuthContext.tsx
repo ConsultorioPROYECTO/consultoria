@@ -284,7 +284,14 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     setError(null);
     try {
       await firebaseSignOut(auth);
-      // `onAuthStateChanged` se encargará de actualizar el estado del usuario a null.
+      // Limpiar estados inmediatamente para evitar errores durante la transición
+      setUser(null);
+      setUserRole(null);
+      setOrganizationId(null);
+      setDoctorId(null);
+      setAssistantId(null);
+      setIsLoadingRole(false);
+      // `onAuthStateChanged` se encargará de confirmar la actualización del estado.
     } catch (err) {
       console.error('Error al cerrar sesión:', err);
       if (err instanceof Error && 'code' in err) {
@@ -297,7 +304,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         } as AuthError);
       }
     } finally {
-      // setLoading(false); // Gestionado por onAuthStateChanged
+      setLoading(false);
     }
   };
 

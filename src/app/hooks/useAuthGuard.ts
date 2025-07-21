@@ -6,28 +6,44 @@ export const useAuthGuard = () => {
   const { user, loading, userRole, organizationId, isLoadingRole } = useAuth();
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
     if (loading || isLoadingRole) return;
 
     if (!user) {
-      router.push('/login');
+      if (!hasRedirected) {
+        setHasRedirected(true);
+        setIsAuthenticated(false);
+        router.push('/login');
+      }
       return;
     }
 
+    // Reset redirect flag when user is present
+    setHasRedirected(false);
+
     if (!userRole || !organizationId) {
       console.error('Error al obtener el rol del usuario');
-      router.push('/login');
+      if (!hasRedirected) {
+        setHasRedirected(true);
+        setIsAuthenticated(false);
+        router.push('/login');
+      }
       return;
     }
 
     if (userRole === 'N/A') {
-      router.push('/onboard');
+      if (!hasRedirected) {
+        setHasRedirected(true);
+        setIsAuthenticated(false);
+        router.push('/onboard');
+      }
       return;
     }
 
     setIsAuthenticated(true);
-  }, [user, userRole, organizationId, loading, isLoadingRole, router]);
+  }, [user, userRole, organizationId, loading, isLoadingRole, router, hasRedirected]);
 
   return {
     isAuthenticated,
