@@ -168,6 +168,12 @@
   }
 }
 
+* {
+  scrollbar-width: thin; /* thin | auto | none */
+  scrollbar-color: rgba(200, 200, 200, 0.4) transparent; /* thumb claro y sutil */
+  scrollbar-gutter: stable both-edges; /* Gutter minimalista en ambos lados */
+}
+
 /* Estilos personalizados para scrollbar (Webkit) */
 ::-webkit-scrollbar {
   width: 6px; /* Ancho de la barra de desplazamiento */
