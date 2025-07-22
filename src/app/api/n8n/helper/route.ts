@@ -28,7 +28,6 @@ import {
 import { eq, and, desc, asc, sql } from 'drizzle-orm';
 // import { z } from 'zod';
 import {
-  createSuccessResponse,
   createErrorResponse,
   API_ERRORS,
   HTTP_STATUS
@@ -301,8 +300,11 @@ async function getOrganizationSummary(organizationId: number, requestId?: string
     const duration = Date.now() - startTime;
     console.log(`${logPrefix} ✅ Resumen obtenido exitosamente en ${duration}ms - Doctores: ${summary.statistics.totalDoctors}, Pacientes: ${summary.statistics.totalPatients}, Servicios: ${summary.statistics.totalServices}, Citas hoy: ${summary.statistics.appointmentsToday}`);
     
+    const responseData = { message: 'Resumen de organización obtenido exitosamente', data: summary };
+    console.log(`${logPrefix} 📤 Respuesta completa que se enviará:`, JSON.stringify(responseData, null, 2));
+    
     return NextResponse.json(
-      createSuccessResponse(summary, 'Resumen de organización obtenido exitosamente'),
+      responseData,
       { status: HTTP_STATUS.OK }
     );
 
@@ -344,8 +346,10 @@ async function getDoctorsWithServices(organizationId: number, requestId?: string
     const duration = Date.now() - startTime;
     console.log(`${logPrefix} ✅ ${doctorsWithServices.length} doctores obtenidos exitosamente en ${duration}ms`);
     
+    const responseData = { message: 'Doctores obtenidos exitosamente', data: doctorsWithServices };
+    
     return NextResponse.json(
-      createSuccessResponse(doctorsWithServices, 'Doctores obtenidos exitosamente'),
+      responseData,
       { status: HTTP_STATUS.OK }
     );
 
@@ -487,8 +491,10 @@ async function getTodayAppointments(organizationId: number, requestId?: string) 
     const duration = Date.now() - startTime;
     console.log(`${logPrefix} ✅ ${todayAppointments.length} citas de hoy obtenidas exitosamente en ${duration}ms`);
     
+    const responseData = { message: 'Citas de hoy obtenidas exitosamente', data: todayAppointments };
+    
     return NextResponse.json(
-      createSuccessResponse(todayAppointments, 'Citas de hoy obtenidas exitosamente'),
+      responseData,
       { status: HTTP_STATUS.OK }
     );
 
@@ -551,8 +557,10 @@ async function getUpcomingAppointments(request: NextRequest, organizationId: num
     const duration = Date.now() - startTime;
     console.log(`${logPrefix} ✅ ${upcomingAppointments.length} citas próximas obtenidas exitosamente en ${duration}ms`);
     
+    const responseData = { message: `Citas próximas (${days} días) obtenidas exitosamente`, data: upcomingAppointments };
+    
     return NextResponse.json(
-      createSuccessResponse(upcomingAppointments, `Citas próximas (${days} días) obtenidas exitosamente`),
+      responseData,
       { status: HTTP_STATUS.OK }
     );
 
@@ -601,8 +609,10 @@ async function getDoctorAvailability(request: NextRequest, organizationId: numbe
     const duration = Date.now() - startTime;
     console.log(`${logPrefix} ✅ Disponibilidad de ${doctorsAvailability.length} doctores obtenida exitosamente en ${duration}ms`);
     
+    const responseData = { message: 'Disponibilidad de doctores obtenida exitosamente', data: doctorsAvailability };
+    
     return NextResponse.json(
-      createSuccessResponse(doctorsAvailability, 'Disponibilidad de doctores obtenida exitosamente'),
+      responseData,
       { status: HTTP_STATUS.OK }
     );
 
@@ -646,8 +656,10 @@ async function getMedicalServices(organizationId: number, requestId?: string) {
     const duration = Date.now() - startTime;
     console.log(`${logPrefix} ✅ ${services.length} servicios médicos obtenidos exitosamente en ${duration}ms`);
     
+    const responseData = { message: 'Servicios médicos obtenidos exitosamente', data: services };
+    
     return NextResponse.json(
-      createSuccessResponse(services, 'Servicios médicos obtenidos exitosamente'),
+      responseData,
       { status: HTTP_STATUS.OK }
     );
 
@@ -742,8 +754,10 @@ async function getAppointmentDetails(request: NextRequest, organizationId: numbe
     const duration = Date.now() - startTime;
     console.log(`${logPrefix} ✅ Detalles de cita obtenidos exitosamente en ${duration}ms`);
     
+    const responseData = { message: 'Detalles de cita obtenidos exitosamente', data: appointmentDetails[0] };
+    
     return NextResponse.json(
-      createSuccessResponse(appointmentDetails[0], 'Detalles de cita obtenidos exitosamente'),
+      responseData,
       { status: HTTP_STATUS.OK }
     );
 

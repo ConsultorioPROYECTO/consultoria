@@ -87,7 +87,7 @@ GET /api/n8n/helper?endpoint=appointments-upcoming&days=14
 
 ### 6. doctor-availability
 
-**Descripción**: Obtiene información de disponibilidad de doctores
+**Descripción**: Obtiene información de doctores
 
 **Parámetros**:
 - `doctorId` (opcional): ID específico del doctor
