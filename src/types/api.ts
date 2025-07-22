@@ -201,6 +201,10 @@ export const API_ERRORS = {
   ASSISTANT_NOT_FOUND: 'Asistente no encontrado',
   ASSIGNMENT_ALREADY_EXISTS: 'La asignación ya existe',
   ASSIGNMENT_NOT_FOUND: 'Asignación no encontrada',
+  BAD_REQUEST: 'Solicitud incorrecta',
+  NOT_FOUND: 'Recurso no encontrado',
+  VALIDATION_ERROR: 'Error de validación',
+  CONFLICT: 'Conflicto con recurso existente',
 } as const;
 
 /**
@@ -234,7 +238,7 @@ export function createSuccessResponse<T>(data: T, message: string, status: numbe
  * @param details Detalles adicionales del error.
  * @param status Código de estado HTTP (por defecto 500).
  */
-export function createErrorResponse(error: string, details?: string, status: number = HTTP_STATUS.INTERNAL_ERROR) {
+export function createErrorResponse(error: string, details?: string | unknown[], status: number = HTTP_STATUS.INTERNAL_ERROR) {
   return NextResponse.json({ error, details }, { status });
 }
 
