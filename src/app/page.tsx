@@ -79,61 +79,61 @@ export default function HomePage() {
 
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
-      {/* Sección 1: Hero de Pantalla Completa */}
-      <section 
-        id="hero"
-        className="relative h-dvh min-h-[600px] w-full grid grid-rows-[auto_1fr_auto] p-4 md:pt-6 md:px-6 md:pb-64 overflow-hidden"
-      >
-        {/* Navegación Superior */}
-        <nav className="relative flex justify-between items-center gap-4">
-          {/* Logo o Título */}
-          <Link href="/" className="text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground">
-            Irina 
-          </Link>
-          
-          {/* Enlaces Centrales para Escritorio */}
-          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-6">
+      {/* Navegación Superior Fija */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 pt-3 md:pt-3 bg-gradient-to-b from-black via-black/50 to-transparent">
+        {/* Logo o Título */}
+        <Link href="/" className="text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground">
+          Irina 
+        </Link>
+        
+        {/* Enlaces Centrales para Escritorio */}
+        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-6">
             <a href="#caracteristicas" onClick={(e) => handleScroll(e, 'caracteristicas')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
               <ArrowUpRight className="h-4 w-4" /> Características
             </a>
             <a href="#faq" onClick={(e) => handleScroll(e, 'faq')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
               <ArrowUpRight className="h-4 w-4" /> FAQ
             </a>
-          </div>
+        </div>
 
-          {/* Botones de Auth para Escritorio */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-              Iniciar sesión
-            </Link>
-            <Button asChild size="sm" className="selection:bg-secondary selection:text-primary">
-              <Link href="/signup">Registro</Link>
-            </Button>
-          </div>
+        {/* Botones de Auth para Escritorio */}
+        <div className="hidden md:flex items-center gap-4">
+          <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+            Iniciar sesión
+          </Link>
+          <Button asChild size="sm" className="selection:bg-secondary selection:text-primary">
+            <Link href="/signup">Registro</Link>
+          </Button>
+        </div>
 
-          {/* Botón de Menú para Móvil */}
-          <div className="md:hidden z-50">
-            <Button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)} 
-              variant="ghost" 
-              size="icon"
-              aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
-            >
-              <AnimatePresence initial={false} mode="wait">
-                <motion.div
-                  key={isMenuOpen ? "x" : "menu"}
-                  initial={{ rotate: 45, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -45, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                </motion.div>
-              </AnimatePresence>
-            </Button>
-          </div>
-        </nav>
+        {/* Botón de Menú para Móvil */}
+        <div className="md:hidden z-50">
+          <Button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+            variant="ghost" 
+            size="icon"
+            aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
+          >
+            <AnimatePresence initial={false} mode="wait">
+              <motion.div
+                key={isMenuOpen ? "x" : "menu"}
+                initial={{ rotate: 45, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: -45, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </motion.div>
+            </AnimatePresence>
+          </Button>
+        </div>
+      </nav>
 
+      {/* Sección 1: Hero de Pantalla Completa */}
+      <section 
+        id="hero"
+        className="relative h-dvh min-h-[600px] w-full grid grid-rows-[1fr_auto] pt-20 p-4 md:pt-24 md:px-6 md:pb-64 overflow-hidden"
+      >
         {/* Drawer para Móvil */}
         <AnimatePresence>
           {isMenuOpen && (
