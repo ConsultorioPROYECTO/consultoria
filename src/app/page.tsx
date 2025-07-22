@@ -520,9 +520,9 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 text-left">
 
           {/* Columna 2: Producto */} 
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Producto</h3>
-            <ul className="space-y-2 text-muted-foreground text-sm">
+          <div className="items-start font-light leading-8">
+            <span className="text-lg text-foreground">Producto</span>
+            <ul className="text-muted-foreground">
               <li><Link href="#caracteristicas" className="hover:text-primary transition-colors">Características</Link></li>
               <li><Link href="#beneficios" className="hover:text-primary transition-colors">Beneficios</Link></li>
               <li><Link href="/signup" className="hover:text-primary transition-colors">Solicitar Beta</Link></li>
@@ -530,9 +530,9 @@ export default function HomePage() {
           </div>
 
           {/* Columna 3: Empresa */} 
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-4">Empresa</h3>
-            <ul className="space-y-2 text-muted-foreground text-sm">
+          <div className="items-start font-light leading-8">
+            <span className="text-lg text-foreground">Empresa</span>
+            <ul className="text-muted-foreground">
               <li><Link href="/about" className="hover:text-primary transition-colors">Sobre Nosotros</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Contacto</Link></li>
               <li><Link href="/careers" className="hover:text-primary transition-colors">Carreras</Link></li>
@@ -540,18 +540,18 @@ export default function HomePage() {
           </div>
 
           {/* Columna 4: Legal */}
-          <div className="flex flex-col items-start md:items-start">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Legal</h3>
-            <ul className="space-y-2 text-muted-foreground text-sm mb-6">
+          <div className="items-start font-light leading-8">
+            <span className="text-lg text-foreground">Legal</span>
+            <ul className="text-muted-foreground">
               <li><Link href="/privacy" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
               <li><Link href="/terms" className="hover:text-primary transition-colors">Términos de Servicio</Link></li>
             </ul>
           </div>
 
           {/* Columna 4 (real): Contacto */}
-          <div className="flex flex-col items-start md:items-start">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Contacto</h3>
-            <ul className="space-y-2 text-muted-foreground text-sm mb-6">
+          <div className="items-start font-light leading-8">
+            <span className="text-lg text-foreground">Contacto</span>
+            <ul className="text-muted-foreground">
               <li><Link href="/contact" className="hover:text-primary transition-colors">Email</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Teléfono</Link></li>
               <li><Link href="/contact" className="hover:text-primary transition-colors">Soporte</Link></li>
