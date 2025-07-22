@@ -80,7 +80,7 @@ export default function HomePage() {
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
       {/* Navegación Superior Fija */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 pt-3 md:pt-3 bg-gradient-to-b from-black via-black/50 to-transparent">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 pt-3 md:pt-3 bg-gradient-to-b from-black/80 via-black/20 to-transparent">
         {/* Logo o Título */}
         <Link href="/" className="text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground">
           Irina 
@@ -568,11 +568,16 @@ export default function HomePage() {
           </div>
 
           {/* Nueva Fila para Irina (Logo y Derechos) */}
-          <div className="col-span-full flex flex-col items-end md:items-center">
-            <h3 className="text-2xl font-bold text-foreground mb-2 selection:bg-primary selection:text-primary-foreground">Irina</h3>
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Irina. Todos los derechos reservados.
-            </p>
+
+
+            <div className="relative col-span-full flex flex-col items-end md:items-center overflow-hidden py-9">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-[10rem] font-extrabold text-foreground opacity-8 select-none">Irina</span>
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-2 selection:bg-primary selection:text-primary-foreground z-10">Irina</h3>
+              <p className="text-sm text-muted-foreground z-10">
+                © {new Date().getFullYear()} Irina. Todos los derechos reservados.
+              </p>
           </div>
         </div>
       </footer>
