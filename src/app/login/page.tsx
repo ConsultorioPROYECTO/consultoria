@@ -21,9 +21,7 @@ function Login() {
               <FeatureCarousel />
             </div>
             <div className="flex items-center justify-center h-full overflow-hidden">
-                <div className='fixed inset-0 flex items-center justify-center lg:hidden pointer-events-none'>
-                    <span className="text-[10rem] font-extrabold text-foreground opacity-8 select-none">Irina</span>
-                </div>
+                
                 <div className="w-full h-full">
                     <Suspense fallback={<div>Cargando...</div>}>
                         <LoginContent />
