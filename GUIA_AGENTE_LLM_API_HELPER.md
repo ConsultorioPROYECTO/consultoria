@@ -164,9 +164,9 @@ Para cada servicio:
 
 ### doctor-availability
 **Cuándo usar**:
-- Consultas sobre disponibilidad específica
-- Verificación de horarios
-- Preparación para agendamiento
+- Obtención de lista completa de doctores registrados
+- Recuperación de identificadores únicos de cada doctor
+- Consulta básica sin detalles de disponibilidad
 
 **Parámetros**:
 - `endpoint="doctor-availability"`
