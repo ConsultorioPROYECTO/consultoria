@@ -7,7 +7,6 @@ import type { AuthFormState, LoginFormData } from '@/app/auth-components/auth-ty
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import LoginGoogle from '../../components/auth/LoginButtonGoogle';
 
 export function LoginForm() {
   const { signInWithEmail, loading } = useAuth();
@@ -60,13 +59,7 @@ export function LoginForm() {
         {formState.isLoading || loading ? 'Procesando...' : 'Continuar'}
       </Button>
       
-      <div className="relative flex py-3 items-center">
-        <div className="flex-grow border-t border-muted"></div>
-        <span className="flex-shrink mx-4 text-xs text-muted-foreground">O CONTINUAR CON</span>
-        <div className="flex-grow border-t border-muted"></div>
-      </div>
 
-      <LoginGoogle />
     </form>
   );
 }

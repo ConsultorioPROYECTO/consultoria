@@ -7,6 +7,8 @@ import {
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
+  DrawerFooter,
+  DrawerClose,
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
@@ -53,11 +55,16 @@ export function LoginContent() {
                   </DrawerDescription>
                 </DrawerHeader>
                 <LoginForm />
+                <DrawerFooter>
+            <DrawerClose asChild>
+              <Button variant="outline">Cancelar</Button>
+            </DrawerClose>
+          </DrawerFooter>
               </DrawerContent>
             </Drawer>
           </div>
             
-          <div className="relative lg:hidden flex items-center">
+          <div className="relative flex items-center">
             <div className="flex-grow border-t border-muted-foreground"></div>
             <span className="flex-shrink mx-4 font-light text-sm text-muted-foreground">O CONTINUAR CON</span>
             <div className="flex-grow border-t border-muted-foreground"></div>
