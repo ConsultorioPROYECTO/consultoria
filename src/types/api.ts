@@ -88,6 +88,7 @@ export interface SyncUserResponse {
     firebaseUid: string;
     email?: string;
     role: string;
+    organizationId?: number | null;
     displayName?: string;
     isActive: boolean;
     createdAt: Date;

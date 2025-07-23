@@ -208,6 +208,8 @@ export async function POST(request: NextRequest) {
       calendarCreated?: boolean;
       calendarId?: string;
       calendarError?: string;
+      userRole?: string;
+       organizationId?: number;
     } = {
       message: 'Usuario sincronizado exitosamente',
       user: {
@@ -220,6 +222,8 @@ export async function POST(request: NextRequest) {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
+      userRole: user.role,
+      organizationId: user.organizationId || undefined,
     };
 
     // Agregar información del calendario si es un doctor
@@ -234,7 +238,7 @@ export async function POST(request: NextRequest) {
     }
 
     return createSuccessResponse(
-      responseData,
+       responseData,
       'Usuario sincronizado exitosamente',
       HTTP_STATUS.OK
     );
