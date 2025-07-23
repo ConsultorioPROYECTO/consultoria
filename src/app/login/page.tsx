@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { Suspense, memo } from 'react';
 import Link from 'next/link';
 import { LoginContent } from './login-form/LoginContent';
 import { geistFont } from '../fonts';
@@ -18,10 +18,15 @@ function Login() {
                 </Link>
             </nav>
             <div className="hidden lg:block">
-                    <FeatureCarousel />
+              <FeatureCarousel />
+            </div>
+            <div className="flex items-center justify-center h-full">
+                
+                <div className="w-full h-screen">
+                    <Suspense fallback={<div>Cargando...</div>}>
+                        <LoginContent />
+                    </Suspense>
                 </div>
-            <div className="flex items-center justify-center h-screen ">
-                <LoginContent />
             </div>
         </main>
     );
