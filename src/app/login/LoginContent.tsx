@@ -2,6 +2,14 @@
 import React, { useState } from 'react';
 import { LoginForm } from '@/app/login/login-form/login-form';
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { extractAuthParams, buildAuthRedirectUrl } from '@/app/auth-components/auth-utils';
 import type { AuthParams } from '@/app/auth-components/auth-types';
 import Link from 'next/link';
@@ -25,21 +33,37 @@ export function LoginContent() {
             Ingresa tus credenciales para acceder a tu cuenta.
           </p>
         </div>
-        {showLoginForm ? (
-          <LoginForm />
-        ) : (
-          <div className="flex flex-col gap-4 w-full">
-            <Button className="w-full h-12 text-base" onClick={() => setShowLoginForm(true)}>
-              Continuar con Email
-            </Button>
-            <div className="relative hidden lg:flex items-center">
+        <div className="flex flex-col gap-4 w-full">
+          {/* Desktop Login Form */}
+          <div className="hidden lg:block w-full">
+            <LoginForm />
+          </div>
+
+          {/* Mobile Drawer for Login Form */}
+          <div className="lg:hidden w-full">
+            <Drawer open={showLoginForm} onOpenChange={setShowLoginForm}>
+              <DrawerTrigger asChild>
+                <Button className="w-full h-12 text-base">Continuar con Email</Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle>Iniciar Sesión con Email</DrawerTitle>
+                  <DrawerDescription>
+                    Ingresa tus credenciales para acceder a tu cuenta.
+                  </DrawerDescription>
+                </DrawerHeader>
+                <LoginForm />
+              </DrawerContent>
+            </Drawer>
+          </div>
+            
+            <div className="relative lg:hidden flex items-center">
               <div className="flex-grow border-t border-muted-foreground"></div>
               <span className="flex-shrink mx-4 font-light text-sm text-muted-foreground">O CONTINUAR CON</span>
               <div className="flex-grow border-t border-muted-foreground"></div>
             </div>
-            <LoginGoogle />
+            <LoginGoogle/>
           </div>
-        )}
               <div className="text-center text-muted-foreground text-sm pb-8">
         ¿No tienes cuenta?{' '}
         <Link href={signupHref} className="underline">
