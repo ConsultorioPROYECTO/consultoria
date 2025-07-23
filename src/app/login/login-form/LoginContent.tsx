@@ -27,7 +27,7 @@ export function LoginContent() {
   const signupHref = buildAuthRedirectUrl('/signup', invitacionCode, role);
 
   return (
-    <div className="flex flex-col h-full items-center justify-end lg:justify-center px-4 py-8">
+    <div className="flex flex-col h-screen items-center justify-end lg:justify-center px-4 py-8">
       <div className='inset-0 flex items-center justify-center lg:hidden pointer-events-none'>
         <span className="text-[10rem] font-extrabold text-foreground opacity-8 select-none">Irina</span>
       </div>
