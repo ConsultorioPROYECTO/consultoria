@@ -25,8 +25,8 @@ export function LoginContent() {
   const signupHref = buildAuthRedirectUrl('/signup', invitacionCode, role);
 
   return (
-    <div className="flex flex-col h-screen items-center justify-center">
-      <div className="flex flex-col gap-4 justify-end md:justify-center w-full max-w-sm flex-grow">
+    <div className="flex flex-col h-full items-center justify-end lg:justify-center px-4 py-8">
+      <div className="flex flex-col gap-4 justify-center w-full max-w-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Iniciar Sesión</h1>
           <p className="text-muted-foreground">
@@ -57,21 +57,20 @@ export function LoginContent() {
             </Drawer>
           </div>
             
-            <div className="relative lg:hidden flex items-center">
-              <div className="flex-grow border-t border-muted-foreground"></div>
-              <span className="flex-shrink mx-4 font-light text-sm text-muted-foreground">O CONTINUAR CON</span>
-              <div className="flex-grow border-t border-muted-foreground"></div>
-            </div>
-            <LoginGoogle/>
+          <div className="relative lg:hidden flex items-center">
+            <div className="flex-grow border-t border-muted-foreground"></div>
+            <span className="flex-shrink mx-4 font-light text-sm text-muted-foreground">O CONTINUAR CON</span>
+            <div className="flex-grow border-t border-muted-foreground"></div>
           </div>
-              <div className="text-center text-muted-foreground text-sm pb-8">
-        ¿No tienes cuenta?{' '}
-        <Link href={signupHref} className="underline">
-          Regístrate
-        </Link>
+          <LoginGoogle/>
+        </div>
+        <div className="text-center text-muted-foreground text-sm mt-4">
+          ¿No tienes cuenta?{' '}
+          <Link href={signupHref} className="underline">
+            Regístrate
+          </Link>
+        </div>
       </div>
-      </div>
-
     </div>
   );
 }
