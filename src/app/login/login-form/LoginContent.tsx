@@ -57,7 +57,7 @@ export function LoginContent() {
                 <LoginForm />
                 <DrawerFooter>
             <DrawerClose asChild>
-              <Button variant="outline">Cancelar</Button>
+              <Button variant="outline" className='h-12'>Cancelar</Button>
             </DrawerClose>
           </DrawerFooter>
               </DrawerContent>

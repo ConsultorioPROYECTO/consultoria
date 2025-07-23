@@ -55,7 +55,7 @@ function ContactForm({ onSubmit }: { onSubmit: (data: ContactFormData) => void }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
+    <form onSubmit={handleSubmit} className="grid gap-4 px-4 lg:px-0">
       <div className="grid gap-2">
         <Label htmlFor="name" className="text-sm font-medium">
           <User className="w-4 h-4" />
@@ -154,10 +154,8 @@ export function ContactModal({ children }: ContactModalProps) {
               Completa el formulario para solicitar acceso a nuestra plataforma.
             </DrawerDescription>
           </DrawerHeader>
-          <div className="px-4">
             <ContactForm onSubmit={handleSubmit} />
-          </div>
-          <DrawerFooter className="pt-2">
+          <DrawerFooter>
             <DrawerClose asChild>
               <Button variant="outline">Cancelar</Button>
             </DrawerClose>

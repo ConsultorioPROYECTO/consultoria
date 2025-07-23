@@ -30,12 +30,13 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid gap-4 p-4 lg:p-0">
+    <form onSubmit={handleSubmit} className="grid grid gap-4 px-4 lg:px-0">
       <div className="space-y-2">
         <Label htmlFor="email">Correo Electrónico</Label>
         <Input 
           id="email" 
           type="email" 
+          className="h-12"
           placeholder="tu@email.com" 
           required 
           value={formData.email}
@@ -49,13 +50,14 @@ export function LoginForm() {
           id="password" 
           type="password" 
           placeholder="Tu contraseña" 
+          className='h-12'
           required 
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           disabled={formState.isLoading || loading}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={formState.isLoading || loading}>
+      <Button type="submit" className="w-full h-12" disabled={formState.isLoading || loading}>
         {formState.isLoading || loading ? 'Procesando...' : 'Continuar'}
       </Button>
       
