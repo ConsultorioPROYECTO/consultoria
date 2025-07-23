@@ -2,7 +2,7 @@
 
 import { Suspense, memo } from 'react';
 import Link from 'next/link';
-import { LoginContent } from './LoginContent';
+import { LoginContent } from './login-form/LoginContent';
 import { geistFont } from '../fonts';
 import { FeatureCarousel } from '../auth-components/FeatureCarousel';
 import { useUserSync } from '../hooks/useUserSync';
