@@ -22,7 +22,7 @@ function Login() {
             </div>
             <div className="flex items-center justify-center h-full overflow-hidden">
                 
-                <div className="w-full h-full">
+                <div className="w-full h-screen">
                     <Suspense fallback={<div>Cargando...</div>}>
                         <LoginContent />
                     </Suspense>
