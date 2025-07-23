@@ -20,14 +20,11 @@ function Login() {
             <div className="hidden lg:block">
               <FeatureCarousel />
             </div>
-            <div className="flex items-center justify-center h-full">
-                
-                <div className="w-full h-screen">
+                <div className="w-screen h-screen">
                     <Suspense fallback={<div>Cargando...</div>}>
                         <LoginContent />
                     </Suspense>
                 </div>
-            </div>
         </main>
     );
 }
