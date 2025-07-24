@@ -11,7 +11,7 @@ function Login() {
     useUserSync();
 
     return (
-        <main className={`grid lg:grid-cols-2 w-full min-h-screen bg-background overflow-hidden ${geistFont.className}`}>
+        <main className={`grid lg:grid-cols-2 w-full min-h-screen bg-background ${geistFont.className}`}>
             <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 pt-3 md:pt-3">
                 <Link href="/" className="flex items-center justify-center text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground h-9">
                     Irina
