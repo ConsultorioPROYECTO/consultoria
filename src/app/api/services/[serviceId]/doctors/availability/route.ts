@@ -268,12 +268,18 @@ export async function GET(
           }
         }
 
-        // Agregar doctor a la respuesta
-        doctorsAvailability.push({
-          idDoctor: doctor.idDoctor,
-          doctorName: doctor.doctorName || 'Doctor',
-          availability: dayAvailability
-        });
+        // Solo agregar doctor si tiene disponibilidad
+        const hasAvailability = Object.keys(dayAvailability).length > 0;
+        if (hasAvailability) {
+          doctorsAvailability.push({
+            idDoctor: doctor.idDoctor,
+            doctorName: doctor.doctorName || 'Doctor',
+            availability: dayAvailability
+          });
+          console.log(`Doctor ${doctor.idDoctor} added with availability for ${Object.keys(dayAvailability).length} days`);
+        } else {
+          console.log(`Doctor ${doctor.idDoctor} skipped - no availability found`);
+        }
 
       } catch (doctorError) {
         console.error(`Error processing doctor ${doctor.idDoctor}:`, doctorError);
