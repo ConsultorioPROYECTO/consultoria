@@ -164,7 +164,7 @@ export default function HomePage() {
 
         {/* Contenido Principal del Hero */}
         <motion.div 
-          className="flex flex-col items-center justify-center text-center p-4"
+          className="flex flex-col gap-4 items-center justify-center text-center p-4"
           initial="hidden"
           animate="show"
           variants={{ 
@@ -179,7 +179,6 @@ export default function HomePage() {
             Irina
           </motion.h1>
           <motion.div 
-            className="mt-2 mb-1"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             <Badge 
@@ -190,13 +189,12 @@ export default function HomePage() {
             </Badge>
           </motion.div>
           <motion.p 
-            className="mt-4 max-w-md md:max-w-xl text-muted-foreground md:text-lg"
+            className="max-w-md md:max-w-xl text-muted-foreground md:text-lg"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             Tu asistente inteligente para la gestión de clínicas. Simplifica la agenda, centraliza expedientes y optimiza la comunicación.
           </motion.p>
           <motion.div 
-            className="mt-8"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             <ContactModal>
@@ -493,7 +491,7 @@ export default function HomePage() {
             ¿Listo para transformar tu clínica?
           </motion.h2>
           <motion.p
-            className="mt-4 max-w-2xl mx-auto text-lg"
+            className="max-w-2xl mx-auto text-lg"
             variants={{
               hidden: { opacity: 0, y: 20 },
               show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -508,7 +506,7 @@ export default function HomePage() {
             }}
           >
             <ContactModal>
-              <Button size="lg" className="mt-8 selection:bg-secondary selection:text-primary">
+              <Button size="lg" className="selection:bg-secondary selection:text-primary">
                 Solicitar Acceso
                 <ArrowUpRight className='h-4 w-4'/>
               </Button>
