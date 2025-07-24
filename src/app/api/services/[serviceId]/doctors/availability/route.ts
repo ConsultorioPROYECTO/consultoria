@@ -58,12 +58,13 @@ export async function GET(
   const limitParam = searchParams.get('limit');
   const summaryOnlyParam = searchParams.get('summaryOnly');
   const dateParam = searchParams.get('date');
+  const startDateParam = searchParams.get('startDate');
   
   // Validar y establecer valores por defecto
   const limit = limitParam ? parseInt(limitParam, 10) : undefined;
   const summaryOnly = summaryOnlyParam === 'true';
   
-  console.debug(`Query params: limit=${limit}, summaryOnly=${summaryOnly}, date=${dateParam}`);
+  console.debug(`Query params: limit=${limit}, summaryOnly=${summaryOnly}, date=${dateParam}, startDate=${startDateParam}`);
 
   if (isNaN(serviceId)) {
     console.error('Validation Error: Invalid serviceId');
@@ -132,13 +133,13 @@ export async function GET(
 
     console.log(`Found ${availableDoctors.length} doctors for service ${serviceId}`);
 
-    // Calcular fechas - usar fecha específica si se proporciona, sino próximos 7 días
+    // Calcular fechas - prioridad: date específico > startDate + 7 días > próximos 7 días desde hoy
     const now = DateTime.now().setZone('America/Bogota');
     let startDate: DateTime;
     let endDate: DateTime;
     
     if (dateParam) {
-      // Validar formato de fecha
+      // Validar formato de fecha específica
       const specificDate = DateTime.fromISO(dateParam, { zone: 'America/Bogota' });
       if (!specificDate.isValid) {
         console.error('Validation Error: Invalid date format');
@@ -150,11 +151,24 @@ export async function GET(
       startDate = specificDate.startOf('day');
       endDate = specificDate.endOf('day');
       console.debug(`Using specific date: ${dateParam}`);
+    } else if (startDateParam) {
+      // Validar formato de fecha de inicio para 7 días
+      const customStartDate = DateTime.fromISO(startDateParam, { zone: 'America/Bogota' });
+      if (!customStartDate.isValid) {
+        console.error('Validation Error: Invalid startDate format');
+        return NextResponse.json(
+          { error: 'Formato de startDate inválido. Use YYYY-MM-DD.' },
+          { status: 400 }
+        );
+      }
+      startDate = customStartDate.startOf('day');
+      endDate = startDate.plus({ days: 7 }).endOf('day');
+      console.debug(`Using custom start date for 7 days: ${startDateParam}`);
     } else {
-      // Usar próximos 7 días por defecto
+      // Usar próximos 7 días por defecto desde hoy
       startDate = now.startOf('day');
       endDate = startDate.plus({ days: 7 }).endOf('day');
-      console.debug('Using default 7-day range');
+      console.debug('Using default 7-day range from today');
     }
     
     console.debug(`Date Range: startDate=${startDate.toISO()}, endDate=${endDate.toISO()}`);
