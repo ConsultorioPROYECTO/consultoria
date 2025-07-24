@@ -202,6 +202,7 @@ export default function HomePage() {
             <ContactModal>
               <Button size="lg" className="selection:bg-secondary selection:text-primary">
                 Solicitar Acceso
+                <ArrowUpRight className='h-4 w-4'/>
               </Button>
             </ContactModal>
           </motion.div>
@@ -235,7 +236,7 @@ export default function HomePage() {
               alt="Mockup de la aplicación"
               width={1000}
               height={1000}
-              className="w-full h-full object-cover"
+              className="w-full h-full p-3 rounded-4xl object-cover"
             />
           </div>
         </motion.div>
@@ -255,7 +256,7 @@ export default function HomePage() {
               alt="Mockup de la aplicación"
               width={1000}
               height={1000}
-              className="w-full h-full object-cover"
+              className="w-full h-full p-3 rounded-4xl object-cover"
             />
           </div>
           {/* Degradado inferior para fusionarse con el fondo */}
@@ -509,6 +510,7 @@ export default function HomePage() {
             <ContactModal>
               <Button size="lg" className="mt-8 selection:bg-secondary selection:text-primary">
                 Solicitar Acceso
+                <ArrowUpRight className='h-4 w-4'/>
               </Button>
             </ContactModal>
           </motion.div>
