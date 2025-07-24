@@ -57,12 +57,13 @@ export async function GET(
   const { searchParams } = new URL(request.url);
   const limitParam = searchParams.get('limit');
   const summaryOnlyParam = searchParams.get('summaryOnly');
+  const dateParam = searchParams.get('date');
   
   // Validar y establecer valores por defecto
   const limit = limitParam ? parseInt(limitParam, 10) : undefined;
   const summaryOnly = summaryOnlyParam === 'true';
   
-  console.debug(`Query params: limit=${limit}, summaryOnly=${summaryOnly}`);
+  console.debug(`Query params: limit=${limit}, summaryOnly=${summaryOnly}, date=${dateParam}`);
 
   if (isNaN(serviceId)) {
     console.error('Validation Error: Invalid serviceId');
@@ -131,10 +132,30 @@ export async function GET(
 
     console.log(`Found ${availableDoctors.length} doctors for service ${serviceId}`);
 
-    // Calcular fechas para los próximos 7 días
+    // Calcular fechas - usar fecha específica si se proporciona, sino próximos 7 días
     const now = DateTime.now().setZone('America/Bogota');
-    const startDate = now.startOf('day');
-    const endDate = startDate.plus({ days: 7 }).endOf('day');
+    let startDate: DateTime;
+    let endDate: DateTime;
+    
+    if (dateParam) {
+      // Validar formato de fecha
+      const specificDate = DateTime.fromISO(dateParam, { zone: 'America/Bogota' });
+      if (!specificDate.isValid) {
+        console.error('Validation Error: Invalid date format');
+        return NextResponse.json(
+          { error: 'Formato de fecha inválido. Use YYYY-MM-DD.' },
+          { status: 400 }
+        );
+      }
+      startDate = specificDate.startOf('day');
+      endDate = specificDate.endOf('day');
+      console.debug(`Using specific date: ${dateParam}`);
+    } else {
+      // Usar próximos 7 días por defecto
+      startDate = now.startOf('day');
+      endDate = startDate.plus({ days: 7 }).endOf('day');
+      console.debug('Using default 7-day range');
+    }
     
     console.debug(`Date Range: startDate=${startDate.toISO()}, endDate=${endDate.toISO()}`);
 
