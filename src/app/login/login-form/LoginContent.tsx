@@ -27,9 +27,8 @@ export function LoginContent() {
   const signupHref = buildAuthRedirectUrl('/signup', invitacionCode, role);
 
   return (
-    <div className="flex flex-col h-full w-full items-center justify-center px-4">
-
-      <div className="flex flex-col gap-4 justify-center max-w-sm">
+    <div className="px-4">
+      <div className="flex flex-col h-full w-full items-center justify-center">
         
         <div className="text-center">
           <h1 className="text-2xl font-bold">Iniciar Sesión</h1>
