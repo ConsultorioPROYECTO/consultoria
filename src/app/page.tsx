@@ -467,7 +467,7 @@ export default function HomePage() {
         className="py-20 md:py-32 px-4 md:px-6 bg-secondary/50 text-foreground text-center"
       >
         <motion.div
-          className="max-w-4xl mx-auto"
+          className="flex flex-col gap-2 items-center justify-center text-center"
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, amount: 0.3 }}
@@ -491,7 +491,7 @@ export default function HomePage() {
             ¿Listo para transformar tu clínica?
           </motion.h2>
           <motion.p
-            className="max-w-2xl mx-auto text-lg"
+            className="max-w-2xl text-lg"
             variants={{
               hidden: { opacity: 0, y: 20 },
               show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -523,9 +523,8 @@ export default function HomePage() {
           <div className="items-start font-light leading-8">
             <span className="text-lg text-foreground">Producto</span>
             <ul className="text-muted-foreground">
-              <li><Link href="#caracteristicas" className="hover:text-primary transition-colors">Características</Link></li>
-              <li><Link href="#beneficios" className="hover:text-primary transition-colors">Beneficios</Link></li>
-              <li><Link href="/signup" className="hover:text-primary transition-colors">Solicitar Beta</Link></li>
+              <li><Link href="#caracteristicas" onClick={(e) => handleScroll(e, 'caracteristicas')} className="hover:text-primary transition-colors">Características</Link></li>
+              <li><Link href="#beneficios" onClick={(e) => handleScroll(e, 'beneficios')} className="hover:text-primary transition-colors">Beneficios</Link></li>
             </ul>
           </div>
 
