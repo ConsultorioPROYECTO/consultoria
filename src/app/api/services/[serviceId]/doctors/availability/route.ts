@@ -14,6 +14,7 @@ import {
   DoctorAvailabilityByDate,
   TimePeriod,
   TimeInterval,
+  IntervalsByPeriodSummary,
 } from '@/types/doctor-availability';
 
 /**
@@ -52,10 +53,29 @@ export async function GET(
   const serviceId = parseInt(resolvedParams.serviceId, 10);
   console.debug(`Parsed serviceId: ${serviceId}`);
 
+  // Extraer parámetros de consulta de la URL
+  const { searchParams } = new URL(request.url);
+  const limitParam = searchParams.get('limit');
+  const summaryOnlyParam = searchParams.get('summaryOnly');
+  
+  // Validar y establecer valores por defecto
+  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+  const summaryOnly = summaryOnlyParam === 'true';
+  
+  console.debug(`Query params: limit=${limit}, summaryOnly=${summaryOnly}`);
+
   if (isNaN(serviceId)) {
     console.error('Validation Error: Invalid serviceId');
     return NextResponse.json(
       { error: 'El serviceId no es válido' },
+      { status: 400 }
+    );
+  }
+  
+  if (limit !== undefined && (isNaN(limit) || limit < 1)) {
+    console.error('Validation Error: Invalid limit parameter');
+    return NextResponse.json(
+      { error: 'El parámetro limit debe ser un número mayor a 0' },
       { status: 400 }
     );
   }
@@ -119,9 +139,13 @@ export async function GET(
     console.debug(`Date Range: startDate=${startDate.toISO()}, endDate=${endDate.toISO()}`);
 
     const doctorsAvailability: DoctorAvailabilityInfo[] = [];
+    
+    // Aplicar límite si se especifica
+    const doctorsToProcess = limit ? availableDoctors.slice(0, limit) : availableDoctors;
+    console.log(`Processing ${doctorsToProcess.length} doctors (limit applied: ${limit || 'none'})`);
 
     // Procesar cada doctor
-    for (const doctor of availableDoctors) {
+    for (const doctor of doctorsToProcess) {
       if (!doctor.calendarId) {
         console.warn(`Doctor ${doctor.idDoctor} has no calendar_id, skipping`);
         continue;
@@ -146,41 +170,80 @@ export async function GET(
         // Organizar disponibilidad por día
         const dayAvailability: DoctorAvailabilityByDate = {};
         
-        for (const interval of availableIntervals) {
-          const intervalStart = interval.start!;
-          const intervalEnd = interval.end!;
-          const dayKey = formatDateToLongSpanish(intervalStart);
+        if (summaryOnly) {
+          // Modo resumen: solo días y períodos, sin intervalos específicos
+          const processedDays = new Set<string>();
+          const dayPeriods: { [day: string]: Set<TimePeriod> } = {};
           
-          // Inicializar el día si no existe
-          if (!dayAvailability[dayKey]) {
+          for (const interval of availableIntervals) {
+            const intervalStart = interval.start!;
+            const intervalEnd = interval.end!;
+            const dayKey = formatDateToLongSpanish(intervalStart);
+            
+            if (!processedDays.has(dayKey)) {
+              processedDays.add(dayKey);
+              dayPeriods[dayKey] = new Set<TimePeriod>();
+            }
+            
+            // Determinar períodos disponibles en este intervalo
+            let currentSlotStart = intervalStart;
+            while (currentSlotStart.plus({ minutes: intervalMinutes }) <= intervalEnd) {
+              const period = getTimePeriod(currentSlotStart.toFormat('HH:mm'));
+              dayPeriods[dayKey].add(period);
+              currentSlotStart = currentSlotStart.plus({ minutes: intervalMinutes });
+            }
+          }
+          
+          // Crear estructura de respuesta sin intervalos específicos
+          for (const [dayKey, periods] of Object.entries(dayPeriods)) {
             dayAvailability[dayKey] = {
-              intervals: {},
+              intervals: Object.fromEntries(
+                Array.from(periods).map(period => [period, "disponible, consulta el día para obtener más detalles."])
+              ) as IntervalsByPeriodSummary,
               timeZone: doctorTimezone
             };
           }
-          
-          // Generar slots de tiempo basados en la duración del servicio
-          let currentSlotStart = intervalStart;
-          while (currentSlotStart.plus({ minutes: intervalMinutes }) <= intervalEnd) {
-            const currentSlotEnd = currentSlotStart.plus({ minutes: intervalMinutes });
+        } else {
+          // Modo completo: incluir todos los intervalos específicos
+          for (const interval of availableIntervals) {
+            const intervalStart = interval.start!;
+            const intervalEnd = interval.end!;
+            const dayKey = formatDateToLongSpanish(intervalStart);
             
-            const timeInterval: TimeInterval = {
-              startTime: currentSlotStart.toFormat('HH:mm'),
-              endTime: currentSlotEnd.toFormat('HH:mm')
-            };
-            
-            // Determinar el período del día
-            const period = getTimePeriod(timeInterval.startTime);
-            
-            // Inicializar el período si no existe
-            if (!dayAvailability[dayKey].intervals[period]) {
-              dayAvailability[dayKey].intervals[period] = [];
+            // Inicializar el día si no existe
+            if (!dayAvailability[dayKey]) {
+              dayAvailability[dayKey] = {
+                intervals: {},
+                timeZone: doctorTimezone
+              };
             }
             
-            // Agregar el intervalo al período correspondiente
-            dayAvailability[dayKey].intervals[period]!.push(timeInterval);
-            
-            currentSlotStart = currentSlotEnd;
+            // Generar slots de tiempo basados en la duración del servicio
+            let currentSlotStart = intervalStart;
+            while (currentSlotStart.plus({ minutes: intervalMinutes }) <= intervalEnd) {
+              const currentSlotEnd = currentSlotStart.plus({ minutes: intervalMinutes });
+              
+              const timeInterval: TimeInterval = {
+                startTime: currentSlotStart.toFormat('HH:mm'),
+                endTime: currentSlotEnd.toFormat('HH:mm')
+              };
+              
+              // Determinar el período del día
+              const period = getTimePeriod(timeInterval.startTime);
+              
+              // Inicializar el período si no existe
+              if (!dayAvailability[dayKey].intervals[period]) {
+                dayAvailability[dayKey].intervals[period] = [];
+              }
+              
+              // Agregar el intervalo al período correspondiente (solo en modo completo)
+              const periodIntervals = dayAvailability[dayKey].intervals[period];
+              if (Array.isArray(periodIntervals)) {
+                periodIntervals.push(timeInterval);
+              }
+              
+              currentSlotStart = currentSlotEnd;
+            }
           }
         }
 

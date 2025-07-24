@@ -21,10 +21,25 @@ export type IntervalsByPeriod = {
 };
 
 /**
+ * Intervalos en modo resumen (solo mensaje descriptivo)
+ */
+export type IntervalsByPeriodSummary = {
+  [K in TimePeriod]?: string;
+};
+
+/**
  * Disponibilidad de un doctor para un día específico
  */
 export type DayAvailability = {
-  intervals: IntervalsByPeriod;
+  intervals: IntervalsByPeriod | IntervalsByPeriodSummary;
+  timeZone: string; // Zona horaria del doctor (ej: "America/Bogota")
+};
+
+/**
+ * Disponibilidad de un doctor para un día específico en modo resumen
+ */
+export type DayAvailabilitySummary = {
+  intervals: IntervalsByPeriodSummary;
   timeZone: string; // Zona horaria del doctor (ej: "America/Bogota")
 };
 

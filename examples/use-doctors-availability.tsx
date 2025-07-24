@@ -7,6 +7,7 @@ import {
   TimeInterval,
   TimePeriod,
   IntervalsByPeriod,
+  IntervalsByPeriodSummary,
 } from '@/types/doctor-availability';
 
 /**
@@ -49,9 +50,15 @@ export const useDoctorsAvailability = (serviceId: string) => {
 /**
  * Función utilitaria para contar intervalos en todos los períodos
  */
-const countIntervalsInPeriods = (intervals: IntervalsByPeriod): number => {
+const countIntervalsInPeriods = (intervals: IntervalsByPeriod | IntervalsByPeriodSummary): number => {
   return Object.values(intervals).reduce(
-    (total, periodIntervals) => total + (periodIntervals?.length || 0),
+    (total, periodIntervals) => {
+      if (Array.isArray(periodIntervals)) {
+        return total + periodIntervals.length;
+      }
+      // Si es string (modo summary), contamos como 1 período disponible
+      return total + (periodIntervals ? 1 : 0);
+    },
     0
   );
 };
@@ -97,7 +104,7 @@ export const findNextAvailableSlot = (data: ServiceDoctorsAvailabilityResponse) 
         // Revisar todos los períodos del día
         for (const period of ['mañana', 'tarde', 'noche'] as TimePeriod[]) {
           const intervals = dayAvailability.intervals[period];
-          if (intervals) {
+          if (intervals && Array.isArray(intervals)) {
             for (const interval of intervals) {
               // Si es hoy, verificar que el horario sea futuro
               if (!isToday || interval.startTime > currentTime) {
@@ -114,6 +121,19 @@ export const findNextAvailableSlot = (data: ServiceDoctorsAvailabilityResponse) 
                 };
               }
             }
+          } else if (intervals && typeof intervals === 'string') {
+            // En modo summary, solo sabemos que hay disponibilidad pero no los horarios específicos
+            return {
+              doctor: {
+                id: doctor.idDoctor,
+                name: doctor.doctorName,
+              },
+              date,
+              period,
+              startTime: 'Consultar detalles',
+              endTime: 'Consultar detalles',
+              timeZone: dayAvailability.timeZone,
+            };
           }
         }
       }
@@ -131,7 +151,7 @@ export const groupAvailabilityByDate = (data: ServiceDoctorsAvailabilityResponse
     date: string;
     doctors: Array<{
       doctor: { id: number; name: string };
-      intervals: IntervalsByPeriod;
+      intervals: IntervalsByPeriod | IntervalsByPeriodSummary;
       timeZone: string;
     }>;
   }> = {};
@@ -162,13 +182,15 @@ export const groupAvailabilityByDate = (data: ServiceDoctorsAvailabilityResponse
 /**
  * Función para obtener todos los intervalos de un día sin importar el período
  */
-export const getAllIntervalsForDay = (intervals: IntervalsByPeriod): TimeInterval[] => {
+export const getAllIntervalsForDay = (intervals: IntervalsByPeriod | IntervalsByPeriodSummary): TimeInterval[] => {
   const allIntervals: TimeInterval[] = [];
   
   (['mañana', 'tarde', 'noche'] as TimePeriod[]).forEach(period => {
-    if (intervals[period]) {
-      allIntervals.push(...intervals[period]!);
+    const periodData = intervals[period];
+    if (periodData && Array.isArray(periodData)) {
+      allIntervals.push(...periodData);
     }
+    // Si es string (modo summary), no podemos extraer intervalos específicos
   });
   
   return allIntervals;
@@ -177,8 +199,13 @@ export const getAllIntervalsForDay = (intervals: IntervalsByPeriod): TimeInterva
 /**
  * Función para obtener intervalos por período específico
  */
-export const getIntervalsByPeriod = (intervals: IntervalsByPeriod, period: TimePeriod): TimeInterval[] => {
-  return intervals[period] || [];
+export const getIntervalsByPeriod = (intervals: IntervalsByPeriod | IntervalsByPeriodSummary, period: TimePeriod): TimeInterval[] => {
+  const periodData = intervals[period];
+  if (Array.isArray(periodData)) {
+    return periodData;
+  }
+  // Si es string (modo summary), no podemos devolver intervalos específicos
+  return [];
 };
 
 /**
