@@ -12,7 +12,35 @@ import {
   ServiceAvailabilityError,
   DoctorAvailabilityInfo,
   DoctorAvailabilityByDate,
+  TimePeriod,
+  TimeInterval,
 } from '@/types/doctor-availability';
+
+/**
+ * Convierte una fecha DateTime a formato largo en español
+ * Ejemplo: "lunes 20 de mayo de 2025"
+ */
+function formatDateToLongSpanish(date: DateTime): string {
+  return date.setLocale('es').toFormat('cccc d \'de\' MMMM \'de\' yyyy');
+}
+
+/**
+ * Determina el período del día basado en la hora de inicio
+ * Mañana: 06:00 - 11:59
+ * Tarde: 12:00 - 17:59
+ * Noche: 18:00 - 05:59 (del día siguiente)
+ */
+function getTimePeriod(startTime: string): TimePeriod {
+  const hour = parseInt(startTime.split(':')[0], 10);
+  
+  if (hour >= 6 && hour < 12) {
+    return 'mañana';
+  } else if (hour >= 12 && hour < 18) {
+    return 'tarde';
+  } else {
+    return 'noche';
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -121,12 +149,12 @@ export async function GET(
         for (const interval of availableIntervals) {
           const intervalStart = interval.start!;
           const intervalEnd = interval.end!;
-          const dayKey = intervalStart.toISODate()!;
+          const dayKey = formatDateToLongSpanish(intervalStart);
           
           // Inicializar el día si no existe
           if (!dayAvailability[dayKey]) {
             dayAvailability[dayKey] = {
-              intervals: [],
+              intervals: {},
               timeZone: doctorTimezone
             };
           }
@@ -136,10 +164,21 @@ export async function GET(
           while (currentSlotStart.plus({ minutes: intervalMinutes }) <= intervalEnd) {
             const currentSlotEnd = currentSlotStart.plus({ minutes: intervalMinutes });
             
-            dayAvailability[dayKey].intervals.push({
+            const timeInterval: TimeInterval = {
               startTime: currentSlotStart.toFormat('HH:mm'),
               endTime: currentSlotEnd.toFormat('HH:mm')
-            });
+            };
+            
+            // Determinar el período del día
+            const period = getTimePeriod(timeInterval.startTime);
+            
+            // Inicializar el período si no existe
+            if (!dayAvailability[dayKey].intervals[period]) {
+              dayAvailability[dayKey].intervals[period] = [];
+            }
+            
+            // Agregar el intervalo al período correspondiente
+            dayAvailability[dayKey].intervals[period]!.push(timeInterval);
             
             currentSlotStart = currentSlotEnd;
           }

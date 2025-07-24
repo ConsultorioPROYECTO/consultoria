@@ -9,16 +9,28 @@ export type TimeInterval = {
 };
 
 /**
+ * Períodos del día para agrupar los intervalos
+ */
+export type TimePeriod = 'mañana' | 'tarde' | 'noche';
+
+/**
+ * Intervalos agrupados por período del día
+ */
+export type IntervalsByPeriod = {
+  [K in TimePeriod]?: TimeInterval[];
+};
+
+/**
  * Disponibilidad de un doctor para un día específico
  */
 export type DayAvailability = {
-  intervals: TimeInterval[];
+  intervals: IntervalsByPeriod;
   timeZone: string; // Zona horaria del doctor (ej: "America/Bogota")
 };
 
 /**
  * Disponibilidad completa de un doctor organizada por fecha
- * La clave es la fecha en formato YYYY-MM-DD
+ * La clave es la fecha en formato largo en español (ej: "lunes 20 de mayo de 2025")
  */
 export type DoctorAvailabilityByDate = {
   [date: string]: DayAvailability;

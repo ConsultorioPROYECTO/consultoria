@@ -5,6 +5,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   ServiceDoctorsAvailabilityResponse,
   TimeInterval,
+  TimePeriod,
+  IntervalsByPeriod,
 } from '@/types/doctor-availability';
 
 /**
@@ -45,6 +47,16 @@ export const useDoctorsAvailability = (serviceId: string) => {
 };
 
 /**
+ * Función utilitaria para contar intervalos en todos los períodos
+ */
+const countIntervalsInPeriods = (intervals: IntervalsByPeriod): number => {
+  return Object.values(intervals).reduce(
+    (total, periodIntervals) => total + (periodIntervals?.length || 0),
+    0
+  );
+};
+
+/**
  * Función utilitaria para formatear la disponibilidad para mostrar en UI
  */
 export const formatAvailabilityForDisplay = (data: ServiceDoctorsAvailabilityResponse) => {
@@ -55,7 +67,7 @@ export const formatAvailabilityForDisplay = (data: ServiceDoctorsAvailabilityRes
     },
     totalDays: Object.keys(doctor.availability).length,
     totalSlots: Object.values(doctor.availability).reduce(
-      (total, day) => total + day.intervals.length,
+      (total, day) => total + countIntervalsInPeriods(day.intervals),
       0
     ),
     availability: doctor.availability,
@@ -68,25 +80,40 @@ export const formatAvailabilityForDisplay = (data: ServiceDoctorsAvailabilityRes
 export const findNextAvailableSlot = (data: ServiceDoctorsAvailabilityResponse) => {
   const now = new Date();
   const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
-  const today = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+  const today = now.toLocaleDateString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).replace(/^\w/, c => c.toUpperCase()); // Formato largo en español
 
   for (const doctor of data.availability.doctors) {
     for (const [date, dayAvailability] of Object.entries(doctor.availability)) {
       // Solo considerar fechas futuras o hoy con horarios futuros
-      if (date > today || (date === today)) {
-        for (const interval of dayAvailability.intervals) {
-          // Si es hoy, verificar que el horario sea futuro
-          if (date > today || interval.startTime > currentTime) {
-            return {
-              doctor: {
-                id: doctor.idDoctor,
-                name: doctor.doctorName,
-              },
-              date,
-              startTime: interval.startTime,
-              endTime: interval.endTime,
-              timeZone: dayAvailability.timeZone,
-            };
+      const isToday = date === today;
+      const isFutureDate = !isToday; // Asumimos que las fechas están ordenadas
+      
+      if (isFutureDate || isToday) {
+        // Revisar todos los períodos del día
+        for (const period of ['mañana', 'tarde', 'noche'] as TimePeriod[]) {
+          const intervals = dayAvailability.intervals[period];
+          if (intervals) {
+            for (const interval of intervals) {
+              // Si es hoy, verificar que el horario sea futuro
+              if (!isToday || interval.startTime > currentTime) {
+                return {
+                  doctor: {
+                    id: doctor.idDoctor,
+                    name: doctor.doctorName,
+                  },
+                  date,
+                  period,
+                  startTime: interval.startTime,
+                  endTime: interval.endTime,
+                  timeZone: dayAvailability.timeZone,
+                };
+              }
+            }
           }
         }
       }
@@ -104,7 +131,7 @@ export const groupAvailabilityByDate = (data: ServiceDoctorsAvailabilityResponse
     date: string;
     doctors: Array<{
       doctor: { id: number; name: string };
-      intervals: TimeInterval[];
+      intervals: IntervalsByPeriod;
       timeZone: string;
     }>;
   }> = {};
@@ -130,6 +157,55 @@ export const groupAvailabilityByDate = (data: ServiceDoctorsAvailabilityResponse
   });
 
   return groupedByDate;
+};
+
+/**
+ * Función para obtener todos los intervalos de un día sin importar el período
+ */
+export const getAllIntervalsForDay = (intervals: IntervalsByPeriod): TimeInterval[] => {
+  const allIntervals: TimeInterval[] = [];
+  
+  (['mañana', 'tarde', 'noche'] as TimePeriod[]).forEach(period => {
+    if (intervals[period]) {
+      allIntervals.push(...intervals[period]!);
+    }
+  });
+  
+  return allIntervals;
+};
+
+/**
+ * Función para obtener intervalos por período específico
+ */
+export const getIntervalsByPeriod = (intervals: IntervalsByPeriod, period: TimePeriod): TimeInterval[] => {
+  return intervals[period] || [];
+};
+
+/**
+ * Función para obtener estadísticas de disponibilidad
+ */
+export const getAvailabilityStats = (data: ServiceDoctorsAvailabilityResponse) => {
+  const totalDoctors = data.availability.doctors.length;
+  const doctorsWithAvailability = data.availability.doctors.filter(
+    doctor => Object.keys(doctor.availability).length > 0
+  ).length;
+  
+  let totalDays = 0;
+  let totalSlots = 0;
+  
+  data.availability.doctors.forEach(doctor => {
+    totalDays += Object.keys(doctor.availability).length;
+    Object.values(doctor.availability).forEach(day => {
+      totalSlots += countIntervalsInPeriods(day.intervals);
+    });
+  });
+  
+  return {
+    totalDoctors,
+    doctorsWithAvailability,
+    totalDays,
+    totalSlots,
+  };
 };
 
 /**
@@ -174,7 +250,7 @@ export const DoctorsAvailabilityExample: React.FC<{ serviceId: string }> = ({ se
         <div className="bg-green-50 p-4 rounded-lg">
           <h3>Próximo turno disponible</h3>
           <p>
-            Dr. {nextSlot.doctor.name} - {nextSlot.date} a las {nextSlot.startTime}
+            Dr. {nextSlot.doctor.name} - {nextSlot.date} ({nextSlot.period}) a las {nextSlot.startTime}
           </p>
         </div>
       )}
@@ -199,16 +275,32 @@ export const DoctorsAvailabilityExample: React.FC<{ serviceId: string }> = ({ se
             {doctors.map((doctor) => (
               <div key={`${doctor.doctor.id}-${date}`} className="ml-4">
                 <h5>{doctor.doctor.name}</h5>
-                <div className="flex flex-wrap gap-2">
-                  {doctor.intervals.map((interval, index) => (
-                    <span 
-                      key={index} 
-                      className="bg-blue-200 px-2 py-1 rounded text-sm"
-                    >
-                      {interval.startTime} - {interval.endTime}
-                    </span>
-                  ))}
-                </div>
+                
+                {/* Mostrar intervalos agrupados por período */}
+                {(['mañana', 'tarde', 'noche'] as TimePeriod[]).map(period => {
+                  const periodIntervals = getIntervalsByPeriod(doctor.intervals, period);
+                  if (periodIntervals.length === 0) return null;
+                  
+                  return (
+                    <div key={period} className="mb-2">
+                      <h6 className="font-semibold capitalize text-sm">{period}</h6>
+                      <div className="flex flex-wrap gap-2 ml-2">
+                        {periodIntervals.map((interval, index) => (
+                          <span 
+                            key={index} 
+                            className={`px-2 py-1 rounded text-sm ${
+                              period === 'mañana' ? 'bg-yellow-200' :
+                              period === 'tarde' ? 'bg-orange-200' :
+                              'bg-purple-200'
+                            }`}
+                          >
+                            {interval.startTime} - {interval.endTime}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -242,36 +334,8 @@ export const isDoctorAvailableAt = (
   }
 
   const dayAvailability = doctor.availability[date];
-  return dayAvailability.intervals.some(interval => 
+  const allIntervals = getAllIntervalsForDay(dayAvailability.intervals);
+  return allIntervals.some((interval: TimeInterval) => 
     time >= interval.startTime && time < interval.endTime
   );
-};
-
-/**
- * Función para obtener estadísticas de disponibilidad
- */
-export const getAvailabilityStats = (data: ServiceDoctorsAvailabilityResponse) => {
-  const stats = {
-    totalDoctors: data.availability.doctors.length,
-    totalDays: 0,
-    totalSlots: 0,
-    doctorsWithAvailability: 0,
-  };
-
-  data.availability.doctors.forEach(doctor => {
-    const doctorDays = Object.keys(doctor.availability).length;
-    const doctorSlots = Object.values(doctor.availability).reduce(
-      (total, day) => total + day.intervals.length,
-      0
-    );
-    
-    if (doctorSlots > 0) {
-      stats.doctorsWithAvailability++;
-    }
-    
-    stats.totalDays += doctorDays;
-    stats.totalSlots += doctorSlots;
-  });
-
-  return stats;
 };
