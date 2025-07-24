@@ -30,6 +30,13 @@ const inter = geistFont;
 export const metadata: Metadata = {
   title: 'Irina',
   description: 'Sistema de gestión de citas médicas',
+  manifest: '/manifest.ts',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Irina',
+    // startUpImage: [], // Puedes añadir imágenes de inicio aquí
+  },
 };
 
 /**
