@@ -27,11 +27,11 @@ export function LoginContent() {
   const signupHref = buildAuthRedirectUrl('/signup', invitacionCode, role);
 
   return (
-    <div className="flex flex-col h-full w-full items-center justify-center px-4">
-      <div className='inset-0 flex items-center justify-center lg:hidden pointer-events-none'>
-                <span className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-extrabold text-foreground opacity-8 w-full select-none">Irina</span>
+    <div className="relative flex flex-col h-full w-full items-center justify-center px-4">
+      <div className='absolute inset-0 flex items-center justify-center lg:hidden pointer-events-none'>
+        <span className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-extrabold text-foreground opacity-8 w-full select-none">Irina</span>
       </div>
-      <div className="flex flex-col gap-4 justify-center max-w-sm">
+      <div className="z-10 flex flex-col gap-4 justify-center max-w-sm">
         
         <div className="text-center">
           <h1 className="text-2xl font-bold">Iniciar Sesión</h1>
