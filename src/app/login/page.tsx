@@ -20,9 +20,9 @@ function Login() {
             <div className="hidden lg:block">
               <FeatureCarousel />
             </div>
-                    <Suspense fallback={<div>Cargando...</div>}>
-                        <LoginContent />
-                    </Suspense>
+            <Suspense fallback={<div>Cargando...</div>}>
+                <LoginContent />
+            </Suspense>
         </main>
     );
 }
