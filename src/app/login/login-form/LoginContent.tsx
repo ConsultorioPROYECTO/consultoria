@@ -28,15 +28,14 @@ export function LoginContent() {
 
   return (
     <div className="px-4">
-      <div className="flex flex-col h-full w-full items-center justify-center">
-        
+      <div className="grid grid-cols-1 h-full w-full gap-4 place-items-center place-content-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Iniciar Sesión</h1>
           <p className="text-muted-foreground">
             Ingresa tus credenciales para acceder a tu cuenta.
           </p>
         </div>
-        <div className="flex flex-col gap-4 w-full">
+        <div className="grid grid-cols-1 gap-4 w-full">
           {/* Desktop Login Form */}
           <div className="hidden lg:block">
             <LoginForm />
@@ -72,7 +71,7 @@ export function LoginContent() {
           </div>
           <LoginGoogle/>
         </div>
-        <div className="text-center text-muted-foreground text-sm mt-4">
+        <div className="text-center text-muted-foreground text-sm">
           ¿No tienes cuenta?{' '}
           <Link href={signupHref} className="underline">
             Regístrate
