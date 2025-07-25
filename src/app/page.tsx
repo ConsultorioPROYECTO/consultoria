@@ -304,10 +304,10 @@ export default function HomePage() {
         className="py-20 md:py-32 px-4 md:px-6 bg-background"
       >
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl font-base md:text-4xl tracking-tight">
             Funcionalidades que Impulsan tu Práctica
           </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+          <p className="mt-4 font-light max-w-2xl mx-auto text-muted-foreground md:text-lg">
             Irina está diseñada con herramientas potentes y fáciles de usar para cada aspecto de tu clínica.
           </p>
         </div>
@@ -342,23 +342,23 @@ export default function HomePage() {
           ].map((feature, index) => (
             <motion.div
               key={feature.title}
-              className="flex flex-col items-center text-center p-4 shadow-sm"
+              className="flex flex-col items-center gap-4 text-center p-4 shadow-sm"
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary">
                 <feature.icon className="w-8 h-8" />
               </div>
-              <div className="flex-grow flex flex-col justify-start">
-                <h3 className="text-xl font-semibold">{feature.title}</h3>
-                <p className="mt-2 text-muted-foreground text-sm">
+              <div className="flex-grow flex flex-col gap-4 justify-start">
+                <h3 className="text-xl font-base">{feature.title}</h3>
+                <p className="text-muted-foreground font-light ">
                   {feature.description}
                 </p>
               </div>
               {/* Aquí puedes agregar tu mockup */}
-              <div className="mt-4 w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center text-muted-foreground text-xs">
+              <div className="w-full aspect-video bg-muted/50 rounded-lg flex items-center justify-center text-muted-foreground text-xs">
                 [Mockup con relación de aspecto 16:9]
               </div>
             </motion.div>
