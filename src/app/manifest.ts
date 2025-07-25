@@ -2,28 +2,29 @@ import type { MetadataRoute } from 'next'
  
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Irina',
+    name: 'Irina - Plataforma de Salud',
     short_name: 'Irina',
     description: 'Irina es una plataforma que permite a los profesionales de la salud transformar su práctica en una experiencia más interactiva y personalizada.',
     start_url: '/',
+    scope: '/',
     display: 'standalone',
-    background_color: 'primary',
-    theme_color: 'primary',
+    orientation: 'portrait',
+    background_color: '#ffffff',
+    theme_color: '#3B82F6',
+    categories: ['medical', 'health', 'productivity'],
+    lang: 'es',
     icons: [
       {
-        src: '/img/logos/Google_G.svg',
+        src: '/icon-192x192.svg',
         sizes: '192x192',
         type: 'image/svg+xml',
+        purpose: 'any',
       },
       {
-        src: '/img/logos/google.svg',
+        src: '/icon-512x512.svg',
         sizes: '512x512',
         type: 'image/svg+xml',
-      },
-      {
-        src: '/img/logos/Google__G__logo.svg',
-        sizes: 'any',
-        type: 'image/svg+xml',
+        purpose: 'any',
       },
     ],
   }
