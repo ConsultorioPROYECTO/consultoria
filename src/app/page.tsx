@@ -173,7 +173,7 @@ export default function HomePage() {
           }}
         >
           <motion.h1 
-            className="text-4xl md:text-5xl lg:text-6xl font-base tracking-tighter selection:bg-primary selection:text-primary-foreground leading-tight"
+            className="text-4xl sm:text-4xl md:text-5xl lg:text-6xl font-base tracking-tighter selection:bg-primary selection:text-primary-foreground leading-tight"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             La Revolución en tu Agenda<br />Diseñado para redefinir tu Gestión
@@ -185,7 +185,7 @@ export default function HomePage() {
               variant="outline"
               className="px-3 py-1 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15 text-xs sm:text-sm md:text-base font-medium text-primary/80 tracking-wide uppercase text-start whitespace-normal break-words leading-none"
             >
-              Ideal para tu consultorio • centro médico • clínica
+              consultorio • centro médico • clínica
             </Badge>
           </motion.div>
           <motion.p 
