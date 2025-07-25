@@ -173,17 +173,17 @@ export default function HomePage() {
           }}
         >
           <motion.h1 
-            className="text-6xl md:text-7xl lg:text-8xl font-bold tracking-tighter selection:bg-primary selection:text-primary-foreground"
+            className="text-4xl md:text-5xl lg:text-6xl font-base tracking-tighter selection:bg-primary selection:text-primary-foreground"
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
-            Irina
+            La Revolución en tu Agenda<br />Diseñado para redefinir tu Gestión
           </motion.h1>
           <motion.div 
             variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
           >
             <Badge 
               variant="outline"
-              className="px-3 py-1 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15 text-[10px] sm:text-sm md:text-base lg:text-lg font-medium text-primary/80 tracking-wide uppercase text-center leading-tight"
+              className="px-2 py-0.5 bg-gradient-to-r from-primary/8 to-secondary/8 rounded-full border border-primary/15 text-xs sm:text-sm md:text-base font-medium text-primary/80 tracking-wide uppercase text-center"
             >
               Ideal para tu consultorio • centro médico • clínica
             </Badge>
