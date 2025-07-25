@@ -268,9 +268,9 @@ export default function HomePage() {
         id="producto"
         className="py-20 md:py-32 px-4 md:px-6 bg-secondary/50"
       >
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Un vistazo a la simplicidad</h2>
-          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+        <div className="flex flex-col gap-4 items-center justify-center text-center p-4">
+          <h2 className="text-3xl font-base md:text-4xl tracking-tight">Un vistazo a la simplicidad</h2>
+          <p className="max-w-2xl font-light text-muted-foreground md:text-lg">
             Diseñamos una interfaz que se siente familiar desde el primer día. Menos clics, más cuidado del paciente.
           </p>
         </div>
@@ -348,7 +348,7 @@ export default function HomePage() {
               viewport={{ once: true, amount: 0.3 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full text-primary">
                 <feature.icon className="w-8 h-8" />
               </div>
               <div className="flex-grow flex flex-col gap-4 justify-start">
@@ -368,23 +368,23 @@ export default function HomePage() {
 
       {/* Sección 3: Beneficios Clave */}
       <section id="beneficios" className="py-20 md:py-32 px-4 md:px-6 bg-secondary/50">
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+        <div className="flex flex-col gap-4 items-center justify-center text-center p-4">
+          <h2 className="text-3xl font-base md:text-4xl tracking-tight">
             Diseñado para devolverte el tiempo
           </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+          <p className="max-w-2xl font-light text-muted-foreground md:text-lg">
             Nos enfocamos en tres pilares que eliminan la fricción de tu día a día, permitiéndote concentrarte en tus pacientes.
           </p>
         </div>
 
         <div className="mt-12 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
           {benefits.map((benefit) => (
-            <div key={benefit.title} className="flex flex-col items-center text-center p-4">
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4">
+            <div key={benefit.title} className="flex flex-col items-center text-center gap-4 p-4">
+              <div className="flex items-center justify-center w-12 h-12 text-primary">
                 <benefit.icon className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-semibold">{benefit.title}</h3>
-              <p className="mt-2 text-muted-foreground text-sm">
+              <h3 className="text-xl font-base">{benefit.title}</h3>
+              <p className="text-muted-foreground font-light">
                 {benefit.description}
               </p>
             </div>
@@ -397,11 +397,11 @@ export default function HomePage() {
         id="faq"
         className="py-20 md:py-32 px-4 md:px-6 bg-background"
       >
-        <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+        <div className="flex flex-col gap-4 items-center justify-center text-center p-4">
+          <h2 className="text-3xl font-base md:text-4xl tracking-tight">
             Preguntas Frecuentes
           </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-muted-foreground md:text-lg">
+          <p className="max-w-2xl font-light text-muted-foreground md:text-lg">
             Encuentra respuestas a las preguntas más comunes sobre Irina.
           </p>
         </div>
@@ -468,7 +468,7 @@ export default function HomePage() {
         className="py-20 md:py-32 px-4 md:px-6 bg-secondary/50 text-foreground text-center"
       >
         <motion.div
-          className="flex flex-col gap-2 items-center justify-center text-center"
+          className="flex flex-col gap-4 items-center justify-center text-center p-4"
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, amount: 0.3 }}
@@ -483,7 +483,7 @@ export default function HomePage() {
           }}
         >
           <motion.h2
-            className="text-3xl md:text-4xl font-bold tracking-tight"
+            className="text-3xl md:text-4xl font-base tracking-tight"
             variants={{
               hidden: { opacity: 0, y: 20 },
               show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -492,7 +492,7 @@ export default function HomePage() {
             ¿Listo para transformar tu clínica?
           </motion.h2>
           <motion.p
-            className="max-w-2xl text-lg"
+            className="max-w-2xl font-light text-muted-foreground text-lg"
             variants={{
               hidden: { opacity: 0, y: 20 },
               show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
