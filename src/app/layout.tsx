@@ -39,6 +39,7 @@ export const metadata: Metadata = {
   },
 };
 
+
 /**
  * Componente RootLayout que define la estructura base HTML de la aplicación.
  * @param {Readonly<{ children: React.ReactNode }>} props - Propiedades del layout.
