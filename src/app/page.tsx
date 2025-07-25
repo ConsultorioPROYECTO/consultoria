@@ -164,7 +164,7 @@ export default function HomePage() {
 
         {/* Contenido Principal del Hero */}
         <motion.div 
-          className="flex flex-col gap-4 items-center justify-center text-center p-4"
+          className="flex flex-col gap-4 items-start justify-center text-start p-4"
           initial="hidden"
           animate="show"
           variants={{ 
@@ -222,9 +222,10 @@ export default function HomePage() {
 
         {/* Mockup de la aplicación (visible solo en desktop, cortado) */}
         <motion.div
-          className="hidden md:block absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[80%] max-w-4xl aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-t-xl shadow-2xl border border-b-0 border-primary/30 overflow-hidden"
-          initial={{ opacity: 0, y: 100, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+          className="hidden md:block absolute bottom-[-200px] right-[-50px] w-[80%] max-w-6xl aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg shadow-xl border border-primary/30 z-0"
+          style={{ transform: 'rotateX(50deg) rotateZ(-25deg) translateY(20px)' }}
+          initial={{ opacity: 0, y: 50, rotateX: 0, rotateZ: 0 }}
+          animate={{ opacity: 1, y: 0, rotateX: 50, rotateZ: -25 }}
           transition={{ delay: 0.8, duration: 0.7, ease: "easeOut" }}
         >
           {/* Contenido del Mockup - Placeholder */}
