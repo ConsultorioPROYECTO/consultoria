@@ -54,5 +54,4 @@ etc/secrets/
 irina-462416-2f32be502aa4.json
 etc/secrets/irina-462416-2f32be502aa4.json
 GEMINI.md
-public/sw.js
-public/workbox-4754cb34.js
+package-lock.json

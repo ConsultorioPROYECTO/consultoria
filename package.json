@@ -11,7 +11,7 @@
     "lint:jsdoc": "eslint --config .eslintrc.jsdoc.js src/app/api/**/*.ts src/lib/**/*.ts",
     "docs:check": "npm run lint:jsdoc",
     "docs:api": "echo 'Documentación de API disponible en docs/api/doctors-availability.md'",
-    "generate": "drizzle-kit generate --out migrations-folder --schema src/db/schema.ts"
+    "generate": "drizzle-kit generate"
   },
   "jest": {
     "transform": {
@@ -97,7 +97,7 @@
     "@types/react": "19.1.8",
     "@types/react-dom": "19.1.6",
     "babel-jest": "^30.0.4",
-    "drizzle-kit": "^0.31.1",
+    "drizzle-kit": "^0.31.4",
     "eslint": "^9",
     "eslint-config-next": "^15.3.5",
     "jest": "^30.0.4",
@@ -109,7 +109,8 @@
   },
   "overrides": {
     "@types/react": "19.1.8",
-    "@types/react-dom": "19.1.6"
+    "@types/react-dom": "19.1.6",
+    "esbuild": "^0.25.0"
   },
   "browserslist": [
     "chrome 64",
