@@ -20,14 +20,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
 import { db } from '@/db';
-import { appointments, doctors, medicalServices, patients, users, doctorServices } from '@/db/schema';
+import { appointments, doctors, medicalServices, patients, users, doctorServices, organization } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createAppointmentEvent, AppointmentStatus } from '@/lib/calendar-event-manager';
 import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
 import { handleDatabaseError } from '@/lib/api-helpers';
-import type { DecodedIdToken } from 'firebase-admin/auth';
 import { DateTime } from 'luxon';
 import { getDoctorAvailability } from '@/lib/calendar-event-retriever';
 import {
@@ -38,6 +36,66 @@ import {
   HTTP_STATUS
 } from '@/types/api';
 
+// === API Key Authentication ===
+
+/**
+ * Authenticates requests using API Key from headers and returns organization information.
+ * 
+ * @param {NextRequest} request - The incoming HTTP request
+ * @returns {Promise<{success: boolean, organizationId?: number, error?: string}>} 
+ *   Authentication result with organization ID or error
+ * 
+ * @example
+ * ```typescript
+ * const authResult = await authenticateApiKey(request);
+ * if (!authResult.success) {
+ *   return createErrorResponse(API_ERRORS.UNAUTHORIZED, authResult.error);
+ * }
+ * const organizationId = authResult.organizationId;
+ * ```
+ * 
+ * @security Requires 'X-API-Key' header with valid API key
+ */
+async function authenticateApiKey(request: NextRequest): Promise<{
+  success: boolean;
+  organizationId?: number;
+  error?: string;
+}> {
+  try {
+    const apiKey = request.headers.get('X-API-Key');
+    
+    if (!apiKey) {
+      return {
+        success: false,
+        error: 'API Key requerida en el header X-API-Key'
+      };
+    }
+
+    // Buscar la organización por API key
+    const org = await db.query.organization.findFirst({
+      where: eq(organization.apiKey, apiKey),
+    });
+    
+    if (!org) {
+      return {
+        success: false,
+        error: 'API Key inválida'
+      };
+    }
+
+    return {
+      success: true,
+      organizationId: org.id
+    };
+  } catch (error) {
+    console.error('Error en autenticación de API Key:', error);
+    return {
+      success: false,
+      error: 'Error interno de autenticación'
+    };
+  }
+}
+
 // === Auto-Assign Appointment API Types ===
 
 /**
@@ -47,7 +105,6 @@ import {
  * @property {string} identificationNumber - Patient's identification number
  * @property {string} identificationType - Type of identification document (CC, TI, CE, etc.)
  * @property {number} serviceId - Unique identifier of the medical service
- * @property {number} organizationId - Unique identifier of the organization
  * @property {string} date - Date of the appointment in ISO format (YYYY-MM-DD)
  * @property {string} time - Time of the appointment in 24-hour format (HH:MM)
  * @property {boolean} [isVirtual=false] - Whether the appointment is conducted virtually
@@ -60,7 +117,6 @@ import {
  *   identificationNumber: "12345678",
  *   identificationType: "CC",
  *   serviceId: 5,
- *   organizationId: 1,
  *   date: "2024-01-15",
  *   time: "14:30",
  *   isVirtual: true,
@@ -76,8 +132,6 @@ export interface CreateAutoAssignAppointmentRequest {
   identificationType: string;
   /** Unique identifier of the medical service */
   serviceId: number;
-  /** Unique identifier of the organization */
-  organizationId: number;
   /** Date in YYYY-MM-DD format */
   date: string;
   /** Time in HH:MM format (24-hour) */
@@ -231,7 +285,7 @@ async function findAvailableDoctor(
  * Handles POST request for creating appointments with automatic doctor assignment.
  * 
  * This function performs the following operations:
- * 1. **Authentication & Authorization**: Validates user permissions and organization membership
+ * 1. **API Key Authentication**: Validates API key and gets organization ID
  * 2. **Request Validation**: Validates request body format and required fields
  * 3. **Entity Verification**: Ensures patient, service, and organization exist and match
  * 4. **Doctor Assignment**: Automatically finds an available doctor for the service
@@ -239,7 +293,6 @@ async function findAvailableDoctor(
  * 6. **Database Persistence**: Stores appointment data with proper relationships
  * 
  * @param {NextRequest} request - The incoming HTTP request containing appointment data
- * @param {DecodedIdToken} decodedToken - Firebase authentication token with user information
  * @returns {Promise<NextResponse<CreateAutoAssignAppointmentApiResponse | ApiError>>} 
  *   JSON response with appointment creation result or error details
  * 
@@ -268,48 +321,23 @@ async function findAvailableDoctor(
  * }
  * ```
  * 
- * @security Requires Firebase authentication with 'admin' or 'asistente' role
+ * @security Requires valid API key in 'X-API-Key' header
  * @rateLimit Subject to organization-level rate limiting
  */
-async function handlePostRequest(
-  request: NextRequest,
-  decodedToken: DecodedIdToken
-): Promise<NextResponse> {
+async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
   try {
-    // 1. Get authenticated user information
-    const userResult = await db
-      .select()
-      .from(users)
-      .where(eq(users.firebaseUid, decodedToken.uid))
-      .limit(1);
-
-    if (userResult.length === 0) {
+    // 1. Authenticate using API Key and get organization ID
+    const authResult = await authenticateApiKey(request);
+    
+    if (!authResult.success) {
       return createErrorResponse(
-        API_ERRORS.USER_NOT_FOUND,
-        'Usuario no encontrado en la base de datos',
-        HTTP_STATUS.NOT_FOUND
+        API_ERRORS.UNAUTHORIZED,
+        authResult.error || 'Autenticación fallida',
+        HTTP_STATUS.UNAUTHORIZED
       );
     }
 
-    const user = userResult[0];
-
-    // 2. Validate user role
-    if (user.role !== 'admin' && user.role !== 'asistente') {
-      return createErrorResponse(
-        API_ERRORS.FORBIDDEN,
-        'Usuario no tiene permisos para crear citas. Se requiere rol de admin o asistente',
-        HTTP_STATUS.FORBIDDEN
-      );
-    }
-
-    // 3. Verify user has an associated organization
-    if (!user.organizationId) {
-      return createErrorResponse(
-        API_ERRORS.FORBIDDEN,
-        'Usuario no tiene una organización asociada',
-        HTTP_STATUS.FORBIDDEN
-      );
-    }
+    const organizationId = authResult.organizationId!;
 
     // Parse and validate request body
     let body: CreateAutoAssignAppointmentRequest;
@@ -327,7 +355,6 @@ async function handlePostRequest(
       identificationNumber,
       identificationType,
       serviceId,
-      organizationId,
       date,
       time,
       isVirtual = false,
@@ -336,20 +363,11 @@ async function handlePostRequest(
     } = body;
 
     // Validate required fields
-    if (!identificationNumber || !identificationType || !serviceId || !organizationId || !date || !time) {
+    if (!identificationNumber || !identificationType || !serviceId || !date || !time) {
       return createErrorResponse(
         API_ERRORS.INVALID_REQUEST,
-        'Campos requeridos faltantes: identificationNumber, identificationType, serviceId, organizationId, date, time',
+        'Campos requeridos faltantes: identificationNumber, identificationType, serviceId, date, time',
         HTTP_STATUS.BAD_REQUEST
-      );
-    }
-
-    // Validate that the requested organization matches user's organization
-    if (organizationId !== user.organizationId) {
-      return createErrorResponse(
-        API_ERRORS.FORBIDDEN,
-        'No tiene permisos para crear citas en esta organización',
-        HTTP_STATUS.FORBIDDEN
       );
     }
 
@@ -546,14 +564,12 @@ async function handlePostRequest(
  * 2. Has availability at the requested date and time
  * 
  * @route POST /api/appointments/auto-assign
- * @access Protected - Requires Firebase authentication
- * @roles admin, asistente
+ * @access Protected - Requires API Key authentication
  * 
  * @param {CreateAutoAssignAppointmentRequest} request.body - Appointment creation data
  * @param {string} request.body.identificationNumber - Patient's identification number
  * @param {string} request.body.identificationType - Type of identification document
  * @param {number} request.body.serviceId - Medical service identifier
- * @param {number} request.body.organizationId - Organization identifier
  * @param {string} request.body.date - Appointment date (YYYY-MM-DD)
  * @param {string} request.body.time - Appointment time (HH:MM)
  * @param {boolean} [request.body.isVirtual=false] - Virtual appointment flag
@@ -562,8 +578,7 @@ async function handlePostRequest(
  * 
  * @returns {CreateAutoAssignAppointmentApiResponse} 201 - Appointment created successfully
  * @returns {ApiError} 400 - Invalid request data
- * @returns {ApiError} 401 - Authentication required
- * @returns {ApiError} 403 - Insufficient permissions
+ * @returns {ApiError} 401 - Authentication required (invalid API key)
  * @returns {ApiError} 404 - Entity not found (patient/service)
  * @returns {ApiError} 409 - No available doctor found
  * @returns {ApiError} 500 - Internal server error
@@ -572,14 +587,13 @@ async function handlePostRequest(
  * ```typescript
  * // Request
  * POST /api/appointments/auto-assign
- * Authorization: Bearer <firebase-token>
+ * X-API-Key: <organization-api-key>
  * Content-Type: application/json
  * 
  * {
  *   "identificationNumber": "12345678",
  *   "identificationType": "CC",
  *   "serviceId": 5,
- *   "organizationId": 1,
  *   "date": "2024-01-15",
  *   "time": "14:30",
  *   "isVirtual": true,
@@ -610,15 +624,11 @@ async function handlePostRequest(
  * 
  * @see {@link CreateAutoAssignAppointmentRequest} for request body structure
  * @see {@link CreateAutoAssignAppointmentResponse} for response data structure
- * @see {@link https://firebase.google.com/docs/auth | Firebase Authentication}
  * @see {@link https://developers.google.com/calendar/api | Google Calendar API}
  * 
  * @since 1.0.0
  * @version 1.0.0
  */
-export const POST = withAuthentication(async (
-  request: NextRequest,
-  decodedToken: DecodedIdToken
-) => {
-  return handlePostRequest(request, decodedToken);
-});
+export const POST = async (request: NextRequest) => {
+  return handlePostRequest(request);
+};

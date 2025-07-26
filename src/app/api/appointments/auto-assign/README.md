@@ -15,12 +15,18 @@ POST /api/appointments/auto-assign
 
 ## Autenticación
 
-Requiere autenticación Firebase con rol de `admin` o `asistente`.
+Requiere autenticación por API Key de la organización.
 
 ```
-Authorization: Bearer <firebase-token>
+X-API-Key: <organization-api-key>
 Content-Type: application/json
 ```
+
+### Funcionamiento
+- Cada organización tiene una API key única almacenada en la base de datos
+- La API key se usa para identificar y autenticar la organización
+- El `organizationId` se obtiene automáticamente de las credenciales de la API key
+- No se requieren roles de usuario ni autenticación Firebase
 
 ## Parámetros de Entrada
 
@@ -29,27 +35,30 @@ Content-Type: application/json
 | `identificationNumber` | string | ✅ | Número de identificación del paciente |
 | `identificationType` | string | ✅ | Tipo de documento (DNI, CC, TI, CE, PP, RC, AS) |
 | `serviceId` | number | ✅ | ID del servicio médico |
-| `organizationId` | number | ✅ | ID de la organización |
 | `date` | string | ✅ | Fecha de la cita (YYYY-MM-DD) |
 | `time` | string | ✅ | Hora de la cita (HH:MM) |
 | `isVirtual` | boolean | ❌ | Si la cita es virtual (default: false) |
 | `meetingLink` | string | ❌ | Link de reunión (requerido si isVirtual=true) |
 | `notes` | string | ❌ | Notas adicionales |
 
+**Nota:** El `organizationId` se obtiene automáticamente de la API key, por lo que no es necesario incluirlo en la solicitud.
+
 ## Ejemplo de Solicitud
 
-```json
-{
-  "identificationNumber": "12345678",
-  "identificationType": "CC",
-  "serviceId": 5,
-  "organizationId": 1,
-  "date": "2024-01-15",
-  "time": "14:30",
-  "isVirtual": true,
-  "meetingLink": "https://meet.google.com/abc-defg-hij",
-  "notes": "Consulta de seguimiento"
-}
+```bash
+curl -X POST https://your-domain.com/api/appointments/auto-assign \
+  -H "X-API-Key: <organization-api-key>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "identificationNumber": "12345678",
+    "identificationType": "CC",
+    "serviceId": 5,
+    "date": "2024-01-15",
+    "time": "14:30",
+    "isVirtual": true,
+    "meetingLink": "https://meet.google.com/abc-defg-hij",
+    "notes": "Consulta de seguimiento"
+  }'
 ```
 
 ## Respuesta Exitosa (201)
@@ -81,14 +90,8 @@ Content-Type: application/json
 ### 401 - No Autenticado
 ```json
 {
-  "error": "Acceso denegado: Token inválido"
-}
-```
-
-### 403 - Sin Permisos
-```json
-{
-  "error": "Usuario no tiene permisos para crear citas. Se requiere rol de admin o asistente"
+  "error": "API Key inválida",
+  "details": "La API key proporcionada no es válida o no existe"
 }
 ```
 
@@ -188,12 +191,16 @@ El sistema busca doctores disponibles en el siguiente orden:
 
 ## Diferencias con la API Regular
 
-| Característica | API Regular | API Auto-Assign |
-|----------------|-------------|------------------|
-| Doctor ID | Requerido | No requerido |
-| Identificación del Paciente | Patient ID | Número + Tipo de Identificación |
-| Asignación | Manual | Automática |
-| Validación de Disponibilidad | Manual | Automática |
+| Aspecto | API Regular | API Auto-Assign |
+|---------|-------------|------------------|
+| **Autenticación** | Firebase + roles de usuario | API Key de organización |
+| **OrganizationId** | Requerido en el body | Obtenido automáticamente de la API key |
+| **Doctor** | Requiere `doctorId` específico | Asigna automáticamente el primer doctor disponible |
+| **Disponibilidad** | Valida disponibilidad del doctor específico | Busca entre todos los doctores disponibles |
+| **Flexibilidad** | Menor flexibilidad, doctor fijo | Mayor flexibilidad, asignación dinámica |
+| **Casos de uso** | Citas con doctor preferido | Citas urgentes o sin preferencia de doctor |
+| **Validación** | Valida doctor específico | Valida que exista al menos un doctor disponible |
+| **Respuesta** | Información del doctor seleccionado | Información del doctor asignado automáticamente |
 
 ## Consideraciones de Rendimiento
 
