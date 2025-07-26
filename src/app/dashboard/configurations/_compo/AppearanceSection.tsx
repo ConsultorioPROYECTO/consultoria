@@ -1,8 +1,10 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { ThemePreviewCard } from "./ThemePreviewCard";
 import { useTheme } from "next-themes";
 import { useUIStyle } from "@/app/context/UIStyleContext";
-import { Sun, Moon } from "lucide-react";
+import { Sun, Moon, ChevronDown } from "lucide-react";
+import { useState } from 'react'; // Forzar recarga
 
 interface AppearanceSectionProps {
   selectedTheme: string;
@@ -11,6 +13,7 @@ interface AppearanceSectionProps {
 
 export function AppearanceSection({ selectedTheme, onThemeChange }: AppearanceSectionProps) {
   const { theme, setTheme } = useTheme();
+  const [showThemePreviews, setShowThemePreviews] = useState(true);
   const { uiStyle, setUiStyle } = useUIStyle();
 
   const handleUiStyleChange = (style: 'normal' | 'minimal') => {
@@ -29,31 +32,49 @@ export function AppearanceSection({ selectedTheme, onThemeChange }: AppearanceSe
               Selecciona el tema visual de la aplicación
             </div>
           </div>
-          <div className="flex gap-2 justify-self-end">
-            <Button
-              variant={selectedTheme === 'theme-claude' ? 'default' : 'outline'}
-              size="sm"
+{/* Theme Previews Toggle */}
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowThemePreviews(!showThemePreviews)}
+            aria-expanded={showThemePreviews}
+            aria-label="Toggle theme previews"
+          >
+            <ChevronDown className={`h-5 w-5 transition-transform ${showThemePreviews ? 'rotate-180' : ''}`} />
+          </Button>
+        </div>
+        </div>
+        
+        {/* Theme Previews */}
+        <div className={`grid grid-cols-3 gap-4 overflow-hidden transition-all duration-300 ease-in-out ${showThemePreviews ? 'max-h-screen opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+          <div className="flex flex-col items-center">
+            <ThemePreviewCard
+              themeName="theme-claude"
+              selected={selectedTheme === 'theme-claude'}
               onClick={() => onThemeChange('theme-claude')}
-            >
-              Claude
-            </Button>
-            <Button
-              variant={selectedTheme === 'theme-vercel' ? 'default' : 'outline'}
-              size="sm"
+            />
+            <span className="mt-2 text-sm font-medium">Claude</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <ThemePreviewCard
+              themeName="theme-vercel"
+              selected={selectedTheme === 'theme-vercel'}
               onClick={() => onThemeChange('theme-vercel')}
-            >
-              Vercel
-            </Button>
-            <Button
-              variant={selectedTheme === 'system' ? 'default' : 'outline'}
-              size="sm"
+            />
+            <span className="mt-2 text-sm font-medium">Vercel</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <ThemePreviewCard
+              themeName="system"
+              selected={selectedTheme === 'system'}
               onClick={() => onThemeChange('system')}
-            >
-              Sistema
-            </Button>
+            />
+            <span className="mt-2 text-sm font-medium">Sistema</span>
           </div>
         </div>
         
+
         {/* Mode Selection */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
           <div className="space-y-1">
