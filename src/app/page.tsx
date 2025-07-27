@@ -236,6 +236,7 @@ export default function HomePage() {
               width={1000}
               height={1000}
               className="w-full h-full p-3 rounded-4xl object-cover"
+              fetchPriority="high"
             />
           </div>
         </motion.div>
@@ -256,6 +257,7 @@ export default function HomePage() {
               width={1000}
               height={1000}
               className="w-full h-full p-3 rounded-4xl object-cover"
+              fetchPriority="high"
             />
           </div>
           {/* Degradado inferior para fusionarse con el fondo */}
@@ -622,15 +624,15 @@ function ThemeSwitcher() {
   return (
     <Tabs defaultValue={getActiveTab()} onValueChange={handleThemeChange} className="w-[200px]">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="light" title="Cambiar a tema claro">
+        <TabsTrigger value="light" title="Cambiar a tema claro" aria-label="Cambiar a tema claro">
           <Sun className="h-4 w-4" />
           <span className="sr-only">Claro</span>
         </TabsTrigger>
-        <TabsTrigger value="dark" title="Cambiar a tema oscuro">
+        <TabsTrigger value="dark" title="Cambiar a tema oscuro" aria-label="Cambiar a tema oscuro">
           <Moon className="h-4 w-4" />
           <span className="sr-only">Oscuro</span>
         </TabsTrigger>
-        <TabsTrigger value="system" title="Cambiar a tema del sistema">
+        <TabsTrigger value="system" title="Cambiar a tema del sistema" aria-label="Cambiar a tema del sistema">
           <Laptop className="h-4 w-4" />
           <span className="sr-only">Sistema</span>
         </TabsTrigger>
