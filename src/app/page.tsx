@@ -232,10 +232,11 @@ export default function HomePage() {
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-semibold">
             <Image
               src={"/MedDashboardDark.webp"}
+              priority={true}
               alt="Mockup de la aplicación"
-              width={1000}
-              height={1000}
-              className="w-full h-full p-3 rounded-4xl object-cover"
+              fill={true}
+              objectFit="cover"
+              className="p-3 rounded-4xl"
               fetchPriority="high"
             />
           </div>
@@ -253,10 +254,11 @@ export default function HomePage() {
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-semibold">
             <Image
               src={"/MedDashboardDark.webp"}
+              priority={true}
               alt="Mockup de la aplicación"
-              width={1000}
-              height={1000}
-              className="w-full h-full p-3 rounded-4xl object-cover"
+              fill={true}
+              objectFit="cover"
+              className="p-3 rounded-4xl"
               fetchPriority="high"
             />
           </div>
@@ -552,7 +554,7 @@ export default function HomePage() {
             </ul>
           </div>
 
-          {/* Columna 4 (real): Contacto */}
+          {/* Columna 4: Contacto */}
           <div className="items-start font-light leading-8">
             <span className="text-lg text-foreground">Contacto</span>
             <ul className="text-muted-foreground">
