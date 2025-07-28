@@ -30,6 +30,11 @@ const ConfigurationView = dynamic(() => import('../configurations/config-view'),
   ssr: false,
 });
 
+const AiCareView = dynamic(() => import('../ai-care/ai-care-view'), {
+  loading: LoadingSpinner,
+  ssr: false,
+});
+
 const CalendarWrapper = () => (
   <div className="flex flex-1 flex-col overflow-hidden">
     <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
@@ -66,6 +71,18 @@ const ConfigurationWrapper = () => (
   </div>
 );
 
+const AiCareWrapper = () => (
+  <div className="flex flex-1 flex-col overflow-hidden">
+    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+      <div className="h-full w-full flex flex-col">
+        <Suspense fallback={<LoadingSpinner />}>
+          <AiCareView />
+        </Suspense>
+      </div>
+    </main>
+  </div>
+);
+
 const ViewRenderer: React.FC = () => {
   const { currentView } = useNavigation();
   const { userRole, isLoadingRole, error } = useAuth();
@@ -80,6 +97,9 @@ const ViewRenderer: React.FC = () => {
     
     case 'configuration':
       return <ConfigurationWrapper />;
+    
+    case 'ai-care':
+      return <AiCareWrapper />;
     
     case 'dashboard':
     default:

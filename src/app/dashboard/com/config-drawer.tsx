@@ -10,7 +10,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Settings, Bell, Building, LogOut } from 'lucide-react';
+import { Settings, Bell, Building, LogOut, MessageCircle } from 'lucide-react';
 import { useNavigation } from '@/app/context/NavigationContext';
 import { useAuth } from '@/app/context/AuthContext';
 
@@ -35,6 +35,12 @@ const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
       icon: Building,
       title: 'Organizacion',
       action: () => setCurrentView('organization'),
+    }] : []),
+    // Solo mostrar 'Organizacion' si el rol es 'admin'
+    ...(userRole === 'admin' ? [{
+      icon: MessageCircle,
+      title: 'AI-Care',
+      action: () => setCurrentView('ai-care'),
     }] : []),
     {
       icon: Bell,
