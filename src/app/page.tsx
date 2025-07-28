@@ -545,8 +545,10 @@ export default function HomePage() {
           <div className="items-start font-light leading-8">
             <span className="text-lg text-foreground">Legal</span>
             <ul className="text-muted-foreground">
-              <li><Link href="/privacy" className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
-              <li><Link href="/terms" className="hover:text-primary transition-colors">Términos de Servicio</Link></li>
+              <li><Link href="/legal/privacy-policy" prefetch={false} className="hover:text-primary transition-colors">Política de Privacidad</Link></li>
+              <li><Link href="/legal/terms-of-service" prefetch={false} className="hover:text-primary transition-colors">Términos de Servicio</Link></li>
+              <li><Link href="/legal/terms-and-conditions" prefetch={false} className="hover:text-primary transition-colors">Términos y Condiciones</Link></li>
+              <li><Link href="/legal/cookies" prefetch={false} className="hover:text-primary transition-colors">Política de Cookies</Link></li>
             </ul>
           </div>
 

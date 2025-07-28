@@ -131,6 +131,7 @@ export function StaffDetailModal({
           <Image 
             src="/img/avatar_1.webp" 
             alt="Perfil" 
+            priority={true}
             width={500}
             height={500}
             className="absolute inset-0 w-full h-full object-cover"
