@@ -115,6 +115,12 @@
   "browserslist": [
     ">=2%",
     "not dead",
-    "not op_mini all"
+    "not op_mini all",
+    "not safari < 12",
+    "not ios_saf < 12",
+    "not android < 67",
+    "not edge < 79",
+    "not firefox < 67",
+    "not chrome < 64"
   ]
 }
