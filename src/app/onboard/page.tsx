@@ -25,7 +25,7 @@ function OnboardContent() {
     const searchParams = useSearchParams();
     const initialInvitationCode = searchParams.get('invitacionCode');
     const initialRole = searchParams.get('role');
-    const { signOut, getAuthToken, userRole } = useAuth();
+    const { signOut, getAuthToken, userRole, refreshUserInfo } = useAuth();
 
     useEffect(() => {
         // Verificar que los parámetros no sean null ni la cadena "null"
@@ -128,6 +128,10 @@ function OnboardContent() {
             ? '¡Organización creada y plan seleccionado!'
             : '¡Plan seleccionado!'
         );
+        
+        // Refrescar la información del usuario para obtener el organizationId actualizado
+        await refreshUserInfo();
+        
         router.push('/dashboard');
       } catch (error) {
         console.error('Error al procesar el plan y la organización:', error);

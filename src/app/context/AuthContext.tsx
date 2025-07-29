@@ -83,6 +83,7 @@ interface AuthContextType {
   signInWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>;
   signUpWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUserInfo: () => Promise<void>;
   error: AuthError | null;
 }
 
@@ -335,6 +336,40 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     }
   };
 
+  /**
+   * Refresca la información del usuario desde la base de datos.
+   * Útil después de crear una organización o cambiar el rol.
+   * @async
+   * @returns {Promise<void>}
+   */
+  const refreshUserInfo = async (): Promise<void> => {
+    if (!user) return;
+    
+    setIsLoadingRole(true);
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/users/rol', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUserRole(data.role);
+        setOrganizationId(data.organizationId || null);
+        setDoctorId(data.doctorId || null);
+        setAssistantId(data.assistantId || null);
+      } else {
+        console.error('Error refreshing user info:', response.status);
+      }
+    } catch (error) {
+      console.error('Error refreshing user info:', error);
+    } finally {
+      setIsLoadingRole(false);
+    }
+  };
+
   const contextValue: AuthContextType = {
     user,
     loading,
@@ -348,6 +383,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     signInWithEmail,
     signUpWithEmail, 
     signOut,
+    refreshUserInfo,
     error,
   };
 
