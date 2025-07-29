@@ -37,7 +37,7 @@ const AiCareView = dynamic(() => import('../ai-care/ai-care-view'), {
 
 const CalendarWrapper = () => (
   <div className="flex flex-1 flex-col overflow-hidden">
-    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2">
       <div className="h-full w-full flex flex-col">
         <Suspense fallback={<LoadingSpinner />}>
           <CalendarView />
@@ -49,7 +49,7 @@ const CalendarWrapper = () => (
 
 const OrganizationConfigWrapper = () => (
   <div className="flex flex-1 flex-col overflow-hidden">
-    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2">
       <div className="h-full w-full flex flex-col">
         <Suspense fallback={<LoadingSpinner />}>
           <OrganizationConfigView />
@@ -61,7 +61,7 @@ const OrganizationConfigWrapper = () => (
 
 const ConfigurationWrapper = () => (
   <div className="flex flex-1 flex-col overflow-hidden">
-    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2">
       <div className="h-full w-full flex flex-col">
         <Suspense fallback={<LoadingSpinner />}>
           <ConfigurationView />
@@ -72,9 +72,9 @@ const ConfigurationWrapper = () => (
 );
 
 const AiCareWrapper = () => (
-  <div className="flex flex-1 flex-col overflow-hidden">
-    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
-      <div className="h-full w-full flex flex-col">
+  <div className="flex flex-1 flex-col h-screen overflow-hidden">
+    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2 flex flex-col">
+      <div className="h-screen w-full flex flex-col flex-1">
         <Suspense fallback={<LoadingSpinner />}>
           <AiCareView />
         </Suspense>
