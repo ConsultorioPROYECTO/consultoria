@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { sendEmailVerification } from 'firebase/auth';
+import { toast } from 'sonner';
 
 export function useUserSync() {
   const { user } = useAuth();
@@ -13,7 +14,9 @@ export function useUserSync() {
     if (!currentUser.emailVerified) {
       try {
         await sendEmailVerification(currentUser);
-        alert('Te hemos enviado un correo de verificación. Por favor, verifica tu correo antes de continuar.');
+        toast.success('Correo de verificación enviado', {
+          description: 'Te hemos enviado un correo de verificación. Por favor, verifica tu correo antes de continuar.'
+        });
       } catch (error) {
         console.error('Error al enviar correo de verificación:', error);
       }
