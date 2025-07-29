@@ -63,7 +63,7 @@ function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetu
   );
 }
 
-function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: JoinOrganizationProps) {
+function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nextStep }: JoinOrganizationProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -107,7 +107,8 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: J
 
       if (joinResponse.ok) {
         alert("¡Te has unido exitosamente a la organización!");
-        router.push('/dashboard');
+        // Avanzar al siguiente paso en lugar de ir directamente al dashboard
+        nextStep();
         return;
       }
 

@@ -43,10 +43,14 @@ export function useUserSync() {
       }
 
       const syncedUserData = await response.json();
+      
+      // Acceder a los datos correctamente desde la estructura de respuesta
+      const userRole = syncedUserData.data?.userRole || syncedUserData.userRole;
+      const organizationId = syncedUserData.data?.organizationId || syncedUserData.organizationId;
 
-      if (syncedUserData.userRole === 'N/A' || syncedUserData.organizationId === null) {
+      if (userRole === 'N/A' || organizationId === null || organizationId === undefined) {
         router.push('/onboard');
-      } else if (syncedUserData.userRole && syncedUserData.organizationId) {
+      } else if (userRole && organizationId) {
         router.push('/dashboard');
       } else {
         // Caso de seguridad: si no cumple ninguna condición, ir a onboard
