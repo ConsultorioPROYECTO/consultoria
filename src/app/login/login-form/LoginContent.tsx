@@ -27,7 +27,7 @@ export function LoginContent() {
   const signupHref = buildAuthRedirectUrl('/signup', invitacionCode, role);
 
   return (
-    <div className="px-4">
+    <div className="px-4 h-screen">
       <div className="grid grid-cols-1 h-full w-full gap-4 place-items-center place-content-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Iniciar Sesión</h1>
@@ -35,7 +35,7 @@ export function LoginContent() {
             Ingresa tus credenciales para acceder a tu cuenta.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-4 w-full">
+        <div className="grid grid-cols-1 gap-4 w-full max-w-sm ">
           {/* Desktop Login Form */}
           <div className="hidden lg:block">
             <LoginForm />
