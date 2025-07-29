@@ -27,6 +27,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useRef,
   ReactNode,
   ReactElement,
 } from 'react';
@@ -116,48 +117,72 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const [doctorId, setDoctorId] = useState<number | null>(null);
   const [assistantId, setAssistantId] = useState<number | null>(null);
 
+  // Ref para evitar múltiples peticiones con el mismo usuario
+  const lastUserUidRef = useRef<string | null>(null);
+  const roleRequestRef = useRef<Promise<void> | null>(null);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       auth,
       async (currentUser) => {
         setUser(currentUser);
+        
         if (currentUser) {
+          // Evitar múltiples peticiones para el mismo usuario
+          if (lastUserUidRef.current === currentUser.uid && roleRequestRef.current) {
+            await roleRequestRef.current;
+            return;
+          }
+          
+          lastUserUidRef.current = currentUser.uid;
           setIsLoadingRole(true);
-          try {
-            const token = await currentUser.getIdToken();
-            const response = await fetch('/api/users/rol', {
-              headers: {
-                'Authorization': `Bearer ${token}`
+          
+          // Crear una promesa para evitar peticiones duplicadas
+          const roleRequest = (async () => {
+            try {
+              const token = await currentUser.getIdToken();
+              const response = await fetch('/api/users/rol', {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                setUserRole(data.role);
+                setOrganizationId(data.organizationId || null);
+                setDoctorId(data.doctorId || null);
+                setAssistantId(data.assistantId || null);
+              } else {
+                setUserRole(null);
+                setOrganizationId(null);
+                setDoctorId(null);
+                setAssistantId(null);
               }
-            });
-            if (response.ok) {
-              const data = await response.json();
-              setUserRole(data.role);
-              setOrganizationId(data.organizationId || null);
-              setDoctorId(data.doctorId || null);
-              setAssistantId(data.assistantId || null);
-            } else {
+            } catch (error) {
+              console.error("Error fetching user role:", error);
               setUserRole(null);
               setOrganizationId(null);
               setDoctorId(null);
               setAssistantId(null);
+            } finally {
+              setIsLoadingRole(false);
+              roleRequestRef.current = null;
             }
-          } catch (error) {
-            console.error("Error fetching user role:", error);
-            setUserRole(null);
-            setOrganizationId(null);
-            setDoctorId(null);
-            setAssistantId(null);
-          } finally {
-            setIsLoadingRole(false);
-          }
+          })();
+          
+          roleRequestRef.current = roleRequest;
+          await roleRequest;
         } else {
+          lastUserUidRef.current = null;
+          roleRequestRef.current = null;
           setUserRole(null);
           setOrganizationId(null);
           setDoctorId(null);
           setAssistantId(null);
           setIsLoadingRole(false);
         }
+        
         setLoading(false);
         setError(null);
       },
@@ -171,6 +196,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         setAssistantId(null);
         setLoading(false);
         setIsLoadingRole(false);
+        lastUserUidRef.current = null;
+        roleRequestRef.current = null;
       },
     );
 

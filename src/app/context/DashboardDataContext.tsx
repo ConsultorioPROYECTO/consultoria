@@ -489,9 +489,22 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     });
   }, [fetchMedicalServices, fetchDoctorServices, fetchPatients, fetchUsers, userRole]);
 
+  // Ref para evitar cargas múltiples
+  const hasLoadedInitialDataRef = useRef(false);
+  const lastUserRoleRef = useRef<string | null>(null);
+
   // Función estable para cargar datos iniciales
   const loadInitialData = useCallback(() => {
-    if (user) {
+    if (user && userRole && userRole !== 'N/A') {
+      // Evitar cargas duplicadas para el mismo usuario y rol
+      const currentUserRole = `${user.uid}-${userRole}`;
+      if (hasLoadedInitialDataRef.current && lastUserRoleRef.current === currentUserRole) {
+        return;
+      }
+      
+      hasLoadedInitialDataRef.current = true;
+      lastUserRoleRef.current = currentUserRole;
+      
       // Crear array de promesas basado en el rol del usuario
       const promises = [
         fetchMedicalServices(),
@@ -521,8 +534,15 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
   // Cargar datos iniciales cuando el usuario esté disponible
   useEffect(() => {
+    // Reset flag cuando cambia el usuario
+    if (!user) {
+      hasLoadedInitialDataRef.current = false;
+      lastUserRoleRef.current = null;
+      return;
+    }
+    
     loadInitialData();
-  }, [loadInitialData]);
+  }, [loadInitialData, user]);
 
   const value: DashboardDataContextType = {
     state,

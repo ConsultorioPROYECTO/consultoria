@@ -25,7 +25,7 @@ function OnboardContent() {
     const searchParams = useSearchParams();
     const initialInvitationCode = searchParams.get('invitacionCode');
     const initialRole = searchParams.get('role');
-    const { signOut, getAuthToken } = useAuth();
+    const { signOut, getAuthToken, userRole } = useAuth();
 
     useEffect(() => {
         // Verificar que los parámetros no sean null ni la cadena "null"
@@ -41,6 +41,15 @@ function OnboardContent() {
             setCurrentStep(2);
         }
     }, [initialInvitationCode, initialRole]);
+
+    // Manejar el caso cuando el usuario ya tiene un rol pero no organización
+    useEffect(() => {
+        if (userRole && userRole !== 'N/A') {
+            // Usuario ya tiene rol, saltar al paso 2 para unirse a organización
+            setSelectedRole(userRole);
+            setCurrentStep(2);
+        }
+    }, [userRole]);
 
     // Toasts globales para mostrar mensajes de ejemplo
     // useEffect(() => {
