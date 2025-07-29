@@ -46,8 +46,11 @@ export function useUserSync() {
 
       if (syncedUserData.userRole === 'N/A' || syncedUserData.organizationId === null) {
         router.push('/onboard');
-      } else {
+      } else if (syncedUserData.userRole && syncedUserData.organizationId) {
         router.push('/dashboard');
+      } else {
+        // Caso de seguridad: si no cumple ninguna condición, ir a onboard
+        router.push('/onboard');
       }
     } catch (error) {
       console.error('Error en la llamada de sincronización:', error);
