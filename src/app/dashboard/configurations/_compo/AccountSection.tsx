@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { User, updateProfile } from "firebase/auth";
 import Image from 'next/image';
@@ -157,22 +156,6 @@ export function AccountSection({ user, userRole }: AccountSectionProps) {
 
         </div>
       </div>
-
-      {userRole === 'medico' && (
-        <div>
-          <h3 className="text-lg font-medium mb-4">Información Profesional</h3>
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="specialty">Especialidad</Label>
-              <Input id="specialty" defaultValue="" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="license">Número de Colegiado</Label>
-              <Input id="license" defaultValue="" />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
