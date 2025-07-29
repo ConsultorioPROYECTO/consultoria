@@ -142,6 +142,33 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
           const roleRequest = (async () => {
             try {
               const token = await currentUser.getIdToken();
+              
+              // Primero sincronizar el usuario con la base de datos local
+              try {
+                const userData = {
+                  firebaseUid: currentUser.uid,
+                  email: currentUser.email,
+                  emailVerified: currentUser.emailVerified,
+                  phoneNumber: currentUser.phoneNumber,
+                  displayName: currentUser.displayName,
+                  photoURL: currentUser.photoURL,
+                  providerId: currentUser.providerData?.[0]?.providerId || 'password',
+                };
+
+                const syncResponse = await fetch('/api/auth/sync-user', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(userData),
+                });
+
+                if (!syncResponse.ok) {
+                  console.error('Error al sincronizar usuario:', syncResponse.statusText);
+                }
+              } catch (syncError) {
+                console.error('Error en la sincronización del usuario:', syncError);
+              }
+              
+              // Luego obtener el rol del usuario
               const response = await fetch('/api/users/rol', {
                 headers: {
                   'Authorization': `Bearer ${token}`
