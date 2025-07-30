@@ -1,14 +1,12 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Drawer,
@@ -16,7 +14,6 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,11 +27,13 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
-import { Loader2, Plus, UserPlus } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useAuth } from '@/app/context/AuthContext'
 
 interface CreatePatientModalProps {
+  isOpen: boolean
+  onClose: () => void
   onPatientCreated?: () => void
 }
 
@@ -340,10 +339,9 @@ const FormContent = React.memo(({ formData, handleInputChange, handleSubmit, han
 
 FormContent.displayName = 'FormContent'
 
-export function CreatePatientModal({ onPatientCreated }: CreatePatientModalProps) {
+export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: CreatePatientModalProps) {
   const { user } = useAuth()
   const isMobile = useIsMobile()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<CreatePatientRequest>({
     firstName: '',
@@ -474,7 +472,7 @@ export function CreatePatientModal({ onPatientCreated }: CreatePatientModalProps
       
       toast.success('Paciente registrado exitosamente')
       resetForm()
-      setIsDialogOpen(false)
+      onClose()
       onPatientCreated?.()
     } catch (error) {
       console.error('Error creating patient:', error)
@@ -482,30 +480,18 @@ export function CreatePatientModal({ onPatientCreated }: CreatePatientModalProps
     } finally {
       setIsLoading(false)
     }
-  }, [formData, onPatientCreated, validateForm, resetForm, user])
-
-  const handleOpenDialog = () => {
-    setIsDialogOpen(true)
-  }
+  }, [formData, onPatientCreated, validateForm, resetForm, user, onClose])
 
   const handleCloseDialog = useCallback(() => {
     resetForm()
-    setIsDialogOpen(false)
-  }, [resetForm])
+    onClose()
+  }, [resetForm, onClose])
 
   return (
-    <Card className="flex flex-col justify-between h-full">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold flex items-center justify-between">
-          Registrar Nuevo Paciente
-          {isMobile ? (
-            <Drawer open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DrawerTrigger asChild>
-                <Button size="sm" className="ml-2" onClick={handleOpenDialog}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nuevo Paciente
-                </Button>
-              </DrawerTrigger>
+    <>
+      {isMobile ? (
+        <Drawer open={isOpen} onOpenChange={onClose}>
+
               <DrawerContent className="max-h-[90vh]">
                 <div className="overflow-y-auto">
                   <DrawerHeader className="text-left px-4">
@@ -525,15 +511,10 @@ export function CreatePatientModal({ onPatientCreated }: CreatePatientModalProps
                   </div>
                 </div>
               </DrawerContent>
-            </Drawer>
-          ) : (
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="ml-2" onClick={handleOpenDialog}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nuevo Paciente
-                </Button>
-              </DialogTrigger>
+        </Drawer>
+      ) : (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Registrar Nuevo Paciente</DialogTitle>
@@ -549,16 +530,8 @@ export function CreatePatientModal({ onPatientCreated }: CreatePatientModalProps
                    isLoading={isLoading}
                  />
               </DialogContent>
-            </Dialog>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow flex flex-col justify-center items-center text-center space-y-4">
-        <div className="text-muted-foreground">
-          <UserPlus className="h-12 w-12 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">Haga clic en &quot;Nuevo Paciente&quot; para registrar un paciente en el sistema.</p>
-        </div>
-      </CardContent>
-    </Card>
+        </Dialog>
+      )}
+    </>
   )
 }

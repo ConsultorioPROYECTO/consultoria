@@ -1,7 +1,7 @@
 'use client';
 
 import { CreateAppointmentCard } from "../Admin/_compo/CreateAppointmentCard";
-import { CreatePatientModal } from "../../patients/_components/CreatePatientModal";
+import { CreatePatientCard } from "../../patients/_components/CreatePatientCard";
 
 export default function AssistantDashboard() {
 
@@ -14,7 +14,7 @@ export default function AssistantDashboard() {
                 <div className="grid gap-6 lg:grid-cols-2 lg:col-span-2">
                   {/* <WorkloadOverview /> */}
                   <CreateAppointmentCard/>
-                  <CreatePatientModal />
+                  <CreatePatientCard />
                 </div>
               </div>
             </div>

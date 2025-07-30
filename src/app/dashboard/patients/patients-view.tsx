@@ -1,6 +1,6 @@
 'use client';
 
-import { CreatePatientModal } from "./_components/CreatePatientModal";
+import { CreatePatientCard } from "./_components/CreatePatientCard";
 import { useAuth } from "../../context/AuthContext";
 import { PatientsTable } from "./_components/PatientsTable";
 import { PatientsOverview } from "./_components/PatientsOverview";
@@ -34,7 +34,7 @@ export default function PatientsView() {
         {/* Primera fila: Estadísticas y Acciones Rápidas */}
         <div className="grid gap-6 lg:grid-cols-2">
           <PatientsOverview />
-          <CreatePatientModal />
+          <CreatePatientCard />
         </div>
 
         {/* Segunda fila: Tabla de Pacientes */}
