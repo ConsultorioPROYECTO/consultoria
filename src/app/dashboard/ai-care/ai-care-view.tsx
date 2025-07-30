@@ -118,7 +118,7 @@ export default function AICareView() {
   };
 
   return (
-    <div className="flex flex-col flex-1 h-full bg-background p-4 md:p-8">
+    <div className="flex flex-col flex-1 h-full bg-background">
       <AnimatePresence mode="wait">
         {!messageSent ? (
           <div className="flex flex-col gap-4 items-center justify-center w-full flex-1 h-full">
@@ -159,7 +159,7 @@ export default function AICareView() {
           </div>
         ) : (
            <div className="flex flex-col flex-1 h-full justify-center">
-             <div className="flex-1 flex flex-col justify-start p-4 space-y-4">
+             <div className="flex-1 flex flex-col justify-start gap-4">
                 {/* Mensaje del usuario */}
                 <AnimatePresence>
                   {showUserMessage && (
@@ -170,7 +170,7 @@ export default function AICareView() {
                       transition={{ duration: 0.5, ease: "easeOut" }}
                       className="flex justify-end"
                     >
-                      <div className="bg-primary text-primary-foreground rounded-lg p-3 max-w-md ml-auto shadow-lg">
+                      <div className="bg-primary text-primary-foreground rounded-lg p-3 max-w-md shadow-lg">
                         <p className="text-sm">{currentUserMessage}</p>
                       </div>
                     </motion.div>
@@ -187,7 +187,7 @@ export default function AICareView() {
                       transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
                       className="flex justify-start"
                     >
-                      <div className="bg-muted/50 text-muted-foreground rounded-lg p-3 max-w-md mr-auto shadow-lg">
+                      <div className="bg-muted/50 text-muted-foreground rounded-lg p-3 max-w-md shadow-lg">
                         <div className="flex items-center gap-2 mb-2">
                           <motion.div 
                             className="w-2 h-2 bg-green-500 rounded-full"
