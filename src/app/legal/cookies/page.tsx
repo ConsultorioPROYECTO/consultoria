@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { ArrowUpRight, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { geistFont } from '../../fonts';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 
