@@ -7,7 +7,7 @@ export interface PatientWithRelations {
   lastName: string;
   email: string;
   phone: string;
-  dateOfBirth: string;
+  birthDate: string;
   gender: string;
   identificationType: string;
   identificationNumber: string;

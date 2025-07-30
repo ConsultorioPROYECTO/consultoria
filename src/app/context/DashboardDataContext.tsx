@@ -42,7 +42,7 @@ interface Patient {
   lastName: string;
   email: string;
   phone: string;
-  dateOfBirth: string;
+  birthDate: string;
   gender: string;
   identificationType: string;
   identificationNumber: string;

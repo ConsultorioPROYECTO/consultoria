@@ -34,7 +34,9 @@ export function PatientsOverview() {
       female: patients.filter(p => p.gender === 'F').length,
       other: patients.filter(p => p.gender === 'Other').length,
       thisMonth: patients.filter(p => {
-        const patientDate = new Date(p.dateOfBirth);
+        // Usar birthDate en lugar de dateOfBirth para coincidir con el esquema de la API
+        if (!p.birthDate) return false;
+        const patientDate = new Date(p.birthDate);
         return patientDate.getMonth() === currentMonth && patientDate.getFullYear() === currentYear;
       }).length
     };
