@@ -206,7 +206,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
         throw new Error('No se pudo obtener el token de autenticación');
       }
 
-      const response = await fetch('/api/assistants/doctors-with-appointments', {
+      const response = await fetch('/api/assitantants/doctors-with-appointments', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
