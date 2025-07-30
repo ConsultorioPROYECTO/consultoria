@@ -247,9 +247,9 @@ export function PatientsTable() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-col gap-0">
         <CardTitle className="font-bold text-2xl">
-          Pacientes ({filteredPatients.length})
+          Pacientes
         </CardTitle>
       </CardHeader>
       <CardContent>

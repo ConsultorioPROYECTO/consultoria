@@ -63,7 +63,7 @@ export function PatientsOverview() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-col gap-0">
         <CardTitle className="text-2xl font-bold">
           Resumen de Pacientes
         </CardTitle>
