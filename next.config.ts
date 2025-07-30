@@ -10,7 +10,6 @@ const nextConfig: NextConfig = {
   * remotePatterns: Define patrones de URLs externas permitidas.
   */
   images: {
-    domains: ['lh3.googleusercontent.com'],
     remotePatterns: [new URL('https://lh3.googleusercontent.com/**')],
   },
 
