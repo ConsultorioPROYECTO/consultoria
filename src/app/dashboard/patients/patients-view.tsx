@@ -6,7 +6,7 @@ import { Badge } from "@rutas/components/ui/badge";
 import { Users, UserPlus, Search, Calendar, FileText, TrendingUp } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { usePatientsOnly } from "@/hooks/useDashboardOptimized";
-import { PatientsTable } from "../com/PatientsTable";
+import { PatientsTable } from "./_components/PatientsTable";
 import { useMemo } from "react";
 
 // Componente de estadísticas de pacientes
