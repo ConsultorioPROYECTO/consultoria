@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type ViewType = 'dashboard' | 'calendar' | 'organization-config' | 'org-config' | 'organization' | 'configuration' | 'ai-care';
+export type ViewType = 'dashboard' | 'calendar' | 'patients' | 'organization' | 'configuration' | 'ai-care';
 
 interface NavigationContextType {
   currentView: ViewType;

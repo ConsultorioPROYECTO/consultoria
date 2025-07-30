@@ -42,6 +42,12 @@ const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
       title: 'AI-Care',
       action: () => setCurrentView('ai-care'),
     }] : []),
+    // Patients if admin or assistant
+    ...((userRole === 'admin' || userRole === 'asistente') ? [{
+      icon: MessageCircle,
+      title: 'Patients',
+      action: () => setCurrentView('patients'),
+    }] : []),
     {
       icon: Bell,
       title: 'Notificaciones',

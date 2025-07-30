@@ -100,12 +100,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       onClick: () => setCurrentView('organization'),
     });
   }
-    if (userRole === 'admin') {
+  if (userRole === 'admin') {
     navMain.splice(1, 0, {
       title: "Ai-Care",
       url: "/dashboard/ai-care",
       icon: Factory,
       onClick: () => setCurrentView('ai-care'),
+    });
+  }
+  if (userRole === 'admin' || userRole === 'asistente') {
+    navMain.splice(1, 0, {
+      title: "Patients",
+      url: "/dashboard/patients",
+      icon: Factory,
+      onClick: () => setCurrentView('patients'),
     });
   }
 
