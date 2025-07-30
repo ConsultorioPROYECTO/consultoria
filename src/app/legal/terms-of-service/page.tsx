@@ -81,7 +81,7 @@ export default function TermsOfServicePage() {
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
       {/* Navegación Superior Fija */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 pt-3 md:pt-3">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 h-16">
         {/* Logo o Título */}
         <Link href="/" className="text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground">
           Irina
