@@ -3,7 +3,7 @@
 import { LegalNavbar } from '../_components/LegalNavbar';
 import { geistFont } from '../../fonts';
 import { motion } from 'framer-motion';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 export default function TermsOfServicePage() {
   const termsContent = [
@@ -52,29 +52,9 @@ export default function TermsOfServicePage() {
       content: "Si tiene alguna pregunta sobre estos Términos de Servicio, por favor contáctenos a través de los canales de soporte disponibles en nuestra plataforma."
     },
   ];
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isMenuOpen]);
 
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault();
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-    if (isMenuOpen) {
-      setIsMenuOpen(false);
-    }
-  };
+
 
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>

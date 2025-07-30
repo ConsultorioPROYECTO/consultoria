@@ -1,11 +1,9 @@
 "use client";
 
-import { ArrowUpRight, Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { LegalNavbar } from '../_components/LegalNavbar';
 import { geistFont } from '../../fonts';
-import { motion, AnimatePresence } from 'framer-motion';
-import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import React from 'react';
 
 export default function PrivacyPolicyPage() {
   const privacyContent = [
@@ -46,29 +44,9 @@ export default function PrivacyPolicyPage() {
       content: "Si tiene alguna pregunta sobre esta Política de Privacidad, por favor contáctenos a través de los canales de soporte disponibles en nuestra plataforma."
     },
   ];
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (isMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isMenuOpen]);
 
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
-    e.preventDefault();
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-    if (isMenuOpen) {
-      setIsMenuOpen(false);
-    }
-  };
+
 
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
