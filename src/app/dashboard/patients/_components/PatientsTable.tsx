@@ -222,7 +222,7 @@ export function PatientsTable() {
           <CardTitle className="text-sm font-medium">Pacientes</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-2">
+          <div className="animate-pulse flex flex-col gap-2">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-12 bg-gray-200 rounded"></div>
             ))}
@@ -253,7 +253,7 @@ export function PatientsTable() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="w-full space-y-4">
+        <div className="w-full flex flex-col gap-4">
           {/* Filtros */}
           <div className="flex items-center justify-between gap-2">
             <Input
@@ -335,7 +335,7 @@ export function PatientsTable() {
               Mostrando {table.getRowModel().rows.length} de{" "}
               {filteredPatients.length} pacientes
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
