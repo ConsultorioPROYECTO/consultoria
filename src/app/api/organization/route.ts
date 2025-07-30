@@ -45,6 +45,7 @@ import { users } from '@rutas/db/schema/users';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { generateRandomInvitationCode, generateUniqueInstanceId, generateUniqueApiKey } from '@/lib/organization-utils';
+import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
 
 /**
  * Esquema de validación para la creación de organización
@@ -163,6 +164,18 @@ const postUserRoleHandler = async (
       await db.update(users)
       .set({ organizationId: newOrganizationId })
       .where(eq(users.id, user.id));
+
+      // 6. Sincronizar conocimiento con pgVector
+      try {
+        await syncKnowledgeAfterCRUD('organization', 'create', {
+          id: newOrganizationId,
+          organizationId: newOrganizationId
+        });
+        console.log(`Conocimiento sincronizado para organización ${newOrganizationId}`);
+      } catch (syncError) {
+        console.error('Error al sincronizar conocimiento:', syncError);
+        // No fallar la operación principal por errores de sincronización
+      }
 
       return NextResponse.json({ 
         message: 'Organización creada correctamente.',

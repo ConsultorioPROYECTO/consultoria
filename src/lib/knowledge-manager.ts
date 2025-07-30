@@ -690,24 +690,29 @@ export class KnowledgeManager {
    */
   private buildOrganizationPlainText(data: OrganizationKnowledgeData): string {
     const parts = [
-      `Organización: ${data.name}`,
-      `ID de la Organización: ${data.id}`,
+      `Empresa: ${data.name}`,
+      `Nombre de la organización: ${data.name}`,
     ];
 
     if (data.address) {
-      parts.push(`Dirección: ${data.address}`);
+      parts.push(`Dirección de la empresa: ${data.address}`);
+      parts.push(`Ubicación: ${data.address}`);
     }
 
     if (data.phone) {
-      parts.push(`Teléfono: ${data.phone}`);
+      parts.push(`Teléfono de contacto: ${data.phone}`);
+      parts.push(`Número telefónico: ${data.phone}`);
     }
 
     if (data.email) {
-      parts.push(`Email: ${data.email}`);
+      parts.push(`Correo electrónico: ${data.email}`);
+      parts.push(`Email de contacto: ${data.email}`);
     }
 
-    if (data.nit) {
-      parts.push(`NIT: ${data.nit}`);
+    // Información adicional para búsquedas
+    parts.push(`Información de contacto de ${data.name}`);
+    if (data.address && data.phone && data.email) {
+      parts.push(`Datos completos de contacto: ${data.name} - ${data.address} - ${data.phone} - ${data.email}`);
     }
 
     return parts.join('\n');
