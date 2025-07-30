@@ -1,8 +1,8 @@
 "use client";
 
-import Link from 'next/link';
 import { ArrowUpRight, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LegalNavbar } from '../_components/LegalNavbar';
 import { geistFont } from '../../fonts';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
@@ -81,51 +81,7 @@ export default function TermsAndConditionsPage() {
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
       {/* Navegación Superior Fija */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 h-16">
-        {/* Logo o Título */}
-        <Link href="/" className="text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground">
-          Irina
-        </Link>
-        
-        {/* Enlaces Centrales para Escritorio */}
-        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-6">
-            <a href="#" onClick={(e) => handleScroll(e, 'terms')} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-              <ArrowUpRight className="h-4 w-4" /> Términos y Condiciones
-            </a>
-        </div>
-
-        {/* Botones de Auth para Escritorio */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Iniciar sesión
-          </Link>
-          <Button asChild size="sm" className="selection:bg-secondary selection:text-primary">
-            <Link href="/signup">Registro</Link>
-          </Button>
-        </div>
-
-        {/* Botón de Menú para Móvil */}
-        <div className="md:hidden z-50">
-          <Button 
-            onClick={() => setIsMenuOpen(!isMenuOpen)} 
-            variant="ghost" 
-            size="icon"
-            aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"}
-          >
-            <AnimatePresence initial={false} mode="wait">
-              <motion.div
-                key={isMenuOpen ? "x" : "menu"}
-                initial={{ rotate: 45, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -45, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </motion.div>
-            </AnimatePresence>
-          </Button>
-        </div>
-      </nav>
+      <LegalNavbar showSectionLinks={true} sectionId="terms" sectionName="Términos y Condiciones" />
 
       {/* Sección de Contenido de Términos y Condiciones */}
       <section 
