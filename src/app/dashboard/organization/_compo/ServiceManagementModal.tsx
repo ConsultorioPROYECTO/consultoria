@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@rutas/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { FileText } from "lucide-react";
 
 // Tipos basados en la API
 interface MedicalService {
@@ -173,32 +174,45 @@ export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialt
           </TabsList>
           
           <TabsContent value="services" className="mt-6">
-            <div className={`grid gap-8 ${isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'} overflow-y-auto`}>
-              {specialties.map((specialty) => (
-                <section key={specialty.name} className="grid gap-4">
-                  <h3 className="text-xl font-semibold capitalize">{specialty.name}</h3>
-                  <div className="grid gap-4">
-                    {specialty.services.map((service) => (
-                      <div key={service.id} className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-[1fr_auto]'} items-center gap-4 p-3 border rounded-md`}>
-                        <div className="grid gap-1">
-                          <p className="font-medium flex items-center gap-2">
-                            {service.name} 
-                            <Badge variant="outline">{service.code}</Badge>
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Duración: {service.durationMinutes} min - Precio: ${service.basePrice}
-                          </p>
+            {specialties.length === 0 ? (
+              <div className="flex flex-col gap-4 items-center justify-center py-12 text-center">
+                <div className="text-muted-foreground">
+                  <FileText className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium">No hay servicios disponibles</h3>
+                <p className="text-sm text-muted-foreground">Aún no has creado ningún servicio médico.</p>
+                <Button onClick={() => setActiveTab('create')} variant="outline">
+                  Crear primer servicio
+                </Button>
+              </div>
+            ) : (
+              <div className={`grid gap-8 ${isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'} overflow-y-auto`}>
+                {specialties.map((specialty) => (
+                  <section key={specialty.name} className="grid gap-4">
+                    <h3 className="text-xl font-semibold capitalize">{specialty.name}</h3>
+                    <div className="grid gap-4">
+                      {specialty.services.map((service) => (
+                        <div key={service.id} className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-[1fr_auto]'} items-center gap-4 p-3 border rounded-md`}>
+                          <div className="grid gap-1">
+                            <p className="font-medium flex items-center gap-2">
+                              {service.name} 
+                              <Badge variant="outline">{service.code}</Badge>
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Duración: {service.durationMinutes} min - Precio: ${service.basePrice}
+                            </p>
+                          </div>
+                          <div className={`flex items-center gap-3 ${isMobile ? 'justify-between' : ''}`}>
+                            <Switch checked={service.isActive} onCheckedChange={() => handleToggleService(service)} />
+                            <Button variant="outline" size="sm" onClick={() => openEditModal(service)}>Editar</Button>
+                          </div>
                         </div>
-                        <div className={`flex items-center gap-3 ${isMobile ? 'justify-between' : ''}`}>
-                          <Switch checked={service.isActive} onCheckedChange={() => handleToggleService(service)} />
-                          <Button variant="outline" size="sm" onClick={() => openEditModal(service)}>Editar</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="create" className="mt-6">
