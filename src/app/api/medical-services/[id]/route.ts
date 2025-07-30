@@ -60,6 +60,7 @@ import { eq, and, not } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS } from "@/types/api";
 import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
 import type { NewMedicalService } from "@/db/schema";
+import { syncKnowledgeAfterCRUD } from "@/lib/knowledge-manager";
 
 /**
  * Handler para obtener un servicio médico específico por su ID.
@@ -389,6 +390,18 @@ const updateMedicalServiceHandler = async (
       .set(updateData)
       .where(eq(medicalServices.id, serviceId));
 
+    // Sincronizar conocimiento con pgVector después de la actualización
+    try {
+      await syncKnowledgeAfterCRUD(
+        'service',
+        'update',
+        { ...existingService, ...updateData }
+      );
+    } catch (knowledgeError) {
+      console.error('Error sincronizando conocimiento después de actualizar servicio:', knowledgeError);
+      // No fallar la operación principal por errores de sincronización
+    }
+
     return createSuccessResponse(
       { id: serviceId, updated: Object.keys(updateData) },
       "Servicio médico actualizado exitosamente"
@@ -538,6 +551,18 @@ const deleteMedicalServiceHandler = async (
     await db.update(medicalServices)
       .set({ isActive: false })
       .where(eq(medicalServices.id, serviceId));
+
+    // Sincronizar conocimiento con pgVector después de la eliminación
+    try {
+      await syncKnowledgeAfterCRUD(
+        'service',
+        'delete',
+        existingService
+      );
+    } catch (knowledgeError) {
+      console.error('Error sincronizando conocimiento después de eliminar servicio:', knowledgeError);
+      // No fallar la operación principal por errores de sincronización
+    }
 
     return createSuccessResponse(
       { 
