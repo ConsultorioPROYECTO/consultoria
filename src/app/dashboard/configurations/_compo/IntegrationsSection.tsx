@@ -116,6 +116,10 @@ export function IntegrationsSection() {
   const [instanceInfo, setInstanceInfo] = useState<InstanceInfo | null>(null)
   const [isLoadingInstanceInfo, setIsLoadingInstanceInfo] = useState<boolean>(false)
   const [instanceInfoError, setInstanceInfoError] = useState<string | null>(null)
+  
+  // Estados para la desconexión
+  const [isDisconnecting, setIsDisconnecting] = useState<boolean>(false)
+  const [disconnectError, setDisconnectError] = useState<string | null>(null)
 
   /**
    * Checks if the organization has a WhatsApp connection using the connectionState API.
@@ -201,7 +205,56 @@ export function IntegrationsSection() {
     }
   }, [user, getAuthToken]);
 
+  /**
+   * Disconnects the current WhatsApp instance.
+   * 
+   * @returns Promise<void>
+   */
+  const handleDisconnectWhatsApp = async (): Promise<void> => {
+    if (!user) {
+      setDisconnectError("Usuario no autenticado.");
+      return;
+    }
 
+    try {
+      setIsDisconnecting(true);
+      setDisconnectError(null);
+      
+      const token = await getAuthToken();
+      if (!token) {
+        setDisconnectError('No se pudo obtener el token de autenticación');
+        return;
+      }
+
+      const response = await fetch('/api/evolutionAPI/disconnect', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Error ${response.status}: ${response.statusText}`);
+      }
+
+      // Update connection state after successful disconnection
+      setHasWhatsAppConnection(false);
+      setInstanceInfo(null);
+      setShowConnectionInfo(false);
+      setConnectionState(null);
+      
+      console.log('WhatsApp instance disconnected successfully');
+      
+    } catch (error) {
+      console.error('Error disconnecting WhatsApp:', error);
+      setDisconnectError(error instanceof Error ? error.message : 'Error desconocido al desconectar');
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
 
   /**
    * Starts auto-refresh to check connection state and regenerate QR every 30 seconds.
@@ -716,6 +769,33 @@ export function IntegrationsSection() {
                           )}
                         </div>
                       </div>
+                    </div>
+                    
+                    {/* Botón de desconexión */}
+                    <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={handleDisconnectWhatsApp}
+                        disabled={isDisconnecting}
+                        className="w-full"
+                      >
+                        {isDisconnecting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Desconectando...
+                          </>
+                        ) : (
+                          'Desconectar WhatsApp'
+                        )}
+                      </Button>
+                      
+                      {/* Error de desconexión */}
+                      {disconnectError && (
+                        <div className="mt-2 p-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded">
+                          <p className="text-xs text-red-600 dark:text-red-400">{disconnectError}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : null}
