@@ -102,6 +102,7 @@ export class KnowledgeManager {
 
   /**
    * Actualiza el conocimiento de un servicio médico en pgVector
+   * Nota: El método PUT sobrescribe completamente los datos existentes
    */
   async updateServiceKnowledge(
     serviceId: number,
@@ -113,6 +114,7 @@ export class KnowledgeManager {
   /**
    * Crea o actualiza el conocimiento de un servicio médico (compatibilidad hacia atrás)
    * Detecta automáticamente si debe crear o actualizar
+   * Nota: La actualización (PUT) sobrescribe completamente los datos existentes
    */
   async createOrUpdateServiceKnowledge(
     serviceId: number,
@@ -192,6 +194,7 @@ export class KnowledgeManager {
 
   /**
    * Actualiza el conocimiento de una organización en pgVector
+   * Nota: El método PUT sobrescribe completamente los datos existentes
    */
   async updateOrganizationKnowledge(organizationId: number): Promise<void> {
     await this.processOrganizationKnowledge(organizationId, 'PUT');
@@ -200,6 +203,7 @@ export class KnowledgeManager {
   /**
    * Crea o actualiza el conocimiento de una organización (compatibilidad hacia atrás)
    * Detecta automáticamente si debe crear o actualizar
+   * Nota: La actualización (PUT) sobrescribe completamente los datos existentes
    */
   async createOrUpdateOrganizationKnowledge(organizationId: number): Promise<void> {
     try {
@@ -279,6 +283,7 @@ export class KnowledgeManager {
 
   /**
    * Actualiza el conocimiento de una relación doctor-servicio en pgVector
+   * Nota: El método PUT sobrescribe completamente los datos existentes
    */
   async updateDoctorServiceKnowledge(
     doctorId: number,
@@ -291,6 +296,7 @@ export class KnowledgeManager {
   /**
    * Crea o actualiza el conocimiento de una relación doctor-servicio (compatibilidad hacia atrás)
    * Detecta automáticamente si debe crear o actualizar
+   * Nota: La actualización (PUT) sobrescribe completamente los datos existentes
    */
   async createOrUpdateDoctorServiceKnowledge(
     doctorId: number,

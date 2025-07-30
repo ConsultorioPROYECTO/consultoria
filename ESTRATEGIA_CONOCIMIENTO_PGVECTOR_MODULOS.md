@@ -8,7 +8,7 @@ Esta estrategia define la implementación de un sistema de gestión de conocimie
 
 ### API Externa de pgVector
 - **URL**: `https://n8n.srv828784.hstgr.cloud/webhook/3b7d5b57-f750-490a-a047-cccee6818c26`
-- **Métodos**: POST (para crear), PUT/PATCH (para actualizar), DELETE (para eliminar)
+- **Métodos**: POST (para crear), PUT (para actualizar - sobrescribe completamente), DELETE (para eliminar)
 - **Content-Type**: `application/json`
 - **Timeout**: 10 segundos por petición
 - **Reintentos**: Hasta 3 intentos con backoff exponencial
@@ -32,7 +32,9 @@ Esta estrategia define la implementación de un sistema de gestión de conocimie
 }
 ```
 
-#### Para Actualizar Conocimiento (PUT/PATCH)
+#### Para Actualizar Conocimiento (PUT)
+**Nota**: El método PUT sobrescribe completamente los datos existentes.
+
 ```json
 {
   "vector_table_name": "general",
@@ -209,6 +211,7 @@ class KnowledgeManager {
 - **Reintentos**: 3 intentos máximo
 - **Backoff**: Exponencial (1s, 2s, 4s)
 - **Timeout**: 10 segundos por petición
+- **Método PUT**: Sobrescribe completamente los datos existentes (no es incremental)
 
 ### 6.2 Logging
 - Registrar todas las peticiones exitosas
