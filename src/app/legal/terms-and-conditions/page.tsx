@@ -1,10 +1,8 @@
 "use client";
 
-import { ArrowUpRight, Menu, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { LegalNavbar } from '../_components/LegalNavbar';
 import { geistFont } from '../../fonts';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import React, { useState, useEffect } from 'react';
 
 export default function TermsAndConditionsPage() {
