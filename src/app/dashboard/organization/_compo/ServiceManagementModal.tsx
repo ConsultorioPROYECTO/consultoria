@@ -2,6 +2,7 @@
 
 import { Button } from "@rutas/components/ui/button";
 import { Input } from "@rutas/components/ui/input";
+import { Textarea } from "@rutas/components/ui/textarea";
 import { Switch } from "@rutas/components/ui/switch";
 import { Badge } from "@rutas/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -276,8 +277,10 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
     isActive: true,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const type = 'type' in e.target ? e.target.type : 'text';
+    const checked = 'checked' in e.target ? e.target.checked : false;
     setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
@@ -315,7 +318,16 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
         </div>
         <div className="grid gap-2">
           <Label htmlFor="create-description" className="text-base font-medium">Descripción</Label>
-          <Input id="create-description" name="description" value={formData.description || ''} onChange={handleChange} />
+          <Textarea 
+            id="create-description" 
+            name="description" 
+            value={formData.description || ''} 
+            onChange={handleChange}
+            className="min-h-[80px] resize-none text-justify break-words hyphens-auto"
+            rows={6}
+            minLength={10}
+            maxLength={255}
+          />
         </div>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
           <div className="grid gap-2">
