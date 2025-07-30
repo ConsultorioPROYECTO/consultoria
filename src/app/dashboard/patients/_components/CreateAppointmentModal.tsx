@@ -132,7 +132,7 @@ interface CreateAppointmentModalProps {
  * Componente para crear citas médicas con integración completa al backend
  */
 export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, contextDoctorId }: CreateAppointmentModalProps) {
-  const { user, userRole } = useAuth();
+  const { user, userRole, getAuthToken } = useAuth();
   const isMobile = useIsMobile();
   
   // Hooks del contexto
@@ -201,7 +201,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
     
     setIsLoadingDoctors(true);
     try {
-      const token = await user?.getIdToken();
+      const token = await getAuthToken();
       if (!token) {
         throw new Error('No se pudo obtener el token de autenticación');
       }
@@ -214,11 +214,38 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       });
 
       if (!response.ok) {
-        throw new Error('Error al obtener médicos');
+        console.warn('Failed to fetch assigned doctors for assistant');
+        return;
       }
 
-      const data = await response.json();
-      setAssistantDoctors(data.doctors || []);
+      const assistantData = await response.json();
+      
+      // Definir interfaz para los datos de doctores asignados
+      interface AssignedDoctor {
+        idDoctor: number;
+        userId?: string;
+        user?: {
+          displayName?: string;
+          email?: string;
+          firstName?: string;
+          lastName?: string;
+        };
+      }
+      
+      // Mapear los doctores asignados al formato esperado
+      const doctors = (assistantData.data || []).map((doctor: AssignedDoctor) => ({
+        id: doctor.userId?.toString() || doctor.idDoctor.toString(),
+        displayName: doctor.user?.displayName || doctor.user?.email || `${doctor.user?.firstName || ''} ${doctor.user?.lastName || ''}`.trim() || `Doctor ${doctor.idDoctor}`,
+        email: doctor.user?.email || '',
+        firstName: doctor.user?.firstName || '',
+        lastName: doctor.user?.lastName || '',
+        role: 'medico',
+        organizationId: 0,
+        isActive: true,
+        idDoctor: doctor.idDoctor
+      }));
+      
+      setAssistantDoctors(doctors);
     } catch (error) {
       console.error('Error fetching assistant doctors:', error);
       toast.error('Error al cargar médicos', {
@@ -229,14 +256,14 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
     } finally {
       setIsLoadingDoctors(false);
     }
-  }, [user, userRole]);
+  }, [getAuthToken, userRole]);
 
   /**
    * Obtener intervalos de disponibilidad del doctor
    */
   const fetchDoctorAvailability = useCallback(async (doctorId: number, date: string, intervalMinutes: number) => {
     try {
-      const token = await user?.getIdToken();
+      const token = await getAuthToken();
       if (!token) {
         throw new Error('No se pudo obtener el token de autenticación');
       }
@@ -262,7 +289,7 @@ export function CreateAppointmentModal({ isOpen, onClose, onAppointmentCreated, 
       });
       return [];
     }
-  }, [user]);
+  }, [getAuthToken]);
 
   /**
    * Cargar intervalos de disponibilidad
@@ -628,12 +655,9 @@ const FormContent = React.memo<FormContentProps>(({
                   aria-expanded={openDoctorCombo}
                   className="w-full justify-between"
                 >
-                  {formData.doctorId > 0
-                    ? (() => {
-                        const doctor = doctors.find((d) => (d.idDoctor || d.id) === formData.doctorId);
-                        return doctor ? (doctor.displayName || `${doctor.firstName} ${doctor.lastName}`) : "Seleccionar médico...";
-                      })()
-                    : "Seleccionar médico..."}
+                  <span className="truncate">
+                    {doctors.find((doctor) => doctor.idDoctor?.toString() === formData.doctorId.toString())?.displayName || "Seleccionar médico..."}
+                  </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
