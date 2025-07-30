@@ -277,7 +277,7 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
     basePrice: '0',
     category: '',
     isActive: true,
-    requiresPreparation: false,
+    requiresPreparation: true,
     preparationInstructions: '',
   });
 
@@ -300,7 +300,7 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
       basePrice: '0',
       category: '',
       isActive: true,
-      requiresPreparation: false,
+      requiresPreparation: true,
       preparationInstructions: '',
     });
   };
@@ -333,6 +333,7 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
             rows={6}
             minLength={10}
             maxLength={255}
+            placeholder="Describe detalladamente el servicio médico, procedimientos incluidos, beneficios y cualquier información relevante para el paciente..."
           />
         </div>
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
@@ -393,7 +394,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
         basePrice: '0',
         category: '',
         isActive: true,
-        requiresPreparation: false,
+        requiresPreparation: true,
         preparationInstructions: '',
       });
     }
@@ -434,7 +435,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
               </div>
               <div>
                 <Label htmlFor="description" className="text-base font-medium">Descripción</Label>
-                <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} />
+                <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} placeholder="Describe el servicio médico..." />
               </div>
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                 <div>
@@ -502,9 +503,9 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
                 <Input id="category" name="category" value={formData.category || ''} onChange={handleChange} required />
               </div>
               <div>
-                <Label htmlFor="description" className="text-base font-medium">Descripción</Label>
-                <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} />
-              </div>
+                 <Label htmlFor="description" className="text-base font-medium">Descripción</Label>
+                 <Input id="description" name="description" value={formData.description || ''} onChange={handleChange} placeholder="Describe el servicio médico..." />
+               </div>
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                 <div>
                   <Label htmlFor="durationMinutes" className="text-base font-medium">Duración (min)</Label>
