@@ -75,13 +75,12 @@ interface OrganizationKnowledgeData {
 interface DoctorServiceKnowledgeData {
   doctorId: number;
   doctorName: string | null;
-  doctorEmail: string | null;
-  doctorPhone: string | null;
   serviceId: number;
   serviceName: string;
   serviceDescription: string | null;
   serviceDurationMinutes: number;
   serviceBasePrice: string;
+  customPrice: string | null;
   organizationId: number;
   organizationName: string;
 }
@@ -629,13 +628,12 @@ export class KnowledgeManager {
         .select({
           doctorId: doctors.idDoctor,
           doctorName: users.displayName,
-          doctorEmail: users.email,
-          doctorPhone: users.phoneNumber,
           serviceId: medicalServices.id,
           serviceName: medicalServices.name,
           serviceDescription: medicalServices.description,
           serviceDurationMinutes: medicalServices.durationMinutes,
           serviceBasePrice: medicalServices.basePrice,
+          customPrice: doctorServices.customPrice,
           organizationId: organization.id,
           organizationName: organization.name
         })
@@ -721,21 +719,19 @@ export class KnowledgeManager {
   private buildDoctorServicePlainText(data: DoctorServiceKnowledgeData): string {
     const parts = [
       `Doctor: ${data.doctorName || 'Sin nombre'} (ID: ${data.doctorId})`,
-      `Email del Doctor: ${data.doctorEmail || 'Sin email'}`,
       `Servicio: ${data.serviceName} (ID: ${data.serviceId})`,
       `Organización: ${data.organizationName} (ID: ${data.organizationId})`,
     ];
-
-    if (data.doctorPhone) {
-      parts.push(`Teléfono del Doctor: ${data.doctorPhone}`);
-    }
 
     if (data.serviceDescription) {
       parts.push(`Descripción del Servicio: ${data.serviceDescription}`);
     }
 
     parts.push(`Duración del Servicio: ${data.serviceDurationMinutes} minutos`);
-    parts.push(`Precio del Servicio: $${data.serviceBasePrice}`);
+    
+    // Usar precio personalizado si existe, sino usar precio base del servicio
+    const finalPrice = data.customPrice || data.serviceBasePrice;
+    parts.push(`Precio del Servicio: $${finalPrice}`);
 
     return parts.join('\n');
   }

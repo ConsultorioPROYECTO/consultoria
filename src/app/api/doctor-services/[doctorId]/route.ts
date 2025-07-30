@@ -106,6 +106,7 @@ import { eq, and, inArray } from 'drizzle-orm';
 import { auth } from '@/app/lib/firebase/server/adminConfig';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/types/api';
+import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
 
 interface RouteParams {
   doctorId: string;
@@ -529,6 +530,20 @@ const updateDoctorServicesHandler = async (
         }
       }
     });
+
+    // Sincronizar conocimiento con pgVector para cada servicio actualizado
+    try {
+      for (const serviceId of serviceIds) {
+        await syncKnowledgeAfterCRUD('doctor_service', 'update', {
+          doctorId,
+          serviceId,
+          organizationId: requestingUser.organizationId
+        });
+      }
+    } catch (syncError) {
+      console.error('❌ [DoctorServices] Error sincronizando conocimiento:', syncError);
+      // No fallar la operación principal por errores de sincronización
+    }
 
     return createSuccessResponse(updatedServices, 'Doctor services updated successfully');
   } catch (error) {

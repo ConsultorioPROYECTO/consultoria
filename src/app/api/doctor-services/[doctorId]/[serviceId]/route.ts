@@ -130,11 +130,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { doctorServices } from '@/db/schema';
+import { doctorServices, users } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/app/lib/firebase/server/adminConfig';
 import { DecodedIdToken } from 'firebase-admin/auth';
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/types/api';
+import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
 
 interface RouteParams {
   doctorId: string;
@@ -452,6 +453,15 @@ const updateDoctorServiceHandler = async (
       return createErrorResponse('Custom price must be a non-negative number', undefined, HTTP_STATUS.BAD_REQUEST);
     }
 
+    // Obtener usuario para validación de organización
+    const requestingUser = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid)
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      return createErrorResponse('User not found or missing organization', undefined, HTTP_STATUS.FORBIDDEN);
+    }
+
     const existingRelation = await db.query.doctorServices.findFirst({
       where: and(
         eq(doctorServices.doctorId, doctorId),
@@ -474,6 +484,18 @@ const updateDoctorServiceHandler = async (
         eq(doctorServices.doctorId, doctorId),
         eq(doctorServices.serviceId, serviceId)
       ));
+
+    // Sincronizar conocimiento con pgVector
+    try {
+      await syncKnowledgeAfterCRUD('doctor_service', 'update', {
+        doctorId,
+        serviceId,
+        organizationId: requestingUser.organizationId
+      });
+    } catch (syncError) {
+      console.error('❌ [DoctorServices] Error sincronizando conocimiento:', syncError);
+      // No fallar la operación principal por errores de sincronización
+    }
 
     return createSuccessResponse(
       { doctorId, serviceId, customPrice: customPrice?.toString() },
@@ -526,6 +548,15 @@ const deleteDoctorServiceHandler = async (
       return createErrorResponse('Invalid doctor ID or service ID', undefined, HTTP_STATUS.BAD_REQUEST);
     }
 
+    // Obtener usuario para validación de organización
+    const requestingUser = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid)
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      return createErrorResponse('User not found or missing organization', undefined, HTTP_STATUS.FORBIDDEN);
+    }
+
     const existingRelation = await db.query.doctorServices.findFirst({
       where: and(
         eq(doctorServices.doctorId, doctorId),
@@ -548,6 +579,18 @@ const deleteDoctorServiceHandler = async (
         eq(doctorServices.doctorId, doctorId),
         eq(doctorServices.serviceId, serviceId)
       ));
+
+    // Sincronizar conocimiento con pgVector (eliminación)
+    try {
+      await syncKnowledgeAfterCRUD('doctor_service', 'delete', {
+        doctorId,
+        serviceId,
+        organizationId: requestingUser.organizationId
+      });
+    } catch (syncError) {
+      console.error('❌ [DoctorServices] Error sincronizando conocimiento:', syncError);
+      // No fallar la operación principal por errores de sincronización
+    }
 
     return createSuccessResponse(null, 'Doctor service relationship deleted successfully');
   } catch (error) {

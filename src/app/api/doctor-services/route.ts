@@ -78,6 +78,7 @@ import type { DecodedIdToken } from "firebase-admin/auth";
 import { eq, and } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from "@/types/api";
 import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import { syncKnowledgeAfterCRUD } from "@/lib/knowledge-manager";
 import type {  NewDoctorService } from "@/db/schema";
 
 /**
@@ -468,6 +469,18 @@ const createDoctorServiceHandler = async (
     };
 
     await db.insert(doctorServices).values(newDoctorServiceData);
+
+    // Sincronizar conocimiento con pgVector
+    try {
+      await syncKnowledgeAfterCRUD('doctor_service', 'create', {
+        doctorId,
+        serviceId,
+        organizationId: requestingUser.organizationId
+      });
+    } catch (syncError) {
+      console.error('❌ [DoctorServices] Error sincronizando conocimiento:', syncError);
+      // No fallar la operación principal por errores de sincronización
+    }
 
     return createSuccessResponse(
       { doctorId, serviceId },
