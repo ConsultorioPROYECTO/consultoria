@@ -35,6 +35,11 @@ const AiCareView = dynamic(() => import('../ai-care/ai-care-view'), {
   ssr: false,
 });
 
+const PatientsView = dynamic(() => import('../patients/patients-view'), {
+  loading: LoadingSpinner,
+  ssr: false,
+});
+
 const CalendarWrapper = () => (
   <div className="flex flex-1 flex-col overflow-hidden">
     <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2">
@@ -83,6 +88,18 @@ const AiCareWrapper = () => (
   </div>
 );
 
+const PatientsWrapper = () => (
+  <div className="flex flex-1 flex-col overflow-hidden">
+    <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2">
+      <div className="h-full w-full flex flex-col">
+        <Suspense fallback={<LoadingSpinner />}>
+          <PatientsView />
+        </Suspense>
+      </div>
+    </main>
+  </div>
+);
+
 const ViewRenderer: React.FC = () => {
   const { currentView } = useNavigation();
   const { userRole, isLoadingRole, error } = useAuth();
@@ -100,6 +117,9 @@ const ViewRenderer: React.FC = () => {
     
     case 'ai-care':
       return <AiCareWrapper />;
+    
+    case 'patients':
+      return <PatientsWrapper />;
     
     case 'dashboard':
     default:
