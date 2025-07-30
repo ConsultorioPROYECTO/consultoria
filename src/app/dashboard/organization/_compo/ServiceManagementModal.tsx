@@ -339,7 +339,7 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
             <Input id="create-basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2">
           <Switch id="create-isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
           <Label htmlFor="create-isActive" className="text-base font-medium">Activo</Label>
         </div>
@@ -417,7 +417,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
                   <Input id="basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
                 <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
               </div>
@@ -465,7 +465,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
                   <Input id="basePrice" name="basePrice" type="number" step="0.01" value={formData.basePrice || ''} onChange={handleChange} required />
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
                 <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
               </div>
