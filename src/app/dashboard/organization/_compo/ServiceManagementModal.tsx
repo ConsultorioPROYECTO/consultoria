@@ -173,7 +173,7 @@ export function ServiceSpecialtyConfig({ isOpen, onOpenChange }: ServiceSpecialt
           </TabsList>
           
           <TabsContent value="services" className="mt-6">
-            <div className={`grid gap-8 ${isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'} overflow-y-auto pr-2`}>
+            <div className={`grid gap-8 ${isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'} overflow-y-auto`}>
               {specialties.map((specialty) => (
                 <section key={specialty.name} className="grid gap-4">
                   <h3 className="text-xl font-semibold capitalize">{specialty.name}</h3>
@@ -283,8 +283,8 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
   };
 
   return (
-    <div className={`${isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'} overflow-y-auto pr-2`}>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className={`${isMobile ? 'max-h-[50vh]' : 'max-h-[60vh]'} overflow-y-auto `}>
+      <form onSubmit={handleSubmit} className="grid gap-4">
         <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4 font-medium`}>
           <div className="grid gap-2">
             <Label htmlFor="create-name" className="text-base font-medium">Nombre</Label>
@@ -362,7 +362,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
             <DrawerHeader>
               <DrawerTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DrawerTitle>
             </DrawerHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 p-4">
+            <form onSubmit={handleSubmit} className="grid gap-4 p-4">
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                 <div>
                   <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
@@ -410,7 +410,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
             <DialogHeader>
               <DialogTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 p-4">
+            <form onSubmit={handleSubmit} className="grid gap-4 p-4">
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                 <div>
                   <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
@@ -465,11 +465,11 @@ function ServiceSpecialtySkeleton() {
         <Skeleton className="h-10 w-full" />
       </div>
       
-      <div className="space-y-8 max-h-[60vh] overflow-y-auto pr-2">
+      <div className="grid gap-8 max-h-[60vh] overflow-y-auto">
         {[...Array(3)].map((_, i) => (
           <section key={i}>
             <Skeleton className="h-7 w-1/4 mb-3" />
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {[...Array(4)].map((_, j) => (
                 <div key={j} className="flex items-center justify-between p-3 border rounded-md">
                   <div className="w-full">
