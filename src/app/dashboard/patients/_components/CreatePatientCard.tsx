@@ -29,7 +29,7 @@ export function CreatePatientCard({ onPatientCreated }: CreatePatientCardProps) 
   return (
     <>
       <Card className="flex flex-col justify-between h-full">
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-0">
           <CardTitle className="text-2xl font-bold flex items-center justify-between">
             Registrar Nuevo Paciente
             
