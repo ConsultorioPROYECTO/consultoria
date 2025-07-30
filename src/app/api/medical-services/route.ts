@@ -53,6 +53,7 @@ import { eq, and } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS } from "@/types/api";
 import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
 import type { NewMedicalService } from "@/db/schema";
+import { syncKnowledgeAfterCRUD } from "@/lib/knowledge-manager";
 
 /**
  * Manejador para obtener servicios médicos de la organización del usuario autenticado.
@@ -342,6 +343,22 @@ const createMedicalServiceHandler = async (
     };
 
     const [createdService] = await db.insert(medicalServices).values(newServiceData);
+
+    // Sincronizar conocimiento con pgVector
+    try {
+      await syncKnowledgeAfterCRUD(
+        'service',
+        'create',
+        {
+          id: createdService.insertId,
+          ...newServiceData
+        }
+      );
+      console.log('✅ [API] Conocimiento sincronizado con pgVector exitosamente');
+    } catch (syncError) {
+      console.error('❌ [API] Error sincronizando conocimiento con pgVector:', syncError);
+      // No fallar la operación principal por errores de sincronización
+    }
 
     return createSuccessResponse(
       { id: createdService.insertId, code: newServiceData.code },
