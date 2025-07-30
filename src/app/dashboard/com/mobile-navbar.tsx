@@ -57,7 +57,7 @@ const navItems: NavItem[] = useMemo(() => [
 
   // Memoize helper function to determine if an item is active
   const isItemActive = useCallback((item: { title: string }) => {
-    if (!currentView || !['dashboard', 'calendar', 'configuration', 'organization'].includes(currentView)) {
+    if (!currentView || !['dashboard', 'calendar', 'configuration', 'organization', 'ai-care'].includes(currentView)) {
       return false;
     }
     if (item.title === 'Calendario') {
@@ -71,7 +71,7 @@ const navItems: NavItem[] = useMemo(() => [
 
   // Memoize active index calculation
   const activeIndex = useMemo(() => {
-    if (currentView === 'configuration' || currentView === 'organization') {
+    if (currentView === 'configuration' || currentView === 'organization' ) {
       return -1; // No active index for main nav when in configuration
     }
     return navItems.findIndex(item => isItemActive(item));
@@ -179,12 +179,12 @@ const handleItemClick = useCallback((index: number) => {
         isPending ? 'opacity-90' : ''
       }`}>
         <Tabs 
-          value={currentView === 'configuration' || currentView === 'organization' ? 'config' : ''} 
+          value={currentView === 'configuration' || currentView === 'organization' || currentView === 'ai-care' ? 'config' : ''} 
           className="relative z-10"
         >
           <div className="relative">
             <AnimatePresence>
-              {(currentView === 'configuration' || currentView === 'organization') && (
+              {(currentView === 'configuration' || currentView === 'organization' || currentView === 'ai-care') && (
                 <motion.div 
                   className="absolute inset-0 bg-primary rounded-full z-0"
                   variants={configIndicatorVariants}
@@ -207,7 +207,7 @@ const handleItemClick = useCallback((index: number) => {
                 }`}
               >
                 <configButton.icon className={`h-5 w-5 ${
-                  currentView === 'configuration' || currentView === 'organization' ? 'text-primary-foreground' : 'text-foreground'
+                  currentView === 'configuration' || currentView === 'organization' || currentView === 'ai-care' ? 'text-primary-foreground' : 'text-foreground'
                 } ${
                   isPending ? 'animate-pulse' : ''
                 }`} />

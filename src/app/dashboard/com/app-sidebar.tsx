@@ -100,6 +100,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       onClick: () => setCurrentView('organization'),
     });
   }
+    if (userRole === 'admin') {
+    navMain.splice(1, 0, {
+      title: "Ai-Care",
+      url: "/dashboard/ai-care",
+      icon: Factory,
+      onClick: () => setCurrentView('ai-care'),
+    });
+  }
 
   const data = {
     user: {
