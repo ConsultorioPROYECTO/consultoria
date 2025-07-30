@@ -219,7 +219,7 @@ export function PatientsTable() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm font-medium">Pacientes</CardTitle>
+          <CardTitle className="font-bold text-2xl">Pacientes</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse flex flex-col gap-2">
@@ -248,7 +248,7 @@ export function PatientsTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-medium">
+        <CardTitle className="font-bold text-2xl">
           Pacientes ({filteredPatients.length})
         </CardTitle>
       </CardHeader>
