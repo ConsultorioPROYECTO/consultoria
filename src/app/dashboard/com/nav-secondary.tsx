@@ -14,16 +14,14 @@ import { cn } from "@rutas/lib/utils"
 
 export function NavSecondary({
   items,
-  currentPath,
   hideIcons = false,
   ...props
 }: {
   items: {
     title: string
-    url: string
     icon: LucideIcon
+    onClick?: () => void
   }[]
-  currentPath: string
   hideIcons?: boolean
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
   return (
@@ -34,27 +32,24 @@ export function NavSecondary({
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild
+              <SidebarMenuButton
+                onClick={item.onClick}
                 className={
                   hideIcons ? (
                     // Estilo minimalista
                     cn(
-                      "text-muted-foreground hover:!bg-transparent focus:!bg-transparent active:!bg-transparent overflow-hidden",
-                      item.url === currentPath && "bg-transparent text-primary"
+                      "text-muted-foreground hover:!bg-transparent focus:!bg-transparent active:!bg-transparent overflow-hidden"
                     )
                   ) : (
                     // Estilo normal
                     cn(
-                      "text-muted-foreground",
-                      item.url === currentPath && "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                      "text-muted-foreground"
                     )
                   )
                 }
               >
-                <a href={item.url}>
-                  {!hideIcons && <item.icon />}
-                  <span>{item.title}</span>
-                </a>
+                {!hideIcons && <item.icon />}
+                <span>{item.title}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

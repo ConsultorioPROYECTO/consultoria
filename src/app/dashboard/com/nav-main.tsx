@@ -12,43 +12,37 @@ import Link from 'next/link'
 import { cn } from "@rutas/lib/utils"
 import { useNavigation } from "@rutas/app/context/NavigationContext"
 
+
 export function NavMain({
   items,
-  currentPath,
   hideIcons = false,
 }: {
   items: {
     title: string
-    url: string
     icon?: LucideIcon
+    isActive?: boolean
     onClick?: () => void
   }[]
-  currentPath: string
   hideIcons?: boolean
 }) {
   const { currentView } = useNavigation();
   
-  // Helper function to determine if an item is active
-  const isItemActive = (item: { title: string; url: string }) => {
-    // For calendar, check both URL and currentView
-    if (item.title === 'Calendario') {
-      return currentView === 'calendar';
+  const isItemActive = (item: { title: string; isActive?: boolean }) => {
+    if (item.isActive !== undefined) {
+      return item.isActive
     }
-    // For organization, check currentView
-    if (item.title === 'Organización') {
-      return currentView === 'organization';
+    
+    // Map titles to views
+    const titleToView: Record<string, string> = {
+      'Dashboard': 'dashboard',
+      'Calendario': 'calendar',
+      'Organización': 'organization',
+      'AI-Care': 'ai-care',
+      'Patients': 'patients'
     }
-    // Ai-Care
-    if (item.title === 'Ai-Care') {
-      return currentView === 'ai-care';
-    }
-    // For dashboard, check if we're on dashboard view and not on calendar
-    if (item.title === 'Dashboard') {
-      return currentView === 'dashboard' && currentPath === '/dashboard';
-    }
-    // For other items, use URL comparison
-    return item.url === currentPath;
-  };
+    
+    return titleToView[item.title] === currentView
+  }
   return (
     <SidebarGroup className={cn(hideIcons && "h-full flex flex-col")}>
       <SidebarGroupContent className={cn(
@@ -126,7 +120,7 @@ export function NavMain({
                     )}
                   </button>
                 ) : (
-                  <Link href={item.url}>
+                  <Link href="#">
                     {!hideIcons && item.icon && <item.icon />}
                     {hideIcons ? (
                       <span className="block font-semibold text-3xl" >

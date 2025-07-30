@@ -1,10 +1,9 @@
 'use client'
 
 import * as React from "react"
-import { usePathname } from 'next/navigation';
+
 // import { Calendar } from "@rutas/components/ui/calendar"
-import { Button } from "@rutas/components/ui/button" // Añadir importación de Button
-import { Card, CardHeader, CardTitle } from "@rutas/components/ui/card" // Añadir importaciones de Card
+
 import {
   House,
   HelpCircle,
@@ -27,51 +26,20 @@ import { useUIStyle } from "../../context/UIStyleContext"
 import { useNavigation } from "@rutas/app/context/NavigationContext"
 import { geistFont } from "../../fonts"
 
-// Interfaz para las citas y datos de ejemplo
-interface Appointment {
-  id: string;
-  time: string;
-  patientName: string;
-  description?: string;
-}
 
 
-// Helper to format date to YYYY-MM-DD string for mock data lookup
-const formatDateKey = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
-// Datos de ejemplo para citas (simulando una base de datos o API)
-const MOCK_APPOINTMENTS: { [key: string]: Appointment[] } = {
-  // Usar fechas dinámicas relativas al día actual para que siempre haya datos de ejemplo
-  [formatDateKey(new Date())]: [
-    { id: "1", time: "09:00 AM", patientName: "Carlos Santana", description: "Consulta General" },
-    { id: "2", time: "10:30 AM", patientName: "Elena Rodriguez", description: "Seguimiento" },
-  ],
-  [formatDateKey(new Date(new Date().setDate(new Date().getDate() + 1)))]: [
-    { id: "3", time: "11:00 AM", patientName: "Pedro Pascal", description: "Revisión Anual" },
-  ],
-};
+
+
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [date] = React.useState<Date | undefined>(undefined) // Estado inicial sin fecha seleccionada
-  const [selectedDayAppointments, setSelectedDayAppointments] = React.useState<Appointment[]>([])
+ 
+
   const { user, userRole } = useAuth()
   const { uiStyle } = useUIStyle() // Obtener el estilo de interfaz
   const { setCurrentView, } = useNavigation()
-  const pathname = usePathname();
 
-  React.useEffect(() => {
-    if (date) {
-      const dateKey = formatDateKey(date);
-      setSelectedDayAppointments(MOCK_APPOINTMENTS[dateKey] || []);
-    } else {
-      setSelectedDayAppointments([]);
-    }
-  }, [date]);
+
 
   if (!user) {
     return null
@@ -80,13 +48,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navMain = [
     {
       title: "Dashboard",
-      url: "/dashboard",
       icon: House,
       onClick: () => setCurrentView('dashboard'),
     },
     {
       title: "Calendario",
-      url: "/dashboard/calender",
       icon: CalendarClock,
       onClick: () => setCurrentView('calendar'),
     },
@@ -95,7 +61,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (userRole === 'admin') {
     navMain.splice(1, 0, {
       title: "Organización",
-      url: "/dashboard/",
       icon: Factory,
       onClick: () => setCurrentView('organization'),
     });
@@ -103,7 +68,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (userRole === 'admin') {
     navMain.splice(1, 0, {
       title: "Ai-Care",
-      url: "/dashboard/ai-care",
       icon: Factory,
       onClick: () => setCurrentView('ai-care'),
     });
@@ -111,7 +75,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (userRole === 'admin' || userRole === 'asistente') {
     navMain.splice(1, 0, {
       title: "Patients",
-      url: "/dashboard/patients",
       icon: Factory,
       onClick: () => setCurrentView('patients'),
     });
@@ -146,7 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           // Modo minimalista: contenido centrado
           <div className="flex flex-col gap-4">
             
-            <NavMain items={data.navMain} currentPath={pathname} hideIcons={true} />
+            <NavMain items={data.navMain} hideIcons={true} />
             {/* <NavSecondary items={data.navSecondary} currentPath={pathname} hideIcons={true} /> */}
             <NavUser user={data.user} hideIcons={true} />
             
@@ -164,42 +127,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="rounded-md "
               />
             </div> */}
-            {/* Sección para mostrar citas del día seleccionado */}  
-            {date && selectedDayAppointments.length > 0 && (
-              <div className="flex flex-col gap-3 p-2 mt-4">
-                <Card>
-                  <CardHeader className="pb-2 pt-3">
-                    <CardTitle className="text-sm font-medium">
-                      Citas para {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
-                    </CardTitle>
-                  </CardHeader>
-                  <div className="flex flex-col gap-3 p-2">
-                    {selectedDayAppointments.map(app => (
-                      <div key={app.id} className="p-1 border-b last:border-b-0">
-                        <p className="font-semibold">{app.time} - {app.patientName}</p>
-                        {app.description && <p className="text-muted-foreground">{app.description}</p>}
-                      </div>
-                    ))}
-                     <Button variant="outline" size="sm" className="w-full mt-2">
-                      <CalendarClock className="mr-2 h-3 w-3" />
-                      Ver todas las citas
-                    </Button>
-                  </div>
-                </Card>
-              </div>
-            )}
-            {date && selectedDayAppointments.length === 0 && (
-               <div className="p-2 mt-2 text-center">
-                <p className="text-xs text-muted-foreground">
-                    No hay citas para {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}.
-                </p>
-               </div>
-            )}
+
+        
+
             <div className="flex flex-col">
-              <NavMain items={data.navMain} currentPath={pathname} hideIcons={false} />
+              <NavMain items={data.navMain} hideIcons={false} />
             </div>
             <div className="flex flex-col mt-auto">
-              <NavSecondary items={data.navSecondary} currentPath={pathname} hideIcons={false} />
+              <NavSecondary items={data.navSecondary} hideIcons={false} />
             </div>
           </>
         )}
