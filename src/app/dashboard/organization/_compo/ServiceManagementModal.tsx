@@ -347,10 +347,6 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
         </div>
         <div className="grid gap-4">
           <div className="flex items-center gap-2">
-            <Switch id="create-isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
-            <Label htmlFor="create-isActive" className="text-base font-medium">Activo</Label>
-          </div>
-          <div className="flex items-center gap-2">
             <Switch id="create-requiresPreparation" name="requiresPreparation" checked={formData.requiresPreparation || false} onCheckedChange={(checked) => setFormData((p) => ({...p, requiresPreparation: checked, preparationInstructions: checked ? p.preparationInstructions : ''}))} />
             <Label htmlFor="create-requiresPreparation" className="text-base font-medium">Requiere Preparación</Label>
           </div>
@@ -369,6 +365,10 @@ function ServiceCreateForm({ onSave, isMobile = false }: ServiceCreateFormProps)
               />
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <Switch id="create-isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
+            <Label htmlFor="create-isActive" className="text-base font-medium">Activo</Label>
+          </div>
         </div>
         <div className="flex justify-end pt-4">
           <Button type="submit" className={`${isMobile ? 'w-full' : 'w-full sm:w-auto'}`}>Crear Servicio</Button>
@@ -448,10 +448,6 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
               </div>
               <div className="grid gap-4">
                 <div className="flex items-center gap-2">
-                  <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
-                  <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
-                </div>
-                <div className="flex items-center gap-2">
                    <Switch id="requiresPreparation" name="requiresPreparation" checked={formData.requiresPreparation || false} onCheckedChange={(checked) => setFormData((p) => ({...p, requiresPreparation: checked, preparationInstructions: checked ? p.preparationInstructions : ''}))} />
                    <Label htmlFor="requiresPreparation" className="text-base font-medium">Requiere Preparación</Label>
                  </div>
@@ -470,6 +466,10 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
                      />
                    </div>
                  )}
+                <div className="flex items-center gap-2">
+                  <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
+                  <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
+                </div>
               </div>
               <DrawerFooter className="flex flex-row gap-2 pt-4">
                 <DrawerClose asChild>
@@ -516,30 +516,30 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
                 </div>
               </div>
               <div className="grid gap-4">
-                <div className="flex items-center gap-2">
-                  <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
-                  <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                   <Switch id="requiresPreparation" name="requiresPreparation" checked={formData.requiresPreparation || false} onCheckedChange={(checked) => setFormData((p) => ({...p, requiresPreparation: checked, preparationInstructions: checked ? p.preparationInstructions : ''}))} />
-                   <Label htmlFor="requiresPreparation" className="text-base font-medium">Requiere Preparación</Label>
+                 <div className="flex items-center gap-2">
+                    <Switch id="requiresPreparation" name="requiresPreparation" checked={formData.requiresPreparation || false} onCheckedChange={(checked) => setFormData((p) => ({...p, requiresPreparation: checked, preparationInstructions: checked ? p.preparationInstructions : ''}))} />
+                    <Label htmlFor="requiresPreparation" className="text-base font-medium">Requiere Preparación</Label>
+                  </div>
+                  {formData.requiresPreparation && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="preparationInstructions" className="text-base font-medium">Instrucciones de Preparación</Label>
+                      <Textarea 
+                        id="preparationInstructions" 
+                        name="preparationInstructions" 
+                        value={formData.preparationInstructions || ''} 
+                        onChange={(e) => setFormData((p) => ({...p, preparationInstructions: e.target.value}))}
+                        className="min-h-[80px] resize-none text-justify break-words hyphens-auto"
+                        rows={4}
+                        placeholder="Describe las instrucciones específicas de preparación para este servicio..."
+                        maxLength={500}
+                      />
+                    </div>
+                  )}
+                 <div className="flex items-center gap-2">
+                   <Switch id="isActive" name="isActive" checked={formData.isActive || false} onCheckedChange={(checked) => setFormData((p) => ({...p, isActive: checked}))} />
+                   <Label htmlFor="isActive" className="text-base font-medium">Activo</Label>
                  </div>
-                 {formData.requiresPreparation && (
-                   <div className="grid gap-2">
-                     <Label htmlFor="preparationInstructions" className="text-base font-medium">Instrucciones de Preparación</Label>
-                     <Textarea 
-                       id="preparationInstructions" 
-                       name="preparationInstructions" 
-                       value={formData.preparationInstructions || ''} 
-                       onChange={(e) => setFormData((p) => ({...p, preparationInstructions: e.target.value}))}
-                       className="min-h-[80px] resize-none text-justify break-words hyphens-auto"
-                       rows={4}
-                       placeholder="Describe las instrucciones específicas de preparación para este servicio..."
-                       maxLength={500}
-                     />
-                   </div>
-                 )}
-              </div>
+               </div>
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="outline">Cancelar</Button>
