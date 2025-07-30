@@ -55,7 +55,13 @@ const createOrganizationSchema = z.object({
     .min(1, 'El nombre de la organización es requerido')
     .max(255, 'El nombre de la organización no puede exceder 255 caracteres')
     .trim(),
-  planId: z.string().min(1, 'El ID del plan es requerido') // Cambiado a string
+  planId: z.string().min(1, 'El ID del plan es requerido'), // Cambiado a string
+  timezone: z.string()
+    .max(40, 'La zona horaria no puede exceder 40 caracteres')
+    .optional(),
+  currency: z.string()
+    .max(40, 'La moneda no puede exceder 40 caracteres')
+    .optional()
 });
 
 
@@ -102,7 +108,7 @@ const postUserRoleHandler = async (
         );
       }
       
-      const { organizationName, planId: planIdentifier } = validationResult.data;
+      const { organizationName, planId: planIdentifier, timezone, currency } = validationResult.data;
 
       // Mapeo de identificadores de plan del frontend a nombres en la BD
       const planIdentifierMap: { [key: string]: string } = {
@@ -149,6 +155,8 @@ const postUserRoleHandler = async (
         planId: plan.id, // Usar el ID numérico del plan
         instanceId: instanceId,
         apiKey: apiKey,
+        timezone: timezone,
+        currency: currency,
       });
 
       const newOrganizationId = insertResult[0].insertId;

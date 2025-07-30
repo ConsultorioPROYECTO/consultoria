@@ -17,6 +17,8 @@ import { plans } from './plans';
  * @property {string} email - Correo electrónico de la organización.
  * @property {string} nit - NIT de la organización.
  * @property {string} logo - Logo de la organización.
+ * @property {string} timezone - Zona horaria de la organización.
+ * @property {string} currency - Moneda de la organización.
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
@@ -30,6 +32,8 @@ export const organization = mysqlTable('organization', {
   email: varchar('email', { length: 255 }),
   nit: varchar('nit', { length: 45 }),
   logo: varchar('logo', { length: 255 }),
+  timezone: varchar('timezone', { length: 40 }),
+  currency: varchar('currency', { length: 40 }),
   planId: int('plan_id', {unsigned : true}).references(() => plans.id, {onDelete : "no action", onUpdate : "cascade"}),
   instanceId: varchar('instance_id', { length: 25 }),
   apiKey: varchar('api_key', { length: 25 }),
