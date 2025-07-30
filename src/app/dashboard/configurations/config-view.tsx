@@ -151,7 +151,7 @@ export default function ConfigView() {
                         <button
                           key={item.name}
                           onClick={() => handleSectionChange(item.name)}
-                          className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent text-left transition-colors"
+                          className="w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors"
                         >
                           <item.icon className="h-5 w-5 text-muted-foreground" />
                           <span className="font-medium">{item.name}</span>
@@ -223,7 +223,7 @@ export default function ConfigView() {
                           : "bg-transparent hover:bg-transparent hover:text-primary text-muted-foreground" // Minimal Inactivo
                         : item.name === activeSection
                           ? "bg-primary text-primary-foreground hover:bg-primary/90" // Normal Activo
-                          : "hover:bg-accent hover:text-accent-foreground text-muted-foreground" // Normal Inactivo
+                          : "hover:bg-accent text-muted-foreground" // Normal Inactivo
                     )}
                   >
                     {uiStyle !== 'minimal' && <item.icon className="h-4 w-4" />}
