@@ -38,12 +38,19 @@ export function useChatMessages(remoteJid: string | null): UseChatMessagesReturn
       
       // Solo actualizar si seguimos en el mismo chat
       if (currentRemoteJid.current === targetRemoteJid) {
-        console.log('[USE_CHAT_MESSAGES] Mensajes cargados exitosamente:', {
-          remoteJid: targetRemoteJid,
-          count: fetchedMessages.length,
-          sample: fetchedMessages.slice(0, 2).map(msg => ({ id: msg.id, content: msg.content.substring(0, 50) + '...' }))
+        // Ordenar mensajes por timestamp (más antiguos primero)
+        const sortedMessages = fetchedMessages.sort((a, b) => {
+          const timestampA = new Date(a.timestamp).getTime();
+          const timestampB = new Date(b.timestamp).getTime();
+          return timestampA - timestampB;
         });
-        setMessages(fetchedMessages);
+        
+        console.log('[USE_CHAT_MESSAGES] Mensajes cargados y ordenados exitosamente:', {
+          remoteJid: targetRemoteJid,
+          count: sortedMessages.length,
+          sample: sortedMessages.slice(0, 2).map(msg => ({ id: msg.id, content: msg.content.substring(0, 50) + '...' }))
+        });
+        setMessages(sortedMessages);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
