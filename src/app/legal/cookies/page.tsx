@@ -43,7 +43,7 @@ export default function CookiesPage() {
   return (
     <main className="bg-background text-foreground">
       {/* Navegación Superior Fija */}
-      <LegalNavbar showSectionLinks={true} sectionId="cookies" sectionName="Política de Cookies" />
+      <LegalNavbar showSectionLinks={true} sectionName="Política de Cookies" />
 
       {/* Sección de Contenido de Cookies */}
       <section 

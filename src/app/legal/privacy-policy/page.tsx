@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
       {/* Navegación Superior Fija */}
-      <LegalNavbar showSectionLinks={true} sectionId="privacy" sectionName="Política de Privacidad" />
+      <LegalNavbar showSectionLinks={true} sectionName="Política de Privacidad" />
 
       {/* Sección de Contenido de Política de Privacidad */}
       <section 

@@ -49,9 +49,9 @@ export function FeatureCarousel() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.5, ease: 'easeInOut' }}
-          className="flex flex-col items-center"
+          className="flex flex-col items-center gap-4"
         >
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full text-primary">
             <currentFeature.icon className="h-8 w-8" />
           </div>
           <h2 className="text-xl font-bold text-foreground">

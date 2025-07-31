@@ -6,13 +6,11 @@ import { Button } from '@/components/ui/button'
 
 interface LegalNavbarProps {
   showSectionLinks?: boolean
-  sectionId?: string
   sectionName?: string
 }
 
 export function LegalNavbar({ 
   showSectionLinks = false, 
-  sectionId = '', 
   sectionName = '' 
 }: LegalNavbarProps) {
   return (
@@ -24,10 +22,16 @@ export function LegalNavbar({
       
       {/* Enlaces Centrales para Escritorio */}
       <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-6">
-        {showSectionLinks && sectionId && sectionName ? (
-          <a href={`#${sectionId}`} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
-            <ArrowUpRight className="h-4 w-4" /> {sectionName}
-          </a>
+        {showSectionLinks && sectionName ? (
+          <div className="flex items-center gap-2">
+            <Link href="/" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Home
+            </Link>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-sm font-medium text-primary underline underline-offset-4">
+              {sectionName}
+            </span>
+          </div>
         ) : (
           <>
             <Link href="/#caracteristicas" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">

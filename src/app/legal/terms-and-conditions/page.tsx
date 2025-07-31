@@ -59,7 +59,7 @@ export default function TermsAndConditionsPage() {
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
       {/* Navegación Superior Fija */}
-      <LegalNavbar showSectionLinks={true} sectionId="terms" sectionName="Términos y Condiciones" />
+      <LegalNavbar showSectionLinks={true} sectionName="Términos y Condiciones" />
 
       {/* Sección de Contenido de Términos y Condiciones */}
       <section 

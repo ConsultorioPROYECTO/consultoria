@@ -59,7 +59,7 @@ export default function TermsOfServicePage() {
   return (
     <main className={`bg-background text-foreground ${geistFont.className}`}>
       {/* Navegación Superior Fija */}
-      <LegalNavbar showSectionLinks={true} sectionId="terms" sectionName="Términos de Servicio" />
+      <LegalNavbar showSectionLinks={true} sectionName="Términos de Servicio" />
 
       {/* Sección de Contenido de Términos de Servicio */}
       <section 
