@@ -318,6 +318,21 @@ export interface TransformedMessage {
   isFromDoctor: boolean;
   /** Estado del mensaje */
   status: 'sent' | 'delivered' | 'read';
+  /** Tipo de mensaje */
+  messageType?: 'text' | 'audio' | 'image' | 'document';
+  /** Datos específicos para mensajes de audio */
+  audioData?: {
+    /** URL del archivo de audio */
+    url: string;
+    /** Duración en segundos */
+    duration?: number;
+    /** Indica si es un mensaje de voz (push to talk) */
+    isPtt?: boolean;
+    /** Tipo MIME del archivo */
+    mimetype?: string;
+    /** Forma de onda del audio */
+    waveform?: string;
+  };
 }
 
 /**
@@ -360,7 +375,9 @@ export function extractMessageContent(message: EvolutionMessage): string {
     return `[Imagen] ${message.message.imageMessage.caption}`;
   }
   if (message.message?.audioMessage) {
-    return '[Mensaje de audio]';
+    const duration = message.message.audioMessage.seconds;
+    const durationText = duration ? ` (${duration}s)` : '';
+    return `[Mensaje de audio]${durationText}`;
   }
   if (message.message?.documentMessage?.fileName) {
     return `[Documento] ${message.message.documentMessage.fileName}`;
@@ -383,6 +400,25 @@ export function transformMessage(message: EvolutionMessage): TransformedMessage 
     }
   }
 
+  // Determinar el tipo de mensaje
+  let messageType: 'text' | 'audio' | 'image' | 'document' = 'text';
+  let audioData: TransformedMessage['audioData'];
+
+  if (message.message?.audioMessage) {
+    messageType = 'audio';
+    audioData = {
+      url: message.message.audioMessage.url || '',
+      duration: message.message.audioMessage.seconds,
+      isPtt: message.message.audioMessage.ptt,
+      mimetype: message.message.audioMessage.mimetype,
+      waveform: message.message.audioMessage.waveform
+    };
+  } else if (message.message?.imageMessage) {
+    messageType = 'image';
+  } else if (message.message?.documentMessage) {
+    messageType = 'document';
+  }
+
   return {
     id: message.id,
     content: extractMessageContent(message),
@@ -390,7 +426,9 @@ export function transformMessage(message: EvolutionMessage): TransformedMessage 
       ? new Date(message.messageTimestamp * 1000).toISOString()
       : new Date().toISOString(),
     isFromDoctor: message.key?.fromMe || false,
-    status
+    status,
+    messageType,
+    audioData
   };
 }
 

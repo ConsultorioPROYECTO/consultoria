@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { Send, Paperclip, Smile, Check, CheckCheck } from "lucide-react"
+import { Send, Paperclip, Smile, Check, CheckCheck, Play, Pause, Volume2 } from "lucide-react"
 
 interface Message {
   id: string
@@ -14,6 +14,14 @@ interface Message {
   timestamp: string
   isFromDoctor: boolean
   status: 'sent' | 'delivered' | 'read'
+  messageType?: 'text' | 'audio' | 'image' | 'document'
+  audioData?: {
+    url: string
+    duration?: number
+    isPtt?: boolean
+    mimetype?: string
+    waveform?: string
+  }
 }
 
 interface Patient {
@@ -28,6 +36,71 @@ interface ChatWindowProps {
   patient: Patient
   messages: Message[]
   onSendMessage: (message: string) => void
+}
+
+// Componente para renderizar mensajes de audio
+function AudioMessage({ audioData }: { audioData: Message['audioData'] }) {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play()
+      }
+      setIsPlaying(!isPlaying)
+    }
+  }
+
+  const handleAudioEnd = () => {
+    setIsPlaying(false)
+  }
+
+  if (!audioData?.url) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Volume2 className="h-4 w-4" />
+        <span className="text-sm">Audio no disponible</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg max-w-xs">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 rounded-full"
+        onClick={togglePlay}
+      >
+        {isPlaying ? (
+          <Pause className="h-4 w-4" />
+        ) : (
+          <Play className="h-4 w-4" />
+        )}
+      </Button>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <Volume2 className="h-3 w-3 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">
+            {audioData.duration ? `${audioData.duration}s` : 'Audio'}
+            {audioData.isPtt && ' • Nota de voz'}
+          </span>
+        </div>
+        <div className="w-full h-1 bg-muted rounded-full mt-1">
+          <div className="h-full bg-primary rounded-full w-0" />
+        </div>
+      </div>
+      <audio
+        ref={audioRef}
+        src={audioData.url}
+        onEnded={handleAudioEnd}
+        preload="metadata"
+      />
+    </div>
+  )
 }
 
 export function ChatWindow({ patient, messages, onSendMessage }: ChatWindowProps) {
@@ -110,34 +183,64 @@ export function ChatWindow({ patient, messages, onSendMessage }: ChatWindowProps
                 >
                   <div
                     className={cn(
-                      "max-w-[70%] rounded-lg px-3 py-2 text-sm",
+                      "max-w-[70%] rounded-lg text-sm",
+                      message.messageType === 'audio' ? "" : "px-3 py-2",
                       message.isFromDoctor
                         ? "bg-secondary text-secondary-foreground rounded-br-none"
                         : "bg-muted text-foreground rounded-bl-none"
                     )}
                   >
-                    <p className="break-words">{message.content}</p>
-                    <div className="flex items-center justify-end gap-1">
-                      <span className={cn(
-                        "text-xs",
-                        message.isFromDoctor ? "text-muted-foreground" : "text-muted-foreground"
-                      )}>
-                        {formatMessageTime(message.timestamp)}
-                      </span>
-                      {message.isFromDoctor && (
-                        <div className="flex">
-                          {message.status === 'read' && (
-                            <CheckCheck className="h-4 w-4 text-blue-200" />
-                          )}
-                          {message.status === 'delivered' && (
-                            <CheckCheck className="h-3 w-3 text-blue-200" />
-                          )}
-                          {message.status === 'sent' && (
-                            <Check className="h-3 w-3 text-blue-200" />
+                    {message.messageType === 'audio' ? (
+                      <div className="p-2">
+                        <AudioMessage audioData={message.audioData} />
+                        <div className="flex items-center justify-end gap-1 mt-2">
+                          <span className={cn(
+                            "text-xs",
+                            message.isFromDoctor ? "text-muted-foreground" : "text-muted-foreground"
+                          )}>
+                            {formatMessageTime(message.timestamp)}
+                          </span>
+                          {message.isFromDoctor && (
+                            <div className="flex">
+                              {message.status === 'read' && (
+                                <CheckCheck className="h-4 w-4 text-blue-200" />
+                              )}
+                              {message.status === 'delivered' && (
+                                <CheckCheck className="h-3 w-3 text-blue-200" />
+                              )}
+                              {message.status === 'sent' && (
+                                <Check className="h-3 w-3 text-blue-200" />
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="break-words">{message.content}</p>
+                        <div className="flex items-center justify-end gap-1">
+                          <span className={cn(
+                            "text-xs",
+                            message.isFromDoctor ? "text-muted-foreground" : "text-muted-foreground"
+                          )}>
+                            {formatMessageTime(message.timestamp)}
+                          </span>
+                          {message.isFromDoctor && (
+                            <div className="flex">
+                              {message.status === 'read' && (
+                                <CheckCheck className="h-4 w-4 text-blue-200" />
+                              )}
+                              {message.status === 'delivered' && (
+                                <CheckCheck className="h-3 w-3 text-blue-200" />
+                              )}
+                              {message.status === 'sent' && (
+                                <Check className="h-3 w-3 text-blue-200" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
