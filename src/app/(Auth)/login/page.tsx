@@ -4,7 +4,7 @@ import { Suspense, memo } from 'react';
 import Link from 'next/link';
 import { LoginContent } from './_components/LoginContent';
 import dynamic from 'next/dynamic';
-import { useUserSync } from '../../hooks/useUserSync';
+import { useUserSync } from '../hooks/useUserSync';
 import { useIsMobile } from '@/hooks/use-mobile';
 import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
