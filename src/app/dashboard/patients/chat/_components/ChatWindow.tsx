@@ -77,12 +77,14 @@ function AudioMessage({ audioData }: { audioData: Message['audioData'] }) {
 
         const data = await response.json()
         
-        if (data.success && data.data?.base64 && audioData.mimetype) {
-          // Crear una URL de datos con el base64
-          const audioUrl = `data:${audioData.mimetype};base64,${data.data.base64}`
+        // La respuesta de Evolution API tiene la estructura:
+        // { message: string, data: { mediaType, fileName, size, mimetype, base64 } }
+        if (data.data && data.data.base64 && data.data.mimetype) {
+          // Crear una URL de datos con el base64 y mimetype de la respuesta
+          const audioUrl = `data:${data.data.mimetype};base64,${data.data.base64}`
           setAudioSrc(audioUrl)
         } else {
-          throw new Error('No se pudo obtener el audio')
+          throw new Error('No se encontró el contenido base64 en la respuesta')
         }
       } catch (err) {
         console.error('Error al cargar el audio:', err)
