@@ -105,6 +105,14 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
       if (messagesData.messages && Array.isArray(messagesData.messages)) {
         console.log(`[CHAT_MESSAGES] Encontrado array en messagesData.messages con ${messagesData.messages.length} elementos`);
         messagesArray = messagesData.messages;
+      } else if (messagesData.messages && messagesData.messages.records && Array.isArray(messagesData.messages.records)) {
+        console.log(`[CHAT_MESSAGES] Encontrado array paginado en messagesData.messages.records con ${messagesData.messages.records.length} elementos`);
+        console.log(`[CHAT_MESSAGES] Información de paginación:`, {
+          total: messagesData.messages.total,
+          pages: messagesData.messages.pages,
+          currentPage: messagesData.messages.currentPage
+        });
+        messagesArray = messagesData.messages.records;
       } else if (messagesData.data && Array.isArray(messagesData.data)) {
         console.log(`[CHAT_MESSAGES] Encontrado array en messagesData.data con ${messagesData.data.length} elementos`);
         messagesArray = messagesData.data;
