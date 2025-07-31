@@ -176,7 +176,7 @@ function OnboardContent() {
       </Button>
 
       {/* Contenedor principal con ancho fijo para evitar saltos */}
-      <div className="max-w-4xl mx-auto flex flex-col gap-4">
+      <div className="max-w-4xl flex flex-col justify-center gap-4">
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -185,7 +185,7 @@ function OnboardContent() {
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -40, filter: "blur(8px)" }}
             transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
-            className="w-full"
+            className="flex flex-col w-full gap-6"
             
           >
             {/* Paso 1: Bienvenida y Selección de Rol */}
@@ -279,7 +279,7 @@ function OnboardContent() {
                 </>
             )}
           {/* Términos y Política al final, fuera de la animación si queremos que siempre estén visibles */}
-          <div className="text-muted-foreground text-center text-xs text-balance mt-6 w-full">
+          <div className="text-muted-foreground text-center text-xs text-balance w-full">
             Al continuar, aceptas nuestros <a href="#" className="underline hover:text-primary">Términos de Servicio</a>{" "}
             y <a href="#" className="underline hover:text-primary">Política de Privacidad</a>.
           </div>

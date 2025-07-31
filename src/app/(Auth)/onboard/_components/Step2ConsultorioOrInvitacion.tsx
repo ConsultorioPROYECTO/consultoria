@@ -32,13 +32,13 @@ function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetu
 
   return (
     <>
-      <div className="flex flex-col items-center text-center gap-2 mt-10 md:mt-12">
+      <div className="flex flex-col items-center text-center gap-2">
         <h1 className="text-3xl font-bold">Configura tu Consultorio</h1>
         <p className="text-muted-foreground text-balance">
           Ingresa el nombre de tu consultorio u organización.
         </p>
       </div>
-      <div className="flex justify-center items-center gap-2 mt-4">
+      <div className="flex justify-center items-center gap-2">
         <Label htmlFor="nameConsultorio" className="text-md sr-only">Nombre del Consultorio</Label>
         <Input
           id="nameConsultorio"
@@ -49,7 +49,7 @@ function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetu
           className="py-3 text-base text-center"
         />
       </div>
-      <div className="w-full mt-4">
+      <div className="w-full">
         <Button
           type="button"
           className="w-full py-3 text-base"
@@ -193,13 +193,13 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nex
 
   return (
     <>
-      <div className="flex flex-col items-center text-center gap-2 mt-10 md:mt-12">
+      <div className="flex flex-col items-center text-center gap-2">
         <h1 className="text-3xl font-bold">Unirse a una Organización</h1>
         <p className="text-muted-foreground text-balance">
           Ingresa el código de invitación que te proporcionaron.
         </p>
       </div>
-      <div className="flex justify-center items-center gap-3 mt-4">
+      <div className="flex justify-center items-center gap-3">
         <Label htmlFor="invitationCode" className="text-md sr-only">Código de Invitación</Label>
         <InputOTP
           maxLength={6}
@@ -219,7 +219,7 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nex
           </InputOTPGroup>
         </InputOTP>
       </div>
-      <div className="w-full mt-4">
+      <div className="w-full">
         <Button
           type="button"
           className="w-full py-3 text-base"
@@ -249,7 +249,7 @@ export function Step2ConsultorioOrInvitacion({
   nextStep: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4">
       {selectedRole === "Admin" ? (
         <AdminSetup
           nameConsultorio={nameConsultorio}
