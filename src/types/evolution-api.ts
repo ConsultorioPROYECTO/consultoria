@@ -407,7 +407,7 @@ export function transformMessage(message: EvolutionMessage): TransformedMessage 
   if (message.message?.audioMessage) {
     messageType = 'audio';
     audioData = {
-      messageId: message.id,
+      messageId: message.key?.id || message.id,
       duration: message.message.audioMessage.seconds,
       isPtt: message.message.audioMessage.ptt,
       mimetype: message.message.audioMessage.mimetype,

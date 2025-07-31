@@ -139,13 +139,27 @@ const getMediaBase64Handler = async (
     const mediaUrl = `${EVOLUTION_API_SERVER_URL}/chat/getBase64FromMediaMessage/${instanceId}`;
     console.log(`Downloading media from: ${mediaUrl}`);
     
+    // Format request body according to Evolution API documentation
+    // https://doc.evolution-api.com/v2/api-reference/chat-controller/get-base64
+    const requestBody = {
+      message: {
+        key: {
+          id: messageId
+        }
+      },
+      // Optional: convert video to MP4 format
+      //convertToMp4: true 
+    };
+    
+    console.log(`Request body:`, JSON.stringify(requestBody, null, 2));
+    
     const response = await fetch(mediaUrl, {
       method: 'POST',
       headers: {
         'apikey': EVOLUTION_API_KEY,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ messageId })
+      body: JSON.stringify(requestBody)
     });
 
     // Handle Evolution API response
