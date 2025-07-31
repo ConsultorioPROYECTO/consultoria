@@ -2,6 +2,7 @@
 
 import { mysqlTable, varchar, timestamp, text, boolean, index, mysqlEnum, int } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'; // Para validación con Zod
+import { relations } from 'drizzle-orm/relations';
 import { organization } from './organization';
 
 /**
@@ -61,6 +62,14 @@ export const users = mysqlTable('users', {
 // Esquemas Zod para validación (opcional pero muy recomendado)
 export const insertUserSchema = createInsertSchema(users);
 export const selectUserSchema = createSelectSchema(users);
+
+// Relaciones
+export const userRelations = relations(users, ({ one }) => ({
+  organization: one(organization, {
+    fields: [users.organizationId],
+    references: [organization.id]
+  })
+}));
 
 export type User = typeof users.$inferSelect; // Tipo para seleccionar usuarios
 export type NewUser = typeof users.$inferInsert; // Tipo para insertar nuevos usuarios

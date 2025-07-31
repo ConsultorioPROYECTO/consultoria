@@ -34,7 +34,6 @@ import { z } from 'zod';
 
 // === Configuración de la API externa ===
 const AI_CARE_API_URL = 'https://n8n.srv828784.hstgr.cloud/webhook/da33f4ed-2439-47a6-bff4-4714e9582e2c';
-const AI_CARE_API_KEY = process.env.AI_CARE_API_KEY;
 
 // === Schemas de validación ===
 const sendMessageSchema = z.object({
@@ -140,10 +139,15 @@ async function sendMessageHandler(
   decodedToken: DecodedIdToken
 ): Promise<NextResponse> {
   try {
-    // Obtener información del usuario autenticado
+    // Obtener información del usuario autenticado con su organización
     const user = await db.query.users.findFirst({
       where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true }
+      columns: { role: true, id: true, organizationId: true },
+      with: {
+        organization: {
+          columns: { apiKey: true }
+        }
+      }
     });
 
     if (!user) {
@@ -196,13 +200,14 @@ async function sendMessageHandler(
 
     const { message, sessionId: providedSessionId } = validation.data;
 
-    // Verificar que la API key esté configurada
-    if (!AI_CARE_API_KEY) {
-      console.error('[AI_CARE_CHAT] API Key no configurada');
+    // Verificar que la organización tenga API key configurada
+    const aiCareApiKey = user.organization?.apiKey;
+    if (!aiCareApiKey) {
+      console.error('[AI_CARE_CHAT] API Key no configurada para la organización');
       return NextResponse.json(
         createErrorResponse(
           API_ERRORS.INTERNAL_ERROR,
-          'Configuración del servicio AI-Care no disponible'
+          'API Key de AI-Care no configurada para su organización'
         ),
         { status: HTTP_STATUS.INTERNAL_ERROR }
       );
@@ -230,7 +235,7 @@ async function sendMessageHandler(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': AI_CARE_API_KEY
+          'X-API-Key': aiCareApiKey
         },
         body: JSON.stringify(payload)
       });
@@ -299,10 +304,15 @@ async function getHistoryHandler(
   decodedToken: DecodedIdToken
 ): Promise<NextResponse> {
   try {
-    // Obtener información del usuario autenticado
+    // Obtener información del usuario autenticado con su organización
     const user = await db.query.users.findFirst({
       where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true }
+      columns: { role: true, id: true, organizationId: true },
+      with: {
+        organization: {
+          columns: { apiKey: true }
+        }
+      }
     });
 
     if (!user) {
@@ -353,13 +363,14 @@ async function getHistoryHandler(
       );
     }
 
-    // Verificar que la API key esté configurada
-    if (!AI_CARE_API_KEY) {
-      console.error('[AI_CARE_CHAT] API Key no configurada');
+    // Verificar que la organización tenga API key configurada
+    const aiCareApiKey = user.organization?.apiKey;
+    if (!aiCareApiKey) {
+      console.error('[AI_CARE_CHAT] API Key no configurada para la organización');
       return NextResponse.json(
         createErrorResponse(
           API_ERRORS.INTERNAL_ERROR,
-          'Configuración del servicio AI-Care no disponible'
+          'API Key de AI-Care no configurada para su organización'
         ),
         { status: HTTP_STATUS.INTERNAL_ERROR }
       );
@@ -373,7 +384,7 @@ async function getHistoryHandler(
       const response = await fetch(`${AI_CARE_API_URL}?session_id=${encodeURIComponent(sessionId)}`, {
         method: 'GET',
         headers: {
-          'X-API-Key': AI_CARE_API_KEY
+          'X-API-Key': aiCareApiKey
         }
       });
 
