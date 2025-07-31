@@ -90,7 +90,7 @@ export const SubscriptionCards: React.FC<SubscriptionCardsProps> = ({ selectedPl
                 <p>{plan.asistentesLimit}</p>
               </div>
             </CardContent>
-            <CardFooter className="px-3 pb-2 pt-1"> {/* Reducido pb a 2 */}
+            <CardFooter className="px-3">
                   <Button 
                     className="w-full mt-auto"
                     onClick={() => onSelectPlan(plan.id)}
