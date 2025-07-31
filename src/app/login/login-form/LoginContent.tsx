@@ -27,8 +27,8 @@ export function LoginContent() {
   const signupHref = buildAuthRedirectUrl('/signup', invitacionCode, role);
 
   return (
-    <div className="flex flex-1 flex-col h-full p-4">
-      <div className="flex flex-col flex-1 w-full gap-4 place-items-center place-content-end sm:place-content-center">
+    <div className="flex flex-col h-full p-4">
+      <div className="flex flex-col flex-1 justify-end md:justify-center items-center w-full gap-4">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Iniciar Sesión</h1>
           <p className="text-muted-foreground">
@@ -56,20 +56,20 @@ export function LoginContent() {
                 </DrawerHeader>
                 <LoginForm />
                 <DrawerFooter>
-            <DrawerClose asChild>
-              <Button variant="outline" className='h-12'>Cancelar</Button>
-            </DrawerClose>
-          </DrawerFooter>
+                  <DrawerClose asChild>
+                    <Button variant="outline" className='h-12'>Cancelar</Button>
+                  </DrawerClose>
+                </DrawerFooter>
               </DrawerContent>
             </Drawer>
           </div>
-            
+
           <div className="relative flex items-center">
             <div className="flex-grow border-t border-muted-foreground"></div>
             <span className="flex-shrink mx-4 font-light text-sm text-muted-foreground">O CONTINUAR CON</span>
             <div className="flex-grow border-t border-muted-foreground"></div>
           </div>
-          <LoginGoogle/>
+          <LoginGoogle />
         </div>
         <div className="text-center text-muted-foreground text-sm">
           ¿No tienes cuenta?{' '}
