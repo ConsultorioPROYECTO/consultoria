@@ -105,7 +105,7 @@ interface Message {
 
 ## 🎯 Plan de Desarrollo Detallado
 
-### Fase 1: Arquitectura de Datos (Semana 1-2)
+### Fase 1: Arquitectura Simplificada (Semana 1-2)
 
 #### 1.1 Definición de Interfaces TypeScript
 
@@ -120,99 +120,120 @@ export interface Patient {
   organizationId: string;
 }
 
-export interface ChatSession {
+// Interfaces basadas directamente en las APIs externas
+export interface ExternalChat {
   id: string;
-  patientId: string;
   remoteJid: string;
-  instanceId: string;
-  isActive: boolean;
-  lastMessageAt: Date;
-  unreadCount: number;
-  windowStart?: Date;
-  windowExpires?: Date;
+  pushName: string;
+  profilePicUrl: string | null;
+  updatedAt: string;
+  windowStart: string | null;
+  windowExpires: string | null;
   windowActive: boolean;
 }
 
-export interface ChatMessage {
+export interface ExternalMessage {
   id: string;
-  chatSessionId: string;
-  messageId: string;
-  fromMe: boolean;
-  content: string;
-  messageType: 'text' | 'image' | 'document' | 'interactive';
-  timestamp: Date;
-  status: 'sent' | 'delivered' | 'read' | 'failed';
-  metadata?: Record<string, any>;
+  key: {
+    id: string;
+    fromMe: boolean;
+    remoteJid: string;
+  };
+  pushName: string;
+  messageType: string;
+  message: any;
+  messageTimestamp: number;
+  instanceId: string;
+  source: string;
 }
 
 export interface ChatState {
-  sessions: ChatSession[];
-  messages: Record<string, ChatMessage[]>;
-  activeSessionId: string | null;
+  chats: ExternalChat[];
+  messages: Record<string, ExternalMessage[]>;
+  activeRemoteJid: string | null;
   loading: boolean;
   error: string | null;
 }
 ```
 
-#### 1.2 Esquema de Base de Datos
+#### 1.2 Arquitectura de Proxy Directo
 
-```sql
--- Tabla de sesiones de chat
-CREATE TABLE chat_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  patient_id UUID REFERENCES patients(id),
-  remote_jid VARCHAR(255) NOT NULL,
-  instance_id VARCHAR(255) NOT NULL,
-  is_active BOOLEAN DEFAULT true,
-  last_message_at TIMESTAMP,
-  unread_count INTEGER DEFAULT 0,
-  window_start TIMESTAMP,
-  window_expires TIMESTAMP,
-  window_active BOOLEAN DEFAULT false,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Tabla de mensajes
-CREATE TABLE chat_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  chat_session_id UUID REFERENCES chat_sessions(id),
-  message_id VARCHAR(255) UNIQUE NOT NULL,
-  from_me BOOLEAN NOT NULL,
-  content TEXT,
-  message_type VARCHAR(50) NOT NULL,
-  timestamp TIMESTAMP NOT NULL,
-  status VARCHAR(20) DEFAULT 'sent',
-  metadata JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Índices para optimización
-CREATE INDEX idx_chat_sessions_patient_id ON chat_sessions(patient_id);
-CREATE INDEX idx_chat_messages_session_id ON chat_messages(chat_session_id);
-CREATE INDEX idx_chat_messages_timestamp ON chat_messages(timestamp DESC);
+**Flujo de Datos Simplificado:**
+```
+Frontend → Next.js API Routes → APIs Externas (WhatsApp)
 ```
 
-### Fase 2: Capa de Servicios (Semana 2-3)
+**Beneficios:**
+- Sin base de datos adicional
+- Datos siempre actualizados
+- Menor complejidad
+- Mantenimiento reducido
 
-#### 2.1 Servicio de Chat
+### Fase 2: APIs Internas como Proxy (Semana 2-3)
+
+#### 2.1 API Routes de Next.js
 
 ```typescript
-// services/chatService.ts
-export class ChatService {
-  private baseUrl: string;
-  private apiKey: string;
+// app/api/patients/chats/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { DecodedIdToken } from 'firebase-admin/auth';
+import { db } from '@/db';
+import { organization } from '@/db/schema/organization';
+import { users } from '@/db/schema/users';
+import { eq } from 'drizzle-orm';
+import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS } from '@/types/api';
 
-  constructor(organizationConfig: { baseUrl: string; apiKey: string }) {
-    this.baseUrl = organizationConfig.baseUrl;
-    this.apiKey = organizationConfig.apiKey;
-  }
+/**
+ * Manejador para obtener chats de WhatsApp de la organización
+ */
+const getChatsHandler = async (
+  request: NextRequest,
+  decodedToken: DecodedIdToken
+): Promise<NextResponse | Response> => {
+  try {
+    // Obtener usuario autenticado
+    const requestingUser = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid),
+      columns: { role: true, id: true, organizationId: true },
+    });
 
-  async getChats(instanceId: string): Promise<Chat[]> {
-    const response = await fetch(`${this.baseUrl}/chat/findChats/${instanceId}`, {
+    if (!requestingUser || !requestingUser.organizationId) {
+      return createErrorResponse(
+        API_ERRORS.USER_NOT_FOUND,
+        'Usuario no encontrado o sin organización asociada',
+        HTTP_STATUS.FORBIDDEN
+      );
+    }
+
+    // Validar que el usuario tenga permisos para ver chats
+    if (!['admin', 'medico', 'asistente'].includes(requestingUser.role)) {
+      return createErrorResponse(
+        API_ERRORS.FORBIDDEN,
+        'No tienes permisos para acceder a los chats',
+        HTTP_STATUS.FORBIDDEN
+      );
+    }
+
+    // Obtener configuración de la organización
+    const orgConfig = await db.query.organization.findFirst({
+      where: eq(organization.id, requestingUser.organizationId),
+      columns: { instanceId: true, apiKey: true }
+    });
+
+    if (!orgConfig || !orgConfig.instanceId) {
+      return createErrorResponse(
+        API_ERRORS.NOT_FOUND,
+        'Configuración de WhatsApp no encontrada para la organización',
+        HTTP_STATUS.NOT_FOUND
+      );
+    }
+
+    // Llamar a la API externa de WhatsApp
+    const response = await fetch(`${process.env.EVOLUTION_API_SERVER_URL}/chat/findChats/${orgConfig.instanceId}`, {
       method: 'POST',
       headers: {
-        'apikey': this.apiKey,
+        'apikey': process.env.EVOLUTION_API_KEY!,
         'Content-Type': 'application/json'
       }
     });
@@ -221,21 +242,109 @@ export class ChatService {
       throw new Error(`Failed to fetch chats: ${response.statusText}`);
     }
     
-    return response.json();
+    const chats = await response.json();
+    return createSuccessResponse(chats, 'Chats obtenidos exitosamente');
+  } catch (error) {
+    console.error('Error fetching chats:', error);
+    return createErrorResponse(
+      API_ERRORS.INTERNAL_ERROR,
+      'Error interno del servidor',
+      HTTP_STATUS.INTERNAL_ERROR
+    );
   }
+};
 
-  async getMessages(instanceId: string, remoteJid: string, page = 1, offset = 20): Promise<MessageResponse> {
-    const response = await fetch(`${this.baseUrl}/chat/findMessages/${instanceId}`, {
+export const GET = withAuthentication(getChatsHandler);
+```
+
+```typescript
+// app/api/patients/chats/messages/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { DecodedIdToken } from 'firebase-admin/auth';
+import { db } from '@/db';
+import { organization } from '@/db/schema/organization';
+import { users } from '@/db/schema/users';
+import { eq } from 'drizzle-orm';
+import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS } from '@/types/api';
+import { z } from 'zod';
+
+// Esquema de validación para el body
+const getMessagesSchema = z.object({
+  remoteJid: z.string().min(1, 'remoteJid es requerido'),
+  page: z.number().int().min(1).default(1),
+  offset: z.number().int().min(1).max(100).default(20)
+});
+
+/**
+ * Manejador para obtener mensajes de un chat específico
+ */
+const getMessagesHandler = async (
+  request: NextRequest,
+  decodedToken: DecodedIdToken
+): Promise<NextResponse | Response> => {
+  try {
+    // Obtener usuario autenticado
+    const requestingUser = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, decodedToken.uid),
+      columns: { role: true, id: true, organizationId: true },
+    });
+
+    if (!requestingUser || !requestingUser.organizationId) {
+      return createErrorResponse(
+        API_ERRORS.USER_NOT_FOUND,
+        'Usuario no encontrado o sin organización asociada',
+        HTTP_STATUS.FORBIDDEN
+      );
+    }
+
+    // Validar que el usuario tenga permisos para ver mensajes
+    if (!['admin', 'medico', 'asistente'].includes(requestingUser.role)) {
+      return createErrorResponse(
+        API_ERRORS.FORBIDDEN,
+        'No tienes permisos para acceder a los mensajes',
+        HTTP_STATUS.FORBIDDEN
+      );
+    }
+
+    // Validar body de la request
+    const body = await request.json();
+    const validation = getMessagesSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return createErrorResponse(
+        API_ERRORS.VALIDATION_ERROR,
+        'Datos de entrada inválidos',
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    const { remoteJid, page, offset } = validation.data;
+
+    // Obtener configuración de la organización
+    const orgConfig = await db.query.organization.findFirst({
+      where: eq(organization.id, requestingUser.organizationId),
+      columns: { instanceId: true }
+    });
+
+    if (!orgConfig || !orgConfig.instanceId) {
+      return createErrorResponse(
+        API_ERRORS.NOT_FOUND,
+        'Configuración de WhatsApp no encontrada para la organización',
+        HTTP_STATUS.NOT_FOUND
+      );
+    }
+    
+    // Llamar a la API externa de WhatsApp
+    const response = await fetch(`${process.env.EVOLUTION_API_SERVER_URL}/chat/findMessages/${orgConfig.instanceId}`, {
       method: 'POST',
       headers: {
-        'apikey': this.apiKey,
+        'apikey': process.env.EVOLUTION_API_KEY!,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         where: {
-          key: {
-            remoteJid
-          }
+          key: { remoteJid }
         },
         page,
         offset
@@ -246,43 +355,93 @@ export class ChatService {
       throw new Error(`Failed to fetch messages: ${response.statusText}`);
     }
     
-    return response.json();
+    const messages = await response.json();
+    return createSuccessResponse(messages, 'Mensajes obtenidos exitosamente');
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    return createErrorResponse(
+      API_ERRORS.INTERNAL_ERROR,
+      'Error interno del servidor',
+      HTTP_STATUS.INTERNAL_ERROR
+    );
   }
+};
 
-  async sendMessage(instanceId: string, remoteJid: string, message: string): Promise<void> {
-    // Implementar envío de mensajes
-  }
-}
+export const POST = withAuthentication(getMessagesHandler);
 ```
 
-#### 2.2 Repository Pattern
+#### 2.2 Cliente HTTP Simplificado
 
 ```typescript
-// repositories/chatRepository.ts
-export class ChatRepository {
-  async saveChatSession(session: Omit<ChatSession, 'id'>): Promise<ChatSession> {
-    // Implementar guardado en base de datos
+// services/chatApiClient.ts
+import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils';
+
+export class ChatApiClient {
+  private async getAuthHeaders(): Promise<HeadersInit> {
+    const token = await getFirebaseAuthToken();
+    if (!token) {
+      throw new Error('No se pudo obtener el token de autenticación');
+    }
+    
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
   }
 
-  async getChatSessions(patientId: string): Promise<ChatSession[]> {
-    // Implementar consulta de sesiones
+  async getChats(): Promise<ExternalChat[]> {
+    const headers = await this.getAuthHeaders();
+    const response = await fetch('/api/patients/chats', {
+      method: 'GET',
+      headers
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.details || 'Failed to fetch chats');
+    }
+    
+    const result = await response.json();
+    return result.data;
   }
 
-  async saveMessage(message: Omit<ChatMessage, 'id'>): Promise<ChatMessage> {
-    // Implementar guardado de mensaje
+  async getMessages(remoteJid: string, page = 1, offset = 20) {
+    const headers = await this.getAuthHeaders();
+    const response = await fetch('/api/patients/chats/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ remoteJid, page, offset })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.details || 'Failed to fetch messages');
+    }
+    
+    const result = await response.json();
+    return result.data;
   }
 
-  async getMessages(sessionId: string, limit = 50, offset = 0): Promise<ChatMessage[]> {
-    // Implementar consulta de mensajes
-  }
-
-  async markMessagesAsRead(sessionId: string): Promise<void> {
-    // Implementar marcado como leído
+  async sendMessage(remoteJid: string, message: string) {
+    const headers = await this.getAuthHeaders();
+    const response = await fetch('/api/patients/chats/send', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ remoteJid, message })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.details || 'Failed to send message');
+    }
+    
+    const result = await response.json();
+    return result.data;
   }
 }
 ```
 
-### Fase 3: Gestión de Estado (Semana 3-4)
+### Fase 3: Gestión de Estado Simplificada (Semana 3-4)
 
 #### 3.1 Context API para Chat
 
@@ -291,11 +450,10 @@ export class ChatRepository {
 interface ChatContextType {
   state: ChatState;
   actions: {
-    loadChats: () => Promise<void>;
-    selectChat: (sessionId: string) => Promise<void>;
-    sendMessage: (content: string) => Promise<void>;
-    markAsRead: (sessionId: string) => Promise<void>;
-    refreshMessages: () => Promise<void>;
+    loadChats: (instanceId: string) => Promise<void>;
+    selectChat: (remoteJid: string) => Promise<void>;
+    loadMessages: (instanceId: string, remoteJid: string) => Promise<void>;
+    refreshData: () => Promise<void>;
   };
 }
 
@@ -303,32 +461,65 @@ export const ChatContext = createContext<ChatContextType | null>(null);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<ChatState>({
-    sessions: [],
+    chats: [],
     messages: {},
-    activeSessionId: null,
+    activeRemoteJid: null,
     loading: false,
     error: null
   });
 
-  const chatService = useMemo(() => {
-    // Obtener configuración de la organización
-    const orgConfig = getOrganizationConfig();
-    return new ChatService(orgConfig);
-  }, []);
+  const apiClient = useMemo(() => new ChatApiClient(), []);
 
   const actions = useMemo(() => ({
     loadChats: async () => {
       setState(prev => ({ ...prev, loading: true, error: null }));
       try {
-        const chats = await chatService.getChats(instanceId);
-        // Procesar y guardar chats
-        setState(prev => ({ ...prev, sessions: processedSessions, loading: false }));
+        const chats = await apiClient.getChats();
+        setState(prev => ({ ...prev, chats, loading: false }));
       } catch (error) {
         setState(prev => ({ ...prev, error: error.message, loading: false }));
       }
     },
-    // ... otras acciones
-  }), [chatService]);
+    
+    selectChat: async (remoteJid: string) => {
+      setState(prev => ({ ...prev, activeRemoteJid: remoteJid }));
+    },
+    
+    loadMessages: async (remoteJid: string) => {
+      setState(prev => ({ ...prev, loading: true }));
+      try {
+        const response = await apiClient.getMessages(remoteJid);
+        setState(prev => ({
+          ...prev,
+          messages: {
+            ...prev.messages,
+            [remoteJid]: response.messages.records
+          },
+          loading: false
+        }));
+      } catch (error) {
+        setState(prev => ({ ...prev, error: error.message, loading: false }));
+      }
+    },
+    
+    refreshData: async () => {
+      // Recargar datos actuales
+      if (state.activeRemoteJid) {
+        await actions.loadMessages(state.activeRemoteJid);
+      }
+    },
+
+    sendMessage: async (remoteJid: string, message: string) => {
+      try {
+        await apiClient.sendMessage(remoteJid, message);
+        // Recargar mensajes después de enviar
+        await actions.loadMessages(remoteJid);
+      } catch (error) {
+        setState(prev => ({ ...prev, error: error.message }));
+        throw error;
+      }
+    }
+  }), [apiClient, state.activeRemoteJid]);
 
   return (
     <ChatContext.Provider value={{ state, actions }}>
@@ -338,7 +529,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 }
 ```
 
-#### 3.2 Custom Hooks
+#### 3.2 Custom Hooks Simplificados
 
 ```typescript
 // hooks/useChat.ts
@@ -351,23 +542,23 @@ export function useChat() {
 }
 
 // hooks/useChatMessages.ts
-export function useChatMessages(sessionId: string | null) {
+export function useChatMessages(remoteJid: string | null) {
   const { state, actions } = useChat();
   
-  const messages = sessionId ? state.messages[sessionId] || [] : [];
+  const messages = remoteJid ? state.messages[remoteJid] || [] : [];
   
   useEffect(() => {
-    if (sessionId) {
-      actions.loadMessages(sessionId);
+    if (remoteJid) {
+      actions.loadMessages(remoteJid);
     }
-  }, [sessionId]);
+  }, [remoteJid]);
   
   return {
     messages,
     loading: state.loading,
     error: state.error,
-    sendMessage: actions.sendMessage,
-    markAsRead: () => actions.markAsRead(sessionId!)
+    refreshMessages: () => remoteJid && actions.loadMessages(remoteJid),
+    sendMessage: (message: string) => remoteJid && actions.sendMessage(remoteJid, message)
   };
 }
 ```
@@ -671,10 +862,16 @@ describe('Chat Flow', () => {
 
 ### Consideraciones de Seguridad
 
-1. **Autenticación por Organización**
-   - Cada organización tiene su propia API key
-   - Validación de permisos por usuario
-   - Aislamiento de datos entre organizaciones
+1. **Autenticación con Firebase**
+   - Todos los endpoints requieren token de Firebase válido
+   - Validación de permisos por rol de usuario (admin, medico, asistente)
+   - Aislamiento de datos por organización del usuario autenticado
+   - Uso del middleware `withAuthentication` para verificación automática de tokens
+
+2. **Autorización por Organización**
+   - Cada usuario solo puede acceder a chats de su organización
+   - La instancia de WhatsApp se obtiene automáticamente de la organización del usuario
+   - No se requiere pasar instanceId desde el frontend por seguridad
 
 2. **Sanitización de Mensajes**
    - Validación de contenido entrante
@@ -733,20 +930,20 @@ export class Analytics {
 
 | Semana | Fase | Tareas Principales | Entregables |
 |--------|------|-------------------|-------------|
-| 1-2 | Arquitectura | Definir interfaces, esquemas DB | Tipos TypeScript, Migraciones |
-| 2-3 | Servicios | ChatService, Repository | APIs integradas |
-| 3-4 | Estado | Context, Hooks | Gestión de estado |
+| 1-2 | Arquitectura Simplificada | Definir interfaces, API Routes | Tipos TypeScript, APIs Proxy |
+| 2-3 | APIs Proxy | Implementar endpoints internos | APIs integradas |
+| 3-4 | Estado | Context, Hooks simplificados | Gestión de estado |
 | 4-5 | UI | Componentes optimizados | Interfaz funcional |
-| 5-6 | Tiempo Real | WebSockets | Chat en tiempo real |
-| 6-7 | Performance | Optimizaciones | Sistema optimizado |
+| 5-6 | Tiempo Real | WebSockets (opcional) | Chat en tiempo real |
+| 6-7 | Performance | Caché y optimizaciones | Sistema optimizado |
 | 7-8 | Testing | Tests, QA | Sistema probado |
 
 ### Dependencias
 
 1. **Técnicas**
-   - Configuración de WebSocket server
-   - Migraciones de base de datos
-   - Variables de entorno
+   - Configuración de WebSocket server (opcional)
+   - Variables de entorno para APIs externas
+   - Configuración de CORS
 
 2. **Organizacionales**
    - Acceso a APIs de WhatsApp
@@ -757,9 +954,10 @@ export class Analytics {
 
 | Riesgo | Probabilidad | Impacto | Mitigación |
 |--------|-------------|---------|------------|
-| Límites de API WhatsApp | Media | Alto | Implementar rate limiting y caché |
+| Límites de API WhatsApp | Media | Alto | Implementar rate limiting y caché en memoria |
 | Problemas de conectividad | Alta | Medio | Reconexión automática y fallbacks |
-| Escalabilidad | Baja | Alto | Arquitectura modular y optimizaciones |
+| Latencia de APIs externas | Media | Medio | Caché inteligente y loading states |
+| Dependencia de APIs externas | Baja | Alto | Monitoreo y alertas de disponibilidad |
 
 ## 📝 Conclusiones
 
