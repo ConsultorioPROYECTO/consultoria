@@ -4,9 +4,9 @@ import { Button } from "@rutas/components/ui/button"
 import { useEffect, useState, Suspense } from "react"
 import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react" // Zap y CheckCircle pueden ser removidos si no se usan directamente aquí
 import { motion, AnimatePresence } from 'framer-motion';
-import { Step1RoleSelect } from "./com/Step1RoleSelect";
-import { Step2ConsultorioOrInvitacion } from "./com/Step2ConsultorioOrInvitacion";
-import { Step3PlanSelect } from "./com/Step3PlanSelect";
+import { Step1RoleSelect } from "./_components/Step1RoleSelect";
+import { Step2ConsultorioOrInvitacion } from "./_components/Step2ConsultorioOrInvitacion";
+import { Step3PlanSelect } from "./_components/Step3PlanSelect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@rutas/app/context/AuthContext";
