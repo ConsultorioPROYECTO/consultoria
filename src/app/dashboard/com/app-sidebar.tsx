@@ -1,15 +1,14 @@
 'use client'
 
 import * as React from "react"
-
-// import { Calendar } from "@rutas/components/ui/calendar"
-
 import {
   House,
   HelpCircle,
   Layers,
   CalendarClock,
   Factory,
+  Users,
+  Activity
 } from "lucide-react"
 
 import { NavMain } from "@rutas/app/dashboard/com/nav-main"
@@ -26,25 +25,14 @@ import { useUIStyle } from "../../context/UIStyleContext"
 import { useNavigation } from "@rutas/app/context/NavigationContext"
 import { geistFont } from "../../fonts"
 
-
-
-
-
-
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  
-
   const { user, userRole } = useAuth()
   const { uiStyle } = useUIStyle() // Obtener el estilo de interfaz
   const { setCurrentView, } = useNavigation()
-
-
-
   if (!user) {
     return null
   }
-
   const navMain = [
     {
       title: "Dashboard",
@@ -68,14 +56,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (userRole === 'admin') {
     navMain.splice(1, 0, {
       title: "Ai-Care",
-      icon: Factory,
+      icon: Activity,
       onClick: () => setCurrentView('ai-care'),
     });
   }
   if (userRole === 'admin' || userRole === 'asistente') {
     navMain.splice(1, 0, {
-      title: "Patients",
-      icon: Factory,
+      title: "Pacientes",
+      icon: Users,
       onClick: () => setCurrentView('patients'),
     });
   }
