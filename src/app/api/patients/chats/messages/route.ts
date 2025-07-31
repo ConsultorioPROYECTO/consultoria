@@ -36,6 +36,12 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
     }
 
     // Llamar a la API externa de WhatsApp para obtener mensajes
+    console.log(`[CHAT_MESSAGES] Llamando a Evolution API para obtener mensajes:`, {
+      url: `${process.env.EVOLUTION_API_SERVER_URL}/chat/findMessages/${instanceId}`,
+      chatId,
+      instanceId
+    });
+
     const response = await fetch(`${process.env.EVOLUTION_API_SERVER_URL}/chat/findMessages/${instanceId}`, {
       method: 'POST',
       headers: {
@@ -48,11 +54,30 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
       })
     });
 
+    console.log(`[CHAT_MESSAGES] Respuesta de Evolution API:`, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[CHAT_MESSAGES] Error en API externa:`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      });
       throw new Error(`Error en API externa: ${response.status}`);
     }
 
     const messagesData = await response.json();
+    console.log(`[CHAT_MESSAGES] Datos recibidos de Evolution API:`, {
+      type: typeof messagesData,
+      isArray: Array.isArray(messagesData),
+      length: Array.isArray(messagesData) ? messagesData.length : 'N/A',
+      keys: typeof messagesData === 'object' ? Object.keys(messagesData) : 'N/A',
+      sample: messagesData
+    });
     
     // Transformar datos al formato esperado por el frontend
     interface WhatsAppMessage {
@@ -67,15 +92,61 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
       status?: string;
     }
 
-    const transformedMessages = messagesData.map((msg: WhatsAppMessage) => ({
-      id: msg.id || msg.key?.id || Math.random().toString(36),
-      content: msg.message?.conversation || msg.message?.extendedTextMessage?.text || 'Mensaje no disponible',
-      timestamp: msg.messageTimestamp ? 
-        new Date(msg.messageTimestamp * 1000).toISOString() : 
-        new Date().toISOString(),
-      isFromDoctor: msg.fromMe || false,
-      status: msg.status === 'READ' ? 'read' : msg.status === 'delivered' ? 'delivered' : 'sent'
-    }));
+    // Verificar si messagesData es un array o necesita ser extraído
+    let messagesArray: WhatsAppMessage[];
+    
+    if (Array.isArray(messagesData)) {
+      console.log(`[CHAT_MESSAGES] messagesData es un array directo con ${messagesData.length} elementos`);
+      messagesArray = messagesData;
+    } else if (messagesData && typeof messagesData === 'object') {
+      console.log(`[CHAT_MESSAGES] messagesData es un objeto, buscando array anidado:`, Object.keys(messagesData));
+      
+      // Intentar diferentes propiedades comunes donde podría estar el array
+      if (messagesData.messages && Array.isArray(messagesData.messages)) {
+        console.log(`[CHAT_MESSAGES] Encontrado array en messagesData.messages con ${messagesData.messages.length} elementos`);
+        messagesArray = messagesData.messages;
+      } else if (messagesData.data && Array.isArray(messagesData.data)) {
+        console.log(`[CHAT_MESSAGES] Encontrado array en messagesData.data con ${messagesData.data.length} elementos`);
+        messagesArray = messagesData.data;
+      } else if (messagesData.result && Array.isArray(messagesData.result)) {
+        console.log(`[CHAT_MESSAGES] Encontrado array en messagesData.result con ${messagesData.result.length} elementos`);
+        messagesArray = messagesData.result;
+      } else {
+        console.warn(`[CHAT_MESSAGES] No se encontró array de mensajes en la respuesta:`, messagesData);
+        messagesArray = [];
+      }
+    } else {
+      console.warn(`[CHAT_MESSAGES] messagesData no es un objeto válido:`, messagesData);
+      messagesArray = [];
+    }
+
+    console.log(`[CHAT_MESSAGES] Procesando ${messagesArray.length} mensajes`);
+
+    const transformedMessages = messagesArray.map((msg: WhatsAppMessage, index: number) => {
+      console.log(`[CHAT_MESSAGES] Procesando mensaje ${index + 1}:`, {
+        id: msg.id,
+        keyId: msg.key?.id,
+        hasMessage: !!msg.message,
+        messageKeys: msg.message ? Object.keys(msg.message) : [],
+        fromMe: msg.fromMe,
+        timestamp: msg.messageTimestamp
+      });
+      
+      return {
+        id: msg.id || msg.key?.id || Math.random().toString(36),
+        content: msg.message?.conversation || msg.message?.extendedTextMessage?.text || 'Mensaje no disponible',
+        timestamp: msg.messageTimestamp ? 
+          new Date(msg.messageTimestamp * 1000).toISOString() : 
+          new Date().toISOString(),
+        isFromDoctor: msg.fromMe || false,
+        status: msg.status === 'read' ? 'read' : msg.status === 'delivered' ? 'delivered' : 'sent'
+      };
+    });
+
+    console.log(`[CHAT_MESSAGES] Mensajes transformados exitosamente:`, {
+      count: transformedMessages.length,
+      sample: transformedMessages.slice(0, 2)
+    });
 
     return NextResponse.json(transformedMessages);
   } catch (error) {

@@ -54,55 +54,106 @@ class ChatApiClient {
     url: string,
     options: RequestInit = {}
   ): Promise<Response> {
-    const token = await this.getAuthToken();
+    console.log('[CHAT_API_CLIENT] Realizando petición autenticada:', { url, method: options.method || 'GET' });
     
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...options.headers,
-    };
+    try {
+      const token = await this.getAuthToken();
+      
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers,
+      };
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({
-        error: 'Error de red'
-      }));
-      throw new Error(errorData.error || `Error HTTP: ${response.status}`);
+      console.log('[CHAT_API_CLIENT] Respuesta recibida:', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({
+          error: 'Error de red'
+        }));
+        console.error('[CHAT_API_CLIENT] Error en respuesta:', {
+          url,
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.error || `Error HTTP: ${response.status}`);
+      }
+
+      return response;
+    } catch (error) {
+      console.error('[CHAT_API_CLIENT] Error en petición autenticada:', { url, error });
+      throw error;
     }
-
-    return response;
   }
 
   /**
    * Obtiene la lista de chats
    */
   async getChats(): Promise<Chat[]> {
-    const response = await this.authenticatedFetch(this.baseUrl);
-    return await response.json();
+    console.log('[CHAT_API_CLIENT] Obteniendo lista de chats...');
+    try {
+      const response = await this.authenticatedFetch(this.baseUrl);
+      const data = await response.json();
+      console.log('[CHAT_API_CLIENT] Chats obtenidos exitosamente:', {
+        count: Array.isArray(data) ? data.length : 'N/A',
+        sample: Array.isArray(data) ? data.slice(0, 2) : data
+      });
+      return data;
+    } catch (error) {
+      console.error('[CHAT_API_CLIENT] Error al obtener chats:', error);
+      throw error;
+    }
   }
 
   /**
    * Obtiene los mensajes de un chat específico
    */
   async getMessages(chatId: string): Promise<Message[]> {
-    const url = `${this.baseUrl}/messages?chatId=${encodeURIComponent(chatId)}`;
-    const response = await this.authenticatedFetch(url);
-    return await response.json();
+    console.log('[CHAT_API_CLIENT] Obteniendo mensajes para chat:', { chatId });
+    try {
+      const url = `${this.baseUrl}/messages?chatId=${encodeURIComponent(chatId)}`;
+      const response = await this.authenticatedFetch(url);
+      const data = await response.json();
+      console.log('[CHAT_API_CLIENT] Mensajes obtenidos exitosamente:', {
+        chatId,
+        count: Array.isArray(data) ? data.length : 'N/A',
+        sample: Array.isArray(data) ? data.slice(0, 2) : data
+      });
+      return data;
+    } catch (error) {
+      console.error('[CHAT_API_CLIENT] Error al obtener mensajes:', { chatId, error });
+      throw error;
+    }
   }
 
   /**
    * Envía un mensaje a un chat específico
    */
   async sendMessage(request: SendMessageRequest): Promise<Message> {
-    const response = await this.authenticatedFetch(`${this.baseUrl}/messages`, {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-    return await response.json();
+    console.log('[CHAT_API_CLIENT] Enviando mensaje:', { chatId: request.chatId, content: request.message.substring(0, 50) + '...' });
+    try {
+      const response = await this.authenticatedFetch(`${this.baseUrl}/messages`, {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      const data = await response.json();
+      console.log('[CHAT_API_CLIENT] Mensaje enviado exitosamente:', { chatId: request.chatId });
+      return data;
+    } catch (error) {
+      console.error('[CHAT_API_CLIENT] Error al enviar mensaje:', { chatId: request.chatId, error });
+      throw error;
+    }
   }
 
   /**

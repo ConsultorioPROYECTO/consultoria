@@ -10,9 +10,19 @@ import { Loader2 } from 'lucide-react'
 // Los tipos ahora se importan desde el cliente API
 
 export default function ChatsView() {
+  console.log('[CHATS_VIEW] Componente renderizado');
+  
   // Usar hooks personalizados para manejar estado
   const { chats, selectedChatId, isLoading: chatsLoading, error: chatsError, selectChat } = useChat();
   const { messages, error: messagesError, sendMessage } = useChatMessages(selectedChatId);
+  
+  console.log('[CHATS_VIEW] Estado actual:', {
+    chatsCount: chats.length,
+    selectedChatId,
+    messagesCount: messages.length,
+    loading: chatsLoading,
+    hasError: !!chatsError
+  });
 
   // Encontrar el chat seleccionado
   const selectedChat = chats.find(chat => chat.id === selectedChatId);
@@ -34,6 +44,7 @@ export default function ChatsView() {
 
   // Mostrar estado de carga inicial
   if (chatsLoading) {
+    console.log('[CHATS_VIEW] Mostrando estado de carga');
     return (
       <div className="h-[calc(100vh-200px)] flex items-center justify-center bg-background border rounded-lg">
         <div className="flex items-center space-x-2">
@@ -46,6 +57,7 @@ export default function ChatsView() {
 
   // Mostrar error si hay problemas
   if (chatsError) {
+    console.error('[CHATS_VIEW] Mostrando error:', chatsError);
     return (
       <div className="h-[calc(100vh-200px)] flex items-center justify-center bg-background border rounded-lg p-4">
         <Alert className="max-w-md">
@@ -64,7 +76,10 @@ export default function ChatsView() {
         <ChatList 
           chats={chats}
            selectedChatId={selectedChatId || undefined}
-          onChatSelect={handleChatSelect}
+          onChatSelect={(chatId) => {
+            console.log('[CHATS_VIEW] Chat seleccionado desde ChatList:', { chatId });
+            handleChatSelect(chatId);
+          }}
         />
       </div>
 
@@ -82,7 +97,10 @@ export default function ChatsView() {
             <ChatWindow
                patient={selectedPatient}
                messages={messages}
-               onSendMessage={handleSendMessage}
+               onSendMessage={(message) => {
+                 console.log('[CHATS_VIEW] Enviando mensaje desde ChatWindow:', { content: message.substring(0, 50) + '...' });
+                 handleSendMessage(message);
+               }}
              />
           </>
         ) : (

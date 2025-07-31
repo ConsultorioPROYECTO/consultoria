@@ -26,7 +26,12 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
       return NextResponse.json({ error: 'Configuración de WhatsApp no encontrada' }, { status: 400 });
     }
 
-    // Llamar a la API externa de WhatsApp
+    // Llamar a la API externa de WhatsApp para obtener chats
+    console.log(`[CHATS] Llamando a Evolution API para obtener chats:`, {
+      url: `${process.env.EVOLUTION_API_SERVER_URL}/chat/findChats/${instanceId}`,
+      instanceId
+    });
+
     const response = await fetch(`${process.env.EVOLUTION_API_SERVER_URL}/chat/findChats/${instanceId}`, {
       method: 'POST',
       headers: {
@@ -36,14 +41,63 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
       body: JSON.stringify({})
     });
 
+    console.log(`[CHATS] Respuesta de Evolution API:`, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
+    });
+
     if (!response.ok) {
-      throw new Error(`Error en API externa: ${response.status}, respuesta}`);
+      const errorText = await response.text();
+      console.error(`[CHATS] Error en API externa:`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText
+      });
+      throw new Error(`Error en API externa: ${response.status}`);
     }
 
     const chatsData = await response.json();
+    console.log(`[CHATS] Datos recibidos de Evolution API:`, {
+      type: typeof chatsData,
+      isArray: Array.isArray(chatsData),
+      length: Array.isArray(chatsData) ? chatsData.length : 'N/A',
+      keys: typeof chatsData === 'object' ? Object.keys(chatsData) : 'N/A',
+      sample: Array.isArray(chatsData) ? chatsData.slice(0, 2) : chatsData
+    });
     
+    // Verificar si chatsData es un array o necesita ser extraído
+    let chatsArray: unknown[];
+    
+    if (Array.isArray(chatsData)) {
+      console.log(`[CHATS] chatsData es un array directo con ${chatsData.length} elementos`);
+      chatsArray = chatsData;
+    } else if (chatsData && typeof chatsData === 'object') {
+      console.log(`[CHATS] chatsData es un objeto, buscando array anidado:`, Object.keys(chatsData));
+      
+      // Intentar diferentes propiedades comunes donde podría estar el array
+      if (chatsData.chats && Array.isArray(chatsData.chats)) {
+        console.log(`[CHATS] Encontrado array en chatsData.chats con ${chatsData.chats.length} elementos`);
+        chatsArray = chatsData.chats;
+      } else if (chatsData.data && Array.isArray(chatsData.data)) {
+        console.log(`[CHATS] Encontrado array en chatsData.data con ${chatsData.data.length} elementos`);
+        chatsArray = chatsData.data;
+      } else if (chatsData.result && Array.isArray(chatsData.result)) {
+        console.log(`[CHATS] Encontrado array en chatsData.result con ${chatsData.result.length} elementos`);
+        chatsArray = chatsData.result;
+      } else {
+        console.warn(`[CHATS] No se encontró array de chats en la respuesta:`, chatsData);
+        chatsArray = [];
+      }
+    } else {
+      console.warn(`[CHATS] chatsData no es un objeto válido:`, chatsData);
+      chatsArray = [];
+    }
+
+    console.log(`[CHATS] Procesando ${chatsArray.length} chats`);
+
     // Transformar datos al formato esperado por el frontend
-    const transformedChats = chatsData.map((chat: unknown) => {
+    const transformedChats = chatsArray.map((chat: unknown, index: number) => {
       const chatData = chat as {
         id?: string;
         remoteJid?: string;
@@ -55,6 +109,18 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
         unreadCount?: number;
         isOnline?: boolean;
       };
+      
+      console.log(`[CHATS] Procesando chat ${index + 1}:`, {
+        id: chatData.id,
+        remoteJid: chatData.remoteJid,
+        name: chatData.name,
+        pushName: chatData.pushName,
+        hasLastMessage: !!chatData.lastMessage,
+        lastMessageKeys: chatData.lastMessage ? Object.keys(chatData.lastMessage) : [],
+        unreadCount: chatData.unreadCount,
+        isOnline: chatData.isOnline
+      });
+      
       return {
         id: chatData.id || chatData.remoteJid,
         patientName: chatData.name || chatData.pushName || chatData.remoteJid?.split('@')[0] || 'Usuario',
@@ -67,6 +133,11 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
         isOnline: chatData.isOnline || false,
         messageStatus: 'read' as const
       };
+    });
+
+    console.log(`[CHATS] Chats transformados exitosamente:`, {
+      count: transformedChats.length,
+      sample: transformedChats.slice(0, 2)
     });
 
     return NextResponse.json(transformedChats);

@@ -29,10 +29,15 @@ export function useChat(): UseChatReturn {
    * Obtiene la lista de chats desde la API
    */
   const fetchChats = useCallback(async () => {
+    console.log('[USE_CHAT] Iniciando carga de chats...');
     try {
       setIsLoading(true);
       setError(null);
       const fetchedChats = await chatApiClient.getChats();
+      console.log('[USE_CHAT] Chats cargados exitosamente:', {
+         count: fetchedChats.length,
+         chats: fetchedChats.map(chat => ({ id: chat.id, patientName: chat.patientName }))
+       });
       setChats(fetchedChats);
       
       // Si no hay chat seleccionado y hay chats disponibles, seleccionar el primero
@@ -41,10 +46,12 @@ export function useChat(): UseChatReturn {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      console.error('[USE_CHAT] Error al cargar chats:', { error: err, errorMessage });
       setError(errorMessage);
       console.error('Error fetching chats:', err);
     } finally {
       setIsLoading(false);
+      console.log('[USE_CHAT] Carga de chats finalizada');
     }
   }, [selectedChatId]);
 
@@ -52,6 +59,7 @@ export function useChat(): UseChatReturn {
    * Selecciona un chat específico
    */
   const selectChat = useCallback((chatId: string) => {
+    console.log('[USE_CHAT] Seleccionando chat:', { chatId });
     setSelectedChatId(chatId);
   }, []);
 
@@ -71,6 +79,7 @@ export function useChat(): UseChatReturn {
 
   // Cargar chats al montar el componente
   useEffect(() => {
+    console.log('[USE_CHAT] Hook inicializado, cargando chats...');
     fetchChats();
   }, [fetchChats]);
 
