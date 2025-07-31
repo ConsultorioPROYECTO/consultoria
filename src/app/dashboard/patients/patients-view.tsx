@@ -3,7 +3,7 @@
 import { useAuth } from "../../context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChatsView from "./chat/chats";
-import PatientsTabContent from "./chat/patients";
+import PatientsTabContent from "./patients/patients";
 import { Users, MessageCircle } from "lucide-react";
 
 

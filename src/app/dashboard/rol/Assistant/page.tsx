@@ -1,7 +1,7 @@
 'use client';
 
-import { CreateAppointmentCard } from "../../patients/_components/CreateAppointmentCard";
-import { CreatePatientCard } from "../../patients/_components/CreatePatientCard";
+import { CreateAppointmentCard } from "../../patients/patients/_components/CreateAppointmentCard";
+import { CreatePatientCard } from "../../patients/patients/_components/CreatePatientCard";
 
 export default function AssistantDashboard() {
 

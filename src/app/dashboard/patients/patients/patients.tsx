@@ -1,8 +1,8 @@
 'use client';
 
-import { CreatePatientCard } from "../_components/CreatePatientCard";
-import { PatientsTable } from "../_components/PatientsTable";
-import { PatientsOverview } from "../_components/PatientsOverview";
+import { CreatePatientCard } from "./_components/CreatePatientCard";
+import { PatientsTable } from "./_components/PatientsTable";
+import { PatientsOverview } from "./_components/PatientsOverview";
 
 /**
  * Component that renders the patients tab content
