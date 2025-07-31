@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { SignupForm } from '@/app/signup/signup-form/signup-form';
+import { SignupForm } from '@/app/(Auth)/signup/signup-form/signup-form';
 import { extractAuthParams, buildAuthRedirectUrl } from '@/app/auth-components/auth-utils';
 import type { AuthParams } from '@/app/auth-components/auth-types';
 import Link from 'next/link';

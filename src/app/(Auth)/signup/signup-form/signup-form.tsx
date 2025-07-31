@@ -7,7 +7,7 @@ import type { AuthFormState, SignupFormData } from '@/app/auth-components/auth-t
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import LoginGoogle from '../../components/auth/LoginButtonGoogle';
+import LoginGoogle from '../../../components/auth/LoginButtonGoogle';
 
 export function SignupForm() {
   const { signUpWithEmail, loading } = useAuth();

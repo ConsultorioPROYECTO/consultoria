@@ -3,11 +3,11 @@
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { SignupContent } from './SignupContent';
 import { sendEmailVerification } from "firebase/auth";
-import { geistFont } from '../fonts';
-import { FeatureCarousel } from '../auth-components/FeatureCarousel';
+import { geistFont } from '../../fonts';
+import { FeatureCarousel } from '../_components/FeatureCarousel';
 
 function SignupPageContent() {
     const { user } = useAuth();

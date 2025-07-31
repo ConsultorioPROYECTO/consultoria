@@ -20,7 +20,6 @@ import { useTheme } from 'next-themes';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { geistFont } from './fonts'; // Usando la fuente de Vercel para consistencia
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
@@ -78,7 +77,7 @@ export default function HomePage() {
   };
 
   return (
-    <main className={`bg-background text-foreground ${geistFont.className}`}>
+    <main className="bg-background text-foreground">
       {/* Navegación Superior Fija */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 h-16">
         {/* Logo o Título */}

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { LoginForm } from '@/app/login/login-form/login-form';
+import { LoginForm } from '@/app/(Auth)/login/_components/login-form';
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
