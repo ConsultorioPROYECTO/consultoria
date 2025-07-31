@@ -322,8 +322,8 @@ export interface TransformedMessage {
   messageType?: 'text' | 'audio' | 'image' | 'document';
   /** Datos específicos para mensajes de audio */
   audioData?: {
-    /** URL del archivo de audio */
-    url: string;
+    /** ID del mensaje para obtener base64 */
+    messageId: string;
     /** Duración en segundos */
     duration?: number;
     /** Indica si es un mensaje de voz (push to talk) */
@@ -407,7 +407,7 @@ export function transformMessage(message: EvolutionMessage): TransformedMessage 
   if (message.message?.audioMessage) {
     messageType = 'audio';
     audioData = {
-      url: message.message.audioMessage.url || '',
+      messageId: message.id,
       duration: message.message.audioMessage.seconds,
       isPtt: message.message.audioMessage.ptt,
       mimetype: message.message.audioMessage.mimetype,

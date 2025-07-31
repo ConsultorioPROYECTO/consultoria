@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Send, Paperclip, Smile, Check, CheckCheck, Play, Pause, Volume2 } from "lucide-react"
+import { useAuth } from "@/app/context/AuthContext"
 
 interface Message {
   id: string
@@ -16,7 +17,7 @@ interface Message {
   status: 'sent' | 'delivered' | 'read'
   messageType?: 'text' | 'audio' | 'image' | 'document'
   audioData?: {
-    url: string
+    messageId: string
     duration?: number
     isPtt?: boolean
     mimetype?: string
@@ -41,14 +42,68 @@ interface ChatWindowProps {
 // Componente para renderizar mensajes de audio
 function AudioMessage({ audioData }: { audioData: Message['audioData'] }) {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [audioSrc, setAudioSrc] = useState<string>('')
+  const [error, setError] = useState<string>('')
   const audioRef = useRef<HTMLAudioElement>(null)
+  const { user } = useAuth()
+
+  // Obtener el audio en base64 cuando el componente se monta
+  useEffect(() => {
+    const fetchAudioBase64 = async () => {
+      if (!audioData?.messageId || !user) return
+      
+      try {
+        setIsLoading(true)
+        setError('')
+        
+        // Obtener el token de autenticación
+        const token = await user.getIdToken()
+        
+        const response = await fetch('/api/patients/chats/media/base64', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            messageId: audioData.messageId
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`Error al obtener el audio: ${response.status}`)
+        }
+
+        const data = await response.json()
+        
+        if (data.success && data.data?.base64 && audioData.mimetype) {
+          // Crear una URL de datos con el base64
+          const audioUrl = `data:${audioData.mimetype};base64,${data.data.base64}`
+          setAudioSrc(audioUrl)
+        } else {
+          throw new Error('No se pudo obtener el audio')
+        }
+      } catch (err) {
+        console.error('Error al cargar el audio:', err)
+        setError(err instanceof Error ? err.message : 'Error desconocido')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchAudioBase64()
+  }, [audioData?.messageId, audioData?.mimetype, user])
 
   const togglePlay = () => {
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause()
       } else {
-        audioRef.current.play()
+        audioRef.current.play().catch(err => {
+          console.error('Error al reproducir audio:', err)
+          setError('No se pudo reproducir el audio')
+        })
       }
       setIsPlaying(!isPlaying)
     }
@@ -58,7 +113,25 @@ function AudioMessage({ audioData }: { audioData: Message['audioData'] }) {
     setIsPlaying(false)
   }
 
-  if (!audioData?.url) {
+  if (error) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Volume2 className="h-4 w-4" />
+        <span className="text-sm">Error: {error}</span>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Volume2 className="h-4 w-4" />
+        <span className="text-sm">Cargando audio...</span>
+      </div>
+    )
+  }
+
+  if (!audioSrc) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <Volume2 className="h-4 w-4" />
@@ -74,6 +147,7 @@ function AudioMessage({ audioData }: { audioData: Message['audioData'] }) {
         size="icon"
         className="h-8 w-8 rounded-full"
         onClick={togglePlay}
+        disabled={isLoading || !audioSrc}
       >
         {isPlaying ? (
           <Pause className="h-4 w-4" />
@@ -85,8 +159,8 @@ function AudioMessage({ audioData }: { audioData: Message['audioData'] }) {
         <div className="flex items-center gap-2">
           <Volume2 className="h-3 w-3 text-muted-foreground" />
           <span className="text-xs text-muted-foreground">
-            {audioData.duration ? `${audioData.duration}s` : 'Audio'}
-            {audioData.isPtt && ' • Nota de voz'}
+            {audioData?.duration ? `${audioData.duration}s` : 'Audio'}
+            {audioData?.isPtt && ' • Nota de voz'}
           </span>
         </div>
         <div className="w-full h-1 bg-muted rounded-full mt-1">
@@ -95,7 +169,7 @@ function AudioMessage({ audioData }: { audioData: Message['audioData'] }) {
       </div>
       <audio
         ref={audioRef}
-        src={audioData.url}
+        src={audioSrc}
         onEnded={handleAudioEnd}
         preload="metadata"
       />
