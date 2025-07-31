@@ -15,14 +15,14 @@ function Login() {
     const isMobile = useIsMobile();
     // Componente de loading centralizado
     const LoadingSpinner = () => (
-    <div className="flex h-screen flex-col items-center justify-center">
+    <div className="flex h-dvh flex-col items-center justify-center">
         <WaveformLoader className="w-24 h-auto text-muted-foreground" />
     </div>
     );
 
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-col h-dvh bg-background">
             <nav className="flex-shrink-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 pt-3 md:pt-3">
                 <Link href="/" className="flex items-center justify-center text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground h-9">
                     Irina
