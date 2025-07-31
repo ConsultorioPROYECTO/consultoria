@@ -46,13 +46,13 @@ function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetu
           placeholder="Ej: Clínica Bienestar Total"
           value={nameConsultorio}
           onChange={e => setNameConsultorio(e.target.value)}
-          className="py-3 text-base text-center"
+          className="py-3 text-base text-center h-12"
         />
       </div>
       <div className="w-full">
         <Button
           type="button"
-          className="w-full py-3 text-base"
+          className="w-full py-3 text-base h-12"
           onClick={handleValidateAndProceed}
           disabled={!nameConsultorio}
         >

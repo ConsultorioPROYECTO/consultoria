@@ -36,7 +36,7 @@ export function Step1RoleSelect({ roles, selectedRole, setSelectedRole, nextStep
         </div>
         <Button
           type="button"
-          className="w-full py-3 text-base"
+          className="w-full py-3 text-base h-12"
           onClick={nextStep}
           disabled={!selectedRole}
         >
