@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import Image from 'next/image';
-import { ContactModal } from './components/contact-modal';
+import { ContactModal } from './_components/contact-modal';
 
 // Datos para la sección de beneficios
 const benefits = [
