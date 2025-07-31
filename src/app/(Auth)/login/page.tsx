@@ -34,7 +34,7 @@ function Login() {
                         <FeatureCarousel />
                     </div>
                 )}
-                <div className="flex flex-col flex-grow overflow-y-auto">
+                <div className="flex flex-col flex-grow overflow-hidden">
                     <Suspense fallback={<LoadingSpinner />}>
                         <LoginContent />
                     </Suspense>
