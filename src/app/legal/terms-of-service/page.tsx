@@ -1,63 +1,74 @@
 'use client';
 
 import { LegalNavbar } from '../_components/LegalNavbar';
-import { geistFont } from '../../fonts';
+
 import { motion } from 'framer-motion';
 import React from 'react';
 
+type CookieContent = {
+  title: string;
+  content: string;
+  number?: number;
+};
+
 export default function TermsOfServicePage() {
-  const termsContent = [
+  const termsContent: CookieContent[] = [
     {
       title: "Última actualización: 26 de junio de 2024",
       content: ""
     },
     {
-      title: "Bienvenido a Irina. Al acceder y utilizar nuestros servicios, usted acepta cumplir y estar sujeto a los siguientes términos de servicio. Por favor, léalos detenidamente.",
-      content: ""
-    },
-    {
-      title: "1. Aceptación de los Términos de Servicio",
+      number: 1,
+      title: "Aceptación de los Términos de Servicio",
       content: "Al utilizar la plataforma de Irina, usted reconoce que ha leído, entendido y aceptado estos Términos de Servicio, así como nuestra Política de Privacidad. Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestros servicios."
     },
     {
-      title: "2. Descripción del Servicio",
+      number: 2,
+      title: "Descripción del Servicio",
       content: "Irina es una plataforma de gestión de clínicas diseñada para optimizar la administración de citas, expedientes de pacientes, comunicación interna y otras tareas relacionadas con la operación de un consultorio o centro médico."
     },
     {
-      title: "3. Uso de la Plataforma",
+      number: 3,
+      title: "Uso de la Plataforma",
       content: "Usted se compromete a utilizar la plataforma de Irina de manera lícita y de acuerdo con estos Términos de Servicio. No deberá utilizar la plataforma para fines ilegales o no autorizados."
     },
     {
-      title: "4. Cuentas de Usuario",
+      number: 4,
+      title: "Cuentas de Usuario",
       content: "Para acceder a ciertas funciones de la plataforma, deberá registrar una cuenta. Usted es responsable de mantener la confidencialidad de su información de cuenta y de todas las actividades que ocurran bajo su cuenta."
     },
     {
-      title: "5. Privacidad",
+      number: 5,
+      title: "Privacidad",
       content: "Su privacidad es importante para nosotros. Nuestra Política de Privacidad describe cómo recopilamos, utilizamos y protegemos su información personal. Al utilizar nuestros servicios, usted acepta nuestras prácticas de privacidad."
     },
     {
-      title: "6. Modificaciones de los Términos de Servicio",
+      number: 6,
+      title: "Modificaciones de los Términos de Servicio",
       content: "Nos reservamos el derecho de modificar estos Términos de Servicio en cualquier momento. Las modificaciones entrarán en vigor inmediatamente después de su publicación en la plataforma. Es su responsabilidad revisar periódicamente estos términos."
     },
     {
-      title: "7. Limitación de Responsabilidad",
+      number: 7,
+      title: "Limitación de Responsabilidad",
       content: "Irina no será responsable de ningún daño directo, indirecto, incidental, especial o consecuente que resulte del uso o la imposibilidad de usar nuestros servicios."
     },
     {
-      title: "8. Ley Aplicable",
+      number: 8,
+      title: "Ley Aplicable",
       content: "Estos Términos de Servicio se regirán e interpretarán de acuerdo con las leyes del país donde Irina tiene su sede principal, sin tener en cuenta sus disposiciones sobre conflicto de leyes."
     },
     {
-      title: "9. Contacto",
+      number: 9,
+      title: "Contacto",
       content: "Si tiene alguna pregunta sobre estos Términos de Servicio, por favor contáctenos a través de los canales de soporte disponibles en nuestra plataforma."
-    },
+    }
   ];
 
 
 
 
   return (
-    <main className={`bg-background text-foreground ${geistFont.className}`}>
+    <main className="bg-background text-foreground">
       {/* Navegación Superior Fija */}
       <LegalNavbar showSectionLinks={true} sectionName="Términos de Servicio" />
 
@@ -85,29 +96,33 @@ export default function TermsOfServicePage() {
           {termsContent.map((section, index) => (
             <React.Fragment key={index}>
               {index === 0 && (
-                <motion.p
-                  className="text-sm text-muted-foreground"
-                  variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                >
-                  {section.title}
-                </motion.p>
-              )}
-              {index === 1 && (
-                <motion.p
-                  className="text-muted-foreground md:text-lg text-left"
-                  variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-                >
-                  {section.title}
-                </motion.p>
-              )}
-              {index > 1 && (
                 <>
-                  <motion.h3
-                    className="text-xl font-semibold text-left"
+                  <motion.p
+                    className="text-sm text-muted-foreground"
                     variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
                   >
                     {section.title}
-                  </motion.h3>
+                  </motion.p>
+                  <motion.p
+                    className="text-muted-foreground md:text-lg text-left"
+                    variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+                  >
+                    Bienvenido(a) a <strong>IRINA</strong>. Al acceder y utilizar nuestros servicios, usted acepta cumplir y estar sujeto a los siguientes términos de servicio. Por favor, léalos detenidamente.
+                  </motion.p>
+                  <motion.div className='border-b border-muted-foreground' variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}/>
+                </>
+              )}
+              {index > 0 && (
+                <>
+                  <motion.div 
+                    className="flex flex-col text-left"
+                    variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+                  >
+                    {section.number && (
+                      <span className="text-xl text-muted-foreground font-semibold">{section.number}.</span>
+                    )}
+                    <h3 className="text-xl font-semibold">{section.title}</h3>
+                  </motion.div>
                   <motion.p
                     className="text-muted-foreground md:text-lg text-left"
                     variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
