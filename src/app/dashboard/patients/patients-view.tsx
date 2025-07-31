@@ -33,7 +33,7 @@ export default function PatientsView() {
         </p>
       </div>
       
-      <Tabs defaultValue="patients" className="w-full">
+      <Tabs defaultValue="patients" className="w-full gap-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="patients" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
@@ -45,7 +45,7 @@ export default function PatientsView() {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="patients" className="mt-6">
+        <TabsContent value="patients" className="">
           <div className="grid gap-6">
             {/* Primera fila: Estadísticas y Acciones Rápidas */}
             <div className="grid gap-6 lg:grid-cols-2">
@@ -60,7 +60,7 @@ export default function PatientsView() {
           </div>
         </TabsContent>
         
-        <TabsContent value="chats" className="mt-6">
+        <TabsContent value="chats" className="">
           <ChatsView />
         </TabsContent>
       </Tabs>
