@@ -7,7 +7,6 @@ import type { AuthFormState, SignupFormData } from '@/app/auth-components/auth-t
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import LoginGoogle from '../../../components/auth/LoginButtonGoogle';
 
 export function SignupForm() {
   const { signUpWithEmail, loading } = useAuth();
@@ -31,12 +30,13 @@ export function SignupForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="grid grid gap-4 px-4 lg:px-0">
       <div className="space-y-2">
         <Label htmlFor="email">Correo Electrónico</Label>
         <Input 
           id="email" 
           type="email" 
+          className="h-12"
           placeholder="tu@email.com" 
           required 
           value={formData.email}
@@ -50,23 +50,16 @@ export function SignupForm() {
           id="password" 
           type="password" 
           placeholder="Crea una contraseña segura" 
+          className="h-12"
           required 
           value={formData.password}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           disabled={formState.isLoading || loading}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={formState.isLoading || loading}>
+      <Button type="submit" className="w-full h-12" disabled={formState.isLoading || loading}>
         {formState.isLoading || loading ? 'Procesando...' : 'Crear Cuenta'}
       </Button>
-
-      <div className="relative flex py-3 items-center">
-        <div className="flex-grow border-t border-muted"></div>
-        <span className="flex-shrink mx-4 text-xs text-muted-foreground">O CONTINUAR CON</span>
-        <div className="flex-grow border-t border-muted"></div>
-      </div>
-
-      <LoginGoogle />
     </form>
   );
 }

@@ -1,86 +1,53 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, memo } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../../context/AuthContext';
-import { SignupContent } from './SignupContent';
-import { sendEmailVerification } from "firebase/auth";
-import { geistFont } from '../../fonts';
-import { FeatureCarousel } from '../_components/FeatureCarousel';
+import { SignupContent } from './_components/SignupContent';
+import dynamic from 'next/dynamic';
+import { useSignupSync } from '../../hooks/useSignupSync';
+import { useIsMobile } from '@/hooks/use-mobile';
+import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+
+const FeatureCarousel = dynamic(() => import('../_components/FeatureCarousel').then(mod => mod.FeatureCarousel), { ssr: false });
 
 function SignupPageContent() {
-    const { user } = useAuth();
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const invitacionCode = searchParams.get('invitacionCode');
-    const role = searchParams.get('role');
-
-    useEffect(() => {
-        if (user) {
-            if (!user.emailVerified) {
-                sendEmailVerification(user).then(() => {
-                    alert("Te hemos enviado un correo de verificación. Por favor, verifica tu correo antes de continuar.");
-                });
-                return;
-            }
-            const syncUser = async () => {
-                try {
-                    const userData = {
-                        firebaseUid: user.uid,
-                        email: user.email,
-                        emailVerified: user.emailVerified,
-                        phoneNumber: user.phoneNumber,
-                        displayName: user.displayName,
-                        photoURL: user.photoURL,
-                        providerId: user.providerData?.[0]?.providerId || 'password',
-                    };
-
-                    const response = await fetch('/api/auth/sync-user', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(userData),
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error('Error al sincronizar usuario tras registro:', errorData.details || response.statusText);
-                    } else {
-                        await response.json();
-                    }
-                } catch (error) {
-                    console.error('Error en la llamada de sincronización tras registro:', error);
-                }
-                
-                const onboardUrl = new URL('/onboard', window.location.origin);
-                if (invitacionCode) onboardUrl.searchParams.append('invitacionCode', invitacionCode);
-                if (role) onboardUrl.searchParams.append('role', role);
-                router.push(onboardUrl.toString());
-            };
-
-            syncUser();
-        }
-    }, [user, router, invitacionCode, role]);
+    useSignupSync();
+    const isMobile = useIsMobile();
+    
+    // Componente de loading centralizado
+    const LoadingSpinner = () => (
+        <div className="flex h-dvh flex-col items-center justify-center">
+            <WaveformLoader className="w-24 h-auto text-muted-foreground" />
+        </div>
+    );
 
     return (
-        <main className={`grid lg:grid-cols-2 h-screen bg-background ${geistFont.className}`}>
-            <Link href="/" className="absolute top-8 left-8 text-xl font-bold z-10">
-                Irina
-            </Link>
-            <div className="hidden lg:block">
-              <FeatureCarousel />
-            </div>
-            <div className="flex items-center justify-center">
-                <SignupContent />
-            </div>
-        </main>
+        <div className="flex flex-col h-dvh bg-background">
+            <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center gap-4 px-3 md:px-3 h-16">
+                <Link href="/" className="text-xl font-bold z-50 selection:bg-primary selection:text-primary-foreground">
+                    Irina 
+                </Link>
+            </nav>
+            <main className="flex-grow grid lg:grid-cols-2 w-full overflow-hidden">
+                {!isMobile && (
+                    <div className="hidden lg:block">
+                        <FeatureCarousel />
+                    </div>
+                )}
+                <div className="flex flex-col flex-grow overflow-hidden">
+                    <Suspense fallback={<LoadingSpinner />}>
+                        <SignupContent />
+                    </Suspense>
+                </div>
+            </main>
+        </div>
     );
 }
 
-export default function SignupPage() {
+export default memo(function SignupPage() {
     return (
         <Suspense fallback={<div>Cargando...</div>}>
             <SignupPageContent />
         </Suspense>
     );
-}
+});
