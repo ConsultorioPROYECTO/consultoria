@@ -4,26 +4,11 @@
  */
 
 import { getAuth } from 'firebase/auth';
+import type { TransformedChat, TransformedMessage } from '@/types/evolution-api';
 
-// Tipos para las respuestas de la API
-export interface Chat {
-  id: string;
-  patientName: string;
-  patientAvatar?: string;
-  lastMessage: string;
-  timestamp: string;
-  unreadCount: number;
-  isOnline: boolean;
-  messageStatus: 'sent' | 'delivered' | 'read';
-}
-
-export interface Message {
-  id: string;
-  content: string;
-  timestamp: string;
-  isFromDoctor: boolean;
-  status: 'sent' | 'delivered' | 'read';
-}
+// Tipos para las respuestas de la API (re-exportados desde evolution-api)
+export type Chat = TransformedChat;
+export type Message = TransformedMessage;
 
 export interface SendMessageRequest {
   chatId: string;

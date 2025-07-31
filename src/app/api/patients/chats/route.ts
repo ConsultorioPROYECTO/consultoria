@@ -4,6 +4,8 @@ import { db } from '@/db';
 import { organization } from '@/db/schema/organization';
 import { users } from '@/db/schema/users';
 import { eq } from 'drizzle-orm';
+import type { EvolutionChat } from '@/types/evolution-api';
+import { transformChat } from '@/types/evolution-api';
 
 // GET /api/patients/chats - Obtener lista de chats
 export const GET = withAuthentication(async (request: NextRequest, decodedToken) => {
@@ -67,7 +69,7 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
     });
     
     // Verificar si chatsData es un array o necesita ser extraído
-    let chatsArray: unknown[];
+    let chatsArray: EvolutionChat[];
     
     if (Array.isArray(chatsData)) {
       console.log(`[CHATS] chatsData es un array directo con ${chatsData.length} elementos`);
@@ -97,42 +99,20 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
     console.log(`[CHATS] Procesando ${chatsArray.length} chats`);
 
     // Transformar datos al formato esperado por el frontend
-    const transformedChats = chatsArray.map((chat: unknown, index: number) => {
-      const chatData = chat as {
-        id?: string;
-        remoteJid?: string;
-        name?: string;
-        pushName?: string;
-        profilePicUrl?: string;
-        lastMessage?: { message?: string; messageTimestamp?: number };
-        timestamp?: number;
-        unreadCount?: number;
-        isOnline?: boolean;
-      };
-      
+    const transformedChats = chatsArray.map((chat: EvolutionChat, index: number) => {
       console.log(`[CHATS] Procesando chat ${index + 1}:`, {
-        id: chatData.id,
-        remoteJid: chatData.remoteJid,
-        name: chatData.name,
-        pushName: chatData.pushName,
-        hasLastMessage: !!chatData.lastMessage,
-        lastMessageKeys: chatData.lastMessage ? Object.keys(chatData.lastMessage) : [],
-        unreadCount: chatData.unreadCount,
-        isOnline: chatData.isOnline
-      });
+         id: chat.id,
+         remoteJid: chat.remoteJid,
+         name: chat.name,
+         pushName: chat.pushName,
+         hasLastMessage: false,
+         lastMessageKeys: [],
+         unreadCount: chat.unreadCount,
+         isOnline: chat.isOnline
+       });
       
-      return {
-        id: chatData.id || chatData.remoteJid,
-        patientName: chatData.name || chatData.pushName || chatData.remoteJid?.split('@')[0] || 'Usuario',
-        patientAvatar: chatData.profilePicUrl,
-        lastMessage: chatData.lastMessage?.message || 'Sin mensajes',
-        timestamp: chatData.lastMessage?.messageTimestamp ? 
-          new Date(chatData.lastMessage.messageTimestamp * 1000).toISOString() : 
-          new Date().toISOString(),
-        unreadCount: chatData.unreadCount || 0,
-        isOnline: chatData.isOnline || false,
-        messageStatus: 'read' as const
-      };
+      // Usar la función de transformación de tipos
+      return transformChat(chat);
     });
 
     console.log(`[CHATS] Chats transformados exitosamente:`, {
