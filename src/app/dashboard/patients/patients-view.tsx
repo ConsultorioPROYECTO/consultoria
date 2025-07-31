@@ -1,11 +1,9 @@
 'use client';
 
-import { CreatePatientCard } from "./_components/CreatePatientCard";
 import { useAuth } from "../../context/AuthContext";
-import { PatientsTable } from "./_components/PatientsTable";
-import { PatientsOverview } from "./_components/PatientsOverview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChatsView from "./chat/chats";
+import PatientsTabContent from "./chat/patients";
 import { Users, MessageCircle } from "lucide-react";
 
 
@@ -23,8 +21,8 @@ export default function PatientsView() {
   const displayTwoNames = formattedNames.join(' ');
 
   return (
-    <div className="flex-1 overflow-auto">
-      <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6">
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6 flex-shrink-0">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Hola, {displayTwoNames}
         </h1>
@@ -33,8 +31,8 @@ export default function PatientsView() {
         </p>
       </div>
       
-      <Tabs defaultValue="patients" className="w-full gap-6">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="patients" className="flex-1 gap-6 flex flex-col overflow-hidden">
+        <TabsList className="grid w-full grid-cols-2 flex-shrink-0">
           <TabsTrigger value="patients" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Pacientes
@@ -45,23 +43,12 @@ export default function PatientsView() {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="patients" className="">
-          <div className="grid gap-6">
-            {/* Primera fila: Estadísticas y Acciones Rápidas */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <PatientsOverview />
-              <CreatePatientCard />
-            </div>
-
-            {/* Segunda fila: Tabla de Pacientes */}
-            <div className="grid gap-6">
-              <PatientsTable />
-            </div>
-          </div>
+        <TabsContent value="patients" className="flex-1 overflow-hidden">
+            <PatientsTabContent />
         </TabsContent>
         
-        <TabsContent value="chats" className="">
-          <ChatsView />
+        <TabsContent value="chats" className="flex-1 overflow-hidden">
+            <ChatsView />
         </TabsContent>
       </Tabs>
     </div>
