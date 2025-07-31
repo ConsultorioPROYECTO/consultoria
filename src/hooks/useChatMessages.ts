@@ -19,27 +19,27 @@ export interface UseChatMessagesReturn {
 /**
  * Hook para manejar los mensajes de un chat específico
  */
-export function useChatMessages(chatId: string | null): UseChatMessagesReturn {
+export function useChatMessages(remoteJid: string | null): UseChatMessagesReturn {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const currentChatId = useRef<string | null>(null);
+  const currentRemoteJid = useRef<string | null>(null);
 
   /**
    * Obtiene los mensajes del chat actual
    */
-  const fetchMessages = useCallback(async (targetChatId: string) => {
-    console.log('[USE_CHAT_MESSAGES] Iniciando carga de mensajes para chat:', { chatId: targetChatId });
+  const fetchMessages = useCallback(async (targetRemoteJid: string) => {
+    console.log('[USE_CHAT_MESSAGES] Iniciando carga de mensajes para chat:', { remoteJid: targetRemoteJid });
     try {
       setIsLoading(true);
       setError(null);
-      const fetchedMessages = await chatApiClient.getMessages(targetChatId);
+      const fetchedMessages = await chatApiClient.getMessages(targetRemoteJid);
       
       // Solo actualizar si seguimos en el mismo chat
-      if (currentChatId.current === targetChatId) {
+      if (currentRemoteJid.current === targetRemoteJid) {
         console.log('[USE_CHAT_MESSAGES] Mensajes cargados exitosamente:', {
-          chatId: targetChatId,
+          remoteJid: targetRemoteJid,
           count: fetchedMessages.length,
           sample: fetchedMessages.slice(0, 2).map(msg => ({ id: msg.id, content: msg.content.substring(0, 50) + '...' }))
         });
@@ -47,15 +47,15 @@ export function useChatMessages(chatId: string | null): UseChatMessagesReturn {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
-      if (currentChatId.current === targetChatId) {
-        console.error('[USE_CHAT_MESSAGES] Error al cargar mensajes:', { chatId: targetChatId, error: err, errorMessage });
+      if (currentRemoteJid.current === targetRemoteJid) {
+        console.error('[USE_CHAT_MESSAGES] Error al cargar mensajes:', { remoteJid: targetRemoteJid, error: err, errorMessage });
         setError(errorMessage);
       }
       console.error('Error fetching messages:', err);
     } finally {
-      if (currentChatId.current === targetChatId) {
+      if (currentRemoteJid.current === targetRemoteJid) {
         setIsLoading(false);
-        console.log('[USE_CHAT_MESSAGES] Carga de mensajes finalizada para chat:', { chatId: targetChatId });
+        console.log('[USE_CHAT_MESSAGES] Carga de mensajes finalizada para chat:', { remoteJid: targetRemoteJid });
       }
     }
   }, []);
@@ -64,18 +64,18 @@ export function useChatMessages(chatId: string | null): UseChatMessagesReturn {
    * Envía un mensaje al chat actual
    */
   const sendMessage = useCallback(async (content: string) => {
-    if (!chatId || !content.trim()) {
-      console.log('[USE_CHAT_MESSAGES] No se puede enviar mensaje:', { chatId, hasContent: !!content.trim() });
+    if (!remoteJid || !content.trim()) {
+      console.warn('[USE_CHAT_MESSAGES] No se puede enviar mensaje: remoteJid o contenido vacío');
       return;
     }
 
-    console.log('[USE_CHAT_MESSAGES] Enviando mensaje:', { chatId, content: content.substring(0, 50) + '...' });
+    console.log('[USE_CHAT_MESSAGES] Enviando mensaje:', { remoteJid, content: content.substring(0, 50) + '...' });
     try {
       setIsSending(true);
       setError(null);
       
       const request: SendMessageRequest = {
-        chatId,
+        remoteJid,
         message: content.trim(),
       };
       
@@ -86,23 +86,23 @@ export function useChatMessages(chatId: string | null): UseChatMessagesReturn {
       setMessages(prev => [...prev, newMessage]);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error enviando mensaje';
-      console.error('[USE_CHAT_MESSAGES] Error al enviar mensaje:', { chatId, error: err, errorMessage });
+      console.error('[USE_CHAT_MESSAGES] Error al enviar mensaje:', { remoteJid, error: err, errorMessage });
       setError(errorMessage);
       console.error('Error sending message:', err);
     } finally {
       setIsSending(false);
-      console.log('[USE_CHAT_MESSAGES] Envío de mensaje finalizado para chat:', { chatId });
+      console.log('[USE_CHAT_MESSAGES] Envío de mensaje finalizado para chat:', { remoteJid });
     }
-  }, [chatId]);
+  }, [remoteJid]);
 
   /**
    * Refresca los mensajes del chat actual
    */
   const refreshMessages = useCallback(async () => {
-    if (chatId) {
-      await fetchMessages(chatId);
+    if (remoteJid) {
+      await fetchMessages(remoteJid);
     }
-  }, [chatId, fetchMessages]);
+  }, [remoteJid, fetchMessages]);
 
   /**
    * Limpia el error actual
@@ -111,20 +111,20 @@ export function useChatMessages(chatId: string | null): UseChatMessagesReturn {
     setError(null);
   }, []);
 
-  // Efecto para cargar mensajes cuando cambia el chatId
+  // Efecto para cargar mensajes cuando cambia el remoteJid
   useEffect(() => {
-    console.log('[USE_CHAT_MESSAGES] Hook inicializado o chatId cambió:', { chatId });
-    currentChatId.current = chatId;
+    console.log('[USE_CHAT_MESSAGES] Hook inicializado o remoteJid cambió:', { remoteJid });
+    currentRemoteJid.current = remoteJid;
     
-    if (chatId) {
-      console.log('[USE_CHAT_MESSAGES] No hay chatId, saltando carga de mensajes');
+    if (remoteJid) {
       setMessages([]); // Limpiar mensajes anteriores
-      fetchMessages(chatId);
+      fetchMessages(remoteJid);
     } else {
+      console.log('[USE_CHAT_MESSAGES] No hay remoteJid, saltando carga de mensajes');
       setMessages([]);
       setIsLoading(false);
     }
-  }, [chatId, fetchMessages]);
+  }, [remoteJid, fetchMessages]);
 
   return {
     messages,

@@ -11,7 +11,7 @@ export type Chat = TransformedChat;
 export type Message = TransformedMessage;
 
 export interface SendMessageRequest {
-  chatId: string;
+  remoteJid: string;
   message: string;
 }
 
@@ -104,20 +104,20 @@ class ChatApiClient {
   /**
    * Obtiene los mensajes de un chat específico
    */
-  async getMessages(chatId: string): Promise<Message[]> {
-    console.log('[CHAT_API_CLIENT] Obteniendo mensajes para chat:', { chatId });
+  async getMessages(remoteJid: string): Promise<Message[]> {
+    console.log('[CHAT_API_CLIENT] Obteniendo mensajes para chat:', { remoteJid });
     try {
-      const url = `${this.baseUrl}/messages?chatId=${encodeURIComponent(chatId)}`;
+      const url = `${this.baseUrl}/messages?remoteJid=${encodeURIComponent(remoteJid)}`;
       const response = await this.authenticatedFetch(url);
       const data = await response.json();
       console.log('[CHAT_API_CLIENT] Mensajes obtenidos exitosamente:', {
-        chatId,
+        remoteJid,
         count: Array.isArray(data) ? data.length : 'N/A',
         sample: Array.isArray(data) ? data.slice(0, 2) : data
       });
       return data;
     } catch (error) {
-      console.error('[CHAT_API_CLIENT] Error al obtener mensajes:', { chatId, error });
+      console.error('[CHAT_API_CLIENT] Error al obtener mensajes:', { remoteJid, error });
       throw error;
     }
   }
@@ -126,17 +126,17 @@ class ChatApiClient {
    * Envía un mensaje a un chat específico
    */
   async sendMessage(request: SendMessageRequest): Promise<Message> {
-    console.log('[CHAT_API_CLIENT] Enviando mensaje:', { chatId: request.chatId, content: request.message.substring(0, 50) + '...' });
+    console.log('[CHAT_API_CLIENT] Enviando mensaje:', { remoteJid: request.remoteJid, content: request.message.substring(0, 50) + '...' });
     try {
       const response = await this.authenticatedFetch(`${this.baseUrl}/messages`, {
         method: 'POST',
         body: JSON.stringify(request),
       });
       const data = await response.json();
-      console.log('[CHAT_API_CLIENT] Mensaje enviado exitosamente:', { chatId: request.chatId });
+      console.log('[CHAT_API_CLIENT] Mensaje enviado exitosamente:', { remoteJid: request.remoteJid });
       return data;
     } catch (error) {
-      console.error('[CHAT_API_CLIENT] Error al enviar mensaje:', { chatId: request.chatId, error });
+      console.error('[CHAT_API_CLIENT] Error al enviar mensaje:', { remoteJid: request.remoteJid, error });
       throw error;
     }
   }
@@ -144,9 +144,9 @@ class ChatApiClient {
   /**
    * Marca un chat como leído (funcionalidad futura)
    */
-  async markAsRead(chatId: string): Promise<void> {
+  async markAsRead(remoteJid: string): Promise<void> {
     // Implementación futura cuando se agregue el endpoint
-    console.log(`Marcando chat ${chatId} como leído`);
+    console.log(`Marcando chat ${remoteJid} como leído`);
   }
 }
 

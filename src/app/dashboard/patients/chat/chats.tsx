@@ -13,19 +13,19 @@ export default function ChatsView() {
   console.log('[CHATS_VIEW] Componente renderizado');
   
   // Usar hooks personalizados para manejar estado
-  const { chats, selectedChatId, isLoading: chatsLoading, error: chatsError, selectChat } = useChat();
-  const { messages, error: messagesError, sendMessage } = useChatMessages(selectedChatId);
+  const { chats, selectedRemoteJid, isLoading: chatsLoading, error: chatsError, selectChat } = useChat();
+  const { messages, error: messagesError, sendMessage } = useChatMessages(selectedRemoteJid);
   
   console.log('[CHATS_VIEW] Estado actual:', {
     chatsCount: chats.length,
-    selectedChatId,
+    selectedRemoteJid,
     messagesCount: messages.length,
     loading: chatsLoading,
     hasError: !!chatsError
   });
 
   // Encontrar el chat seleccionado
-  const selectedChat = chats.find(chat => chat.id === selectedChatId);
+  const selectedChat = chats.find(chat => chat.remoteJid === selectedRemoteJid);
   const selectedPatient = selectedChat ? {
     id: selectedChat.id,
     name: selectedChat.patientName,
@@ -34,8 +34,8 @@ export default function ChatsView() {
     lastSeen: selectedChat.isOnline ? undefined : 'hace 2 horas'
   } : undefined;
 
-  const handleChatSelect = (chatId: string) => {
-    selectChat(chatId);
+  const handleChatSelect = (remoteJid: string) => {
+    selectChat(remoteJid);
   };
 
   const handleSendMessage = async (message: string) => {
@@ -75,10 +75,10 @@ export default function ChatsView() {
       <div className="w-80 border-r bg-background">
         <ChatList 
           chats={chats}
-           selectedChatId={selectedChatId || undefined}
-          onChatSelect={(chatId) => {
-            console.log('[CHATS_VIEW] Chat seleccionado desde ChatList:', { chatId });
-            handleChatSelect(chatId);
+           selectedRemoteJid={selectedRemoteJid || undefined}
+          onChatSelect={(remoteJid) => {
+            console.log('[CHATS_VIEW] Chat seleccionado desde ChatList:', { remoteJid });
+            handleChatSelect(remoteJid);
           }}
         />
       </div>

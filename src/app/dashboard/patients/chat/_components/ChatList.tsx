@@ -8,6 +8,7 @@ import { Check, CheckCheck, Plus } from "lucide-react"
 
 interface Chat {
   id: string
+  remoteJid: string
   patientName: string
   patientAvatar?: string
   lastMessage: string
@@ -19,11 +20,11 @@ interface Chat {
 
 interface ChatListProps {
   chats: Chat[]
-  selectedChatId?: string
-  onChatSelect: (chatId: string) => void
+  selectedRemoteJid?: string
+  onChatSelect: (remoteJid: string) => void
 }
 
-export function ChatList({ chats, selectedChatId, onChatSelect }: ChatListProps) {
+export function ChatList({ chats, selectedRemoteJid, onChatSelect }: ChatListProps) {
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -78,10 +79,10 @@ export function ChatList({ chats, selectedChatId, onChatSelect }: ChatListProps)
         {chats.map((chat) => (
           <div
             key={chat.id}
-            onClick={() => onChatSelect(chat.id)}
+            onClick={() => onChatSelect(chat.remoteJid)}
             className={cn(
               "flex items-center gap-3 p-4 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border/50",
-              selectedChatId === chat.id && "bg-muted"
+              selectedRemoteJid === chat.remoteJid && "bg-muted"
             )}
           >
             {/* Avatar */}

@@ -17,7 +17,15 @@ export interface EvolutionMessage {
   key?: {
     /** ID alternativo del mensaje */
     id?: string;
+    /** Indica si el mensaje fue enviado por la instancia actual (true) o recibido (false) */
+    fromMe?: boolean;
+    /** JID remoto del chat */
+    remoteJid?: string;
   };
+  /** Nombre del remitente (pushName) */
+  pushName?: string;
+  /** Tipo de mensaje */
+  messageType?: string;
   /** Contenido del mensaje */
   message?: {
     /** Texto del mensaje (para mensajes simples) */
@@ -29,10 +37,30 @@ export interface EvolutionMessage {
     };
     /** Para mensajes de audio */
     audioMessage?: {
+      /** Indica si es un mensaje de voz (push to talk) */
+      ptt?: boolean;
       /** URL del archivo de audio */
       url?: string;
       /** Duración en segundos */
       seconds?: number;
+      /** Clave de medios */
+      mediaKey?: string;
+      /** Tipo MIME */
+      mimetype?: string;
+      /** Ruta directa del archivo */
+      directPath?: string;
+      /** Tamaño del archivo */
+      fileLength?: string;
+      /** Hash SHA256 del archivo */
+      fileSha256?: string;
+      /** Hash SHA256 del archivo encriptado */
+      fileEncSha256?: string;
+      /** Timestamp de la clave de medios */
+      mediaKeyTimestamp?: string;
+      /** Forma de onda del audio (para mensajes de voz) */
+      waveform?: string;
+      /** Sidecar de streaming */
+      streamingSidecar?: string;
     };
     /** Para mensajes de imagen */
     imageMessage?: {
@@ -40,6 +68,20 @@ export interface EvolutionMessage {
       url?: string;
       /** Texto de la imagen (caption) */
       caption?: string;
+      /** Clave de medios */
+      mediaKey?: string;
+      /** Tipo MIME */
+      mimetype?: string;
+      /** Ruta directa del archivo */
+      directPath?: string;
+      /** Tamaño del archivo */
+      fileLength?: string;
+      /** Hash SHA256 del archivo */
+      fileSha256?: string;
+      /** Hash SHA256 del archivo encriptado */
+      fileEncSha256?: string;
+      /** Timestamp de la clave de medios */
+      mediaKeyTimestamp?: string;
     };
     /** Para mensajes de documento */
     documentMessage?: {
@@ -49,19 +91,53 @@ export interface EvolutionMessage {
       fileName?: string;
       /** Tipo MIME */
       mimetype?: string;
+      /** Clave de medios */
+      mediaKey?: string;
+      /** Ruta directa del archivo */
+      directPath?: string;
+      /** Tamaño del archivo */
+      fileLength?: string;
+      /** Hash SHA256 del archivo */
+      fileSha256?: string;
+      /** Hash SHA256 del archivo encriptado */
+      fileEncSha256?: string;
+      /** Timestamp de la clave de medios */
+      mediaKeyTimestamp?: string;
     };
     /** Información de contexto del mensaje */
     messageContextInfo?: {
+      /** Secreto del mensaje */
+      messageSecret?: string;
+      /** Metadatos de la lista de dispositivos */
+      deviceListMetadata?: {
+        /** Hash de la clave del remitente */
+        senderKeyHash?: string;
+        /** Timestamp del remitente */
+        senderTimestamp?: string;
+        /** Hash de la clave del destinatario */
+        recipientKeyHash?: string;
+        /** Timestamp del destinatario */
+        recipientTimestamp?: string;
+      };
+      /** Versión de los metadatos de la lista de dispositivos */
+      deviceListMetadataVersion?: number;
       /** Información adicional del contexto */
       [key: string]: unknown;
     };
   };
   /** Timestamp Unix del mensaje */
   messageTimestamp?: number;
-  /** Indica si el mensaje fue enviado por la instancia actual (true) o recibido (false) */
-  fromMe?: boolean;
-  /** Estado del mensaje */
-  status?: 'sent' | 'delivered' | 'read';
+  /** ID de la instancia */
+  instanceId?: string;
+  /** Fuente del mensaje (ios, android, web, etc.) */
+  source?: string;
+  /** Información de contexto adicional */
+  contextInfo?: unknown;
+  /** Actualizaciones del estado del mensaje */
+  MessageUpdate?: Array<{
+    /** Estado del mensaje */
+    status?: string;
+  }>;
 }
 
 /**
@@ -194,8 +270,8 @@ export interface EvolutionQRResponse {
  * Request para enviar un mensaje de texto
  */
 export interface SendTextMessageRequest {
-  /** Número de teléfono o JID del destinatario */
-  number: string;
+  /** JID remoto del destinatario */
+  remoteJid: string;
   /** Contenido del mensaje */
   text: string;
   /** Opciones adicionales */
@@ -250,6 +326,8 @@ export interface TransformedMessage {
 export interface TransformedChat {
   /** ID único del chat */
   id: string;
+  /** JID remoto del chat (identificador de WhatsApp) */
+  remoteJid: string;
   /** Nombre del paciente */
   patientName: string;
   /** Avatar del paciente */
@@ -294,14 +372,25 @@ export function extractMessageContent(message: EvolutionMessage): string {
  * Función para transformar un mensaje de Evolution API al formato del frontend
  */
 export function transformMessage(message: EvolutionMessage): TransformedMessage {
+  // Determinar el estado del mensaje basado en MessageUpdate
+  let status: 'sent' | 'delivered' | 'read' = 'sent';
+  if (message.MessageUpdate && message.MessageUpdate.length > 0) {
+    const lastUpdate = message.MessageUpdate[message.MessageUpdate.length - 1];
+    if (lastUpdate.status === 'READ' || lastUpdate.status === 'PLAYED') {
+      status = 'read';
+    } else if (lastUpdate.status === 'DELIVERY_ACK') {
+      status = 'delivered';
+    }
+  }
+
   return {
     id: message.id,
     content: extractMessageContent(message),
     timestamp: message.messageTimestamp 
       ? new Date(message.messageTimestamp * 1000).toISOString()
       : new Date().toISOString(),
-    isFromDoctor: message.fromMe || false,
-    status: message.status || 'sent'
+    isFromDoctor: message.key?.fromMe || false,
+    status
   };
 }
 
@@ -311,6 +400,7 @@ export function transformMessage(message: EvolutionMessage): TransformedMessage 
 export function transformChat(chat: EvolutionChat): TransformedChat {
   return {
     id: chat.id,
+    remoteJid: chat.remoteJid,
     patientName: chat.pushName || chat.name || 'Usuario sin nombre',
     patientAvatar: chat.profilePicUrl,
     lastMessage: 'Sin mensajes',

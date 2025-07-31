@@ -8,10 +8,10 @@ import { chatApiClient, Chat } from '@/lib/chatApiClient';
 
 export interface UseChatReturn {
   chats: Chat[];
-  selectedChatId: string | null;
+  selectedRemoteJid: string | null;
   isLoading: boolean;
   error: string | null;
-  selectChat: (chatId: string) => void;
+  selectChat: (remoteJid: string) => void;
   refreshChats: () => Promise<void>;
   clearError: () => void;
 }
@@ -21,7 +21,7 @@ export interface UseChatReturn {
  */
 export function useChat(): UseChatReturn {
   const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedRemoteJid, setSelectedRemoteJid] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,8 +41,8 @@ export function useChat(): UseChatReturn {
       setChats(fetchedChats);
       
       // Si no hay chat seleccionado y hay chats disponibles, seleccionar el primero
-      if (!selectedChatId && fetchedChats.length > 0) {
-        setSelectedChatId(fetchedChats[0].id);
+      if (!selectedRemoteJid && fetchedChats.length > 0) {
+        setSelectedRemoteJid(fetchedChats[0].remoteJid);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -53,14 +53,14 @@ export function useChat(): UseChatReturn {
       setIsLoading(false);
       console.log('[USE_CHAT] Carga de chats finalizada');
     }
-  }, [selectedChatId]);
+  }, [selectedRemoteJid]);
 
   /**
    * Selecciona un chat específico
    */
-  const selectChat = useCallback((chatId: string) => {
-    console.log('[USE_CHAT] Seleccionando chat:', { chatId });
-    setSelectedChatId(chatId);
+  const selectChat = useCallback((remoteJid: string) => {
+    console.log('[USE_CHAT] Seleccionando chat:', { remoteJid });
+    setSelectedRemoteJid(remoteJid);
   }, []);
 
   /**
@@ -85,7 +85,7 @@ export function useChat(): UseChatReturn {
 
   return {
     chats,
-    selectedChatId,
+    selectedRemoteJid,
     isLoading,
     error,
     selectChat,

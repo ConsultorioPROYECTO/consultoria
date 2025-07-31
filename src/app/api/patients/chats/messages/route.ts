@@ -6,15 +6,15 @@ import { eq } from 'drizzle-orm';
 import type { EvolutionMessage } from '@/types/evolution-api';
 import { transformMessage } from '@/types/evolution-api';
 
-// GET /api/patients/chats/messages?chatId=xxx - Obtener mensajes de un chat específico
+// GET /api/patients/chats/messages?remoteJid=xxx - Obtener mensajes de un chat específico
 export const GET = withAuthentication(async (request: NextRequest, decodedToken) => {
   try {
     const { searchParams } = new URL(request.url);
-    const chatId = searchParams.get('chatId');
+    const remoteJid = searchParams.get('remoteJid');
 
-    if (!chatId) {
+    if (!remoteJid) {
       return NextResponse.json(
-        { error: 'chatId es requerido' },
+        { error: 'remoteJid es requerido' },
         { status: 400 }
       );
     }
@@ -40,7 +40,7 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
     // Llamar a la API externa de WhatsApp para obtener mensajes
     console.log(`[CHAT_MESSAGES] Llamando a Evolution API para obtener mensajes:`, {
       url: `${process.env.EVOLUTION_API_SERVER_URL}/chat/findMessages/${instanceId}`,
-      chatId,
+      remoteJid,
       instanceId
     });
 
@@ -50,10 +50,22 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
         'Content-Type': 'application/json',
         'apikey': apiKey,
       },
-      body: JSON.stringify({
-        remoteJid: chatId,
-        limit: 50 // Limitar a los últimos 50 mensajes
-      })
+      body: JSON.stringify(
+
+        {
+    "where": {
+        "key": {
+            "remoteJid": remoteJid
+        }
+    },
+    // optional
+    "page": 1,
+    "offset": 10
+})
+    });
+
+    console.debug(`[CHAT_MESSAGES] Request body:`, {
+      response: response.body
     });
 
     console.log(`[CHAT_MESSAGES] Respuesta de Evolution API:`, {
@@ -139,7 +151,7 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
         keyId: msg.key?.id,
         hasMessage: !!msg.message,
         messageKeys: msg.message ? Object.keys(msg.message) : [],
-        fromMe: msg.fromMe,
+        fromMe: msg.key?.fromMe,
         timestamp: msg.messageTimestamp
       });
       
@@ -166,11 +178,11 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
 export const POST = withAuthentication(async (request: NextRequest, decodedToken) => {
   try {
     const body = await request.json();
-    const { chatId, message } = body;
+    const { remoteJid, message } = body;
 
-    if (!chatId || !message) {
+    if (!remoteJid || !message) {
       return NextResponse.json(
-        { error: 'chatId y message son requeridos' },
+        { error: 'remoteJid y message son requeridos' },
         { status: 400 }
       );
     }
@@ -199,7 +211,7 @@ export const POST = withAuthentication(async (request: NextRequest, decodedToken
         'apikey': apiKey,
       },
       body: JSON.stringify({
-        number: chatId,
+        number: remoteJid,
         text: message
       })
     });
