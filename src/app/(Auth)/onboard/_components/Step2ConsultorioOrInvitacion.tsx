@@ -5,6 +5,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@rutas
 import React from "react";
 import { getAuthTokenAndEmail } from "@lib/firebase/clientUtils";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { useAuth } from "@rutas/app/context/AuthContext";
 
 interface AdminSetupProps {
   nameConsultorio: string;
@@ -15,18 +17,15 @@ interface AdminSetupProps {
 interface JoinOrganizationProps {
   invitationCode: string;
   setInvitationCode: (v: string) => void;
-  nextStep: () => void;
   selectedRole: string;
 }
 
 function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetupProps) {
   const handleValidateAndProceed = () => {
     if (!nameConsultorio.trim()) {
-      alert("Por favor, ingresa el nombre del consultorio.");
+      toast.error("Por favor, ingresa el nombre del consultorio.");
       return;
     }
-    // Solo validar y avanzar al siguiente paso
-    // La creación de la organización se hará en el paso 3 después de seleccionar el plan
     nextStep();
   };
 
@@ -63,13 +62,14 @@ function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetu
   );
 }
 
-function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nextStep }: JoinOrganizationProps) {
+function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: JoinOrganizationProps) {
   const router = useRouter();
+  const { refreshUserInfo } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
 
   const handleJoinOrganization = async () => {
     if (!invitationCode || invitationCode.length !== 6) {
-      alert("Por favor, ingresa un código de invitación válido de 6 dígitos.");
+      toast.error("Código de invitación inválido", { description: "Por favor, ingresa un código válido de 6 dígitos." });
       return;
     }
 
@@ -79,18 +79,17 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nex
       const { token, email } = await getAuthTokenAndEmail();
       
       if (!token) {
-        alert("No se pudo obtener el token de autenticación. Por favor, inicia sesión nuevamente.");
+        toast.error("Error de autenticación", { description: "No se pudo obtener el token. Por favor, inicia sesión nuevamente." });
         setIsLoading(false);
         return;
       }
 
       if (!email) {
-        alert("No se pudo obtener el email del usuario. Por favor, verifica tu cuenta.");
+        toast.error("Error de usuario", { description: "No se pudo obtener el email del usuario. Por favor, verifica tu cuenta." });
         setIsLoading(false);
         return;
       }
 
-      // Primero intentamos unirse directamente (si ya tiene una invitación aprobada)
       const joinResponse = await fetch("/api/organization/join", {
         method: "POST",
         headers: {
@@ -106,13 +105,12 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nex
       const joinData = await joinResponse.json();
 
       if (joinResponse.ok) {
-        alert("¡Te has unido exitosamente a la organización!");
-        // Avanzar al siguiente paso en lugar de ir directamente al dashboard
-        nextStep();
+        toast.success("¡Bienvenido a bordo!", { description: "Te has unido exitosamente a la organización." });
+        await refreshUserInfo();
+        router.push('/dashboard');
         return;
       }
 
-      // Si no puede unirse directamente, crear una solicitud de invitación
       if (joinResponse.status === 403 && joinData.message?.includes('No invitation found')) {
         const requestResponse = await fetch("/api/organization/request-join", {
           method: "POST",
@@ -130,7 +128,7 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nex
         const requestData = await requestResponse.json();
 
         if (requestResponse.ok) {
-          alert("Solicitud de unión enviada correctamente. Recibirás un correo electrónico cuando sea aprobada por un administrador.");
+          toast.info("Solicitud de unión enviada", { description: "Recibirás un correo electrónico cuando sea aprobada por un administrador." });
           router.push('/dashboard');
         } else {
           handleRequestError(requestResponse.status, requestData);
@@ -140,54 +138,46 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, nex
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Error de red. Por favor, verifica tu conexión e intenta nuevamente.");
+      toast.error("Error de red", { description: "Por favor, verifica tu conexión e intenta nuevamente." });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleJoinError = (status: number, data: { error?: string; message?: string }) => {
+    const description = data.error || data.message || "Ocurrió un error desconocido.";
     switch (status) {
       case 404:
-        alert("Código de invitación incorrecto. Verifica el código e intenta nuevamente.");
+        toast.error("Código incorrecto", { description: "Verifica el código e intenta nuevamente." });
         break;
       case 400:
-        alert(data.error || "Código de invitación inválido.");
+        toast.error("Código inválido", { description });
         break;
       case 403:
         if (data.message?.includes('expired')) {
-          alert("La invitación ha expirado. Solicita una nueva invitación.");
+          toast.error("Invitación expirada", { description: "Solicita una nueva invitación." });
         } else if (data.message?.includes('not pending')) {
-          alert("Esta invitación ya ha sido procesada.");
+          toast.error("Invitación ya procesada", { description: "Esta invitación ya ha sido utilizada o cancelada." });
         } else {
-          alert(data.message || "No tienes permisos para unirte a esta organización.");
+          toast.error("Sin permisos", { description });
         }
         break;
-      case 500:
-      case 502:
-      case 503:
-        alert("Error del servidor. Por favor, intenta más tarde.");
-        break;
       default:
-        alert(data.error || data.message || "Error al unirse a la organización.");
+        toast.error("Error al unirse", { description });
     }
   };
 
   const handleRequestError = (status: number, data: { error?: string; message?: string }) => {
+    const description = data.error || "Ocurrió un error desconocido al enviar la solicitud.";
     switch (status) {
       case 404:
-        alert("Usuario u organización no encontrada.");
+        toast.error("No encontrado", { description: "Usuario u organización no encontrada." });
         break;
       case 400:
-        alert(data.error || "Datos de solicitud inválidos.");
-        break;
-      case 500:
-      case 502:
-      case 503:
-        alert("Error del servidor. Por favor, intenta más tarde.");
+        toast.error("Solicitud inválida", { description });
         break;
       default:
-        alert(data.error || "Error al enviar la solicitud de unión.");
+        toast.error("Error en la solicitud", { description });
     }
   };
 
@@ -260,7 +250,6 @@ export function Step2ConsultorioOrInvitacion({
         <JoinOrganization
           invitationCode={invitationCode}
           setInvitationCode={setInvitationCode}
-          nextStep={nextStep}
           selectedRole={selectedRole}
         />
       )}

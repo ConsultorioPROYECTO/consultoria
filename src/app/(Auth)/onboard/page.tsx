@@ -205,7 +205,7 @@ function OnboardContent() {
                 setNameConsultorio={setNameConsultorio}
                 invitationCode={invitationCode}
                 setInvitationCode={setInvitationCode}
-                nextStep={async () => {
+                nextStep={() => {
                   if (selectedRole === "Admin") {
                     if (!nameConsultorio.trim()) {
                       toast.error("Nombre del consultorio requerido", {
@@ -214,52 +214,9 @@ function OnboardContent() {
                       return;
                     }
                     // Solo avanza al siguiente paso, la creación se hará después de seleccionar el plan
-                    nextStep(); 
-                  } else {
-                    // Lógica para Médico o Asistente: enviar código de invitación al backend
-                    if (!invitationCode) {
-                      toast.error("Por favor, introduce un código de invitación.", {
-                        description: "El código de invitación no puede estar vacío.",
-                      });
-                      return;
-                    }
-
-                    try {
-                      const response = await fetch('/api/organization/join', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ invitationCode: invitationCode, role : selectedRole }),
-                      });
-
-                      // Intentar parsear como JSON solo si la respuesta parece ser JSON
-                      if (response.headers.get("content-type")?.includes("application/json")) {
-                        const data = await response.json();
-                        if (response.ok) {
-                          toast.success("¡Bienvenido a bordo!", {
-                            description: data.message || "Te has unido a la organización exitosamente.",
-                          });
-                          router.push('/dashboard'); // Redirigir al dashboard en caso de éxito
-                        } else {
-                          toast.error("Error al unirse a la organización.", {
-                            description: data.message || "No se pudo unir a la organización. Inténtalo de nuevo.",
-                          });
-                        }
-                      } else {
-                        const textError = await response.text();
-                        console.error("Respuesta no JSON del servidor (unión):", textError);
-                        toast.error("Error del servidor", {
-                            description: "El servidor devolvió una respuesta inesperada al intentar unirse. Por favor, inténtalo más tarde.",
-                        });
-                      }
-                    } catch (error) {
-                      console.error("Error al enviar la solicitud de unión:", error);
-                      toast.error("Error de conexión o procesamiento", {
-                        description: "No se pudo conectar con el servidor o procesar la respuesta al unirse. Inténtalo de nuevo más tarde.",
-                      });
-                    }
+                    nextStep();
                   }
+                  // Para otros roles, el componente Step2 se encarga de la navegación.
                 }}
               />
             )}
