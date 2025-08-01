@@ -50,7 +50,8 @@ export const plansData: Plan[] = [ // <-- AÑADIDO 'export'
     asistentesLimit: "Asistentes ilimitados", // O un límite alto
     features: [
       "Todo en Profesional",
-      "IA con análisis avanzado (beta)",
+      "IA con análisis avanzado",
+      "Modulo avanzado de Ai-Care",
       "Múltiples números de WhatsApp (opcional)",
       "Reportes avanzados y personalizables",
       "SLA",
