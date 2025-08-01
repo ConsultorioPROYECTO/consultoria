@@ -13,11 +13,12 @@ import { users } from "@/db/schema/users";
 import { doctors } from "@/db/schema/doctors";
 import { assistants } from "@/db/schema/assistants";
 import { eq } from "drizzle-orm";
-import { DecodedIdToken } from "firebase-admin/auth";
+
 import { NextRequest, NextResponse } from "next/server";
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS, API_ERRORS } from "@/types/api";
-import { withAuthentication } from "@/app/lib/firebase/server/middleware/authMiddleware";
-import { validateUserRole } from "@/lib/api-helpers";
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+
 import { z } from "zod";
 
 const changeRolSchema = z.object({
@@ -104,7 +105,7 @@ const changeRolSchema = z.object({
  */
 const changeUserRole = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
+  userInfo: AuthenticatedUserInfo,
   context: { params: { rol: string; id: string } }
 ): Promise<NextResponse | Response> => {
   try {
@@ -121,33 +122,15 @@ const changeUserRole = async (
 
     const parsedRol = changeRolSchema.parse({ rol });
 
-    // Obtener información del usuario autenticado
-    const authenticatedUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { id: true, organizationId: true, role: true }
-    });
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: authenticatedUser } = userInfo;
     
-    if (!authenticatedUser) {
-      return createErrorResponse(
-        API_ERRORS.USER_NOT_FOUND,
-        'Usuario autenticado no encontrado en la base de datos local.',
-        HTTP_STATUS.NOT_FOUND
-      );
-    }
-
     if (!authenticatedUser.organizationId) {
       return createErrorResponse(
         API_ERRORS.FORBIDDEN,
         'El usuario autenticado no pertenece a ninguna organización.',
         HTTP_STATUS.FORBIDDEN
       );
-    }
-
-    
-
-    const roleValidationError = validateUserRole(authenticatedUser.role, ["admin"]);
-    if (roleValidationError) {
-      return roleValidationError;
     }
 
     // Obtener información del usuario objetivo
@@ -322,4 +305,17 @@ const changeUserRole = async (
  *   console.error('Error:', result.error);
  * }
  */
-export const GET = withAuthentication(changeUserRole);
+// Wrapper function to handle the context parameter
+const handleChangeUserRole = async (
+  request: NextRequest,
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse | Response> => {
+  const context = args[0] as { params: { rol: string; id: string } };
+  return changeUserRole(request, userInfo, context);
+};
+
+export const GET = withOptimizedAuthentication(handleChangeUserRole, {
+  requiredRoles: 'admin',
+  requireOrganization: true
+});

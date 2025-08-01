@@ -37,8 +37,8 @@ import {
   type DoctorAssistantAssignmentsResponse,
   type DeleteDoctorAssistantAssignmentRequest
 } from '@/types/api';
-import { withAuthentication } from '@lib/firebase/server/middleware/authMiddleware';
-import { DecodedIdToken } from 'firebase-admin/auth';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 /**
  * Endpoint GET para obtener asignaciones de doctores a asistentes.
@@ -90,15 +90,9 @@ import { DecodedIdToken } from 'firebase-admin/auth';
  * }
  * ```
  */
-const getHandler = async (request: NextRequest, decodedToken: DecodedIdToken): Promise<NextResponse> => {
+const getHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
   try {
-    const user = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true }
-    });
-    if (!user || user.role !== 'admin') {
-      return createErrorResponse(API_ERRORS.FORBIDDEN, 'Acceso denegado. Se requiere rol de administrador', HTTP_STATUS.FORBIDDEN);
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
     const { searchParams } = new URL(request.url);
     const doctorIdParam = searchParams.get('doctorId');
     const assistantIdParam = searchParams.get('assistantId');
@@ -201,7 +195,10 @@ const getHandler = async (request: NextRequest, decodedToken: DecodedIdToken): P
     return handleDatabaseError(error, 'obtener asignaciones');
   }
 };
-export const GET = withAuthentication(getHandler);
+export const GET = withOptimizedAuthentication(getHandler, {
+  requiredRoles: 'admin',
+  requireOrganization: true
+});
 
 /**
  * Endpoint POST para crear una nueva asignación de doctor a asistente.
@@ -257,15 +254,9 @@ export const GET = withAuthentication(getHandler);
  * }
  * ```
  */
-const postHandler = async (request: NextRequest, decodedToken: DecodedIdToken): Promise<NextResponse> => {
+const postHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
   try {
-    const user = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true }
-    });
-    if (!user || user.role !== 'admin') {
-      return createErrorResponse(API_ERRORS.FORBIDDEN, 'Acceso denegado. Se requiere rol de administrador', HTTP_STATUS.FORBIDDEN);
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
     const validation = await validateRequestBody(request, createDoctorAssistantAssignmentSchema);
     if (!validation.success) {
       return validation.error;
@@ -357,7 +348,10 @@ const postHandler = async (request: NextRequest, decodedToken: DecodedIdToken): 
     return handleDatabaseError(error, 'crear asignación');
   }
 };
-export const POST = withAuthentication(postHandler);
+export const POST = withOptimizedAuthentication(postHandler, {
+  requiredRoles: 'admin',
+  requireOrganization: true
+});
 
 /**
  * Endpoint DELETE para eliminar una asignación de doctor a asistente.
@@ -391,22 +385,10 @@ export const POST = withAuthentication(postHandler);
  * }
  * ```
  */
-const deleteHandler = async (request: NextRequest, decodedToken: DecodedIdToken): Promise<NextResponse> => {
+const deleteHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
   try {
-    // Verificar permisos de administrador
-    const user = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true }
-    });
+    // El middleware optimizado ya valida autenticación, rol y organización
     
-    if (!user || user.role !== 'admin') {
-      return createErrorResponse(
-        API_ERRORS.FORBIDDEN, 
-        'Acceso denegado. Se requiere rol de administrador', 
-        HTTP_STATUS.FORBIDDEN
-      );
-    }
-
     // Obtener y validar parámetros de query
     const { searchParams } = new URL(request.url);
     const doctorIdParam = searchParams.get('doctorId');
@@ -484,4 +466,7 @@ const deleteHandler = async (request: NextRequest, decodedToken: DecodedIdToken)
   }
 };
 
-export const DELETE = withAuthentication(deleteHandler);
+export const DELETE = withOptimizedAuthentication(deleteHandler, {
+  requiredRoles: 'admin',
+  requireOrganization: true
+});

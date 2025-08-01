@@ -27,13 +27,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
-import { db } from '@/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+
+
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/types/api';
-import { validateUserRole, handleDatabaseError } from '@/lib/api-helpers';
+import { handleDatabaseError } from '@/lib/api-helpers';
 import { getOrganizationInstance } from '@/lib/organization-utils';
 
 // === Environment Configuration ===
@@ -74,7 +73,7 @@ const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY;
  */
 const getMediaBase64Handler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   // Validate environment configuration
   if (!EVOLUTION_API_SERVER_URL || !EVOLUTION_API_KEY) {
@@ -91,26 +90,17 @@ const getMediaBase64Handler = async (
   }
 
   try {
-    // Get requesting user from database
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user } = userInfo;
+    
+    if (!user.organizationId) {
       return createErrorResponse('User not found', undefined, HTTP_STATUS.FORBIDDEN);
     }
 
-    // Validate user role
-    const roleValidationError = validateUserRole(requestingUser.role, ["admin", "medico", "asistente"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
-
-    console.log(`Downloading media for user: ${decodedToken.uid}, organization: ${requestingUser.organizationId}`);
+    console.log(`Downloading media for user: ${user.firebaseUid}, organization: ${user.organizationId}`);
 
     // Get organization instance information
-    const orgResult = await getOrganizationInstance(requestingUser.organizationId);
+    const orgResult = await getOrganizationInstance(user.organizationId);
     
     if (!orgResult.success || !orgResult.instanceId) {
       return createErrorResponse(
@@ -121,7 +111,7 @@ const getMediaBase64Handler = async (
     }
 
     const instanceId = orgResult.instanceId;
-    console.log(`Using instanceId: ${instanceId} for organization: ${requestingUser.organizationId}`);
+    console.log(`Using instanceId: ${instanceId} for organization: ${user.organizationId}`);
 
     // Get messageId from request body
     const body = await request.json();
@@ -201,6 +191,8 @@ const getMediaBase64Handler = async (
  * @param {DecodedIdToken} decodedToken - The authenticated user token
  * @returns {Promise<NextResponse | Response>} The API response
  */
-export const POST = withAuthentication(async (request: NextRequest, decodedToken: DecodedIdToken) => {
-  return getMediaBase64Handler(request, decodedToken);
+export const POST = withOptimizedAuthentication(async (request: NextRequest, userInfo: AuthenticatedUserInfo) => {
+  return getMediaBase64Handler(request, userInfo);
+}, {
+  requireOrganization: true
 });

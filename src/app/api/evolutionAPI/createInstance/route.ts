@@ -51,14 +51,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import type { DecodedIdToken } from "firebase-admin/auth";
-import { eq } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from "@/types/api";
-import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import { handleDatabaseError } from "@/lib/api-helpers";
 import { getOrganizationInstance } from '@/lib/organization-utils';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 // === Environment Configuration ===
 const EVOLUTION_API_SERVER_URL = process.env.EVOLUTION_API_SERVER_URL;
@@ -121,7 +118,7 @@ interface EvolutionCreateInstanceResponse {
  */
 const createInstanceHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   // Validate environment configuration
   if (!EVOLUTION_API_SERVER_URL || !EVOLUTION_API_KEY) {
@@ -138,23 +135,14 @@ const createInstanceHandler = async (
   }
 
   try {
-    // Get requesting user from database
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse('User not found', undefined, HTTP_STATUS.FORBIDDEN);
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
+    
+    if (!requestingUser.organizationId) {
+      return createErrorResponse('User not found', 'User does not belong to any organization', HTTP_STATUS.FORBIDDEN);
     }
-
-    // Validate user role
-    const roleValidationError = validateUserRole(requestingUser.role, ["admin"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
-
-    console.log(`Creating instance for user: ${decodedToken.uid}, organization: ${requestingUser.organizationId}`);
+    
+    console.log(`Creating instance for user: ${requestingUser.firebaseUid}, organization: ${requestingUser.organizationId}`);
 
     // Get organization instance information
     const orgResult = await getOrganizationInstance(requestingUser.organizationId);
@@ -247,6 +235,7 @@ const createInstanceHandler = async (
  * @param {DecodedIdToken} decodedToken - The authenticated user token
  * @returns {Promise<NextResponse | Response>} The API response
  */
-export const POST = withAuthentication(async (request: NextRequest, decodedToken: DecodedIdToken) => {
-  return createInstanceHandler(request, decodedToken);
+export const POST = withOptimizedAuthentication(createInstanceHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
 });

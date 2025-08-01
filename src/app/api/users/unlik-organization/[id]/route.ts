@@ -10,11 +10,10 @@ import { db } from "@/db";
 
 import { users } from "@/db/schema/users";
 import { eq } from "drizzle-orm";
-import { DecodedIdToken } from "firebase-admin/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS, API_ERRORS } from "@/types/api";
-import { withAuthentication } from "@/app/lib/firebase/server/middleware/authMiddleware";
-import { validateUserRole } from "@/lib/api-helpers";
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 /**
  * Desvincula un usuario de su organización actual.
@@ -85,7 +84,7 @@ import { validateUserRole } from "@/lib/api-helpers";
  */
 const unlinkOrganization = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
+  userInfo: AuthenticatedUserInfo,
   context: { params: { id: string } }
 ): Promise<NextResponse | Response> => {
   try {
@@ -100,32 +99,8 @@ const unlinkOrganization = async (
       );
     }
 
-    // Obtener información del usuario autenticado
-    const authenticatedUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { id: true, organizationId: true, role: true }
-    });
-    
-    if (!authenticatedUser) {
-      return createErrorResponse(
-        API_ERRORS.USER_NOT_FOUND,
-        'Usuario autenticado no encontrado en la base de datos local.',
-        HTTP_STATUS.NOT_FOUND
-      );
-    }
-
-    if (!authenticatedUser.organizationId) {
-      return createErrorResponse(
-        API_ERRORS.FORBIDDEN,
-        'El usuario autenticado no pertenece a ninguna organización.',
-        HTTP_STATUS.FORBIDDEN
-      );
-    }
-
-    const roleValidationError = validateUserRole(authenticatedUser.role, ["admin"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: authenticatedUser } = userInfo;
 
     // Obtener información del usuario objetivo
     const targetUser = await db.query.users.findFirst({
@@ -214,4 +189,16 @@ const unlinkOrganization = async (
  *   console.error('Error:', result.error);
  * }
  */
-export const GET = withAuthentication(unlinkOrganization);
+const handleUnlinkOrganization = async (
+  request: NextRequest,
+  userInfo: AuthenticatedUserInfo,
+  context?: unknown
+): Promise<NextResponse | Response> => {
+  const params = context as { params: { id: string } };
+  return unlinkOrganization(request, userInfo, params);
+};
+
+export const GET = withOptimizedAuthentication(handleUnlinkOrganization, {
+  requiredRoles: ['admin'],
+  requireOrganization: true
+});

@@ -47,13 +47,14 @@
  */
 
 import { NextRequest } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { db } from '@/db';
 import { users, assistants, assistantDoctor, doctors, appointments, patients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
-import { validateUserRole, handleDatabaseError } from '@/lib/api-helpers';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import { handleDatabaseError } from '@/lib/api-helpers';
+
 import type { InferSelectModel } from 'drizzle-orm';
 
 /**
@@ -265,33 +266,13 @@ export type OrganizationAssistantDoctorAppointmentsResponse = AssistantWithDocto
  */
 async function handleGetRequest(
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ) {
   try {
-    // 1. Obtener información del usuario autenticado
-    const userResult = await db
-      .select()
-      .from(users)
-      .where(eq(users.firebaseUid, decodedToken.uid))
-      .limit(1);
-
-    if (userResult.length === 0) {
-      return createErrorResponse(
-        API_ERRORS.USER_NOT_FOUND,
-        'Usuario no encontrado en la base de datos',
-        HTTP_STATUS.NOT_FOUND
-      );
-    }
-
-    const user = userResult[0];
-
-    // 2. Validar que el usuario tenga rol de "admin" (master)
-    const roleValidationError = validateUserRole(user.role, 'admin');
-    if (roleValidationError) {
-      return roleValidationError;
-    }
-
-    // 3. Verificar que el usuario tenga una organización asociada
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user } = userInfo;
+    
+    // Verificar que el usuario tenga una organización asociada
     if (!user.organizationId) {
       return createErrorResponse(
         API_ERRORS.FORBIDDEN,
@@ -437,11 +418,14 @@ async function handleGetRequest(
  * @see {@link withAuthentication} Middleware de autenticación Firebase
  * @see {@link OrganizationAssistantDoctorAppointmentsResponse} Tipo de respuesta
  */
-export const GET = withAuthentication(async (
+export const GET = withOptimizedAuthentication(async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ) => {
-  return handleGetRequest(request, decodedToken);
+  return handleGetRequest(request, userInfo);
+}, {
+  requiredRoles: 'admin',
+  requireOrganization: true
 });
 
 /**

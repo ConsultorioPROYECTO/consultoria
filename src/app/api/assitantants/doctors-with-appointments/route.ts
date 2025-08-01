@@ -18,12 +18,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@rutas/db";
-import { users, assistants, assistantDoctor, doctors } from "@rutas/db/schema";
-import { withAuthentication } from "@rutas/app/lib/firebase/server/middleware/authMiddleware";
-import type { DecodedIdToken } from "firebase-admin/auth";
+import { assistants, assistantDoctor, doctors } from "@rutas/db/schema";
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { eq, inArray } from "drizzle-orm";
-import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS, type DoctorsWithAppointmentsResponse } from "@/types/api";
-import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import { createErrorResponse, createSuccessResponse, HTTP_STATUS, type DoctorsWithAppointmentsResponse } from "@/types/api";
+import { handleDatabaseError } from "@/lib/api-helpers";
 
 /**
  * Manejador para obtener doctores con sus citas asociadas para asistentes.
@@ -87,23 +87,11 @@ import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
  */
 const getDoctorsWithAppointmentsHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    // Obtener información del usuario autenticado desde la base de datos
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true },
-    });
-    // Validar que el usuario existe en la base de datos local
-    if (!requestingUser) {
-      return createErrorResponse(API_ERRORS.USER_NOT_FOUND, undefined, HTTP_STATUS.FORBIDDEN);
-    }
-    // Validar que el usuario tenga rol de asistente
-    const roleValidationError = validateUserRole(requestingUser.role, ["asistente"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
     // Buscar el registro de asistente asociado al usuario autenticado
     const assistant = await db.query.assistants.findFirst({
       where: eq(assistants.userId, requestingUser.id),
@@ -175,4 +163,7 @@ const getDoctorsWithAppointmentsHandler = async (
  *   -H 'Content-Type: application/json'
  * ```
  */
-export const GET = withAuthentication(getDoctorsWithAppointmentsHandler);
+export const GET = withOptimizedAuthentication(getDoctorsWithAppointmentsHandler, {
+  requiredRoles: ['asistente', 'medico'],
+  requireOrganization: true
+});
