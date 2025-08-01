@@ -23,7 +23,7 @@ import type { NewPatient } from '@/db/schema';
  * @returns {Promise<NextResponse>} A response with the patient data or an error message.
  */
 const getPatientByIdHandler = withAuthorizedUser(async (request, user, { params }) => {
-  const patientId = getNumericParam(params, 'id');
+  const patientId = getNumericParam(await params, 'id');
   if (patientId instanceof NextResponse) return patientId;
 
   try {
@@ -48,7 +48,7 @@ const getPatientByIdHandler = withAuthorizedUser(async (request, user, { params 
  * @returns {Promise<NextResponse>} A response with the updated patient data or an error message.
  */
 const updatePatientHandler = withAuthorizedUser(async (request: NextRequest, user, { params }) => {
-  const patientId = getNumericParam(params, 'id');
+  const patientId = getNumericParam(await params, 'id');
   if (patientId instanceof NextResponse) return patientId;
 
   try {
@@ -81,7 +81,7 @@ const updatePatientHandler = withAuthorizedUser(async (request: NextRequest, use
  * @returns {Promise<NextResponse>} A response confirming the deactivation or an error message.
  */
 const deletePatientHandler = withAuthorizedUser(async (request: NextRequest, user, { params }) => {
-  const patientId = getNumericParam(params, 'id');
+  const patientId = getNumericParam(await params, 'id');
   if (patientId instanceof NextResponse) return patientId;
 
   try {

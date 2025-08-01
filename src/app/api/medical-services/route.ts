@@ -177,7 +177,7 @@ const getMedicalServicesHandler = async (
     const categories = await db.selectDistinct({ category: medicalServices.category })
       .from(medicalServices)
       .where(and(
-        eq(medicalServices.organizationId, requestingUser.organizationId),
+        eq(medicalServices.organizationId, requestingUser.organizationId!),
         eq(medicalServices.isActive, true)
       ));
 
@@ -315,7 +315,7 @@ const createMedicalServiceHandler = async (
       category: body.category,
       requiresPreparation: body.requiresPreparation || false,
       preparationInstructions: body.preparationInstructions || null,
-      organizationId: requestingUser.organizationId,
+      organizationId: requestingUser.organizationId!,
     };
 
     const [createdService] = await db.insert(medicalServices).values(newServiceData);

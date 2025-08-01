@@ -6,7 +6,7 @@
 
 import { NextRequest } from 'next/server';
 import { verifyAuthToken, CustomClaims, hasPermission, belongsToOrganization, UserPermissions } from '../app/lib/firebase/server/adminConfig';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+
 import { createErrorResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
 
 /**
@@ -83,7 +83,15 @@ export async function authenticateRequest(
     };
   }
 
-  const user = (authResult as { success: true; customClaims: CustomClaims & { uid: string; email?: string }; decodedToken: DecodedIdToken }).customClaims;
+  const user = 'customClaims' in authResult ? authResult.customClaims : null;
+  if (!user) {
+    return {
+      success: false,
+      error: createErrorResponse(
+         'Token inválido: Claims no disponibles'
+       ),
+    };
+  }
 
   // Verificar roles permitidos
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
@@ -124,9 +132,9 @@ export async function authenticateRequest(
   }
 
   return {
-    success: true,
-    user,
-  };
+      success: true,
+      user: user as CustomClaims & { uid: string; email?: string },
+    };
 }
 
 /**

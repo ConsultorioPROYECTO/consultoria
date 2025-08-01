@@ -220,7 +220,7 @@ const createPatientHandler = async (
     // Verificar que no exista un paciente con la misma identificación en la organización
     const existingPatient = await db.query.patients.findFirst({
       where: and(
-        eq(patients.organizationId, requestingUser.organizationId),
+        eq(patients.organizationId, requestingUser.organizationId!),
         eq(patients.identificationType, body.identificationType),
         eq(patients.identificationNumber, body.identificationNumber),
         eq(patients.isActive, true)

@@ -28,7 +28,7 @@ type AuthenticatedUser = NonNullable<Awaited<ReturnType<typeof db.query.users.fi
 type AuthenticatedHandler = (
   request: NextRequest,
   user: AuthenticatedUser,
-  context: { params: { [key: string]: string | string[] | undefined } }
+  context: { params: Promise<{ [key: string]: string | string[] | undefined }> }
 ) => Promise<NextResponse | Response>;
 
 /**
@@ -44,7 +44,7 @@ export function withAuthorizedUser(
 ) {
   return async (
     request: NextRequest,
-    context: { params: { [key: string]: string | string[] | undefined } }
+    context: { params: Promise<{ [key: string]: string | string[] | undefined }> }
   ): Promise<NextResponse | Response> => {
     const idToken = request.headers.get('Authorization')?.split('Bearer ')[1];
 

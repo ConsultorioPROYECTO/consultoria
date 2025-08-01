@@ -46,8 +46,9 @@ const UpdateDoctorSchema = z.object({
 
 type UpdateDoctorRequest = z.infer<typeof UpdateDoctorSchema>;
 
-async function handlePatchRequest(request: NextRequest, _userInfo: AuthenticatedUserInfo) {
+async function handlePatchRequest(request: NextRequest, 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _userInfo: AuthenticatedUserInfo) {
   // _userInfo es requerido por la firma de AuthenticatedHandler pero la validación se hace en el middleware
   try {
     const body = await request.json();
@@ -86,6 +87,6 @@ async function handlePatchRequest(request: NextRequest, _userInfo: Authenticated
 }
 
 export const PATCH = withOptimizedAuthentication(handlePatchRequest, {
-  requiredRoles: 'admin',
+  requiredRoles: ['admin'],
   requireOrganization: false
 });

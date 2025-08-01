@@ -90,7 +90,9 @@ import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware
  * }
  * ```
  */
-const getHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
+const getHandler = async (request: NextRequest, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
   try {
     // El middleware optimizado ya valida autenticación, rol y organización
     const { searchParams } = new URL(request.url);
@@ -196,7 +198,7 @@ const getHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo)
   }
 };
 export const GET = withOptimizedAuthentication(getHandler, {
-  requiredRoles: 'admin',
+  requiredRoles: ['admin'],
   requireOrganization: true
 });
 
@@ -254,7 +256,9 @@ export const GET = withOptimizedAuthentication(getHandler, {
  * }
  * ```
  */
-const postHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
+const postHandler = async (request: NextRequest, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
   try {
     // El middleware optimizado ya valida autenticación, rol y organización
     const validation = await validateRequestBody(request, createDoctorAssistantAssignmentSchema);
@@ -349,7 +353,7 @@ const postHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo
   }
 };
 export const POST = withOptimizedAuthentication(postHandler, {
-  requiredRoles: 'admin',
+  requiredRoles: ['admin'],
   requireOrganization: true
 });
 
@@ -385,7 +389,9 @@ export const POST = withOptimizedAuthentication(postHandler, {
  * }
  * ```
  */
-const deleteHandler = async (request: NextRequest, userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
+const deleteHandler = async (request: NextRequest, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _userInfo: AuthenticatedUserInfo): Promise<NextResponse> => {
   try {
     // El middleware optimizado ya valida autenticación, rol y organización
     
@@ -467,6 +473,6 @@ const deleteHandler = async (request: NextRequest, userInfo: AuthenticatedUserIn
 };
 
 export const DELETE = withOptimizedAuthentication(deleteHandler, {
-  requiredRoles: 'admin',
+  requiredRoles: ['admin'],
   requireOrganization: true
 });
