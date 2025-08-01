@@ -150,7 +150,7 @@ export default function DoctorDashboard() {
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
-      <main className="flex-1 space-y-6 pb-4 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
+      <main className="flex-1 space-y-6 pb-22 md:pb-4 lg:pb-6 px-4 md:px-4 lg:px-6 pt-2 md:pt-2 lg:pt-2">
         <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between mb-6">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Hola, {displayTwoNames}</h1>
           <p className="text-muted-foreground">{timeBasedPhrase}</p>
