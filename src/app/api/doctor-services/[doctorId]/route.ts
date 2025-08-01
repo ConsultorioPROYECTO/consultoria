@@ -101,54 +101,18 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { doctorServices, doctors, medicalServices, users } from '@/db/schema';
+import { doctorServices, doctors, medicalServices } from '@/db/schema';
 import { eq, and, inArray } from 'drizzle-orm';
-import { auth } from '@/app/lib/firebase/server/adminConfig';
-import { DecodedIdToken } from 'firebase-admin/auth';
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/types/api';
 import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 interface RouteParams {
   doctorId: string;
 }
 
-/**
- * Authenticates incoming requests using Firebase Admin SDK.
- * 
- * Extracts and verifies the Bearer token from the Authorization header,
- * ensuring the request comes from a valid authenticated user. This function
- * is used as a middleware for all protected endpoints.
- * 
- * @param request - The incoming Next.js request with Authorization header
- * @returns Promise resolving to decoded Firebase ID token
- * 
- * @throws {Error} When token is missing, malformed, expired, or verification fails
- * 
- * @example
- * ```typescript
- * const decodedToken = await authenticateRequest(request);
- * console.log('User ID:', decodedToken.uid);
- * console.log('Email:', decodedToken.email);
- * ```
- * 
- * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase Token Verification}
- * 
- * @internal
- */
-async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken | null> {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    return await auth.verifyIdToken(token);
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return null;
-  }
-}
+// Autenticación ahora manejada por withOptimizedAuthentication
 
 /**
  * Retrieves comprehensive medical service assignments for a specific doctor with advanced filtering.
@@ -274,23 +238,19 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
  */
 const getDoctorServicesHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
-  params: RouteParams
+  userInfo: AuthenticatedUserInfo,
+  context: { params: RouteParams }
 ): Promise<NextResponse | Response> => {
   try {
+    const { params } = context;
     const doctorId = parseInt(params.doctorId);
 
     if (isNaN(doctorId)) {
       return createErrorResponse('Invalid doctor ID', undefined, HTTP_STATUS.BAD_REQUEST);
     }
 
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid)
-    });
-
-    if (!requestingUser) {
-      return createErrorResponse('User not found', undefined, HTTP_STATUS.NOT_FOUND);
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     const doctor = await db.query.doctors.findFirst({
       where: eq(doctors.idDoctor, doctorId),
@@ -440,23 +400,19 @@ const getDoctorServicesHandler = async (
  */
 const updateDoctorServicesHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
-  params: RouteParams
+  userInfo: AuthenticatedUserInfo,
+  context: { params: RouteParams }
 ): Promise<NextResponse | Response> => {
   try {
+    const { params } = context;
     const doctorId = parseInt(params.doctorId);
 
     if (isNaN(doctorId)) {
       return createErrorResponse('Invalid doctor ID', undefined, HTTP_STATUS.BAD_REQUEST);
     }
 
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid)
-    });
-
-    if (!requestingUser || !requestingUser.organizationId || requestingUser.role !== 'admin') {
-      return createErrorResponse('Admin access required', undefined, HTTP_STATUS.FORBIDDEN);
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     const body = await request.json();
     const { serviceIds } = body;
@@ -570,19 +526,19 @@ const updateDoctorServicesHandler = async (
  * 
  * @public
  */
-export async function GET(
+const handleGetDoctorServices = async (
   request: NextRequest,
-  { params }: { params: Promise<RouteParams> }
-) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
+  userInfo: AuthenticatedUserInfo,
+  args: unknown
+) => {
+  const params = await (args as { params: Promise<RouteParams> }).params;
+  return getDoctorServicesHandler(request, userInfo, { params });
+};
 
-  const resolvedParams = await params;
-  return getDoctorServicesHandler(request, decodedToken, resolvedParams);
-}
+export const GET = withOptimizedAuthentication(handleGetDoctorServices, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});
 
 /**
  * Handles PUT requests to update services for a specific doctor.
@@ -602,16 +558,16 @@ export async function GET(
  * 
  * @public
  */
-export async function PUT(
+const handleUpdateDoctorServices = async (
   request: NextRequest,
-  { params }: { params: Promise<RouteParams> }
-) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
+  userInfo: AuthenticatedUserInfo,
+  args: unknown
+) => {
+  const params = await (args as { params: Promise<RouteParams> }).params;
+  return updateDoctorServicesHandler(request, userInfo, { params });
+};
 
-  const resolvedParams = await params;
-  return updateDoctorServicesHandler(request, decodedToken, resolvedParams);
-}
+export const PUT = withOptimizedAuthentication(handleUpdateDoctorServices, {
+  requiredRoles: ['admin'],
+  requireOrganization: true
+});

@@ -46,12 +46,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { medicalServices, users } from "@/db/schema";
-import { auth } from "@/app/lib/firebase/server/adminConfig";
-import type { DecodedIdToken } from "firebase-admin/auth";
+import { medicalServices } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS } from "@/types/api";
-import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from "@/types/api";
+import { handleDatabaseError } from "@/lib/api-helpers";
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import type { NewMedicalService } from "@/db/schema";
 import { syncKnowledgeAfterCRUD } from "@/lib/knowledge-manager";
 
@@ -128,23 +128,11 @@ import { syncKnowledgeAfterCRUD } from "@/lib/knowledge-manager";
  */
 const getMedicalServicesHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse(API_ERRORS.USER_NOT_FOUND, undefined, HTTP_STATUS.FORBIDDEN);
-    }
-
-    // Todos los roles pueden ver servicios médicos
-    const roleValidationError = validateUserRole(requestingUser.role, ["admin", "medico", "asistente"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     // Obtener parámetros de query
     const url = new URL(request.url);
@@ -153,7 +141,7 @@ const getMedicalServicesHandler = async (
 
     // Construir condiciones de filtro
     let whereConditions = and(
-      eq(medicalServices.organizationId, requestingUser.organizationId)
+      eq(medicalServices.organizationId, requestingUser.organizationId!)
     );
 
     // Si se solicita solo servicios activos
@@ -285,23 +273,11 @@ const getMedicalServicesHandler = async (
  */
 const createMedicalServiceHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse(API_ERRORS.USER_NOT_FOUND, undefined, HTTP_STATUS.FORBIDDEN);
-    }
-
-    // Solo admins pueden crear servicios médicos
-    const roleValidationError = validateUserRole(requestingUser.role, ["admin"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     const body = await request.json();
     
@@ -316,7 +292,7 @@ const createMedicalServiceHandler = async (
     // Verificar que no exista un servicio con el mismo código en la organización
     const existingService = await db.query.medicalServices.findFirst({
       where: and(
-        eq(medicalServices.organizationId, requestingUser.organizationId),
+        eq(medicalServices.organizationId, requestingUser.organizationId!),
         eq(medicalServices.code, body.code),
         eq(medicalServices.isActive, true)
       )
@@ -420,20 +396,7 @@ const createMedicalServiceHandler = async (
  * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase Verify ID Tokens}
  * @see {@link auth} Instancia de Firebase Admin Auth
  */
-async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken | null> {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    return await auth.verifyIdToken(token);
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return null;
-  }
-}
+// Autenticación ahora manejada por withOptimizedAuthentication
 
 /**
  * Endpoint GET para obtener servicios médicos de la organización.
@@ -484,15 +447,10 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
  * @middleware authenticateRequest
  * @handler getMedicalServicesHandler
  */
-export async function GET(request: NextRequest) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
-
-  return getMedicalServicesHandler(request, decodedToken);
-}
+export const GET = withOptimizedAuthentication(getMedicalServicesHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});
 
 /**
  * Endpoint POST para crear un nuevo servicio médico.
@@ -557,12 +515,7 @@ export async function GET(request: NextRequest) {
  * @middleware authenticateRequest
  * @handler createMedicalServiceHandler
  */
-export async function POST(request: NextRequest) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
-
-  return createMedicalServiceHandler(request, decodedToken);
-}
+export const POST = withOptimizedAuthentication(createMedicalServiceHandler, {
+  requiredRoles: ['admin'],
+  requireOrganization: true
+});

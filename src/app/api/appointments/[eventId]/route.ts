@@ -34,7 +34,7 @@ const patchAppointmentHandler = withAuthorizedUser(async (request, user, { param
     }
     return handleDatabaseError(error, 'update appointment');
   }
-}, ['admin', 'medico']);
+}, ['admin', 'medico', 'asistente']);
 
 const deleteAppointmentHandler = withAuthorizedUser(async (request, user, { params }) => {
   const { eventId } = params;
@@ -58,7 +58,7 @@ const deleteAppointmentHandler = withAuthorizedUser(async (request, user, { para
     console.error(`Error deleting appointment ${eventId}:`, error);
     return handleDatabaseError(error, 'delete appointment');
   }
-}, ['admin', 'medico']);
+}, ['admin', 'medico', 'asistente']);
 
 export {
   patchAppointmentHandler as PATCH,

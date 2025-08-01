@@ -50,14 +50,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { auth } from "@/app/lib/firebase/server/adminConfig";
-import type { DecodedIdToken } from "firebase-admin/auth";
-import { eq } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from "@/types/api";
-import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import { handleDatabaseError } from "@/lib/api-helpers";
 import { getOrganizationInstance } from '@/lib/organization-utils';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 // === Environment Configuration ===
 const EVOLUTION_API_SERVER_URL = process.env.EVOLUTION_API_SERVER_URL;
@@ -83,35 +80,7 @@ interface EvolutionDisconnectResponse {
   [key: string]: unknown;
 }
 
-/**
- * Authenticates incoming requests by verifying Firebase ID tokens.
- * 
- * Extracts the Bearer token from the Authorization header and validates it
- * using Firebase Admin SDK. Returns the decoded token if valid, null otherwise.
- * 
- * @param request - The incoming Next.js request object
- * @returns Promise resolving to decoded token on success, null on failure
- * 
- * @throws {Error} When token verification fails due to network or Firebase errors
- * 
- * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase ID Token Verification}
- * 
- * @internal
- */
-async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken | null> {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    return await auth.verifyIdToken(token);
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return null;
-  }
-}
+// Autenticación ahora manejada por withOptimizedAuthentication
 
 /**
  * Disconnects the authenticated user's Evolution API instance.
@@ -147,7 +116,7 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
  */
 const disconnectInstanceHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   // Validate environment configuration
   if (!EVOLUTION_API_SERVER_URL || !EVOLUTION_API_KEY) {
@@ -164,26 +133,13 @@ const disconnectInstanceHandler = async (
   }
 
   try {
-    // Get requesting user from database
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-    });
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse('User not found', undefined, HTTP_STATUS.FORBIDDEN);
-    }
-
-    // Validate user role
-    const roleValidationError = validateUserRole(requestingUser.role, ["admin", "medico", "asistente"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
-
-    console.log(`Disconnecting instance for user: ${decodedToken.uid}, organization: ${requestingUser.organizationId}`);
+    console.log(`Disconnecting instance for user: ${requestingUser.firebaseUid}, organization: ${requestingUser.organizationId}`);
 
     // Get organization instance information
-    const orgResult = await getOrganizationInstance(requestingUser.organizationId);
+    const orgResult = await getOrganizationInstance(requestingUser.organizationId!);
     
     if (!orgResult.success || !orgResult.instanceId) {
       return createErrorResponse(
@@ -241,47 +197,7 @@ const disconnectInstanceHandler = async (
   }
 };
 
-/**
- * Handles DELETE requests to disconnect Evolution API instances.
- * 
- * Authenticates the request and delegates to the appropriate handler function.
- * Uses Firebase authentication to identify the user and automatically
- * determines the Evolution API instance based on organization membership.
- * 
- * @param request - The incoming Next.js DELETE request
- * @returns Promise resolving to HTTP response with disconnect result or error
- * 
- * @throws {Error} When authentication fails or handler execution encounters errors
- * 
- * @see {@link https://nextjs.org/docs/app/building-your-application/routing/route-handlers | Next.js Route Handlers}
- * @see {@link disconnectInstanceHandler} for detailed implementation documentation
- * 
- * @example
- * ```typescript
- * // Disconnect instance with authentication
- * const response = await fetch('/api/evolutionAPI/disconnect', {
- *   method: 'DELETE',
- *   headers: {
- *     'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
- *   }
- * });
- * const result = await response.json();
- * 
- * if (result.success) {
- *   console.log('Instance disconnected successfully');
- * } else {
- *   console.error('Disconnect failed:', result.error);
- * }
- * ```
- * 
- * @public
- */
-export async function DELETE(request: NextRequest) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
-
-  return disconnectInstanceHandler(request, decodedToken);
-}
+export const DELETE = withOptimizedAuthentication(disconnectInstanceHandler, {
+  requiredRoles: ['admin'],
+  requireOrganization: true
+});

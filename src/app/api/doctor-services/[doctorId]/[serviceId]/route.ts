@@ -130,55 +130,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { doctorServices, users } from '@/db/schema';
+import { doctorServices } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { auth } from '@/app/lib/firebase/server/adminConfig';
-import { DecodedIdToken } from 'firebase-admin/auth';
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from '@/types/api';
 import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 interface RouteParams {
   doctorId: string;
   serviceId: string;
 }
 
-/**
- * Authenticates incoming requests using Firebase Admin SDK.
- * 
- * Extracts and verifies the Bearer token from the Authorization header,
- * ensuring the request comes from a valid authenticated user. This function
- * is used as a middleware for all protected endpoints.
- * 
- * @param request - The incoming Next.js request with Authorization header
- * @returns Promise resolving to decoded Firebase ID token
- * 
- * @throws {Error} When token is missing, malformed, expired, or verification fails
- * 
- * @example
- * ```typescript
- * const decodedToken = await authenticateRequest(request);
- * console.log('User ID:', decodedToken.uid);
- * console.log('Email:', decodedToken.email);
- * ```
- * 
- * @see {@link https://firebase.google.com/docs/auth/admin/verify-id-tokens | Firebase Token Verification}
- * 
- * @internal
- */
-async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken | null> {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    return await auth.verifyIdToken(token);
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return null;
-  }
-}
+// Authentication is now handled by withOptimizedAuthentication middleware
 
 /**
  * Retrieves a specific doctor-service relationship with comprehensive metadata and validation.
@@ -348,7 +312,7 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
  */
 const getDoctorServiceHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
+  userInfo: AuthenticatedUserInfo,
   params: RouteParams
 ): Promise<NextResponse | Response> => {
   try {
@@ -435,7 +399,7 @@ const getDoctorServiceHandler = async (
  */
 const updateDoctorServiceHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
+  userInfo: AuthenticatedUserInfo,
   params: RouteParams
 ): Promise<NextResponse | Response> => {
   try {
@@ -453,14 +417,8 @@ const updateDoctorServiceHandler = async (
       return createErrorResponse('Custom price must be a non-negative number', undefined, HTTP_STATUS.BAD_REQUEST);
     }
 
-    // Obtener usuario para validación de organización
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid)
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse('User not found or missing organization', undefined, HTTP_STATUS.FORBIDDEN);
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     const existingRelation = await db.query.doctorServices.findFirst({
       where: and(
@@ -537,7 +495,7 @@ const updateDoctorServiceHandler = async (
  */
 const deleteDoctorServiceHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
+  userInfo: AuthenticatedUserInfo,
   params: RouteParams
 ): Promise<NextResponse | Response> => {
   try {
@@ -548,14 +506,8 @@ const deleteDoctorServiceHandler = async (
       return createErrorResponse('Invalid doctor ID or service ID', undefined, HTTP_STATUS.BAD_REQUEST);
     }
 
-    // Obtener usuario para validación de organización
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid)
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse('User not found or missing organization', undefined, HTTP_STATUS.FORBIDDEN);
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     const existingRelation = await db.query.doctorServices.findFirst({
       where: and(
@@ -617,19 +569,20 @@ const deleteDoctorServiceHandler = async (
  * 
  * @public
  */
-export async function GET(
+const handleGetDoctorService = async (
   request: NextRequest,
-  { params }: { params: Promise<RouteParams> }
-) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
+  userInfo: AuthenticatedUserInfo,
+  context?: unknown
+): Promise<NextResponse | Response> => {
+  const params = context as { params: Promise<RouteParams> };
+  const resolvedParams = await params.params;
+  return getDoctorServiceHandler(request, userInfo, resolvedParams);
+};
 
-  const resolvedParams = await params;
-  return getDoctorServiceHandler(request, decodedToken, resolvedParams);
-}
+export const GET = withOptimizedAuthentication(handleGetDoctorService, {
+  requiredRoles: ['admin', 'medico'],
+  requireOrganization: true
+});
 
 /**
  * Handles PUT requests to update a specific doctor-service relationship.
@@ -649,19 +602,20 @@ export async function GET(
  * 
  * @public
  */
-export async function PUT(
+const handleUpdateDoctorService = async (
   request: NextRequest,
-  { params }: { params: Promise<RouteParams> }
-) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
+  userInfo: AuthenticatedUserInfo,
+  context?: unknown
+): Promise<NextResponse | Response> => {
+  const params = context as { params: Promise<RouteParams> };
+  const resolvedParams = await params.params;
+  return updateDoctorServiceHandler(request, userInfo, resolvedParams);
+};
 
-  const resolvedParams = await params;
-  return updateDoctorServiceHandler(request, decodedToken, resolvedParams);
-}
+export const PUT = withOptimizedAuthentication(handleUpdateDoctorService, {
+  requiredRoles: ['admin', 'medico'],
+  requireOrganization: true
+});
 
 /**
  * Handles DELETE requests to remove a specific doctor-service relationship.
@@ -681,16 +635,17 @@ export async function PUT(
  * 
  * @public
  */
-export async function DELETE(
+const handleDeleteDoctorService = async (
   request: NextRequest,
-  { params }: { params: Promise<RouteParams> }
-) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
+  userInfo: AuthenticatedUserInfo,
+  context?: unknown
+): Promise<NextResponse | Response> => {
+  const params = context as { params: Promise<RouteParams> };
+  const resolvedParams = await params.params;
+  return deleteDoctorServiceHandler(request, userInfo, resolvedParams);
+};
 
-  const resolvedParams = await params;
-  return deleteDoctorServiceHandler(request, decodedToken, resolvedParams);
-}
+export const DELETE = withOptimizedAuthentication(handleDeleteDoctorService, {
+  requiredRoles: ['admin', 'medico'],
+  requireOrganization: true
+});

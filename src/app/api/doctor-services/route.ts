@@ -72,12 +72,12 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { doctorServices, users, doctors, medicalServices } from "@/db/schema";
-import { auth } from "@/app/lib/firebase/server/adminConfig";
-import type { DecodedIdToken } from "firebase-admin/auth";
+import { doctorServices, doctors, medicalServices } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from "@/types/api";
-import { validateUserRole, handleDatabaseError } from "@/lib/api-helpers";
+import { handleDatabaseError } from "@/lib/api-helpers";
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { syncKnowledgeAfterCRUD } from "@/lib/knowledge-manager";
 import type {  NewDoctorService } from "@/db/schema";
 
@@ -96,20 +96,7 @@ import type {  NewDoctorService } from "@/db/schema";
  * 
  * @internal
  */
-async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken | null> {
-  try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return null;
-    }
-
-    const token = authHeader.substring(7);
-    return await auth.verifyIdToken(token);
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return null;
-  }
-}
+// Autenticación ahora manejada por withOptimizedAuthentication
 
 /**
  * Retrieves doctor-service relationships with advanced filtering and role-based access control.
@@ -194,22 +181,11 @@ async function authenticateRequest(request: NextRequest): Promise<DecodedIdToken
  */
 const getDoctorServicesHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse('User not found', undefined, HTTP_STATUS.FORBIDDEN);
-    }
-
-    const roleValidationError = validateUserRole(requestingUser.role, ["admin", "medico", "asistente"]);
-    if (roleValidationError) {
-      return roleValidationError;
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     // Obtener parámetros de query
     const url = new URL(request.url);
@@ -390,23 +366,11 @@ const getDoctorServicesHandler = async (
  */
 const createDoctorServiceHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-    });
-
-    if (!requestingUser || !requestingUser.organizationId) {
-      return createErrorResponse('User not found', undefined, HTTP_STATUS.FORBIDDEN);
-    }
-
-    // Solo admins pueden asignar servicios a doctores
-    const roleValidationError = validateUserRole(requestingUser.role, "admin");
-    if (roleValidationError) {
-      return roleValidationError;
-    }
+    // El middleware optimizado ya valida autenticación, rol y organización
+    const { user: requestingUser } = userInfo;
 
     const body = await request.json();
     
@@ -436,7 +400,7 @@ const createDoctorServiceHandler = async (
     const service = await db.query.medicalServices.findFirst({
       where: and(
         eq(medicalServices.id, serviceId),
-        eq(medicalServices.organizationId, requestingUser.organizationId),
+        eq(medicalServices.organizationId, requestingUser.organizationId!),
         eq(medicalServices.isActive, true)
       )
     });
@@ -509,15 +473,10 @@ const createDoctorServiceHandler = async (
  * 
  * @public
  */
-export async function GET(request: NextRequest) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
-
-  return getDoctorServicesHandler(request, decodedToken);
-}
+export const GET = withOptimizedAuthentication(getDoctorServicesHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});
 
 /**
  * Handles POST requests to create new doctor-service relationships.
@@ -536,12 +495,7 @@ export async function GET(request: NextRequest) {
  * 
  * @public
  */
-export async function POST(request: NextRequest) {
-  const decodedToken = await authenticateRequest(request);
-  
-  if (!decodedToken) {
-    return createErrorResponse('Unauthorized - Invalid or missing token', undefined, HTTP_STATUS.UNAUTHORIZED);
-  }
-
-  return createDoctorServiceHandler(request, decodedToken);
-}
+export const POST = withOptimizedAuthentication(createDoctorServiceHandler, {
+  requiredRoles: ['admin'],
+  requireOrganization: true
+});
