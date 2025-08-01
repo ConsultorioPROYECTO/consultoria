@@ -32,46 +32,30 @@ export const description = "A stacked bar chart with a legend"
 
 const chartData = [
   // Datos de hace 3 meses (abril 2025)
-  { doctorname: "Dr. García", citas: 186, horas_ocupadas: 80, date: "2025-04-15" },
-  { doctorname: "Dr. Rodríguez", citas: 305, horas_ocupadas: 200, date: "2025-04-16" },
-  { doctorname: "Dr. López", citas: 237, horas_ocupadas: 120, date: "2025-04-17" },
-  { doctorname: "Dr. Martínez", citas: 173, horas_ocupadas: 190, date: "2025-04-18" },
-  { doctorname: "Dr. González", citas: 209, horas_ocupadas: 130, date: "2025-04-19" },
+  { doctorname: "Dr. García", citas: 186, horas_ocupadas: 80, date: "2025-06-15" },
+  { doctorname: "Dr. Rodríguez", citas: 305, horas_ocupadas: 200, date: "2025-06-16" },
+  { doctorname: "Dr. López", citas: 237, horas_ocupadas: 120, date: "2025-06-17" },
+  { doctorname: "Dr. Martínez", citas: 173, horas_ocupadas: 190, date: "2025-06-18" },
+  { doctorname: "Dr. González", citas: 209, horas_ocupadas: 130, date: "2025-06-19" },
   
   // Datos de hace 2 meses (mayo 2025)
   { doctorname: "Dr. García", citas: 195, horas_ocupadas: 85, date: "2025-05-15" },
   { doctorname: "Dr. Rodríguez", citas: 320, horas_ocupadas: 210, date: "2025-05-16" },
   { doctorname: "Dr. López", citas: 245, horas_ocupadas: 125, date: "2025-05-17" },
-  { doctorname: "Dr. Pérez", citas: 214, horas_ocupadas: 140, date: "2025-05-22" },
-  { doctorname: "Dr. Sánchez", citas: 298, horas_ocupadas: 165, date: "2025-05-23" },
-  { doctorname: "Dr. Ramírez", citas: 142, horas_ocupadas: 95, date: "2025-05-24" },
   
   // Datos del mes pasado (junio 2025)
   { doctorname: "Dr. García", citas: 210, horas_ocupadas: 90, date: "2025-06-15" },
   { doctorname: "Dr. Rodríguez", citas: 335, horas_ocupadas: 220, date: "2025-06-16" },
-  { doctorname: "Dr. Torres", citas: 267, horas_ocupadas: 180, date: "2025-06-17" },
-  { doctorname: "Dr. Flores", citas: 189, horas_ocupadas: 110, date: "2025-06-18" },
-  { doctorname: "Dr. Rivera", citas: 321, horas_ocupadas: 220, date: "2025-06-19" },
-  { doctorname: "Dr. Morales", citas: 156, horas_ocupadas: 85, date: "2025-06-20" },
   
   // Datos de los últimos 30 días (junio-julio 2025)
   { doctorname: "Dr. García", citas: 225, horas_ocupadas: 95, date: "2025-06-25" },
   { doctorname: "Dr. Rodríguez", citas: 350, horas_ocupadas: 230, date: "2025-06-26" },
   { doctorname: "Dr. López", citas: 260, horas_ocupadas: 135, date: "2025-06-27" },
-  { doctorname: "Dr. Herrera", citas: 278, horas_ocupadas: 145, date: "2025-06-28" },
-  { doctorname: "Dr. Jiménez", citas: 195, horas_ocupadas: 125, date: "2025-06-29" },
-  { doctorname: "Dr. Vargas", citas: 342, horas_ocupadas: 235, date: "2025-06-30" },
-  { doctorname: "Dr. Castro", citas: 167, horas_ocupadas: 98, date: "2025-07-01" },
-  { doctorname: "Dr. Ortega", citas: 289, horas_ocupadas: 175, date: "2025-07-02" },
   
   // Datos de los últimos 7 días (julio 2025 - más recientes)
   { doctorname: "Dr. García", citas: 240, horas_ocupadas: 100, date: "2025-07-07" },
   { doctorname: "Dr. Rodríguez", citas: 365, horas_ocupadas: 240, date: "2025-07-08" },
   { doctorname: "Dr. López", citas: 275, horas_ocupadas: 140, date: "2025-07-09" },
-  { doctorname: "Dr. Ruiz", citas: 224, horas_ocupadas: 155, date: "2025-07-10" },
-  { doctorname: "Dr. Mendoza", citas: 198, horas_ocupadas: 115, date: "2025-07-11" },
-  { doctorname: "Dr. Aguilar", citas: 256, horas_ocupadas: 168, date: "2025-07-12" },
-  { doctorname: "Dr. Vega", citas: 312, horas_ocupadas: 205, date: "2025-07-13" },
 ]
 
 const chartConfig = {
@@ -195,14 +179,6 @@ export function ChartBarInteractive() {
           </BarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 leading-none font-medium">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="text-muted-foreground leading-none">
-          Showing total visitors for the last 6 months
-        </div>
-      </CardFooter>
     </Card>
   )
 }
