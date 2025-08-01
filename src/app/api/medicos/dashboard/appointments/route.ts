@@ -37,9 +37,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
-import { users, doctors } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
-import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import { doctors } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { eq } from 'drizzle-orm';
 
 // --- Definición del Manejador GET con Autenticación y Autorización ---
@@ -56,34 +56,17 @@ import { eq } from 'drizzle-orm';
  */
 const getUsersHandler = async (
     request: NextRequest,
-    decodedToken: DecodedIdToken,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    context: { params: Record<string, never> } // Para rutas no dinámicas, params es un objeto vacío (Record<string, never>).
+    userInfo: AuthenticatedUserInfo
   ): Promise<NextResponse | Response> => {
-    console.log(`[API /api/medicos/dashboard/appointments] Solicitud GET recibida y autenticada para UID: ${decodedToken.uid}`);
+    console.log(`[API /api/medicos/dashboard/appointments] Solicitud GET recibida y autenticada para UID: ${userInfo.decodedToken.uid}`);
   
-    // --- Autorización: Verificar si el usuario autenticado es un administrador ---
+    // --- Autorización: Verificar si el usuario autenticado es un médico ---
     try {
-      const requestingUser = await db.query.users.findFirst({
-        where: eq(users.firebaseUid, decodedToken.uid),
-        columns: { 
-            role: true,
-            id: true
-        }, // Solo necesitamos el rol para la autorización y id para la relacion con la tabla doctors
-      });
-  
-      if (!requestingUser) {
-        // Esto sería raro si el token es válido, pero podría pasar si el usuario fue eliminado de tu BD
-        // pero no de Firebase Auth inmediatamente.
-        console.warn(`[API /api/medicos/dashboard/appointments] Usuario autenticado con UID ${decodedToken.uid} no encontrado en la base de datos local.`);
-        return NextResponse.json(
-          { error: 'Acceso denegado: No se encontró tu autenticacion de cuenta en el sistema, debes informar a tus superiores..' },
-          { status: 403 }
-        );
-      }   
+      // La información del usuario ya está disponible en userInfo
+      const requestingUser = userInfo.user;
   
       if (requestingUser.role !== 'medico') {
-        console.warn(`[API /api/medicos/dashboard/appointments] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es medico.`);
+        console.warn(`[API /api/medicos/dashboard/appointments] Acceso denegado: Usuario ${userInfo.decodedToken.uid} (Rol: ${requestingUser.role}) no es medico.`);
         return NextResponse.json(
           { error: 'Acceso Denegado: No tienes los permisos necesarios, debes ser medico..' },
           { status: 403 }
@@ -125,7 +108,7 @@ const getUsersHandler = async (
         );
       }
   
-      console.log(`[API /api/medicos/dashboard/appointments] Acceso autorizado para Medico: ${decodedToken.uid} (${decodedToken.email})`);
+      console.log(`[API /api/medicos/dashboard/appointments] Acceso autorizado para Medico: ${userInfo.decodedToken.uid} (${userInfo.decodedToken.email})`);
   
       // Devolver las citas del médico o un array vacío si no tiene
       return NextResponse.json(doctorWithAppointments.appointments || []);
@@ -145,4 +128,4 @@ const getUsersHandler = async (
 
 
 // Envolver el manejador con el middleware de autenticación
-export const GET = withAuthentication(getUsersHandler);
+export const GET = withOptimizedAuthentication(getUsersHandler);

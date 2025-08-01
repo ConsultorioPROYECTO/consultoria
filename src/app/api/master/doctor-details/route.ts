@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { db } from '@/db';
 import { doctors } from '@/db/schema/doctors';
-import { users } from '@/db/schema/users';
 import { eq } from 'drizzle-orm';
 import { createSuccessResponse, createErrorResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
-import { validateUserRole, handleDatabaseError } from '@/lib/api-helpers';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import { handleDatabaseError } from '@/lib/api-helpers';
+
 import { z } from 'zod';
 
 /**
@@ -46,7 +46,9 @@ const UpdateDoctorSchema = z.object({
 
 type UpdateDoctorRequest = z.infer<typeof UpdateDoctorSchema>;
 
-async function handlePatchRequest(request: NextRequest, decodedToken: DecodedIdToken) {
+async function handlePatchRequest(request: NextRequest, _userInfo: AuthenticatedUserInfo) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // _userInfo es requerido por la firma de AuthenticatedHandler pero la validación se hace en el middleware
   try {
     const body = await request.json();
     const parsedBody = UpdateDoctorSchema.safeParse(body);
@@ -60,14 +62,7 @@ async function handlePatchRequest(request: NextRequest, decodedToken: DecodedIdT
       return createErrorResponse(API_ERRORS.INVALID_REQUEST, 'Al menos un campo debe ser proporcionado para actualizar.', HTTP_STATUS.BAD_REQUEST);
     }
 
-    const [user] = await db.select().from(users).where(eq(users.firebaseUid, decodedToken.uid));
-    if (!user) {
-      return createErrorResponse(API_ERRORS.USER_NOT_FOUND, undefined, HTTP_STATUS.NOT_FOUND);
-    }
-
-    if (!validateUserRole(user.role, 'admin')) {
-      return createErrorResponse(API_ERRORS.UNAUTHORIZED, undefined, HTTP_STATUS.FORBIDDEN);
-    }
+    // El middleware optimizado ya validó que el usuario tiene rol 'admin'
 
     const updateData: Partial<UpdateDoctorRequest> = {};
     if (speciality) updateData.speciality = speciality;
@@ -90,4 +85,7 @@ async function handlePatchRequest(request: NextRequest, decodedToken: DecodedIdT
   }
 }
 
-export const PATCH = withAuthentication(handlePatchRequest);
+export const PATCH = withOptimizedAuthentication(handlePatchRequest, {
+  requiredRoles: 'admin',
+  requireOrganization: false
+});

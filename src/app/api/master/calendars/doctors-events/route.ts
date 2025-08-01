@@ -44,13 +44,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { db } from '@/db';
 import { users, doctors } from '@/db/schema';
 import { eq, and, isNotNull } from 'drizzle-orm';
 import { googleCalendarService } from '@/lib/google-calendar';
 import { DateTime } from 'luxon';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+
 
 
 
@@ -106,7 +107,7 @@ interface OrganizationCalendarEventsResponse {
  */
 async function handleGetRequest(
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse<OrganizationCalendarEventsResponse | ErrorResponse>> {
   try {
     // 1. Extraer y validar parámetros de consulta
@@ -149,40 +150,11 @@ async function handleGetRequest(
       );
     }
 
-    // 2. Obtener información del usuario autenticado
-    const userResult = await db
-      .select()
-      .from(users)
-      .where(eq(users.firebaseUid, decodedToken.uid))
-      .limit(1);
-
-    if (userResult.length === 0) {
-      return NextResponse.json(
-        {
-          error: 'USER_NOT_FOUND',
-          message: 'Usuario no encontrado en la base de datos',
-          timestamp: new Date().toISOString(),
-        } satisfies ErrorResponse,
-        { status: 404 }
-      );
-    }
-
-    const user = userResult[0];
-
-    // 3. Validar que el usuario tenga rol de "admin"
-    // 3. Validar que el usuario tenga rol de "admin"
-    if (user.role !== 'admin') {
-      return NextResponse.json(
-        {
-          error: 'FORBIDDEN',
-          message: 'Acceso denegado. Se requiere rol de administrador',
-          timestamp: new Date().toISOString(),
-        } satisfies ErrorResponse,
-        { status: 403 }
-      );
-    }
-
-    // 4. Verificar que el usuario tenga una organización asociada
+    // Usar información del usuario ya obtenida y validada por el middleware optimizado
+    const user = userInfo.user;
+    // El middleware optimizado ya validó que el usuario tiene rol 'admin' y organización
+    
+    // Verificación adicional de tipo para TypeScript
     if (!user.organizationId) {
       return NextResponse.json(
         {
@@ -397,4 +369,7 @@ function isValidISODate(dateString: string): boolean {
  * @httpStatus 429 - Límite excedido: Rate limit de Google Calendar API
  * @httpStatus 500 - Error interno: Error de servidor o base de datos
  */
-export const GET = withAuthentication(handleGetRequest);
+export const GET = withOptimizedAuthentication(handleGetRequest, {
+  requiredRoles: 'admin',
+  requireOrganization: true
+});

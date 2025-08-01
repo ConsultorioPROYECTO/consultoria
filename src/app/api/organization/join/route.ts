@@ -37,8 +37,8 @@ import { organization } from '@rutas/db/schema/organization';
 import { users } from '@rutas/db/schema/users';
 import { doctors } from '@rutas/db/schema/doctors';
 import { assistants } from '@rutas/db/schema/assistants';
-import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware';
-import { DecodedIdToken } from 'firebase-admin/auth';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import {z} from 'zod';
 import { generateRandomInvitationCode } from '@/lib/organization-utils';
 import { organizationInvitationRequest } from '@rutas/db/schema/organization_invitations_request';
@@ -110,7 +110,7 @@ const joinOrganizationSchema = z.object({
  */
 const postOrganizationJoinHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
+  userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
 
   let body;
 
@@ -133,13 +133,8 @@ const postOrganizationJoinHandler = async (
   // Extrae los datos validados
   const { invitationCode } = parseResult.data;
 
-  // Verificar que el usuario no esté ya en una organización
-  const existingUser = await db.query.users.findFirst({
-    where: eq(users.firebaseUid, decodedToken.uid),
-  });
-  if (!existingUser) {
-    return NextResponse.json({ message: 'User not found' }, { status: 404 });
-  }
+  // La información del usuario ya está disponible en userInfo
+  const existingUser = userInfo.user;
 
   if (existingUser.organizationId) {
     return NextResponse.json({ 
@@ -200,7 +195,7 @@ const postOrganizationJoinHandler = async (
   await db.update(users).set({
     organizationId: existingOrganization.id,
     role: invitation.role,
-  }).where(eq(users.firebaseUid, decodedToken.uid));
+  }).where(eq(users.id, existingUser.id));
   
   // Actualizar el estado de la invitación a 'accepted'
   await db.update(organizationInvitationRequest).set({
@@ -340,4 +335,4 @@ const postOrganizationJoinHandler = async (
   }, { status: 200 });
 }
 
-export const POST = withAuthentication(postOrganizationJoinHandler);
+export const POST = withOptimizedAuthentication(postOrganizationJoinHandler);

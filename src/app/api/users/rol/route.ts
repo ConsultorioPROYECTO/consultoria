@@ -57,8 +57,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
 import { users, doctors, assistants } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
-import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { eq } from 'drizzle-orm';
 
 /**
@@ -71,18 +71,10 @@ import { eq } from 'drizzle-orm';
  */
 const getUserRoleHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
+  userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
   try {
-    const user = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { id: true, role: true, organizationId: true }
-    });
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado en la base de datos local.' },
-        { status: 404 }
-      );
-    }
+    // La información del usuario ya está disponible en userInfo
+    const user = userInfo.user;
 
     const response: {
       role: string;
@@ -136,18 +128,10 @@ const getUserRoleHandler = async (
  */
 const postUserRoleHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
+  userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
   try {
-    const user = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { id: true, role: true }
-    });
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado en la base de datos local.' },
-        { status: 404 }
-      );
-    }
+    // La información del usuario ya está disponible en userInfo
+    const user = userInfo.user;
     const body = await request.json();
     if (!body || typeof body.role !== 'string') {
       return NextResponse.json(
@@ -182,5 +166,5 @@ const postUserRoleHandler = async (
   }
 };
 
-export const GET = withAuthentication(getUserRoleHandler);
-export const POST = withAuthentication(postUserRoleHandler);
+export const GET = withOptimizedAuthentication(getUserRoleHandler);
+export const POST = withOptimizedAuthentication(postUserRoleHandler);

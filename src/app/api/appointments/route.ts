@@ -19,14 +19,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { db } from '@/db';
-import { appointments, doctors, medicalServices, patients, users } from '@/db/schema';
+import { appointments, doctors, medicalServices, patients } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createAppointmentEvent, AppointmentStatus } from '@/lib/calendar-event-manager';
 import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
 import { handleDatabaseError } from '@/lib/api-helpers';
-import type { DecodedIdToken } from 'firebase-admin/auth';
 import { DateTime } from 'luxon';
 import {
   APIResponse,
@@ -168,25 +168,11 @@ export type CreateAppointmentApiResponse = APIResponse<CreateAppointmentResponse
  */
 async function handlePostRequest(
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse> {
   try {
-    // 1. Obtener información del usuario autenticado
-    const userResult = await db
-      .select()
-      .from(users)
-      .where(eq(users.firebaseUid, decodedToken.uid))
-      .limit(1);
-
-    if (userResult.length === 0) {
-      return createErrorResponse(
-        API_ERRORS.USER_NOT_FOUND,
-        'Usuario no encontrado en la base de datos',
-        HTTP_STATUS.NOT_FOUND
-      );
-    }
-
-    const user = userResult[0];
+    // 1. La información del usuario ya está disponible en userInfo
+    const user = userInfo.user;
 
     // 2. Validar que el usuario tenga rol de "medico" o "asistente"
     if (user.role !== 'admin' && user.role !== 'asistente') {
@@ -510,7 +496,7 @@ import { getDoctorEvents } from '@/lib/calendar-event-retriever';
 async function handleGetRequest(
   request: NextRequest,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _decodedToken: DecodedIdToken
+  _userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
@@ -545,16 +531,16 @@ async function handleGetRequest(
   }
 }
 
-export const GET = withAuthentication(async (
+export const GET = withOptimizedAuthentication(async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ) => {
-  return handleGetRequest(request, decodedToken);
+  return handleGetRequest(request, userInfo);
 });
 
-export const POST = withAuthentication(async (
+export const POST = withOptimizedAuthentication(async (
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ) => {
-  return handlePostRequest(request, decodedToken);
+  return handlePostRequest(request, userInfo);
 });

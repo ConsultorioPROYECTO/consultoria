@@ -1,11 +1,11 @@
 // @app/src/api/organization/request-join/route.ts
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { db } from '@/db';
 import { organization } from '@/db/schema/organization';
 import { organizationInvitationRequest, organizationInvitationRequestInsert } from '@/db/schema/organization_invitations_request';
-import { users } from '@/db/schema/users';
+
 import { eq } from 'drizzle-orm/sql/expressions/conditions';
-import { DecodedIdToken } from 'firebase-admin/auth';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Cambia estos valores por tus credenciales reales
@@ -68,21 +68,11 @@ const sendInvitacionEmail = async (
  */
 const postOrganizationRequestHandler  = async (
     request: NextRequest,
-    decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
+    userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
     const { email, role, message} = await request.json();
         try {
-            // Se obtiene el usuario omitiendo el role, se debe de dejar claro el manejo de los 
-            // roles el hacer una solicitud de unirse a una organizacion
-            const user = await db.query.users.findFirst({
-                where: eq(users.firebaseUid, decodedToken.uid),
-                columns: { id: true, organizationId: true, email: true, displayName: true, photoURL: true },
-            });
-            if (!user) {
-                return NextResponse.json(
-                    { error: 'Usuario no encontrado en la base de datos local.' },
-                    { status: 404 }
-                );
-            }
+            // La información del usuario ya está disponible en userInfo
+            const user = userInfo.user;
 
             const organizacion = await db.query.organization.findFirst({
                 where: eq(organization.id, user.organizationId as number),
@@ -111,7 +101,7 @@ const postOrganizationRequestHandler  = async (
             const subject = `invitacion al grupo de ${organizacion.name}`
             const url = `http://irina.makilacloud.com:3000/signup?invitacionCode=${organizacion.invitationCode}&role=${role}`;
 
-            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, subject,url,organizacion.invitationCode, user.email as string, user.displayName as string, user.photoURL as string );
+            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, subject,url,organizacion.invitationCode, user.email as string, user.displayName as string, '' );
             
             if (!invitacionEmail) {
                 return NextResponse.json(
@@ -152,4 +142,4 @@ const postOrganizationRequestHandler  = async (
         }
     };
 
-export const POST = withAuthentication(postOrganizationRequestHandler);
+export const POST = withOptimizedAuthentication(postOrganizationRequestHandler);

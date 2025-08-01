@@ -18,8 +18,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -28,7 +28,7 @@ import {
 } from '@/types/api';
 import { handleDatabaseError } from '@/lib/api-helpers';
 import { db } from '@/db';
-import { users } from '@/db/schema';
+import { organization } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -136,27 +136,36 @@ function generateSessionId(): string {
  */
 async function sendMessageHandler(
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse> {
   try {
-    // Obtener información del usuario autenticado con su organización
-    const user = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-      with: {
-        organization: {
-          columns: { apiKey: true }
-        }
-      }
-    });
-
-    if (!user) {
+    // Usar información del usuario ya obtenida por el middleware optimizado
+    const user = userInfo.user;
+    
+    // Verificar que el usuario tenga organización y API key
+    if (!user.organizationId || !userInfo.organizationInfo) {
       return NextResponse.json(
         createErrorResponse(
-          API_ERRORS.USER_NOT_FOUND,
-          'Usuario no encontrado en la base de datos'
+          API_ERRORS.FORBIDDEN,
+          'Usuario debe pertenecer a una organización'
         ),
-        { status: HTTP_STATUS.NOT_FOUND }
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
+    }
+
+    // Obtener información adicional de la organización si es necesaria
+    const organizationDetails = await db.query.organization.findFirst({
+      where: eq(organization.id, user.organizationId),
+      columns: { apiKey: true }
+    });
+
+    if (!organizationDetails?.apiKey) {
+      return NextResponse.json(
+        createErrorResponse(
+          API_ERRORS.FORBIDDEN,
+          'Organización no tiene configurada la API key'
+        ),
+        { status: HTTP_STATUS.FORBIDDEN }
       );
     }
 
@@ -201,7 +210,7 @@ async function sendMessageHandler(
     const { message, sessionId: providedSessionId } = validation.data;
 
     // Verificar que la organización tenga API key configurada
-    const aiCareApiKey = user.organization?.apiKey;
+    const aiCareApiKey = organizationDetails?.apiKey;
     if (!aiCareApiKey) {
       console.error('[AI_CARE_CHAT] API Key no configurada para la organización');
       return NextResponse.json(
@@ -225,7 +234,7 @@ async function sendMessageHandler(
     console.log(`[AI_CARE_CHAT] Enviando mensaje a AI-Care API:`, {
       sessionId,
       messageLength: message.length,
-      userId: decodedToken.uid
+      userId: userInfo.decodedToken.uid
     });
 
     // Enviar mensaje a la API externa de AI-Care
@@ -301,27 +310,20 @@ async function sendMessageHandler(
  */
 async function getHistoryHandler(
   request: NextRequest,
-  decodedToken: DecodedIdToken
+  userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse> {
   try {
-    // Obtener información del usuario autenticado con su organización
-    const user = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, id: true, organizationId: true },
-      with: {
-        organization: {
-          columns: { apiKey: true }
-        }
-      }
-    });
-
-    if (!user) {
+    // Usar información del usuario ya obtenida por el middleware optimizado
+    const user = userInfo.user;
+    
+    // Verificar que el usuario tenga organización
+    if (!user.organizationId || !userInfo.organizationInfo) {
       return NextResponse.json(
         createErrorResponse(
-          API_ERRORS.USER_NOT_FOUND,
-          'Usuario no encontrado en la base de datos'
+          API_ERRORS.FORBIDDEN,
+          'Usuario debe pertenecer a una organización'
         ),
-        { status: HTTP_STATUS.NOT_FOUND }
+        { status: HTTP_STATUS.FORBIDDEN }
       );
     }
 
@@ -331,6 +333,22 @@ async function getHistoryHandler(
         createErrorResponse(
           API_ERRORS.ADMIN_ONLY,
           'No tienes permisos para acceder al chat de AI-Care'
+        ),
+        { status: HTTP_STATUS.FORBIDDEN }
+      );
+    }
+
+    // Obtener información adicional de la organización si es necesaria
+    const organizationDetails = await db.query.organization.findFirst({
+      where: eq(organization.id, user.organizationId),
+      columns: { apiKey: true }
+    });
+
+    if (!organizationDetails?.apiKey) {
+      return NextResponse.json(
+        createErrorResponse(
+          API_ERRORS.FORBIDDEN,
+          'Organización no tiene configurada la API key'
         ),
         { status: HTTP_STATUS.FORBIDDEN }
       );
@@ -364,7 +382,7 @@ async function getHistoryHandler(
     }
 
     // Verificar que la organización tenga API key configurada
-    const aiCareApiKey = user.organization?.apiKey;
+    const aiCareApiKey = organizationDetails?.apiKey;
     if (!aiCareApiKey) {
       console.error('[AI_CARE_CHAT] API Key no configurada para la organización');
       return NextResponse.json(
@@ -453,5 +471,5 @@ async function getHistoryHandler(
  * @access Protected - Requiere autenticación Firebase
  * @roles admin
  */
-export const GET = withAuthentication(getHistoryHandler);
-export const POST = withAuthentication(sendMessageHandler);
+export const GET = withOptimizedAuthentication(getHistoryHandler);
+export const POST = withOptimizedAuthentication(sendMessageHandler);

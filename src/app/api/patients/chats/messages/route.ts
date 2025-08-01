@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { db } from '@/db';
-import { organization, users } from '@/db/schema';
+import { organization } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { EvolutionMessage } from '@/types/evolution-api';
 import { transformMessage } from '@/types/evolution-api';
 
 // GET /api/patients/chats/messages?remoteJid=xxx - Obtener mensajes de un chat específico
-export const GET = withAuthentication(async (request: NextRequest, decodedToken) => {
+export const GET = withOptimizedAuthentication(async (request: NextRequest, userInfo: AuthenticatedUserInfo) => {
   try {
     const { searchParams } = new URL(request.url);
     const remoteJid = searchParams.get('remoteJid');
@@ -19,13 +20,15 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
       );
     }
 
-    // Obtener usuario y organización
-    const user = await db.select().from(users).where(eq(users.firebaseUid, decodedToken.uid)).limit(1);
-    if (!user.length) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    // Usar información del usuario ya obtenida por el middleware optimizado
+    const user = userInfo.user;
+    
+    if (!user.organizationId) {
+      return NextResponse.json({ error: 'Usuario debe pertenecer a una organización' }, { status: 403 });
     }
 
-    const org = await db.select().from(organization).where(eq(organization.id, user[0].organizationId!)).limit(1);
+    // Obtener información completa de la organización
+    const org = await db.select().from(organization).where(eq(organization.id, user.organizationId)).limit(1);
     if (!org.length) {
       return NextResponse.json({ error: 'Organización no encontrada' }, { status: 404 });
     }
@@ -175,7 +178,7 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
 });
 
 // POST /api/patients/chats/messages - Enviar mensaje a un chat específico
-export const POST = withAuthentication(async (request: NextRequest, decodedToken) => {
+export const POST = withOptimizedAuthentication(async (request: NextRequest, userInfo: AuthenticatedUserInfo) => {
   try {
     const body = await request.json();
     const { remoteJid, message } = body;
@@ -187,18 +190,21 @@ export const POST = withAuthentication(async (request: NextRequest, decodedToken
       );
     }
 
-    // Obtener usuario y organización
-    const user = await db.select().from(users).where(eq(users.firebaseUid, decodedToken.uid)).limit(1);
-    if (!user.length) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    // Usar información del usuario ya obtenida por el middleware optimizado
+    const user = userInfo.user;
+    
+    if (!user.organizationId) {
+      return NextResponse.json({ error: 'Usuario debe pertenecer a una organización' }, { status: 403 });
     }
 
-    const org = await db.select().from(organization).where(eq(organization.id, user[0].organizationId!)).limit(1);
+    // Obtener información completa de la organización
+    const org = await db.select().from(organization).where(eq(organization.id, user.organizationId)).limit(1);
     if (!org.length) {
       return NextResponse.json({ error: 'Organización no encontrada' }, { status: 404 });
     }
 
-    const { instanceId, apiKey } = org[0];
+    const { instanceId } = org[0];
+    const apiKey = process.env.EVOLUTION_API_KEY;
     if (!instanceId || !apiKey) {
       return NextResponse.json({ error: 'Configuración de WhatsApp no encontrada' }, { status: 400 });
     }

@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { db } from '@/db';
 import { organization } from '@/db/schema/organization';
-import { users } from '@/db/schema/users';
 import { eq } from 'drizzle-orm';
 import type { EvolutionChat } from '@/types/evolution-api';
 import { transformChat } from '@/types/evolution-api';
 
 // GET /api/patients/chats - Obtener lista de chats
-export const GET = withAuthentication(async (request: NextRequest, decodedToken) => {
+export const GET = withOptimizedAuthentication(async (request: NextRequest, userInfo: AuthenticatedUserInfo) => {
   try {
-    // Obtener usuario y organización
-    const user = await db.select().from(users).where(eq(users.firebaseUid, decodedToken.uid)).limit(1);
-    if (!user.length) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
-    }
+    // La información del usuario ya está disponible en userInfo
+    const user = userInfo.user;
 
-    const org = await db.select().from(organization).where(eq(organization.id, user[0].organizationId!)).limit(1);
+    const org = await db.select().from(organization).where(eq(organization.id, user.organizationId!)).limit(1);
     if (!org.length) {
       return NextResponse.json({ error: 'Organización no encontrada' }, { status: 404 });
     }
@@ -131,7 +128,7 @@ export const GET = withAuthentication(async (request: NextRequest, decodedToken)
 });
 
 // POST /api/patients/chats - Crear nuevo chat o enviar mensaje
-export const POST = withAuthentication(async (request: NextRequest, decodedToken) => {
+export const POST = withOptimizedAuthentication(async (request: NextRequest, userInfo: AuthenticatedUserInfo) => {
   try {
     const body = await request.json();
     const { phoneNumber, message } = body;
@@ -143,13 +140,10 @@ export const POST = withAuthentication(async (request: NextRequest, decodedToken
       );
     }
 
-    // Obtener usuario y organización
-    const user = await db.select().from(users).where(eq(users.firebaseUid, decodedToken.uid)).limit(1);
-    if (!user.length) {
-      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
-    }
+    // La información del usuario ya está disponible en userInfo
+    const user = userInfo.user;
 
-    const org = await db.select().from(organization).where(eq(organization.id, user[0].organizationId!)).limit(1);
+    const org = await db.select().from(organization).where(eq(organization.id, user.organizationId!)).limit(1);
     if (!org.length) {
       return NextResponse.json({ error: 'Organización no encontrada' }, { status: 404 });
     }

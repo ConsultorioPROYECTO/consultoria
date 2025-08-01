@@ -39,8 +39,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@rutas/db';
 import { organization, plans } from '@rutas/db/schema';
-import { withAuthentication } from '@lib/firebase/server/middleware/authMiddleware';
-import { DecodedIdToken } from 'firebase-admin/auth';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { users } from '@rutas/db/schema/users';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -76,18 +76,9 @@ const createOrganizationSchema = z.object({
  */
 const postUserRoleHandler = async (
     request: NextRequest,
-    decodedToken: DecodedIdToken): Promise<NextResponse | Response> => {
+    userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
     try {
-      const user = await db.query.users.findFirst({
-        where: eq(users.firebaseUid, decodedToken.uid),
-        columns: { id: true, role: true }
-      });
-      if (!user) {
-        return NextResponse.json(
-          { error: 'Usuario no encontrado en la base de datos local.' },
-          { status: 404 }
-        );
-      }
+      // La información del usuario ya está disponible en userInfo
       const body = await request.json();
       
       // Validar el cuerpo de la solicitud con Zod
@@ -141,7 +132,7 @@ const postUserRoleHandler = async (
       // 2. Actualizar el rol del usuario a 'admin'
       await db.update(users)
         .set({ role: "admin" })
-        .where(eq(users.id, user.id));
+        .where(eq(users.id, userInfo.user.id));
 
       // 3. Generar código de invitación, instanceId y apiKey
       const invitacionCode = await generateRandomInvitationCode();
@@ -171,7 +162,7 @@ const postUserRoleHandler = async (
       // 5. Asociar el usuario a la organización
       await db.update(users)
       .set({ organizationId: newOrganizationId })
-      .where(eq(users.id, user.id));
+      .where(eq(users.id, userInfo.user.id));
 
       // 6. Sincronizar conocimiento con pgVector
       try {
@@ -200,5 +191,5 @@ const postUserRoleHandler = async (
       );
     }
   };
-  export const POST = withAuthentication(postUserRoleHandler);
+  export const POST = withOptimizedAuthentication(postUserRoleHandler);
   
