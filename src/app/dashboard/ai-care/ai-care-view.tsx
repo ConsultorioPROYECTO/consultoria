@@ -64,14 +64,20 @@ export default function AICareView() {
   useEffect(() => {
     const getGreeting = () => {
       const hour = new Date().getHours();
-      const userName = user?.displayName || 'Usuario';
+      const userName = user?.displayName?.split(' ') || [];
+      const formattedNames = userName.slice(0, 2).map(name => {
+    if (!name) return '';
+    return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  });
+
+      const displayGreetingName = formattedNames.length > 0 ? formattedNames.join(' ') : 'usuario';
       
       if (hour < 12) {
-        return `¡Buenos días, ${userName}!`;
+        return `¡Buenos días, ${displayGreetingName}!`;
       } else if (hour < 18) {
-        return `¡Buenas tardes, ${userName}!`;
+        return `¡Buenas tardes, ${displayGreetingName}!`;
       } else {
-        return `¡Buenas noches, ${userName}!`;
+        return `¡Buenas noches, ${displayGreetingName}!`;
       }
     };
     setGreeting(getGreeting());
@@ -200,7 +206,7 @@ export default function AICareView() {
                   onChange={(e) => setCurrentMessage(e.target.value)}
                   placeholder="¿En qué puedo ayudarte hoy?"
                   disabled={isLoading}
-                  className="min-h-[100px] text-2xl md:text-2xl p-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 border-none shadow-lg bg-transparent text-center placeholder:text-center"
+                  className="min-h-[100px] text-2xl md:text-2xl p-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-lg bg-transparent text-center placeholder:text-center"
                 />
                 <Button
                   type="submit"

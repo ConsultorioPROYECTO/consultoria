@@ -10,7 +10,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { Settings, Bell, Building, LogOut, MessageCircle } from 'lucide-react';
+import { Settings, Bell, Building, LogOut, Users, Activity } from 'lucide-react';
 import { useNavigation } from '@/app/context/NavigationContext';
 import { useAuth } from '@/app/context/AuthContext';
 
@@ -38,13 +38,13 @@ const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
     }] : []),
     // Solo mostrar 'Organizacion' si el rol es 'admin'
     ...(userRole === 'admin' ? [{
-      icon: MessageCircle,
+      icon: Activity,
       title: 'AI-Care',
       action: () => setCurrentView('ai-care'),
     }] : []),
     // Patients if admin or assistant
     ...((userRole === 'admin' || userRole === 'asistente') ? [{
-      icon: MessageCircle,
+      icon: Users,
       title: 'Patients',
       action: () => setCurrentView('patients'),
     }] : []),
