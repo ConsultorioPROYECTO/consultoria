@@ -1,28 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { withAuthentication } from '@/app/lib/firebase/server/middleware/authMiddleware';
-import { updateAppointmentEvent, deleteAppointmentEvent, AppointmentStatus } from '@/lib/calendar-event-manager';
+// src/app/api/appointments/[eventId]/route.ts
+import { withAuthorizedUser } from '@/lib/api/auth';
+import { successResponse, invalidRequestResponse } from '@/lib/api/response-helpers';
+import { updateAppointmentEvent, deleteAppointmentEvent } from '@/lib/db/repositories/appointments';
 import { handleDatabaseError } from '@/lib/api-helpers';
-import type { DecodedIdToken } from 'firebase-admin/auth';
 import { DateTime } from 'luxon';
-import {
-  createSuccessResponse,
-  createErrorResponse,
-  API_ERRORS,
-  HTTP_STATUS
-} from '@/types/api';
+import { AppointmentStatus } from '@/lib/calendar-event-manager';
 
-async function handlePatchRequest(
-  request: NextRequest,
-  decodedToken: DecodedIdToken,
-  { params }: { params: { eventId: string } }
-): Promise<NextResponse> {
+const patchAppointmentHandler = withAuthorizedUser(async (request, user, { params }) => {
+  const { eventId } = params;
   try {
-    const { eventId } = params;
     const body = await request.json();
     const { doctorId, startDateTime, endDateTime, appointmentStatus, summary, description } = body;
 
     if (!doctorId) {
-      return createErrorResponse(API_ERRORS.INVALID_REQUEST, 'doctorId is required', HTTP_STATUS.BAD_REQUEST);
+      return invalidRequestResponse('doctorId is required');
     }
 
     const updatedEvent = await updateAppointmentEvent({
@@ -35,27 +26,26 @@ async function handlePatchRequest(
       ...(description && { description }),
     });
 
-    return createSuccessResponse(updatedEvent, 'Appointment updated successfully');
+    return successResponse(updatedEvent, 'Appointment updated successfully');
   } catch (error) {
-    console.error(`Error updating appointment ${params.eventId}:`, error);
+    console.error(`Error updating appointment ${eventId}:`, error);
     if (error instanceof Error && error.message === 'The selected time slot is no longer available.') {
-      return createErrorResponse('APPOINTMENT_SLOT_UNAVAILABLE', error.message, HTTP_STATUS.CONFLICT);
+        return invalidRequestResponse('The selected time slot is no longer available.');
     }
     return handleDatabaseError(error, 'update appointment');
   }
-}
+}, ['admin', 'medico']);
 
-async function handleDeleteRequest(
-  request: NextRequest,
-  decodedToken: DecodedIdToken,
-  { params }: { params: { eventId: string } }
-): Promise<NextResponse> {
+const deleteAppointmentHandler = withAuthorizedUser(async (request, user, { params }) => {
+  const { eventId } = params;
+  if (typeof eventId !== 'string') {
+    return invalidRequestResponse('Event ID must be a string.');
+  }
   try {
-    const { eventId } = params;
-    const { doctorId } = await request.json(); // doctorId could also be in query params
+    const { doctorId } = await request.json();
 
     if (!doctorId) {
-      return createErrorResponse(API_ERRORS.INVALID_REQUEST, 'doctorId is required', HTTP_STATUS.BAD_REQUEST);
+      return invalidRequestResponse('doctorId is required');
     }
 
     await deleteAppointmentEvent({
@@ -63,25 +53,14 @@ async function handleDeleteRequest(
       doctorId: Number(doctorId),
     });
 
-    return createSuccessResponse(null, 'Appointment deleted successfully', HTTP_STATUS.OK);
+    return successResponse(null, 'Appointment deleted successfully');
   } catch (error) {
-    console.error(`Error deleting appointment ${params.eventId}:`, error);
+    console.error(`Error deleting appointment ${eventId}:`, error);
     return handleDatabaseError(error, 'delete appointment');
   }
-}
+}, ['admin', 'medico']);
 
-export const PATCH = withAuthentication(async (
-  request: NextRequest,
-  decodedToken: DecodedIdToken,
-  context: { params: { eventId: string } }
-) => {
-  return handlePatchRequest(request, decodedToken, context);
-});
-
-export const DELETE = withAuthentication(async (
-  request: NextRequest,
-  decodedToken: DecodedIdToken,
-  context: { params: { eventId: string } }
-) => {
-  return handleDeleteRequest(request, decodedToken, context);
-});
+export {
+  patchAppointmentHandler as PATCH,
+  deleteAppointmentHandler as DELETE,
+};
