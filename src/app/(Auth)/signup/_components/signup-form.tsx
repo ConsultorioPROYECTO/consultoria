@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth, EmailPasswordCredentials } from '@/app/context/AuthContext';
 import { handleAuthError } from '@/app/auth-components/auth-error-handler';
 import type { AuthFormState, SignupFormData } from '@/app/auth-components/auth-types';
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 
 export function SignupForm() {
   const { signUpWithEmail, loading } = useAuth();
+  const router = useRouter();
   const [formData, setFormData] = useState<SignupFormData>({ email: '', password: '' });
   const [formState, setFormState] = useState<AuthFormState>({ isLoading: false, error: null, success: false });
 
@@ -23,6 +25,7 @@ export function SignupForm() {
     try {
       await signUpWithEmail(credentials);
       setFormState({ isLoading: false, success: true, error: null });
+      router.push('/login');
     } catch (error) {
       handleAuthError(error, 'signup');
       setFormState({ isLoading: false, success: false, error: 'Failed to sign up' });
