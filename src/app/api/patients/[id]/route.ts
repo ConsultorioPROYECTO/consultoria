@@ -1,4 +1,8 @@
-// src/app/api/patients/[id]/route.ts
+/**
+ * @fileoverview This file contains the API route handlers for managing a specific patient,
+ * including retrieving, updating, and deleting a patient's data.
+ * @module app/api/patients/[id]/route
+ */
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuthorizedUser } from '@/lib/api/auth';
 import { getNumericParam } from '@/lib/api/request-helpers';
@@ -10,6 +14,14 @@ import { patients } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { NewPatient } from '@/db/schema';
 
+/**
+ * Handles GET requests to retrieve a patient by their ID.
+ * Requires admin, medico, or asistente role.
+ * @param {NextRequest} request - The incoming request object.
+ * @param {object} user - The authenticated user object.
+ * @param {object} params - The route parameters, containing the patient ID.
+ * @returns {Promise<NextResponse>} A response with the patient data or an error message.
+ */
 const getPatientByIdHandler = withAuthorizedUser(async (request, user, { params }) => {
   const patientId = getNumericParam(params, 'id');
   if (patientId instanceof NextResponse) return patientId;
@@ -27,6 +39,14 @@ const getPatientByIdHandler = withAuthorizedUser(async (request, user, { params 
   }
 }, ['admin', 'medico', 'asistente']);
 
+/**
+ * Handles PUT requests to update a patient's data.
+ * Requires admin or asistente role.
+ * @param {NextRequest} request - The incoming request object, containing the patient data in the body.
+ * @param {object} user - The authenticated user object.
+ * @param {object} params - The route parameters, containing the patient ID.
+ * @returns {Promise<NextResponse>} A response with the updated patient data or an error message.
+ */
 const updatePatientHandler = withAuthorizedUser(async (request: NextRequest, user, { params }) => {
   const patientId = getNumericParam(params, 'id');
   if (patientId instanceof NextResponse) return patientId;
@@ -52,6 +72,14 @@ const updatePatientHandler = withAuthorizedUser(async (request: NextRequest, use
   }
 }, ['admin', 'asistente']);
 
+/**
+ * Handles DELETE requests to deactivate a patient (soft delete).
+ * Requires admin role.
+ * @param {NextRequest} request - The incoming request object.
+ * @param {object} user - The authenticated user object.
+ * @param {object} params - The route parameters, containing the patient ID.
+ * @returns {Promise<NextResponse>} A response confirming the deactivation or an error message.
+ */
 const deletePatientHandler = withAuthorizedUser(async (request: NextRequest, user, { params }) => {
   const patientId = getNumericParam(params, 'id');
   if (patientId instanceof NextResponse) return patientId;

@@ -1,12 +1,17 @@
-// src/lib/api/request-helpers.ts
+/**
+ * @fileoverview This file contains helper functions for processing API requests,
+ * such as parsing and validating URL parameters.
+ * @module lib/api/request-helpers
+ */
 import { NextResponse } from 'next/server';
 import { createErrorResponse, HTTP_STATUS } from '@/types/api';
 
 /**
- * Extrae, convierte y valida un parámetro numérico de la URL.
- * @param params - El objeto de parámetros de la ruta.
- * @param paramName - El nombre del parámetro a obtener.
- * @returns El ID numérico o una respuesta de error.
+ * Extracts, parses, and validates a numeric parameter from the URL path.
+ * If the parameter is missing, not a string, or not a valid number, it returns an error response.
+ * @param {object} params - The route parameters object from Next.js.
+ * @param {string} paramName - The name of the parameter to extract (e.g., 'id').
+ * @returns {number | NextResponse} The parsed numeric ID or a NextResponse object with an error.
  */
 export function getNumericParam(params: { [key: string]: string | string[] | undefined }, paramName: string): number | NextResponse {
   const paramValue = params[paramName];
