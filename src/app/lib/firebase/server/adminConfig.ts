@@ -37,6 +37,38 @@
 import * as admin from 'firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { z } from 'zod';
+// Cache simple en memoria para información de usuarios autenticados
+// TTL de 15 minutos para balance entre performance y consistencia
+interface CachedUserInfo {
+  user: {
+    id: number;
+    firebaseUid: string;
+    email: string | null;
+    role: string;
+    organizationId: number | null;
+    displayName: string | null;
+  };
+  organizationInfo: {
+    id: number;
+    name: string;
+  } | null;
+  timestamp: number;
+}
+
+const userCache = new Map<string, CachedUserInfo>();
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutos en millisegundos
+
+/**
+ * Limpia entradas expiradas del cache
+ */
+function cleanExpiredCache(): void {
+  const now = Date.now();
+  for (const [key, value] of userCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      userCache.delete(key);
+    }
+  }
+}
 import type { DecodedIdToken } from 'firebase-admin/auth'; // Solo para el tipado
 import serviceAccountCredentials_json from '../../../../../etc/secrets/consultoria-d1072-firebase-adminsdk-fbsvc-348d22fe8e.json';
 
@@ -334,39 +366,143 @@ export async function createMedicalCustomToken(
 }
 
 /**
- * Verifica y decodifica un token de ID de Firebase.
+ * Verifica y decodifica un token de ID de Firebase con cache optimizado.
+ * 
+ * @param idToken - El token de ID de Firebase a verificar
+ * @returns Promise que resuelve con el token decodificado y claims personalizados
+ * 
+ * @throws {Error} Cuando el token es inválido, expirado o la verificación falla
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   const decodedToken = await verifyIdToken(idToken);
+ *   console.log('User ID:', decodedToken.uid);
+ *   console.log('Custom claims:', decodedToken.customClaims);
+ * } catch (error) {
+ *   console.error('Token verification failed:', error);
+ * }
+ * ```
  */
-export async function verifyIdToken(idToken: string) {
+export async function verifyIdToken(idToken: string): Promise<DecodedIdToken & { customClaims?: CustomClaims }> {
   try {
     const decodedToken = await auth.verifyIdToken(idToken);
     
-    // Extraer claims personalizados del token decodificado
-    const customClaims = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      role: decodedToken.role,
-      organizationId: decodedToken.organizationId,
-      organizationName: decodedToken.organizationName,
-      permissions: decodedToken.permissions,
-      calendarAccess: decodedToken.calendarAccess,
-      doctorInfo: decodedToken.doctorInfo,
-      assistantInfo: decodedToken.assistantInfo,
-      tokenCreatedAt: decodedToken.tokenCreatedAt,
-      tokenVersion: decodedToken.tokenVersion,
-    } as CustomClaims & { uid: string; email?: string };
+    // Extraer custom claims si existen
+    const customClaims = decodedToken.customClaims as CustomClaims | undefined;
     
     return {
-      success: true,
-      decodedToken,
-      customClaims,
+      ...decodedToken,
+      customClaims
     };
   } catch (error) {
-    console.error('Error verificando token:', error);
+    console.error('Error verifying ID token:', error);
+    throw new Error('Invalid or expired token');
+  }
+}
+
+/**
+ * Verifica un token y obtiene información completa del usuario con cache optimizado.
+ * Reduce consultas a la base de datos mediante cache en memoria.
+ * 
+ * @param idToken - El token de ID de Firebase a verificar
+ * @returns Promise que resuelve con información completa del usuario
+ * 
+ * @throws {Error} Cuando el token es inválido o el usuario no existe
+ * 
+ * @example
+ * ```typescript
+ * try {
+ *   const userInfo = await verifyTokenAndGetUserInfo(idToken);
+ *   console.log('User:', userInfo.user);
+ *   console.log('Organization:', userInfo.organizationInfo);
+ * } catch (error) {
+ *   console.error('Authentication failed:', error);
+ * }
+ * ```
+ */
+export async function verifyTokenAndGetUserInfo(idToken: string): Promise<{
+  decodedToken: DecodedIdToken & { customClaims?: CustomClaims };
+  user: CachedUserInfo['user'];
+  organizationInfo: CachedUserInfo['organizationInfo'];
+}> {
+  // Primero verificar el token con Firebase
+  const decodedToken = await verifyIdToken(idToken);
+  
+  // Limpiar cache expirado periódicamente
+  if (Math.random() < 0.1) { // 10% de probabilidad de limpiar cache
+    cleanExpiredCache();
+  }
+  
+  // Buscar en cache primero
+  const cacheKey = decodedToken.uid;
+  const cachedInfo = userCache.get(cacheKey);
+  const now = Date.now();
+  
+  if (cachedInfo && (now - cachedInfo.timestamp) < CACHE_TTL) {
+    // Cache hit - retornar información cached
     return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Error desconocido',
+      decodedToken,
+      user: cachedInfo.user,
+      organizationInfo: cachedInfo.organizationInfo
     };
   }
+  
+  // Cache miss - consultar base de datos
+  const { db } = await import('@/db');
+  const { users, organization } = await import('@/db/schema');
+  const { eq } = await import('drizzle-orm');
+  
+  const userWithOrg = await db
+    .select({
+      // Información del usuario
+      userId: users.id,
+      firebaseUid: users.firebaseUid,
+      email: users.email,
+      role: users.role,
+      organizationId: users.organizationId,
+      displayName: users.displayName,
+      
+      // Información de la organización
+      organizationName: organization.name,
+      orgId: organization.id,
+    })
+    .from(users)
+    .leftJoin(organization, eq(users.organizationId, organization.id))
+    .where(eq(users.firebaseUid, decodedToken.uid))
+    .limit(1);
+  
+  if (userWithOrg.length === 0) {
+    throw new Error('Usuario no encontrado en la base de datos');
+  }
+  
+  const userInfo = userWithOrg[0];
+  
+  // Preparar datos para cache
+  const cacheData: CachedUserInfo = {
+    user: {
+      id: userInfo.userId,
+      firebaseUid: userInfo.firebaseUid,
+      email: userInfo.email,
+      role: userInfo.role,
+      organizationId: userInfo.organizationId,
+      displayName: userInfo.displayName,
+    },
+    organizationInfo: userInfo.organizationName ? {
+      id: userInfo.orgId!,
+      name: userInfo.organizationName,
+    } : null,
+    timestamp: now
+  };
+  
+  // Guardar en cache
+  userCache.set(cacheKey, cacheData);
+  
+  return {
+    decodedToken,
+    user: cacheData.user,
+    organizationInfo: cacheData.organizationInfo
+  };
 }
 
 /**

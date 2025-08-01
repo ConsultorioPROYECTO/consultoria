@@ -74,8 +74,7 @@ import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
 import { users } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
 import { doctors } from '@rutas/db/schema/doctors'; // Importar esquema de doctors
 import { assistants } from '@rutas/db/schema/assistants'; // Importar esquema de assistants
-import { withAuthentication } from '@rutas/app/lib/firebase/server/middleware/authMiddleware'; // Ajusta la ruta
-import type { DecodedIdToken } from 'firebase-admin/auth';
+import { withOptimizedAdminAuth, AuthenticatedUserInfo } from '@rutas/app/lib/firebase/server/middleware/optimizedAuthMiddleware'; // Middleware optimizado
 import { eq, desc } from 'drizzle-orm';
 
 // --- Definición del Manejador GET con Autenticación y Autorización ---
@@ -92,39 +91,12 @@ import { eq, desc } from 'drizzle-orm';
  */
 const getUsersHandler = async (
   request: NextRequest,
-  decodedToken: DecodedIdToken,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  context: { params: Record<string, never> } // Para rutas no dinámicas, params es un objeto vacío (Record<string, never>).
+  userInfo: AuthenticatedUserInfo // Información optimizada del usuario autenticado con cache
 ): Promise<NextResponse | Response> => {
-  console.log(`[API /api/users] Solicitud GET recibida y autenticada para UID: ${decodedToken.uid}`);
+  // El middleware optimizado ya valida que sea admin, no necesitamos verificar aquí
+  console.log(`Admin ${userInfo.user.email} consultando usuarios de organización ${userInfo.organizationInfo?.name}`);
 
-  // --- Autorización: Verificar si el usuario autenticado es un administrador ---
   try {
-    const requestingUser = await db.query.users.findFirst({
-      where: eq(users.firebaseUid, decodedToken.uid),
-      columns: { role: true, organizationId: true }, // Solo necesitamos el rol y la organizacion para la autorización
-    });
-
-    if (!requestingUser) {
-      // Esto sería raro si el token es válido, pero podría pasar si el usuario fue eliminado de tu BD
-      // pero no de Firebase Auth inmediatamente.
-      console.warn(`[API /api/users] Usuario autenticado con UID ${decodedToken.uid} no encontrado en la base de datos local.`);
-      return NextResponse.json(
-        { error: 'Acceso denegado: No se encontró tu autenticacion de cuenta en el sistema, debes informar a tus superiores..' },
-        { status: 403 }
-      );
-    }
-
-    if (requestingUser.role !== 'admin') {
-      console.warn(`[API /api/users] Acceso denegado: Usuario ${decodedToken.uid} (Rol: ${requestingUser.role}) no es admin.`);
-      return NextResponse.json(
-        { error: 'Acceso Denegado: No tienes los permisos necesarios, debes ser admin..' },
-        { status: 403 }
-      );
-    }
-
-    console.log(`[API /api/users] Acceso autorizado para admin: ${decodedToken.uid} (${decodedToken.email})`);
-
     // --- Lógica principal: Obtener todos los usuarios con información de doctor y asistente si aplica ---
     console.log('[API /api/users] Consultando la base de datos para obtener todos los usuarios con información de doctor y asistente...');
 
@@ -152,7 +124,7 @@ const getUsersHandler = async (
       .from(users)
       .leftJoin(doctors, eq(users.id, doctors.userId))
       .leftJoin(assistants, eq(users.id, assistants.userId))
-      .where(requestingUser.organizationId ? eq(users.organizationId, requestingUser.organizationId) : undefined)
+      .where(userInfo.user.organizationId ? eq(users.organizationId, userInfo.user.organizationId) : undefined)
       .orderBy(desc(users.createdAt))
       .limit(100);
 
@@ -173,7 +145,7 @@ const getUsersHandler = async (
 };
 
 // Envolver el manejador con el middleware de autenticación
-export const GET = withAuthentication(getUsersHandler);
+export const GET = withOptimizedAdminAuth(getUsersHandler);
 
 // Nota: Si necesitaras otros métodos (POST, PUT, etc.) y también quieres protegerlos,
 // los envolverías de manera similar:

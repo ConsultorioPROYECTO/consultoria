@@ -10,7 +10,7 @@ import { validateRequestBody } from '@/lib/api-helpers';
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS, API_ERRORS } from '@/types/api';
 import { db } from '@/db';
 import { users, doctors, assistants, organization } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * Esquema de validación para la solicitud de token personalizado.
@@ -36,66 +36,63 @@ export async function POST(request: NextRequest) {
 
     const { uid, organizationId } = validation.data;
 
-    // Buscar el usuario en la base de datos
-    const userResult = await db
+    // Optimización: Una sola consulta con JOINs para obtener toda la información necesaria
+    const userWithOrgAndRoleInfo = await db
       .select({
-        id: users.id,
+        // Información del usuario
+        userId: users.id,
         firebaseUid: users.firebaseUid,
         email: users.email,
         role: users.role,
         organizationId: users.organizationId,
+        
+        // Información de la organización
+        organizationName: organization.name,
+        
+        // Información del doctor (si aplica)
+        doctorId: doctors.idDoctor,
+        doctorSpeciality: doctors.speciality,
+        doctorCalendarId: doctors.calendar_id,
+        doctorMedicalLicense: doctors.nitId,
+        
+        // Información del asistente (si aplica)
+        assistantId: assistants.idAssistant,
       })
       .from(users)
-      .where(eq(users.firebaseUid, uid))
+      .leftJoin(organization, eq(users.organizationId, organization.id))
+      .leftJoin(doctors, eq(users.id, doctors.userId))
+      .leftJoin(assistants, eq(users.id, assistants.userId))
+      .where(
+        and(
+          eq(users.firebaseUid, uid),
+          eq(users.organizationId, parseInt(organizationId))
+        )
+      )
       .limit(1);
 
-    if (userResult.length === 0) {
+    if (userWithOrgAndRoleInfo.length === 0) {
       return NextResponse.json(
         createErrorResponse(
           API_ERRORS.USER_NOT_FOUND,
-          'Usuario no encontrado en la base de datos',
+          'Usuario no encontrado o no pertenece a la organización solicitada',
           HTTP_STATUS.NOT_FOUND
         ),
         { status: HTTP_STATUS.NOT_FOUND }
       );
     }
 
-    const user = userResult[0];
-
-    // Verificar que el usuario pertenezca a la organización solicitada
-    if (user.organizationId?.toString() !== organizationId) {
+    const userInfo = userWithOrgAndRoleInfo[0];
+    
+    if (!userInfo.organizationName) {
       return NextResponse.json(
         createErrorResponse(
-          API_ERRORS.FORBIDDEN,
-          'Usuario no pertenece a la organización especificada',
-          HTTP_STATUS.FORBIDDEN
-        ).body,
-        { status: HTTP_STATUS.FORBIDDEN }
-      );
-    }
-
-    // Obtener información de la organización
-    const orgResult = await db
-      .select({
-        id: organization.id,
-        name: organization.name,
-      })
-      .from(organization)
-      .where(eq(organization.id, parseInt(organizationId)))
-      .limit(1);
-
-    if (orgResult.length === 0) {
-      return NextResponse.json(
-        createErrorResponse(
-          API_ERRORS.USER_NOT_FOUND,
+          API_ERRORS.NOT_FOUND,
           'Organización no encontrada',
           HTTP_STATUS.NOT_FOUND
         ),
         { status: HTTP_STATUS.NOT_FOUND }
       );
     }
-
-    const org = orgResult[0];
 
     // Preparar datos base para el token
     const tokenData: {
@@ -116,52 +113,30 @@ export async function POST(request: NextRequest) {
       };
     } = {
       uid,
-      role: user.role as 'admin' | 'doctor' | 'assistant' | 'patient',
+      role: userInfo.role as 'admin' | 'doctor' | 'assistant' | 'patient',
       organizationId,
-      organizationName: org.name,
+      organizationName: userInfo.organizationName,
       tokenVersion: 1,
     };
 
     // Obtener información específica según el rol
-    if (user.role === 'medico') {
-      const doctorResult = await db
-        .select({
-          id: doctors.idDoctor,
-          specialty: doctors.speciality,
-          googleCalendarId: doctors.calendar_id,
-          medicalLicense: doctors.nitId,
-        })
-        .from(doctors)
-        .where(eq(doctors.userId, user.id))
-        .limit(1);
-
-      if (doctorResult.length > 0) {
-        const doctor = doctorResult[0];
+    if (userInfo.role === 'medico') {
+      if (userInfo.doctorId) {
         tokenData.doctorInfo = {
-          doctorId: doctor.id.toString(),
-          specialty: doctor.specialty,
-          googleCalendarId: doctor.googleCalendarId || undefined,
-          medicalLicense: doctor.medicalLicense || undefined,
-        };
+           doctorId: userInfo.doctorId.toString(),
+           specialty: userInfo.doctorSpeciality || '',
+           googleCalendarId: userInfo.doctorCalendarId || undefined,
+           medicalLicense: userInfo.doctorMedicalLicense || undefined,
+         };
       }
     }
 
-    if (user.role === 'asistente') {
-      const assistantResult = await db
-        .select({
-          id: assistants.idAssistant,
-        })
-        .from(assistants)
-        .where(eq(assistants.userId, user.id))
-        .limit(1);
-
-      if (assistantResult.length > 0) {
-        const assistant = assistantResult[0];
-        
+    if (userInfo.role === 'asistente') {
+      if (userInfo.assistantId) {
         // Obtener doctores asignados (esto podría requerir una tabla de relación)
         // Por ahora, usamos un array vacío como placeholder
         tokenData.assistantInfo = {
-          assistantId: assistant.id.toString(),
+          assistantId: userInfo.assistantId.toString(),
           assignedDoctors: [], // TODO: Implementar lógica de doctores asignados
         };
       }
@@ -175,11 +150,11 @@ export async function POST(request: NextRequest) {
         {
           customToken,
           user: {
-            uid: user.firebaseUid,
-            email: user.email,
-            role: user.role,
-            organizationId: user.organizationId,
-            organizationName: org.name,
+            uid: userInfo.firebaseUid,
+            email: userInfo.email,
+            role: userInfo.role,
+            organizationId: userInfo.organizationId,
+            organizationName: userInfo.organizationName,
           },
         },
         'Token personalizado creado exitosamente'
