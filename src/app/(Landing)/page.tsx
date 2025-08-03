@@ -164,7 +164,7 @@ export default function HomePage() {
 
         {/* Contenido Principal del Hero */}
         <motion.div 
-          className="flex flex-col gap-4 items-start justify-center text-start p-4"
+          className="relative z-10 flex flex-col gap-4 items-start justify-center text-start p-4"
           initial="hidden"
           animate="show"
           variants={{ 
@@ -222,7 +222,7 @@ export default function HomePage() {
 
         {/* Mockup de la aplicación (visible solo en desktop, cortado) */}
         <motion.div
-          className="hidden md:block absolute bottom-[-200px] right-[-50px] w-[80%] max-w-6xl aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg shadow-xl border border-primary/30 z-0"
+          className="pointer-events-none hidden md:block absolute bottom-[-200px] right-[-50px] w-[80%] max-w-6xl aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg shadow-xl border border-primary/30 z-0"
           style={{ transform: 'rotateX(50deg) rotateZ(-25deg) translateY(20px)' }}
           initial={{ opacity: 0, y: 50, rotateX: 0, rotateZ: 0 }}
           animate={{ opacity: 1, y: 0, rotateX: 50, rotateZ: -25 }}
@@ -245,7 +245,7 @@ export default function HomePage() {
 
         {/* Mockup de la aplicación (visible solo en móvil, 3D flat y rotado) */}
         <motion.div
-          className="md:hidden absolute bottom-[-100px] left-1/2 -translate-x-1/2 w-[150%] aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg shadow-xl border border-primary/30 z-0"
+          className="pointer-events-none md:hidden absolute bottom-[-160px] left-1/2 -translate-x-1/2 w-[130%] aspect-[16/9] bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg shadow-xl border border-primary/30 z-0"
           style={{ transform: 'translateX(-50%) rotateX(45deg) rotateZ(-15deg) translateY(20px)' }}
           initial={{ opacity: 0, y: 50, rotateX: 0, rotateZ: 0 }}
           animate={{ opacity: 1, y: 0, rotateX: 45, rotateZ: -15 }}
