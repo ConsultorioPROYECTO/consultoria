@@ -51,6 +51,7 @@ const CalendarWrapper = React.memo(() => (
     </main>
   </div>
 ));
+CalendarWrapper.displayName = 'CalendarWrapper';
 
 const OrganizationConfigWrapper = React.memo(() => (
   <div className="flex flex-1 flex-col overflow-hidden">
@@ -63,6 +64,7 @@ const OrganizationConfigWrapper = React.memo(() => (
     </main>
   </div>
 ));
+OrganizationConfigWrapper.displayName = 'OrganizationConfigWrapper';
 
 const ConfigurationWrapper = React.memo(() => (
   <div className="flex flex-1 flex-col overflow-hidden">
@@ -75,6 +77,7 @@ const ConfigurationWrapper = React.memo(() => (
     </main>
   </div>
 ));
+ConfigurationWrapper.displayName = 'ConfigurationWrapper';
 
 const AiCareWrapper = React.memo(() => (
   <div className="flex flex-1 flex-col h-screen overflow-hidden">
@@ -87,6 +90,7 @@ const AiCareWrapper = React.memo(() => (
     </main>
   </div>
 ));
+AiCareWrapper.displayName = 'AiCareWrapper';
 
 const PatientsWrapper = React.memo(() => (
   <div className="flex flex-1 flex-col overflow-hidden">
@@ -99,6 +103,7 @@ const PatientsWrapper = React.memo(() => (
     </main>
   </div>
 ));
+PatientsWrapper.displayName = 'PatientsWrapper';
 const ViewRenderer: React.FC = React.memo(() => {
   const { currentView } = useNavigation();
   const { userRole, isLoadingRole, error } = useAuth();
@@ -135,6 +140,7 @@ const ViewRenderer: React.FC = React.memo(() => {
 
   return renderContent;
 });
+ViewRenderer.displayName = 'ViewRenderer';
 
 
 
