@@ -130,7 +130,7 @@ export default function DoctorDashboard() {
 
       try {
         const startDate = DateTime.now().toISODate();
-        const endDate = DateTime.now().plus({ days: 7 }).toISODate();
+        const endDate = DateTime.now().plus({ days: 1 }).toISODate();
 
         const eventsResponse = await fetch(`/api/doctors/${doctorId}/calendar/events?startDate=${startDate}&endDate=${endDate}`);
         
