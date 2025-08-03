@@ -258,9 +258,10 @@ export default function HomePage() {
               alt="Mockup de la aplicación"
               loading="lazy"
               fill
-              sizes="(max-width: 768px) 100vw, 80vw"
+              sizes="(max-width: 768px) 90vw, 50vw"
               className="p-3 rounded-4xl object-cover"
               placeholder="blur"
+              quality={70}
             />
           </div>
           {/* Degradado inferior para fusionarse con el fondo */}
