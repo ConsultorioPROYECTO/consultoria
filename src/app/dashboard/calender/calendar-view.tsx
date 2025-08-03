@@ -69,8 +69,8 @@ type Doctor = {
   idDoctor: number;
 };
 
-export default function CalendarView({ consultorioId }: { consultorioId?: string }) {
-  // Hook de autenticación para obtener el doctorId
+export default function CalendarView() {
+    // Hook de autenticación para obtener el doctorId
   const { doctorId, user, userRole, getAuthToken } = useAuth();
   
   // Hook para obtener usuarios del contexto
@@ -349,7 +349,7 @@ export default function CalendarView({ consultorioId }: { consultorioId?: string
     setTimeout(() => {
       loadEvents();
     }, 0);
-  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, consultorioId, userRole]);
+  }, [selectedDoctorId, doctorId, user, currentDate, viewMode, userRole]);
 
   // Sincronizar sharedDisplayMonth cuando currentDate cambie
   React.useEffect(() => {
