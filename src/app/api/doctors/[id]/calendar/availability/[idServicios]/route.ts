@@ -5,16 +5,20 @@ import { db } from '@/db';
 import { doctors } from '@/db/schema/doctors';
 import { medicalServices } from '@/db/schema/medical_services';
 import { eq } from 'drizzle-orm';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 type TimeSlot = {
   start: string;
   end: string;
 };
 
-export async function GET(
-  request: NextRequest, 
-  { params }: { params: Promise<{ id: string, idServicios: string }> }
-): Promise<NextResponse<TimeSlot[] | { error: string }>> {
+const getHandler = async (
+  request: NextRequest,
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse | Response> => {
+  const { params } = args[0] as { params: Promise<{ id: string; idServicios: string }> };
   console.log('API: /api/doctors/[id]/availability/[idServicios] - Request received');
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get('date');
@@ -123,4 +127,9 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+};
+
+export const GET = withOptimizedAuthentication(getHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});

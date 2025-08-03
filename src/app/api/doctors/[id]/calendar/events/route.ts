@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DateTime } from 'luxon';
 import { getDoctorEvents } from '@/lib/calendar-event-retriever';
 import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 /**
  * @fileoverview API endpoint para obtener eventos del calendario de un doctor específico.
@@ -103,10 +105,12 @@ import { BreakTimeType, BREAK_TIME_TYPES } from '@/types/google-calendar';
  * @throws {Error} Cuando el doctorId no es un número válido
  * @throws {Error} Cuando getDoctorEvents falla por problemas de conectividad o permisos
  */
-export async function GET(
+const getHandler = async (
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse | Response> => {
+  const { params } = args[0] as { params: Promise<{ id: string }> };
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   console.log(`🚀 [${requestId}] API: /api/doctors/[id]/calendar/events - Request received`);
   console.log(`📋 [${requestId}] Request URL:`, request.url);
@@ -388,4 +392,9 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+};
+
+export const GET = withOptimizedAuthentication(getHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});

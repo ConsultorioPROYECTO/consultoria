@@ -22,6 +22,8 @@ import { db } from '@/db';
 import { doctors } from '@/db/schema/doctors';
 import { eq } from 'drizzle-orm';
 import { ZodError } from 'zod';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 /**
  * Interfaz para el contexto de parámetros de ruta
@@ -30,43 +32,6 @@ import { ZodError } from 'zod';
 interface RouteContext {
   /** Parámetros de la ruta que contienen el ID del doctor */
   params: Promise<{ id: string }>;
-}
-
-/**
- * Tipo para respuesta de error estándar de la API
- * @interface ErrorResponse
- */
-interface ErrorResponse {
-  /** Mensaje de error principal */
-  error: string;
-  /** Detalles adicionales del error (opcional) */
-  details?: string[] | Array<{ field: string; message: string }>;
-  /** Formato esperado para corregir el error (opcional) */
-  expectedFormat?: Record<string, unknown>;
-}
-
-/**
- * Tipo para respuesta exitosa del endpoint GET
- * @interface GetWorkingHoursResponse
- */
-interface GetWorkingHoursResponse {
-  /** ID del doctor */
-  doctorId: number;
-  /** Horarios de trabajo (formato nuevo o legacy) */
-  workingHours: DoctorWorkingHours | WorkingHours;
-}
-
-/**
- * Tipo para respuesta exitosa del endpoint PUT
- * @interface UpdateWorkingHoursResponse
- */
-interface UpdateWorkingHoursResponse {
-  /** Mensaje de confirmación */
-  message: string;
-  /** ID del doctor */
-  doctorId: number;
-  /** Horarios de trabajo actualizados */
-  workingHours: DoctorWorkingHours;
 }
 
 /**
@@ -130,10 +95,12 @@ interface UpdateWorkingHoursResponse {
  * @see {@link WorkingHours} Para el formato legacy de horarios
  * @see {@link DEFAULT_WORKING_HOURS} Para horarios por defecto
  */
-export async function GET(
+const getHandler = async (
   request: NextRequest,
-  { params }: RouteContext
-): Promise<NextResponse<GetWorkingHoursResponse | ErrorResponse>> {
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse | Response> => {
+  const { params } = args[0] as RouteContext;
   try {
     // Resolver los parámetros de la ruta de forma asíncrona
     const resolvedParams = await params;
@@ -258,7 +225,11 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+};
+
+
+
+
 
 /**
  * Actualiza los horarios de trabajo de un doctor específico
@@ -331,10 +302,12 @@ export async function GET(
  * @see {@link updateWorkingHoursRequestSchema} Para validación del cuerpo de la solicitud
  * @see {@link DoctorWorkingHours} Para el formato de horarios esperado
  */
-export async function PUT(
+const putHandler = async (
   request: NextRequest,
-  { params }: RouteContext
-): Promise<NextResponse<UpdateWorkingHoursResponse | ErrorResponse>> {
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse | Response> => {
+  const { params } = args[0] as RouteContext;
   try {
     // Resolver los parámetros de la ruta de forma asíncrona
     const resolvedParams = await params;
@@ -501,3 +474,13 @@ export async function PUT(
     );
   }
 }
+
+export const PUT = withOptimizedAuthentication(putHandler, {
+  requiredRoles: ['admin', 'medico'],
+  requireOrganization: true
+});
+
+export const GET = withOptimizedAuthentication(getHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});

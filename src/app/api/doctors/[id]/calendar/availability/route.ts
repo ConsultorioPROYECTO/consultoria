@@ -5,6 +5,8 @@ import { getDoctorAvailability } from '@/lib/calendar-event-retriever';
 import { db } from '@/db';
 import { doctors } from '@/db/schema/doctors';
 import { eq } from 'drizzle-orm';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 /**
  * @fileoverview API endpoint para obtener la disponibilidad de horarios de un doctor específico.
@@ -38,10 +40,12 @@ import { eq } from 'drizzle-orm';
  * @version 1.3.0
  * @since 2025-07-02
  */
-export async function GET(
-  request: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse<TimeSlot[] | { error: string }>> {
+const getHandler = async (
+  request: NextRequest,
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse<TimeSlot[] | { error: string }>> => {
+  const { params } = args[0] as { params: Promise<{ id: string }> };
   console.log('API: /api/doctors/[id]/availability - Request received');
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get('date');
@@ -150,7 +154,12 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+};
+
+export const GET = withOptimizedAuthentication(getHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});
 
 
 /**

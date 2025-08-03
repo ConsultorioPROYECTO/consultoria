@@ -35,11 +35,13 @@
  * @since 2025-07-09
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { DateTime } from 'luxon';
 import { createBreakTimeEvent } from '@/lib/calendar-event-manager';
 import { getDoctorEvents } from '@/lib/calendar-event-retriever';
 import { BreakTimeType } from '@/types/google-calendar';
+import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 
 /**
  * Crea un nuevo evento de tiempo de descanso en el calendario de Google del doctor.
@@ -102,7 +104,12 @@ import { BreakTimeType } from '@/types/google-calendar';
  *   })
  * });
  */
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+const postHandler = async (
+  req: NextRequest,
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse | Response> => {
+  const { params } = args[0] as { params: Promise<{ id: string }> };
   try {
     // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia
     // Esto previene manipulación del doctorId en el cuerpo de la petición
@@ -167,7 +174,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       error: errorMessage 
     }, { status: 500 });
   }
-}
+};
+
+export const POST = withOptimizedAuthentication(postHandler, {
+  requiredRoles: ['admin', 'medico'],
+  requireOrganization: true
+});
 
 /**
  * Obtiene todos los eventos de tiempo de descanso para un doctor específico en un rango de fechas.
@@ -214,7 +226,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
  * - 400: Parámetros inválidos
  * - 500: Error interno
  */
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+const getHandler = async (
+  req: NextRequest,
+  userInfo: AuthenticatedUserInfo,
+  ...args: unknown[]
+): Promise<NextResponse | Response> => {
+  const { params } = args[0] as { params: Promise<{ id: string }> };
   // Obtiene el doctorId del parámetro de ruta para mayor seguridad y consistencia
   // Esto previene manipulación del doctorId en los query parameters
   const resolvedParams = await params;
@@ -281,4 +298,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       error: errorMessage 
     }, { status: 500 });
   }
-}
+};
+
+export const GET = withOptimizedAuthentication(getHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true
+});
