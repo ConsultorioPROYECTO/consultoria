@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { useAuth } from '@/app/context/AuthContext';
 
 interface OrganizationData {
   id: string;
@@ -41,16 +42,23 @@ export const useOrganization = (): UseOrganizationReturn => {
   const [organization, setOrganization] = useState<OrganizationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { getAuthToken } = useAuth();
 
-  const fetchOrganization = async () => {
+  const fetchOrganization = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
       
       const response = await fetch('/api/organization', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
@@ -67,17 +75,23 @@ export const useOrganization = (): UseOrganizationReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAuthToken]);
 
   const updateOrganization = async (updateData: UpdateOrganizationData): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
 
+      const token = await getAuthToken();
+      if (!token) {
+        throw new Error('No se pudo obtener el token de autenticación');
+      }
+
       const response = await fetch('/api/organization', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(updateData),
       });
@@ -109,7 +123,7 @@ export const useOrganization = (): UseOrganizationReturn => {
 
   useEffect(() => {
     fetchOrganization();
-  }, []);
+  }, [fetchOrganization]);
 
   return {
     organization,
