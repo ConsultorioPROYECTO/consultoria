@@ -234,6 +234,7 @@ export default function HomePage() {
               src={medDashboardDark}
               alt="Mockup de la aplicación"
               loading="lazy"
+              priority
               fill
               sizes="(max-width: 768px) 90vw, 50vw"
               className="p-3 rounded-4xl object-cover"
@@ -257,6 +258,7 @@ export default function HomePage() {
               src={medDashboardDark}
               alt="Mockup de la aplicación"
               loading="lazy"
+              priority
               fill
               sizes="(max-width: 768px) 90vw, 50vw"
               className="p-3 rounded-4xl object-cover"
