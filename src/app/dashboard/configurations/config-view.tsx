@@ -18,6 +18,8 @@ import { useUIStyle } from "@/app/context/UIStyleContext"
 import { useAuth } from "@/app/context/AuthContext"
 import { AccountSection } from "./_compo/AccountSection"
 import { IntegrationsSection } from "./_compo/IntegrationsSection"
+import { OrganizationInfoSection } from "./_compo/OrganizationInfoSection"
+import { ContactInfoSection } from "./_compo/ContactInfoSection"
 
 const navAccount = [
   {
@@ -110,6 +112,20 @@ export default function ConfigView() {
                   user={user}
                   userRole={userRole || undefined}
                 />
+          </div>
+        );
+
+      case "Información de la Organización":
+        return (
+          <div className="grid gap-6 py-4">
+            <OrganizationInfoSection />
+          </div>
+        );
+
+      case "Información de Contacto":
+        return (
+          <div className="grid gap-6 py-4">
+            <ContactInfoSection />
           </div>
         );
 

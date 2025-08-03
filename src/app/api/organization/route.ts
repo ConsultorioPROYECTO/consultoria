@@ -64,6 +64,42 @@ const createOrganizationSchema = z.object({
     .optional()
 });
 
+/**
+ * Esquema de validación para la actualización de organización
+ */
+const updateOrganizationSchema = z.object({
+  name: z.string()
+    .min(1, 'El nombre de la organización es requerido')
+    .max(255, 'El nombre de la organización no puede exceder 255 caracteres')
+    .trim()
+    .optional(),
+  address: z.string()
+    .max(255, 'La dirección no puede exceder 255 caracteres')
+    .trim()
+    .optional(),
+  phone: z.string()
+    .max(15, 'El teléfono no puede exceder 15 caracteres')
+    .trim()
+    .optional(),
+  email: z.string()
+    .email('Formato de email inválido')
+    .max(255, 'El email no puede exceder 255 caracteres')
+    .trim()
+    .optional(),
+  nit: z.string()
+    .max(45, 'El NIT no puede exceder 45 caracteres')
+    .trim()
+    .optional(),
+  timezone: z.string()
+    .max(40, 'La zona horaria no puede exceder 40 caracteres')
+    .trim()
+    .optional(),
+  currency: z.string()
+    .max(40, 'La moneda no puede exceder 40 caracteres')
+    .trim()
+    .optional()
+});
+
 
 
 /**
@@ -191,8 +227,160 @@ const postUserRoleHandler = async (
       );
     }
   };
-  export const POST = withOptimizedAuthentication(postUserRoleHandler, {
-    requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
-    requireOrganization: false,
-  });
+/**
+ * Manejador para solicitudes PATCH a src/app/api/organization/route.ts.
+ * Permite actualizar la información de una organización.
+ * @async
+ * @param {NextRequest} request
+ * @param {AuthenticatedUserInfo} userInfo
+ * @returns {Promise<NextResponse | Response>}
+ */
+const patchOrganizationHandler = async (
+  request: NextRequest,
+  userInfo: AuthenticatedUserInfo
+): Promise<NextResponse | Response> => {
+  try {
+    // Verificar que el usuario pertenezca a una organización
+    if (!userInfo.user.organizationId) {
+      return NextResponse.json(
+        { error: 'Usuario no pertenece a ninguna organización' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    
+    // Validar el cuerpo de la solicitud con Zod
+    const validationResult = updateOrganizationSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(err => 
+        `${err.path.join('.')}: ${err.message}`
+      ).join(', ');
+      
+      return NextResponse.json(
+        { 
+          error: 'Datos de entrada inválidos', 
+          details: errorMessages,
+          issues: validationResult.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const updateData = validationResult.data;
+
+    // Verificar que hay al menos un campo para actualizar
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No se proporcionaron campos para actualizar' },
+        { status: 400 }
+      );
+    }
+
+    // Actualizar la organización
+    const updateResult = await db.update(organization)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(eq(organization.id, userInfo.user.organizationId));
+
+    // Verificar que la organización fue actualizada
+    if (updateResult[0].affectedRows === 0) {
+      return NextResponse.json(
+        { error: 'Organización no encontrada o no se pudo actualizar' },
+        { status: 404 }
+      );
+    }
+
+    // Obtener la organización actualizada
+    const updatedOrganization = await db.query.organization.findFirst({
+      where: eq(organization.id, userInfo.user.organizationId)
+    });
+
+    // Sincronizar conocimiento con pgVector
+    try {
+      await syncKnowledgeAfterCRUD('organization', 'update', {
+        id: userInfo.user.organizationId,
+        organizationId: userInfo.user.organizationId
+      });
+      console.log(`Conocimiento sincronizado para organización ${userInfo.user.organizationId}`);
+    } catch (syncError) {
+      console.error('Error al sincronizar conocimiento:', syncError);
+      // No fallar la operación principal por errores de sincronización
+    }
+
+    return NextResponse.json({ 
+      message: 'Organización actualizada correctamente.',
+      organization: updatedOrganization
+    });
+  } catch (error) {
+    console.error('Error en el servidor:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor.' },
+      { status: 500 }
+    );
+  }
+};
+
+/**
+ * Manejador para solicitudes GET a src/app/api/organization/route.ts.
+ * Permite obtener la información de la organización del usuario.
+ * @async
+ * @param {NextRequest} request
+ * @param {AuthenticatedUserInfo} userInfo
+ * @returns {Promise<NextResponse | Response>}
+ */
+const getOrganizationHandler = async (
+  request: NextRequest,
+  userInfo: AuthenticatedUserInfo
+): Promise<NextResponse | Response> => {
+  try {
+    // Verificar que el usuario pertenezca a una organización
+    if (!userInfo.user.organizationId) {
+      return NextResponse.json(
+        { error: 'Usuario no pertenece a ninguna organización' },
+        { status: 400 }
+      );
+    }
+
+    // Obtener la información de la organización
+    const organizationData = await db.query.organization.findFirst({
+      where: eq(organization.id, userInfo.user.organizationId)
+    });
+
+    if (!organizationData) {
+      return NextResponse.json(
+        { error: 'Organización no encontrada' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ 
+      organization: organizationData
+    });
+  } catch (error) {
+    console.error('Error en el servidor:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor.' },
+      { status: 500 }
+    );
+  }
+};
+
+export const GET = withOptimizedAuthentication(getOrganizationHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente'],
+  requireOrganization: true,
+});
+
+export const POST = withOptimizedAuthentication(postUserRoleHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
+  requireOrganization: false,
+});
+
+export const PATCH = withOptimizedAuthentication(patchOrganizationHandler, {
+  requiredRoles: ['admin'],
+  requireOrganization: true,
+});
   

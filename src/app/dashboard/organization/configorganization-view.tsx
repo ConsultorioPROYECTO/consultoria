@@ -3,6 +3,7 @@
 import { StaffManagement } from "./_compo/StaffManagement";
 import { CreateInvitationCard } from "./_compo/CreateInvitationCard";
 import { ServiceManagement } from "./_compo/ServiceManagementCard";
+import { OrganizationSettings } from "../com/OrganizationSettings";
 import { useAuth } from "../../context/AuthContext";
 
 export default function OrganizationConfigView() {
@@ -24,13 +25,18 @@ export default function OrganizationConfigView() {
       </div>
       
       <div className="grid gap-6">
-        {/*  */}
+        {/* Configuración de la organización */}
+        <div className="flex justify-start">
+          <OrganizationSettings />
+        </div>
+        
+        {/* Gestión de servicios e invitaciones */}
         <div className="grid gap-6 lg:grid-cols-2">
           <ServiceManagement />
           <CreateInvitationCard />
         </div>
 
-        {/*  */}
+        {/* Gestión de personal */}
         <div className="grid gap-6">
           <StaffManagement />
         </div>
