@@ -25,6 +25,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { Mail, User, Building, MessageSquare } from "lucide-react"
+import { toast } from "sonner"
 
 interface ContactFormData {
   name: string
@@ -137,13 +138,19 @@ export function ContactModal({ children }: ContactModalProps) {
 
       if (result.success) {
         setOpen(false);
-        alert("¡Gracias! Hemos recibido tu solicitud. Te contactaremos pronto.");
+        toast.success("¡Solicitud enviada!", {
+          description: "Hemos recibido tu solicitud. Te contactaremos pronto."
+        });
       } else {
-        alert("Error al enviar la solicitud. Por favor, inténtalo de nuevo.");
+        toast.error("Error al enviar la solicitud", {
+          description: "Por favor, inténtalo de nuevo."
+        });
       }
     } catch (error) {
       console.error('Error al enviar el formulario:', error);
-      alert("Error al enviar la solicitud. Por favor, inténtalo de nuevo.");
+      toast.error("Error de conexión", {
+        description: "Por favor, verifica tu conexión e inténtalo de nuevo."
+      });
     }
   }
 
