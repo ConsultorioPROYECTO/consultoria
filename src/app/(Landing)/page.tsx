@@ -233,11 +233,12 @@ export default function HomePage() {
             <Image
               src={medDashboardDark}
               alt="Mockup de la aplicación"
-              priority
+              loading="lazy"
               fill
-              sizes="(max-width: 768px) 80vw, 50vw"
+              sizes="(max-width: 768px) 90vw, 50vw"
               className="p-3 rounded-4xl object-cover"
               placeholder="blur"
+              quality={70}
             />
           </div>
         </motion.div>
@@ -255,9 +256,9 @@ export default function HomePage() {
             <Image
               src={medDashboardDark}
               alt="Mockup de la aplicación"
-              priority
+              loading="lazy"
               fill
-              sizes="(max-width: 768px) 150vw, 80vw"
+              sizes="(max-width: 768px) 100vw, 80vw"
               className="p-3 rounded-4xl object-cover"
               placeholder="blur"
             />
