@@ -171,6 +171,6 @@ export const GET = withOptimizedAuthentication(getUserRoleHandler, {
   requireOrganization: false,
 });
 export const POST = withOptimizedAuthentication(postUserRoleHandler, {
-  requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
+  requiredRoles: ['admin'],
   requireOrganization: false,
 });
