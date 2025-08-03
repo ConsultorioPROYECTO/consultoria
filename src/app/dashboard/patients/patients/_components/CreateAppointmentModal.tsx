@@ -30,9 +30,17 @@ interface CreateAppointmentRequest {
   serviceId: number;
   date: string;
   time: string;
+  endTime?: string;
+  durationMinutes?: number;
   isVirtual?: boolean;
   meetingLink?: string;
   notes?: string;
+  patientNotes?: string;
+  appointmentPrice?: string;
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  isFirstTime?: boolean;
+  isFollowUp?: boolean;
+  followUpOfId?: number;
 }
 
 /**

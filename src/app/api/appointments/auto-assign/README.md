@@ -30,16 +30,31 @@ Content-Type: application/json
 
 ## Parámetros de Entrada
 
-| Campo | Tipo | Requerido | Descripción |
-|-------|------|-----------|-------------|
-| `identificationNumber` | string | ✅ | Número de identificación del paciente |
-| `identificationType` | string | ✅ | Tipo de documento (DNI, CC, TI, CE, PP, RC, AS) |
-| `serviceId` | number | ✅ | ID del servicio médico |
-| `date` | string | ✅ | Fecha de la cita (YYYY-MM-DD) |
-| `time` | string | ✅ | Hora de la cita (HH:MM) |
-| `isVirtual` | boolean | ❌ | Si la cita es virtual (default: false) |
-| `meetingLink` | string | ❌ | Link de reunión (requerido si isVirtual=true) |
-| `notes` | string | ❌ | Notas adicionales |
+### Campos Requeridos
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `identificationNumber` | string | Número de identificación del paciente |
+| `identificationType` | string | Tipo de documento (DNI, CC, TI, CE, PP, RC, AS) |
+| `serviceId` | number | ID del servicio médico |
+| `date` | string | Fecha de la cita (YYYY-MM-DD) |
+| `time` | string | Hora de la cita (HH:MM) |
+
+### Campos Opcionales
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `endTime` | string | Hora de finalización (HH:MM) - se calcula automáticamente si no se proporciona |
+| `durationMinutes` | number | Duración en minutos - se obtiene del servicio si no se especifica |
+| `isVirtual` | boolean | Si la cita es virtual (default: false) |
+| `meetingLink` | string | Link de reunión (requerido si isVirtual=true) |
+| `notes` | string | Notas del doctor sobre la cita |
+| `patientNotes` | string | Notas del paciente sobre la cita |
+| `appointmentPrice` | string | Precio de la cita (se obtiene del servicio si no se especifica) |
+| `priority` | string | Prioridad de la cita: 'low', 'normal', 'high', 'urgent' (default: 'normal') |
+| `isFirstTime` | boolean | Si es la primera vez del paciente (default: false) |
+| `isFollowUp` | boolean | Si es una cita de seguimiento (default: false) |
+| `followUpOfId` | number | ID de la cita de la cual esta es seguimiento |
 
 **Nota:** El `organizationId` se obtiene automáticamente de la API key, por lo que no es necesario incluirlo en la solicitud.
 
@@ -52,12 +67,15 @@ curl -X POST https://your-domain.com/api/appointments/auto-assign \
   -d '{
     "identificationNumber": "12345678",
     "identificationType": "CC",
-    "serviceId": 5,
+    "serviceId": 1,
     "date": "2024-01-15",
-    "time": "14:30",
-    "isVirtual": true,
-    "meetingLink": "https://meet.google.com/abc-defg-hij",
-    "notes": "Consulta de seguimiento"
+    "time": "10:00",
+    "durationMinutes": 30,
+    "isVirtual": false,
+    "notes": "Consulta de control",
+    "patientNotes": "Paciente con dolor de cabeza",
+    "priority": "normal",
+    "isFirstTime": true
   }'
 ```
 

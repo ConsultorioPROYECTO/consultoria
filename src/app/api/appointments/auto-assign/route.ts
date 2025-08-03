@@ -107,9 +107,17 @@ async function authenticateApiKey(request: NextRequest): Promise<{
  * @property {number} serviceId - Unique identifier of the medical service
  * @property {string} date - Date of the appointment in ISO format (YYYY-MM-DD)
  * @property {string} time - Time of the appointment in 24-hour format (HH:MM)
+ * @property {string} [endTime] - End time of the appointment in 24-hour format (HH:MM)
+ * @property {number} [durationMinutes] - Duration of the appointment in minutes
  * @property {boolean} [isVirtual=false] - Whether the appointment is conducted virtually
  * @property {string} [meetingLink] - Meeting link for virtual appointments (required if isVirtual is true)
  * @property {string} [notes] - Additional notes or comments for the appointment
+ * @property {string} [patientNotes] - Patient-specific notes for the appointment
+ * @property {string} [appointmentPrice] - Custom price for this appointment
+ * @property {'low' | 'normal' | 'high' | 'urgent'} [priority] - Priority level of the appointment
+ * @property {boolean} [isFirstTime] - Whether this is the patient's first appointment with this doctor
+ * @property {boolean} [isFollowUp] - Whether this is a follow-up appointment
+ * @property {number} [followUpOfId] - ID of the original appointment if this is a follow-up
  * 
  * @example
  * ```typescript
@@ -119,9 +127,16 @@ async function authenticateApiKey(request: NextRequest): Promise<{
  *   serviceId: 5,
  *   date: "2024-01-15",
  *   time: "14:30",
+ *   endTime: "15:00",
+ *   durationMinutes: 30,
  *   isVirtual: true,
  *   meetingLink: "https://meet.google.com/abc-defg-hij",
- *   notes: "Consulta de seguimiento"
+ *   notes: "Consulta de seguimiento",
+ *   patientNotes: "Paciente con historial de alergias",
+ *   priority: "normal",
+ *   isFirstTime: false,
+ *   isFollowUp: true,
+ *   followUpOfId: 120
  * };
  * ```
  */
@@ -136,12 +151,28 @@ export interface CreateAutoAssignAppointmentRequest {
   date: string;
   /** Time in HH:MM format (24-hour) */
   time: string;
+  /** End time in HH:MM format (24-hour) */
+  endTime?: string;
+  /** Duration of the appointment in minutes */
+  durationMinutes?: number;
   /** Whether the appointment is virtual */
   isVirtual?: boolean;
   /** Meeting link for virtual appointments */
   meetingLink?: string;
   /** Additional notes for the appointment */
   notes?: string;
+  /** Patient-specific notes for the appointment */
+  patientNotes?: string;
+  /** Custom price for this appointment */
+  appointmentPrice?: string;
+  /** Priority level of the appointment */
+  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  /** Whether this is the patient's first appointment with this doctor */
+  isFirstTime?: boolean;
+  /** Whether this is a follow-up appointment */
+  isFollowUp?: boolean;
+  /** ID of the original appointment if this is a follow-up */
+  followUpOfId?: number;
 }
 
 /**
@@ -357,9 +388,17 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       serviceId,
       date,
       time,
+      endTime,
+      durationMinutes,
       isVirtual = false,
       meetingLink,
-      notes
+      notes,
+      patientNotes,
+      appointmentPrice,
+      priority = 'normal',
+      isFirstTime = false,
+      isFollowUp = false,
+      followUpOfId
     } = body;
 
     // Validate required fields
@@ -467,7 +506,10 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const endDateTime = requestedDateTime.plus({ minutes: medicalService.durationMinutes });
+    // Calculate duration and end time
+    const appointmentDuration = durationMinutes || medicalService.durationMinutes;
+    const endDateTime = requestedDateTime.plus({ minutes: appointmentDuration });
+    const calculatedEndTime = endTime || endDateTime.toFormat('HH:mm');
 
     // Google Calendar integration
     let googleEventId: string | null = null;
@@ -510,12 +552,23 @@ async function handlePostRequest(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Create appointment in database
+    // Create appointment in database with all new fields
     const newAppointment = await db.insert(appointments).values({
       doctorId: availableDoctor.idDoctor,
       patientId: patient.id,
       serviceId: medicalService.id,
       organizationId: organizationId,
+      appointmentDate: requestedDateTime.toJSDate(),
+      appointmentTime: time,
+      endTime: calculatedEndTime,
+      durationMinutes: appointmentDuration,
+      notes: notes || null,
+      patientNotes: patientNotes || null,
+      appointmentPrice: appointmentPrice || null,
+      priority: priority,
+      isFirstTime: isFirstTime ? 1 : 0,
+      isFollowUp: isFollowUp ? 1 : 0,
+      followUpOfId: followUpOfId || null,
       google_event_id: googleEventId || '',
       google_calendar_id: googleCalendarId || '',
       status: APPOINTMENT_STATUS.PENDING,

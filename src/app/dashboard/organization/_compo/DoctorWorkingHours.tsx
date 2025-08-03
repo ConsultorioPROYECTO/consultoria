@@ -124,7 +124,15 @@ export function DoctorWorkingHours({
           return;
         }
 
-        const response = await fetch(`/api/doctors/${doctorId}/working-hours`);
+        const response = await fetch(`/api/doctors/${doctorId}/working-hours`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
         if (response.ok) {
           const data = await response.json();
           // CORRECTO: Acceder a la propiedad anidada para obtener el array

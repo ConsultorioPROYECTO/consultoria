@@ -274,6 +274,13 @@
       "when": 1754185417214,
       "tag": "0038_concerned_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1754264823932,
+      "tag": "0039_warm_vision",
+      "breakpoints": true
     }
   ]
 }

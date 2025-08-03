@@ -11,23 +11,39 @@ import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
 /**
  * @typedef AppointmentTableSchema
  * @author Santiago Prada
- * @description Define la estructura de la tabla 'appointments' en la base de datos MySQL.
+ * @description Define la estructura optimizada de la tabla 'appointments' para dashboards y consultas locales.
+ * Mantiene sincronización con Google Calendar pero prioriza consultas rápidas para analytics.
  *
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
  * @property {number} doctorId - Clave foránea a la tabla 'doctors'.
  * @property {number} patientId - Clave foránea a la tabla 'patients'.
  * @property {number} serviceId - Clave foránea a la tabla 'medical_services'.
  * @property {number} organizationId - Clave foránea a la tabla 'organization'.
- 
+ * 
+ * @property {Date} appointmentDate - Fecha de la cita (YYYY-MM-DD).
+ * @property {string} appointmentTime - Hora de inicio de la cita (HH:MM:SS).
+ * @property {string} endTime - Hora de finalización de la cita (HH:MM:SS).
+ * @property {number} durationMinutes - Duración de la cita en minutos.
+ * @property {text} notes - Notas adicionales de la cita.
+ * @property {text} patientNotes - Notas específicas del paciente para esta cita.
+ * @property {decimal} appointmentPrice - Precio de la cita (puede diferir del precio base del servicio).
+ * 
  * @property {enum} status - Estado de la cita: 'pending' | 'accepted' | 'attended' | 'rejected' | 'canceled'
+ * @property {enum} priority - Prioridad de la cita: 'low' | 'normal' | 'high' | 'urgent'
+ * @property {boolean} isFirstTime - Indica si es la primera cita del paciente con este doctor.
+ * @property {boolean} isFollowUp - Indica si es una cita de seguimiento.
+ * @property {number} followUpOfId - ID de la cita original si es un seguimiento.
+ * 
  * @property {string} google_event_id - ID del evento en Google Calendar.
  * @property {string} google_calendar_id - ID del calendario donde está el evento.
  * @property {enum} sync_status - Estado de sincronización: 'pending' | 'synced' | 'failed' | 'not_synced'
  * @property {Date} last_sync_attempt - Último intento de sincronización.
  * @property {text} sync_error - Detalles del error si falla la sincronización.
- 
+ * 
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
+ * @property {Date} canceledAt - Timestamp de cancelación (si aplica).
+ * @property {Date} attendedAt - Timestamp de cuando se marcó como atendida.
  */
 export const appointments = mysqlTable('appointments', {
   id: serial('id').primaryKey(),
@@ -38,6 +54,23 @@ export const appointments = mysqlTable('appointments', {
   serviceId: int('service_id').references(() => medicalServices.id, { onDelete: 'set null', onUpdate: 'cascade' }),
   organizationId: int('organization_id').references(()=> organization.id, {onDelete: "cascade", onUpdate: "cascade"}).notNull(),
 
+  // --- Campos de fecha y hora optimizados para consultas ---
+  appointmentDate: timestamp('appointment_date').notNull(),
+  appointmentTime: varchar('appointment_time', { length: 8 }).notNull(),
+  endTime: varchar('end_time', { length: 8 }),
+  durationMinutes: int('duration_minutes').notNull().default(30),
+
+  // --- Campos de contenido y precio ---
+  notes: text('notes'),
+  patientNotes: text('patient_notes'),
+  appointmentPrice: varchar('appointment_price', { length: 20 }),
+
+  // --- Estados y metadatos ---
+  priority: mysqlEnum('priority', ['low', 'normal', 'high', 'urgent']).default('normal'),
+  isFirstTime: int('is_first_time').default(0),
+  isFollowUp: int('is_follow_up').default(0),
+  followUpOfId: int('follow_up_of_id'),
+
   // --- Campos de sincronización con Google Calendar ---
   google_event_id: varchar('google_event_id', { length: 255 }).notNull(),
   google_calendar_id: varchar('google_calendar_id', { length: 255 }).notNull(),
@@ -46,21 +79,42 @@ export const appointments = mysqlTable('appointments', {
   last_sync_attempt: timestamp('last_sync_attempt'),
   sync_error: text('sync_error'),
 
-  // --- Timestamps ---
+  // --- Timestamps optimizados para analytics ---
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  canceledAt: timestamp('canceled_at'),
+  attendedAt: timestamp('attended_at'),
 }, (table) => [
-  // Índices para mejorar el rendimiento de las búsquedas
-  index('appointment_doctor_id_idx').on(table.doctorId),
-  index('appointment_patient_id_idx').on(table.patientId),
-  index('appointment_service_id_idx').on(table.serviceId),
-  index('appointment_organization_id_idx').on(table.organizationId),
-  index('appointment_status_idx').on(table.status),
+  // Índices básicos para relaciones
+  index('idx_appointments_doctor_id').on(table.doctorId),
+  index('idx_appointments_patient_id').on(table.patientId),
+  index('idx_appointments_service_id').on(table.serviceId),
+  index('idx_appointments_organization_id').on(table.organizationId),
   
-  // Índices para Google Calendar
-  index('appointment_google_event_id_idx').on(table.google_event_id),
-  index('appointment_google_calendar_id_idx').on(table.google_calendar_id),
-  index('appointment_sync_status_idx').on(table.sync_status),
+  // Índices optimizados para dashboards y analytics
+  index('idx_appointments_date_time').on(table.appointmentDate, table.appointmentTime),
+  index('idx_appointments_status').on(table.status),
+  index('idx_appointments_priority').on(table.priority),
+  
+  // Índices compuestos para consultas de dashboard frecuentes
+  index('idx_appointments_org_date').on(table.organizationId, table.appointmentDate),
+  index('idx_appointments_org_status').on(table.organizationId, table.status),
+  index('idx_appointments_doctor_date').on(table.doctorId, table.appointmentDate),
+  index('idx_appointments_doctor_status').on(table.doctorId, table.status),
+  index('idx_appointments_patient_date').on(table.patientId, table.appointmentDate),
+  
+  // Índices para métricas de tiempo
+  index('idx_appointments_created_at').on(table.createdAt),
+  index('idx_appointments_attended_at').on(table.attendedAt),
+  index('idx_appointments_canceled_at').on(table.canceledAt),
+  
+  // Índices para sincronización con Google Calendar
+  index('idx_appointments_google_event_id').on(table.google_event_id),
+  index('idx_appointments_sync_status').on(table.sync_status),
+  
+  // Índices para seguimientos
+  index('idx_appointments_follow_up').on(table.followUpOfId),
+  index('idx_appointments_first_time').on(table.isFirstTime),
 ]);
 
 
@@ -74,7 +128,8 @@ export type NewAppointment = typeof appointments.$inferInsert;
 // Definir las relaciones desde Appointment
 import { relations } from 'drizzle-orm/relations';
 
-export const appointmentRelations = relations(appointments, ({ one }) => ({
+// Relaciones optimizadas para consultas de dashboard
+export const appointmentRelations = relations(appointments, ({ one, many }) => ({
   // Relación con doctor
   doctor: one(doctors, {
     fields: [appointments.doctorId],
@@ -94,5 +149,15 @@ export const appointmentRelations = relations(appointments, ({ one }) => ({
   organization: one(organization, {
     fields: [appointments.organizationId],
     references: [organization.id],
+  }),
+  // Relación de seguimiento - cita original
+  originalAppointment: one(appointments, {
+    fields: [appointments.followUpOfId],
+    references: [appointments.id],
+    relationName: 'appointmentFollowUp'
+  }),
+  // Relación de seguimiento - citas derivadas
+  followUpAppointments: many(appointments, {
+    relationName: 'appointmentFollowUp'
   }),
 }));
