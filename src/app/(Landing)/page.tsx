@@ -233,7 +233,6 @@ export default function HomePage() {
             <Image
               src={medDashboardDark}
               alt="Mockup de la aplicación"
-              loading="lazy"
               priority
               fill
               sizes="(max-width: 768px) 90vw, 50vw"
@@ -257,7 +256,6 @@ export default function HomePage() {
             <Image
               src={medDashboardDark}
               alt="Mockup de la aplicación"
-              loading="lazy"
               priority
               fill
               sizes="(max-width: 768px) 90vw, 50vw"
