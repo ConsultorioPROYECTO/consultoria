@@ -21,7 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ThemeProvider } from 'next-themes';
 import Image from 'next/image';
 import medDashboardDark from '../../../public/MedDashboardDark.webp';
@@ -65,7 +65,7 @@ export default function HomePage() {
     };
   }, [isMenuOpen]);
 
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+  const handleScroll = useCallback((e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
@@ -75,7 +75,7 @@ export default function HomePage() {
     if (isMenuOpen) {
       setIsMenuOpen(false);
     }
-  };
+  }, [isMenuOpen]);
 
   return (
     <main className="bg-background text-foreground">
