@@ -125,20 +125,26 @@ export function ContactModal({ children }: ContactModalProps) {
   const [open, setOpen] = React.useState(false)
   const isMobile = useIsMobile()
 
-  const handleSubmit = (data: ContactFormData) => {
-    // Aquí puedes implementar la lógica para enviar el formulario
-    console.log("Datos del formulario:", data)
-    
-    // Ejemplo de envío (puedes reemplazar con tu API)
-    // await fetch('/api/contact', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(data)
-    // })
-    
-    setOpen(false)
-    // Mostrar mensaje de éxito
-    alert("¡Gracias! Hemos recibido tu solicitud. Te contactaremos pronto.")
+  const handleSubmit = async (data: ContactFormData) => {
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setOpen(false);
+        alert("¡Gracias! Hemos recibido tu solicitud. Te contactaremos pronto.");
+      } else {
+        alert("Error al enviar la solicitud. Por favor, inténtalo de nuevo.");
+      }
+    } catch (error) {
+      console.error('Error al enviar el formulario:', error);
+      alert("Error al enviar la solicitud. Por favor, inténtalo de nuevo.");
+    }
   }
 
   if (isMobile) {

@@ -10,4 +10,5 @@ export * from './medical_services';
 export * from './doctor_services';
 export * from './organization_invitations_request';
 export * from './plans';
+export * from './contact_requests';
 // Add other schema exports here if you have more files
