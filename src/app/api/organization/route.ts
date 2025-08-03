@@ -191,5 +191,8 @@ const postUserRoleHandler = async (
       );
     }
   };
-  export const POST = withOptimizedAuthentication(postUserRoleHandler);
+  export const POST = withOptimizedAuthentication(postUserRoleHandler, {
+    requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
+    requireOrganization: false,
+  });
   

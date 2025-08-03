@@ -166,5 +166,11 @@ const postUserRoleHandler = async (
   }
 };
 
-export const GET = withOptimizedAuthentication(getUserRoleHandler);
-export const POST = withOptimizedAuthentication(postUserRoleHandler);
+export const GET = withOptimizedAuthentication(getUserRoleHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
+  requireOrganization: false,
+});
+export const POST = withOptimizedAuthentication(postUserRoleHandler, {
+  requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
+  requireOrganization: false,
+});
