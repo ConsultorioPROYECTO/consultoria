@@ -335,4 +335,9 @@ const postOrganizationJoinHandler = async (
   }, { status: 200 });
 }
 
-export const POST = withOptimizedAuthentication(postOrganizationJoinHandler);
+export const POST = withOptimizedAuthentication(postOrganizationJoinHandler,
+  {
+    requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
+    requireOrganization: false,
+  }
+);

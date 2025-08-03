@@ -142,4 +142,9 @@ const postOrganizationRequestHandler  = async (
         }
     };
 
-export const POST = withOptimizedAuthentication(postOrganizationRequestHandler);
+export const POST = withOptimizedAuthentication(postOrganizationRequestHandler,
+  {
+    requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
+    requireOrganization: false,
+  }
+);
