@@ -16,7 +16,7 @@ export function SiteHeader() {
           orientation="vertical"
           className="mx-2 data-[orientation=vertical]:h-4"
         /> */}
-        <h1 className="text-base font-copernicus flex-1 text-center">Nombre paciente</h1>
+        <h1 className="text-base flex-1 text-center">Nombre paciente</h1>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a

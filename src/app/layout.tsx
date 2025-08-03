@@ -20,7 +20,6 @@ import { geistFont } from './fonts';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
 import { UIStyleProvider } from './context/UIStyleContext'; // Importa el UIStyleProvider
-import { copernicusFont } from './fonts';
 import { ThemeProvider } from "./dashboard/com/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ReactElement } from 'react';
@@ -53,7 +52,7 @@ export default function RootLayout({
 }>): React.ReactElement<ReactElement> {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.className} ${copernicusFont.variable}`}>
+      <body className={inter.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

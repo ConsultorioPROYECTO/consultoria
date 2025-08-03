@@ -6,10 +6,5 @@ export const interFont = localFont({
   display: 'swap',
   variable: '--font-inter',
 })
-export const copernicusFont = localFont({
-  src: './Copernicus.ttf',
-  display: 'swap',
-  variable: '--font-copernicus',
-})
 
 export const geistFont = GeistSans

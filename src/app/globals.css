@@ -150,9 +150,6 @@
   --shadow-2xl: var(--shadow-2xl);
 }
 
-.font-copernicus {
-  font-family: var(--font-copernicus);
-}
 
 .font-Inter {
   font-family: var(--font-inter);
