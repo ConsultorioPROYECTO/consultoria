@@ -48,7 +48,8 @@ export default function AICareView() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Error al cargar el historial');
+        const errorMessage = errorData?.details ?? errorData?.error ?? 'Error al cargar el historial';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -86,7 +87,8 @@ export default function AICareView() {
     const savedSessionId = localStorage.getItem('ai-care-session-id');
     if (savedSessionId) {
       setSessionId(savedSessionId);
-      loadChatHistory(savedSessionId);
+      // El historial no se carga para no mostrar conversaciones previas al usuario
+      // loadChatHistory(savedSessionId);
     }
   }, [user, loadChatHistory]);
 
@@ -117,7 +119,8 @@ export default function AICareView() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Error al enviar el mensaje');
+        const errorMessage = errorData?.details ?? errorData?.error ?? 'Error al enviar el mensaje';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
