@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
 import Image from 'next/image';
+import medDashboardDark from '../../../public/MedDashboardDark.webp';
 import { ContactModal } from './_components/contact-modal';
 
 // Datos para la sección de beneficios
@@ -230,13 +231,13 @@ export default function HomePage() {
           {/* Contenido del Mockup - Placeholder */}
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-semibold">
             <Image
-              src={"/MedDashboardDark.webp"}
-              priority={true}
+              src={medDashboardDark}
               alt="Mockup de la aplicación"
-              fill={true}
-              objectFit="cover"
-              className="p-3 rounded-4xl"
-              fetchPriority="high"
+              priority
+              fill
+              sizes="(max-width: 768px) 80vw, 50vw"
+              className="p-3 rounded-4xl object-cover"
+              placeholder="blur"
             />
           </div>
         </motion.div>
@@ -252,13 +253,13 @@ export default function HomePage() {
           {/* Contenido del Mockup - Placeholder */}
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm font-semibold">
             <Image
-              src={"/MedDashboardDark.webp"}
-              priority={true}
+              src={medDashboardDark}
               alt="Mockup de la aplicación"
-              fill={true}
-              objectFit="cover"
-              className="p-3 rounded-4xl"
-              fetchPriority="high"
+              priority
+              fill
+              sizes="(max-width: 768px) 150vw, 80vw"
+              className="p-3 rounded-4xl object-cover"
+              placeholder="blur"
             />
           </div>
           {/* Degradado inferior para fusionarse con el fondo */}
