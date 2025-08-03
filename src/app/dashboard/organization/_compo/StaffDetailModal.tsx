@@ -128,15 +128,15 @@ export function StaffDetailModal({
         {/* Header con imagen de perfil para móviles */}
         <div className="max-sm:h-[350px] max-sm:relative sm:hidden">
           {/* Usamos una etiqueta <img> para mayor fiabilidad */}
-          <Image 
-            src="/img/avatar_1.webp" 
-            alt="Perfil" 
-            priority={true}
+          <Image
+            src="/img/avatar_1.webp"
+            alt="Perfil"
+            priority
             width={500}
             height={500}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover mask-b-from-60%" // degrada de negro (visible) a transparente hacia arriba
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/100 to-transparent" />
+
           <div className="absolute inset-0 flex items-end justify-center pb-6">
             <div className="text-center text-white">
               <div className="w-[80px] h-[80px] mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
