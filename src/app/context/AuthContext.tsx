@@ -141,7 +141,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
           // Crear una promesa para evitar peticiones duplicadas
           const roleRequest = (async () => {
             try {
-              const token = await currentUser.getIdToken();
+              let token = await currentUser.getIdToken();
               
               // Primero sincronizar el usuario con la base de datos local
               try {
@@ -168,6 +168,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
                 console.error('Error en la sincronización del usuario:', syncError);
               }
               
+              token = await currentUser.getIdToken();
               // Luego obtener el rol del usuario
               const response = await fetch('/api/users/rol', {
                 headers: {

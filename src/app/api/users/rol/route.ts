@@ -75,6 +75,14 @@ const getUserRoleHandler = async (
   try {
     // La información del usuario ya está disponible en userInfo
     const user = userInfo.user;
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No se pudo obtener la información del usuario.' },
+        { status: 401 }
+      );
+    }
+
+    console.log(user);
 
     const response: {
       role: string;
