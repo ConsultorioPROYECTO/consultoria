@@ -17,7 +17,6 @@ const useAuth = () => ({
 // Example appointment type (adjust based on your actual appointment type)
 interface Appointment {
   id: number;
-  google_event_id: string;
   patientName: string;
   appointmentDate: string;
   appointmentTime: string;
@@ -95,7 +94,7 @@ export function AttendAppointmentButton({
 
       // Mark as attended
       const response = await AttendAppointmentService.markAsAttended(
-        appointment.google_event_id,
+        appointment.id,
         notes.trim() || undefined,
         authToken
       );

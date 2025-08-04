@@ -11,11 +11,11 @@ import { AppointmentStatusType } from './appointment-status';
  * Request body for marking an appointment as attended.
  * 
  * @interface AttendAppointmentRequest
- * @property {string} eventId - Google Calendar event ID of the appointment to mark as attended
+ * @property {number} appointmentId - Unique identifier of the appointment to mark as attended
  * @property {string} [notes] - Optional notes about the attendance (max 1000 characters)
  */
 export interface AttendAppointmentRequest {
-  eventId: string;
+  appointmentId: number;
   notes?: string;
 }
 
@@ -23,14 +23,12 @@ export interface AttendAppointmentRequest {
  * Response data for attend appointment operation.
  * 
  * @interface AttendAppointmentResponse
- * @property {string} eventId - Google Calendar event ID of the updated appointment
- * @property {number} appointmentId - Internal database ID of the updated appointment
+ * @property {number} appointmentId - ID of the updated appointment
  * @property {string} status - New status of the appointment (should be 'attended')
  * @property {string} attendedAt - ISO timestamp when the appointment was marked as attended
  * @property {string} [notes] - Updated notes if provided
  */
 export interface AttendAppointmentResponse {
-  eventId: string;
   appointmentId: number;
   status: AppointmentStatusType;
   attendedAt: string;

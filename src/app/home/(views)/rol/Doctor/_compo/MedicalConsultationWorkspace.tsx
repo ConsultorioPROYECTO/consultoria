@@ -43,7 +43,7 @@ interface MedicalConsultationWorkspaceProps {
   appointment: ConsultationAppointment | null; // La cita para la consulta actual
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaveAndComplete: (eventId: string, notes: string, aiCareNotes?: string) => void;
+  onSaveAndComplete: (appointmentId: number, notes: string, aiCareNotes?: string) => void;
   isSaving?: boolean;
 }
 
@@ -78,7 +78,7 @@ export function MedicalConsultationWorkspace({
   const handleSaveClick = () => {
     // Debug logs removidos para producción
     const aiCareNotesText = typeof aiCareText === 'string' ? aiCareText : '';
-    onSaveAndComplete(appointment.google_event_id ?? '', notes, aiCareNotesText || undefined);
+    onSaveAndComplete(appointment.id ?? 0, notes, aiCareNotesText || undefined);
     setNotes('');
   };
 

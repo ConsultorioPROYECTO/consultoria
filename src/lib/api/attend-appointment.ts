@@ -17,7 +17,7 @@ export class AttendAppointmentService {
   /**
    * Marks an appointment as attended.
    * 
-   * @param eventId - Google Calendar event ID of the appointment to mark as attended
+   * @param appointmentId - ID of the appointment to mark as attended
    * @param notes - Optional notes about the attendance
    * @param authToken - Firebase authentication token
    * @returns Promise with the API response
@@ -28,7 +28,7 @@ export class AttendAppointmentService {
    * ```typescript
    * try {
    *   const result = await AttendAppointmentService.markAsAttended(
-   *     'google_event_id_123', 
+   *     123, 
    *     'Consulta completada exitosamente',
    *     await getAuthToken()
    *   );
@@ -39,7 +39,7 @@ export class AttendAppointmentService {
    * ```
    */
   static async markAsAttended(
-    eventId: string,
+    appointmentId: number,
     notes?: string,
     authToken?: string
   ): Promise<APIResponse<AttendAppointmentResponse>> {
@@ -48,7 +48,7 @@ export class AttendAppointmentService {
     }
 
     const requestBody: AttendAppointmentRequest = {
-      eventId,
+      appointmentId,
       ...(notes && { notes })
     };
 
