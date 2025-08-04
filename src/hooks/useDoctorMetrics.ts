@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface DoctorMetric {
-  doctorname: string;
+  doctorName: string;
   citas: number;
   horas_ocupadas: number;
 }

@@ -107,7 +107,7 @@ export function ChartBarInteractive() {
           <ChartContainer config={chartConfig}>
             <BarChart accessibilityLayer data={filteredData}>
               <CartesianGrid vertical={false} horizontal={false} />
-              <XAxis dataKey="doctorname" tickLine={false} tickMargin={10} axisLine={false} angle={-45} textAnchor="end" height={80} />
+              <XAxis dataKey="doctorName" tickLine={false} tickMargin={10} axisLine={false} angle={-45} textAnchor="end" height={80} />
               <ChartTooltip content={<ChartTooltipContent hideLabel />} />
               <ChartLegend content={<ChartLegendContent />} />
               <Bar dataKey="citas" stackId="a" fill="var(--color-citas)" radius={[0,0,4,4]} />

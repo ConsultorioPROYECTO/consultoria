@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
   const data = doctorMetrics.map((m) => {
     const estimatedHours = (m.averageDuration * m.totalAppointments) / 60; // horas ocupadas aprox
     return {
-      doctorname: m.doctorName,
+      doctorName: m.doctorName,
       citas: m.totalAppointments,
       horas_ocupadas: Math.round(estimatedHours),
     };
