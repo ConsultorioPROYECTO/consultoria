@@ -9,6 +9,7 @@ import { DailyAgendaView } from "./_compo/DailyAgendaView";
 import { TodaysAppointments } from "./_compo/TodaysAppointments";
 import { NextAppointment } from "./_compo/NextAppointment";
 import { MedicalConsultationWorkspace } from "./_compo/MedicalConsultationWorkspace";
+import type { ConsultationAppointment } from "./_compo/MedicalConsultationWorkspace";
 import { MonthlyAppointmentsSummary } from "./_compo/MonthlyAppointmentsSummary";
 import { TodayIsDay } from "./_compo/TodayIsDay";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,32 +17,12 @@ import { AlertCircle } from 'lucide-react';
 
 // Tipos de datos para eventos de calendario
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
+import { getIdToken } from "firebase/auth";
 
 // Tipo combinado para el estado
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
 
-// Tipo específico para el workspace de consulta médica (DEBE COINCIDIR CON EL ESPERADO POR EL WORKSPACE)
-type ConsultationAppointment = {
-  id: number;
-  google_event_id: string;
-  google_calendar_id: string;
-  doctorId: number;
-  organizationId: number;
-  time: string;
-  status: string;
-  patient: { 
-    // Corregido para coincidir con el workspace
-    firstName: string; 
-    lastName: string; 
-  };
-  service: { id: number; name: string; description?: string; };
-  createdAt: Date;
-  updatedAt: Date;
-  // Campos requeridos por el workspace para sincronización
-  sync_status: 'synced' | 'not_synced' | 'error';
-  last_sync_attempt: Date | null;
-  sync_error: string | null;
-};
+
 
 export default function DoctorDashboard() {
   const { user, doctorId } = useAuth();
@@ -73,7 +54,7 @@ export default function DoctorDashboard() {
       ? DateTime.fromISO(appointment.startDateTime)
       : appointment.startDateTime;
 
-    const consultationAppointment: ConsultationAppointment = {
+    const consultationAppointment = {
       id: 0, 
       google_event_id: appointment.id,
       google_calendar_id: appointment.calendarId,
@@ -96,7 +77,7 @@ export default function DoctorDashboard() {
       sync_status: 'not_synced',
       last_sync_attempt: null,
       sync_error: null,
-    };
+    } as ConsultationAppointment;
     
     setSelectedConsultationAppointment(consultationAppointment);
     setIsMedicalWorkspaceOpen(true);
@@ -129,10 +110,13 @@ export default function DoctorDashboard() {
       setError(null);
 
       try {
+        const token = await user.getIdToken();
         const startDate = DateTime.now().toISODate();
         const endDate = DateTime.now().plus({ days: 1 }).toISODate();
 
-        const eventsResponse = await fetch(`/api/doctors/${doctorId}/calendar/events?startDate=${startDate}&endDate=${endDate}`);
+        const eventsResponse = await fetch(`/api/doctors/${doctorId}/calendar/events?startDate=${startDate}&endDate=${endDate}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
         
         if (!eventsResponse.ok) throw new Error('Error fetching calendar events');
 

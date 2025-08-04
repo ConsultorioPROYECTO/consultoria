@@ -15,7 +15,7 @@ import { PatientHistoryView } from "./medical-consultation/PatientHistoryView";
 import { Appointment, } from '../../../../../db/schema';
 
 // Definir el tipo para la cita de consulta con las relaciones necesarias
-interface ConsultationAppointment extends Omit<Appointment, 'patientId' | 'serviceId'> {
+export interface ConsultationAppointment extends Omit<Partial<Appointment>, 'patientId' | 'serviceId'> {
   time: string;
   patient: {
     firstName: string;
@@ -74,7 +74,7 @@ export function MedicalConsultationWorkspace({
 
   const handleSaveClick = () => {
     // Debug logs removidos para producción
-    onSaveAndComplete(appointment.id, notes);
+    onSaveAndComplete(appointment.id ?? 0, notes);
     setNotes('');
   };
 
@@ -134,7 +134,7 @@ export function MedicalConsultationWorkspace({
               </TabsContent>
               <TabsContent value="medical-history" className="flex-1 overflow-hidden pt-4">
                 <PatientHistoryView
-                  patientId={appointment.id} // Usar el ID de la cita como ID de paciente mock
+                  patientId={appointment.id ?? 0} // Fallback a 0 si el ID no está definido
                   patientName={appointment.patient ? `${appointment.patient.firstName} ${appointment.patient.lastName}` : 'Paciente no disponible'}
                   // isOpen={isOpen} // La visibilidad del modal principal controla la del historial
                   // onOpenChange={onOpenChange}
