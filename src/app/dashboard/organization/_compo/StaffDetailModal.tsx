@@ -153,30 +153,24 @@ export function StaffDetailModal({
         
         
         <div className="flex-grow space-y-6 p-6 max-sm:p-4 overflow-y-auto">
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-4 text-lg"><User className="h-5 w-5" />Información Personal</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <PencilLine className="h-4 w-4 text-muted-foreground"/>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Nombre Completo</label>
-                  <p className="text-base">{staffMember.name}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Mail className="h-4 w-4 text-muted-foreground"/>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Correo Electrónico</label>
-                  <p className="text-base">{staffMember.email}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <h3 className="flex items-center gap-2 text-lg font-medium text-foreground"><User className="h-5 w-5 text-muted-foreground" />Información Personal</h3>
+            <div className="space-y-3">
+                <div className="flex items-center gap-4">
+              <PencilLine className="h-4 w-4 text-muted-foreground"/>
+              <p className="text-base"><span className="text-sm font-medium text-muted-foreground">Nombre Completo:</span> {staffMember.name}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Mail className="h-4 w-4 text-muted-foreground"/>
+              <p className="text-base"><span className="text-sm font-medium text-muted-foreground">Correo Electrónico:</span> {staffMember.email}</p>
+            </div>
+            </div>
+          </div>
 
           {/* Información del rol con SELECT (FUNCIONALIDAD AÑADIDA) */}
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Shield className="h-5 w-5" />Rol en la Organización</CardTitle></CardHeader>
-            <CardContent className="flex items-center gap-4">
+          <div className="space-y-4 mt-6">
+            <h3 className="flex items-center gap-2 text-lg font-medium text-foreground"><Shield className="h-5 w-5 text-muted-foreground" />Rol en la Organización</h3>
+            <div className="flex items-center gap-4">
                 <Select value={currentRole} onValueChange={handleRoleChange} disabled={isChangingRole}>
                     <SelectTrigger className="w-[200px]">
                         <SelectValue placeholder="Seleccionar rol" />
@@ -188,28 +182,26 @@ export function StaffDetailModal({
                     </SelectContent>
                 </Select>
                 {isChangingRole && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Información específica del rol (DISEÑO ORIGINAL RESTAURADO) */}
           {staffMember.role === 'medico' && (
             <>
-              <Card>
-                <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Stethoscope className="h-5 w-5" />Información Médica</CardTitle></CardHeader>
-                <CardContent>
-                  <p><strong>Especialidad:</strong> {staffMember.specialty || 'N/A'}</p>
-                </CardContent>
-              </Card>
+              <div className="space-y-4 mt-6">
+                <h3 className="flex items-center gap-2 text-lg font-medium text-foreground"><Stethoscope className="h-5 w-5 text-muted-foreground" />Información Médica</h3>
+                <div className="space-y-3">
+                  <p className="text-base"><strong>Especialidad:</strong> {staffMember.specialty || 'N/A'}</p>
+                </div>
+              </div>
               
               {/* Servicios Médicos Asignados */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Activity className="h-5 w-5" />
-                    Servicios Médicos Asignados
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              <div className="space-y-4 mt-6">
+                <h3 className="flex items-center gap-2 text-lg font-medium text-foreground">
+                  <Activity className="h-5 w-5 text-muted-foreground" />
+                  Servicios Médicos Asignados
+                </h3>
+                <div className="space-y-3">
                   {servicesLoading ? (
                     <div className="flex items-center justify-center py-4">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -259,18 +251,16 @@ export function StaffDetailModal({
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Servicios Disponibles para Asignar */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Plus className="h-5 w-5" />
-                    Asignar Nuevos Servicios
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              <div className="space-y-4 mt-6">
+                <h3 className="flex items-center gap-2 text-lg font-medium text-foreground">
+                  <Plus className="h-5 w-5 text-muted-foreground" />
+                  Asignar Nuevos Servicios
+                </h3>
+                <div className="space-y-3">
                   {allServicesLoading ? (
                     <div className="flex items-center justify-center py-4">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -323,23 +313,23 @@ export function StaffDetailModal({
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </>
           )}
           {staffMember.role === 'asistente' && (
-            <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Building className="h-5 w-5" />Información del Asistente</CardTitle></CardHeader>
-              <CardContent>
-                <p><strong>Médico Asignado:</strong> {staffMember.assignedDoctor || 'N/A'}</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-4 mt-6">
+              <h3 className="flex items-center gap-2 text-lg font-medium text-foreground"><Building className="h-5 w-5 text-muted-foreground" />Información del Asistente</h3>
+              <div className="space-y-3">
+                <p className="text-base"><strong>Médico Asignado:</strong> {staffMember.assignedDoctor || 'N/A'}</p>
+              </div>
+            </div>
           )}
 
           {/* Acciones con AlertDialog (FUNCIONALIDAD MEJORADA) */}
-          <Card>
-            <CardHeader><CardTitle className="text-lg">Acciones</CardTitle></CardHeader>
-            <CardContent>
+          <div className="space-y-4 mt-6">
+            <h3 className="text-lg font-medium text-foreground">Acciones</h3>
+            <div className="space-y-3">
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" disabled={isDeleting}>
@@ -360,8 +350,8 @@ export function StaffDetailModal({
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
