@@ -1,9 +1,11 @@
 /**
- * Types for the attend appointment API endpoint.
+ * Types and Zod schemas for the attend appointment API endpoint.
  * @packageDocumentation
  * @module types/attend-appointment
  * @author Santiago Prada
  */
+
+import { z } from 'zod';
 
 /**
  * Request body for marking an appointment as attended.
@@ -64,3 +66,54 @@ export interface AttendAppointmentResponse {
   /** Calendar synchronization status */
   syncStatus: string;
 }
+
+// =============================================================================
+// ZOD SCHEMAS
+// =============================================================================
+
+/**
+ * Zod schema for validating attend appointment request data.
+ * 
+ * @example
+ * ```typescript
+ * const validatedRequest = AttendAppointmentRequestSchema.parse(requestBody);
+ * ```
+ */
+export const AttendAppointmentRequestSchema = z.object({
+  /** Google Calendar event ID of the appointment */
+  eventId: z.string()
+    .min(1, 'Event ID is required')
+    .max(255, 'Event ID is too long'),
+  /** Optional notes about the attendance/consultation */
+  notes: z.string()
+    .max(2000, 'Notes cannot exceed 2000 characters')
+    .optional()
+    .transform(val => val?.trim() || undefined)
+});
+
+/**
+ * Zod schema for validating attend appointment response data.
+ * 
+ * @example
+ * ```typescript
+ * const validatedResponse = AttendAppointmentResponseSchema.parse(responseData);
+ * ```
+ */
+export const AttendAppointmentResponseSchema = z.object({
+  /** Database ID of the attended appointment */
+  appointmentId: z.number().int().positive(),
+  /** Google Calendar event ID */
+  eventId: z.string().min(1),
+  /** Updated appointment status */
+  status: z.string().min(1),
+  /** ISO timestamp when marked as attended */
+  attendedAt: z.string().datetime(),
+  /** Notes added during attendance */
+  notes: z.string().optional(),
+  /** Calendar synchronization status */
+  syncStatus: z.string().min(1)
+});
+
+// Type inference from Zod schemas
+export type AttendAppointmentRequestZod = z.infer<typeof AttendAppointmentRequestSchema>;
+export type AttendAppointmentResponseZod = z.infer<typeof AttendAppointmentResponseSchema>;

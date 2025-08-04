@@ -8,13 +8,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { ZodError } from 'zod';
 import { db } from '@/db';
 import { appointments } from '@/db/schema/appointments';
 import { eq } from 'drizzle-orm';
 import { updateAppointmentEvent } from '@/lib/calendar-event-manager';
 import { AppointmentStatus } from '@/lib/calendar-event-manager';
 import { APPOINTMENT_STATUS } from '@/types/appointment-status';
-import { AttendAppointmentRequest, AttendAppointmentResponse } from '@/types/attend-appointment';
+import { 
+  AttendAppointmentRequest, 
+  AttendAppointmentResponse,
+  AttendAppointmentRequestSchema,
+  AttendAppointmentResponseSchema
+} from '@/types/attend-appointment';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -43,11 +49,11 @@ async function handlePatchRequest(
   userInfo: AuthenticatedUserInfo,
   ...args: unknown[]
 ) {
-  const context = args[0] as { params: { eventId: string } };
+  const context = args[0] as { params: Promise<{ eventId: string }> };
   const { params } = context;
   try {
     // 1. Extract and validate request data
-    const { eventId } = params;
+    const { eventId } = await params;
     
     if (!eventId) {
       return NextResponse.json(
@@ -56,21 +62,25 @@ async function handlePatchRequest(
       );
     }
 
-    // Parse request body
+    // Parse and validate request body with Zod
     let requestBody: AttendAppointmentRequest;
     try {
-      requestBody = await request.json();
-    } catch {
+      const rawBody = await request.json();
+      // Add eventId from params to the body for validation
+      const bodyWithEventId = { ...rawBody, eventId };
+      requestBody = AttendAppointmentRequestSchema.parse(bodyWithEventId);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const errorMessage = error.errors.map((err) => 
+          `${err.path.join('.')}: ${err.message}`
+        ).join(', ');
+        return NextResponse.json(
+          createErrorResponse(API_ERRORS.VALIDATION_ERROR, `Validation failed: ${errorMessage}`),
+          { status: HTTP_STATUS.BAD_REQUEST }
+        );
+      }
       return NextResponse.json(
         createErrorResponse(API_ERRORS.VALIDATION_ERROR, 'Invalid JSON in request body'),
-        { status: HTTP_STATUS.BAD_REQUEST }
-      );
-    }
-
-    // Validate that eventId in params matches eventId in body
-    if (requestBody.eventId !== eventId) {
-      return NextResponse.json(
-        createErrorResponse(API_ERRORS.VALIDATION_ERROR, 'Event ID mismatch between URL and request body'),
         { status: HTTP_STATUS.BAD_REQUEST }
       );
     }
@@ -166,7 +176,7 @@ async function handlePatchRequest(
       );
     }
 
-    // 7. Prepare and return success response
+    // 7. Prepare and validate response data with Zod
     const responseData: AttendAppointmentResponse = {
       appointmentId: updatedAppointment.id,
       eventId: eventId,
@@ -176,10 +186,20 @@ async function handlePatchRequest(
       syncStatus: updatedAppointment.sync_status
     };
 
-    return NextResponse.json(
-      createSuccessResponse(responseData, 'Appointment marked as attended successfully'),
-      { status: HTTP_STATUS.OK }
-    );
+    // Validate response data with Zod schema
+    try {
+      const validatedResponse = AttendAppointmentResponseSchema.parse(responseData);
+      return NextResponse.json(
+        createSuccessResponse(validatedResponse, 'Appointment marked as attended successfully'),
+        { status: HTTP_STATUS.OK }
+      );
+    } catch (validationError) {
+      console.error('Response validation error:', validationError);
+      return NextResponse.json(
+        createErrorResponse(API_ERRORS.INTERNAL_ERROR, 'Response validation failed'),
+        { status: HTTP_STATUS.INTERNAL_ERROR }
+      );
+    }
 
   } catch (error) {
     console.error('Error in attend appointment API:', error);

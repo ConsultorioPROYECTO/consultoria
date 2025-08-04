@@ -4,7 +4,7 @@ import { useAuth } from "../../../../context/AuthContext";
 import { useState, useEffect } from "react";
 import { DateTime } from 'luxon';
 import { toast } from 'sonner';
-import { AttendAppointmentService } from '@/lib/api/attend-appointment';
+import { AttendAppointmentRequest, AttendAppointmentResponse } from '@/types/attend-appointment';
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./_compo/DailyAgendaView";
@@ -53,15 +53,29 @@ export default function DoctorDashboard() {
         : consultationNotes;
 
       const token = await user.getIdToken();
-      const response = await AttendAppointmentService.markAsAttended(
+      
+      // Preparar el request body
+      const requestBody: AttendAppointmentRequest = {
         eventId,
-        combinedNotes,
-        token
-      );
+        notes: combinedNotes || undefined
+      };
 
-      if (response.success && response.data) {
+      // Llamar a la nueva API
+      const response = await fetch(`/api/appointments/${eventId}/attend`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        const data = result.data as AttendAppointmentResponse;
         toast.success('Consulta completada exitosamente', {
-          description: `La cita ha sido marcada como ${response.data.status}.`
+          description: `La cita ha sido marcada como ${data.status}.`
         });
         
         // Cerrar el workspace y limpiar el estado
@@ -82,7 +96,7 @@ export default function DoctorDashboard() {
         }
       } else {
         toast.error('Error al completar la consulta', {
-          description: response.error || 'Ocurrió un error inesperado.'
+          description: result.error || 'Ocurrió un error inesperado.'
         });
       }
     } catch (error) {
