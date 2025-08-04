@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/t
 import { useState, useRef } from 'react';
 import { useAICare } from '@/app/hooks/useAICare';
 import { PatientHistoryView } from "./medical-consultation/PatientHistoryView";
+import { Loader2 } from 'lucide-react';
 
 
 import { Appointment, } from '../../../../../../db/schema';
@@ -42,7 +43,8 @@ interface MedicalConsultationWorkspaceProps {
   appointment: ConsultationAppointment | null; // La cita para la consulta actual
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaveAndComplete: (appointmentId: number, notes: string) => void;
+  onSaveAndComplete: (appointmentId: number, notes: string, aiCareNotes?: string) => void;
+  isSaving?: boolean;
 }
 
 export function MedicalConsultationWorkspace({
@@ -50,6 +52,7 @@ export function MedicalConsultationWorkspace({
   isOpen,
   onOpenChange,
   onSaveAndComplete,
+  isSaving = false,
 }: MedicalConsultationWorkspaceProps) {
   const [notes, setNotes] = useState('');
   const [, setSelectedFile] = useState<File | null>(null);
@@ -74,7 +77,8 @@ export function MedicalConsultationWorkspace({
 
   const handleSaveClick = () => {
     // Debug logs removidos para producción
-    onSaveAndComplete(appointment.id ?? 0, notes);
+    const aiCareNotesText = typeof aiCareText === 'string' ? aiCareText : '';
+    onSaveAndComplete(appointment.id ?? 0, notes, aiCareNotesText || undefined);
     setNotes('');
   };
 
@@ -215,7 +219,16 @@ export function MedicalConsultationWorkspace({
 
         {/* Añadir pie de diálogo con botón de guardar */}
         <DialogFooter>
-          <Button onClick={handleSaveClick}>Guardar y Completar Consulta</Button>
+          <Button onClick={handleSaveClick} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar y Completar Consulta'
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
