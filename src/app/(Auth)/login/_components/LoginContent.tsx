@@ -17,7 +17,7 @@ import type { AuthParams } from '@/app/auth-components/auth-types';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import LoginGoogle from '@/app/components/auth/LoginButtonGoogle';
+import LoginGoogle from '@/app/(Auth)/_components/LoginButtonGoogle';
 
 export function LoginContent() {
   const [showLoginForm, setShowLoginForm] = useState(false);
