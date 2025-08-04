@@ -21,7 +21,7 @@ import { db } from '@/db';
 import { appointments } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { APPOINTMENT_STATUS, AppointmentStatusType } from '@/types/appointment-status';
-import { validateRequestBody, handleDatabaseError } from '@/lib/api-helpers';
+import { validateRequestBody, handleDatabaseError, validateUserRole } from '@/lib/api-helpers';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -62,27 +62,22 @@ async function handlePatchRequest(
   request: NextRequest,
   userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse> {
-  console.log('🔍 [ATTEND API] Starting handlePatchRequest');
-  console.log('🔍 [ATTEND API] User info:', {
-    userId: userInfo.user.firebaseUid,
-    role: userInfo.user.role,
-    organizationId: userInfo.user.organizationId
-  });
-  
   try {
+    // Validate user role - only doctors and assistants can mark appointments as attended
+    const roleError = validateUserRole(userInfo.user.role, DEFAULT_ATTEND_CONFIG.requiredRoles);
+    if (roleError) {
+      return NextResponse.json(roleError, { status: HTTP_STATUS.FORBIDDEN });
+    }
+
     // Validate request body
-    console.log('🔍 [ATTEND API] Validating request body...');
     const validation = await validateRequestBody(request, attendAppointmentSchema);
     if (!validation.success) {
-      console.log('❌ [ATTEND API] Request validation failed:', validation.error);
       return NextResponse.json(validation.error, { status: HTTP_STATUS.BAD_REQUEST });
     }
 
     const { eventId, notes } = validation.data;
-    console.log('✅ [ATTEND API] Request validated successfully:', { eventId, notes: notes ? 'provided' : 'not provided' });
 
     // Check if appointment exists and get current status using google_event_id
-    console.log('🔍 [ATTEND API] Searching for appointment with eventId:', eventId);
     const existingAppointment = await db
       .select({
         id: appointments.id,
@@ -96,14 +91,7 @@ async function handlePatchRequest(
       .where(eq(appointments.google_event_id, eventId))
       .limit(1);
 
-    console.log('🔍 [ATTEND API] Database query result:', {
-      found: existingAppointment.length > 0,
-      count: existingAppointment.length,
-      appointment: existingAppointment.length > 0 ? existingAppointment[0] : null
-    });
-
     if (existingAppointment.length === 0) {
-      console.log('❌ [ATTEND API] Appointment not found for eventId:', eventId);
       return NextResponse.json(
         createErrorResponse(
           API_ERRORS.NOT_FOUND,
@@ -115,21 +103,9 @@ async function handlePatchRequest(
     }
 
     const appointment = existingAppointment[0];
-    console.log('✅ [ATTEND API] Appointment found:', {
-      id: appointment.id,
-      status: appointment.status,
-      organizationId: appointment.organizationId
-    });
 
     // Verify user has access to this appointment's organization
-    console.log('🔍 [ATTEND API] Checking organization access:', {
-      userOrgId: userInfo.user.organizationId,
-      appointmentOrgId: appointment.organizationId,
-      hasAccess: userInfo.user.organizationId === appointment.organizationId
-    });
-    
     if (userInfo.user.organizationId !== appointment.organizationId) {
-      console.log('❌ [ATTEND API] Organization access denied');
       return NextResponse.json(
         createErrorResponse(
           API_ERRORS.FORBIDDEN,
@@ -147,13 +123,7 @@ async function handlePatchRequest(
     }
 
     // Check if appointment is already attended
-    console.log('🔍 [ATTEND API] Checking appointment status:', {
-      currentStatus: appointment.status,
-      isAlreadyAttended: appointment.status === APPOINTMENT_STATUS.ATTENDED
-    });
-    
     if (appointment.status === APPOINTMENT_STATUS.ATTENDED) {
-      console.log('❌ [ATTEND API] Appointment already attended');
       return NextResponse.json(
         createErrorResponse(
           API_ERRORS.CONFLICT,
@@ -170,14 +140,7 @@ async function handlePatchRequest(
       APPOINTMENT_STATUS.ACCEPTED
     ];
 
-    console.log('🔍 [ATTEND API] Validating appointment state:', {
-      currentStatus: appointment.status,
-      validStates: validStatesForAttendance,
-      isValidState: validStatesForAttendance.includes(appointment.status as AppointmentStatusType)
-    });
-
     if (!validStatesForAttendance.includes(appointment.status as AppointmentStatusType)) {
-      console.log('❌ [ATTEND API] Invalid appointment state for attendance');
       return NextResponse.json(
         createErrorResponse(
           API_ERRORS.CONFLICT,
@@ -189,7 +152,6 @@ async function handlePatchRequest(
     }
 
     // Update appointment status to attended
-    console.log('🔍 [ATTEND API] Preparing to update appointment...');
     const attendedAt = new Date();
     const updateData: Partial<typeof appointments.$inferSelect> = {
       status: APPOINTMENT_STATUS.ATTENDED,
@@ -202,14 +164,11 @@ async function handlePatchRequest(
       updateData.notes = notes;
     }
 
-    console.log('🔍 [ATTEND API] Update data:', updateData);
-    
-    const updateResult = await db
+    await db
       .update(appointments)
       .set(updateData)
       .where(eq(appointments.google_event_id, eventId));
 
-    console.log('✅ [ATTEND API] Database update completed:', updateResult);
     // The update operation completed successfully if no error was thrown
 
     // Prepare response data
@@ -221,29 +180,18 @@ async function handlePatchRequest(
       ...(notes !== undefined && { notes })
     };
 
-    console.log('🔍 [ATTEND API] Preparing success response:', responseData);
-    
-    const successResponse = createSuccessResponse(
-      responseData,
-      'Appointment successfully marked as attended'
-    );
-    
-    console.log('✅ [ATTEND API] Sending success response:', successResponse);
-    
     return NextResponse.json(
-      successResponse,
+      createSuccessResponse(
+        responseData,
+        'Appointment successfully marked as attended'
+      ),
       { status: HTTP_STATUS.OK }
     );
 
   } catch (error) {
-    console.error('❌ [ATTEND API] Error in attend appointment handler:', error);
-    console.error('❌ [ATTEND API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
-    const errorResponse = handleDatabaseError(error, 'mark appointment as attended');
-    console.error('❌ [ATTEND API] Sending error response:', errorResponse);
-    
+    console.error('Error in attend appointment handler:', error);
     return NextResponse.json(
-      errorResponse,
+      handleDatabaseError(error, 'mark appointment as attended'),
       { status: HTTP_STATUS.INTERNAL_ERROR }
     );
   }
@@ -259,9 +207,5 @@ export const PATCH = withOptimizedAuthentication(async (
   request: NextRequest,
   userInfo: AuthenticatedUserInfo
 ) => {
-  console.log(request)
   return handlePatchRequest(request, userInfo);
-},{
-  requiredRoles: DEFAULT_ATTEND_CONFIG.requiredRoles,
-  requireOrganization: true
 });
