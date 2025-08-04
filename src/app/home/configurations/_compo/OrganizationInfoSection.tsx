@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { OrganizationSettings } from "@/app/dashboard/com/OrganizationSettings"
+import { OrganizationSettings } from "@/app/home/com/OrganizationSettings"
 
 export function OrganizationInfoSection() {
   return (

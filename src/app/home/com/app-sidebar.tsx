@@ -11,9 +11,9 @@ import {
   Activity
 } from "lucide-react"
 
-import { NavMain } from "@rutas/app/dashboard/com/nav-main"
-import { NavSecondary } from "@rutas/app/dashboard/com/nav-secondary"
-import { NavUser } from "@rutas/app/dashboard/com/nav-user"
+import { NavMain } from "@/app/home/com/nav-main"
+import { NavSecondary } from "@/app/home/com/nav-secondary"
+import { NavUser } from "@/app/home/com/nav-user"
 import {
   Sidebar,
   SidebarContent,

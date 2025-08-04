@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { AppSidebar } from '@rutas/app/dashboard/com/app-sidebar';
-import { SiteHeader } from '@rutas/app/dashboard/com/site-header';
+import { AppSidebar } from '@/app/home/com/app-sidebar';
+import { SiteHeader } from '@/app/home/com/site-header';
 import { SidebarInset, SidebarProvider } from '@rutas/components/ui/sidebar';
 import { NavigationProvider } from '@rutas/app/context/NavigationContext';
 import { DashboardDataProvider } from '@rutas/app/context/DashboardDataContext';
