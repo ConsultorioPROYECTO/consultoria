@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ChatsView from "./chat/chats";
 import PatientsTabContent from "./patients/patients";

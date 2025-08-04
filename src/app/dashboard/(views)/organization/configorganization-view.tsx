@@ -3,8 +3,8 @@
 import { StaffManagement } from "./_compo/StaffManagement";
 import { CreateInvitationCard } from "./_compo/CreateInvitationCard";
 import { ServiceManagement } from "./_compo/ServiceManagementCard";
-import { OrganizationSettings } from "../com/OrganizationSettings";
-import { useAuth } from "../../context/AuthContext";
+import { OrganizationSettings } from "../../com/OrganizationSettings";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function OrganizationConfigView() {
   const { user } = useAuth();

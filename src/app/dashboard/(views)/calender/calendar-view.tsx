@@ -27,7 +27,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday, startOfDay, endOfDay } from "date-fns";
-import { EventModal } from "./event-modal";
+import { EventModal } from "./_components/event-modal";
 import { CalendarEvent } from "@/types/calendar";
 import { useAuth } from "../../../context/AuthContext";
 import { useUsersData } from "../../../context/DashboardDataContext";
@@ -36,13 +36,13 @@ import dynamic from "next/dynamic";
 import { toast } from "sonner";
 
 // Importación dinámica del DatePicker
-const DatePicker = dynamic(() => import("./date-picker"), {
+const DatePicker = dynamic(() => import("./_components/date-picker"), {
   ssr: false,
   loading: () => <div className="w-[120px] h-8 bg-muted animate-pulse rounded-md" />
 });
 
 // Importación dinámica del DateRangePicker
-const DateRangePicker = dynamic(() => import("./date-range-picker"), {
+const DateRangePicker = dynamic(() => import("./_components/date-range-picker"), {
   ssr: false,
   loading: () => <div className="w-[200px] h-8 bg-muted animate-pulse rounded-md" />
 });

@@ -20,7 +20,7 @@ const CalendarView = dynamic(() => import('../(views)/calender/calendar-view'), 
   ssr: false,
 });
 
-const OrganizationConfigView = dynamic(() => import('../organization/configorganization-view'), {
+const OrganizationConfigView = dynamic(() => import('../(views)/organization/configorganization-view'), {
   loading: LoadingSpinner,
   ssr: false,
 });
@@ -30,12 +30,12 @@ const ConfigurationView = dynamic(() => import('../configurations/config-view'),
   ssr: false,
 });
 
-const AiCareView = dynamic(() => import('../ai-care/ai-care-view'), {
+const AiCareView = dynamic(() => import('../(views)/ai-care/ai-care-view'), {
   loading: LoadingSpinner,
   ssr: false,
 });
 
-const PatientsView = dynamic(() => import('../patients/patients-view'), {
+const PatientsView = dynamic(() => import('../(views)/patients/patients-view'), {
   loading: LoadingSpinner,
   ssr: false,
 });
