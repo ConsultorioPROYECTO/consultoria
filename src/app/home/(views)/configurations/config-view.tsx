@@ -11,15 +11,15 @@ import {
   Plug
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { AppearanceSection } from "./_compo/AppearanceSection"
+import { AppearanceSection } from "./_components/AppearanceSection"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useTheme } from "next-themes"
 import { useUIStyle } from "@/app/context/UIStyleContext"
 import { useAuth } from "@/app/context/AuthContext"
-import { AccountSection } from "./_compo/AccountSection"
-import { IntegrationsSection } from "./_compo/IntegrationsSection"
-import { OrganizationInfoSection } from "./_compo/OrganizationInfoSection"
-import { ContactInfoSection } from "./_compo/ContactInfoSection"
+import { AccountSection } from "./_components/AccountSection"
+import { IntegrationsSection } from "./_components/IntegrationsSection"
+import { OrganizationInfoSection } from "./_components/OrganizationInfoSection"
+import { ContactInfoSection } from "./_components/ContactInfoSection"
 
 const navAccount = [
   {

@@ -5,13 +5,13 @@ import { useState, useEffect } from "react";
 import { DateTime } from 'luxon';
 
 // Componentes específicos del Dashboard Médico
-import { DailyAgendaView } from "./_compo/DailyAgendaView";
-import { TodaysAppointments } from "./_compo/TodaysAppointments";
-import { NextAppointment } from "./_compo/NextAppointment";
-import { MedicalConsultationWorkspace } from "./_compo/MedicalConsultationWorkspace";
-import type { ConsultationAppointment } from "./_compo/MedicalConsultationWorkspace";
-import { MonthlyAppointmentsSummary } from "./_compo/MonthlyAppointmentsSummary";
-import { TodayIsDay } from "./_compo/TodayIsDay";
+import { DailyAgendaView } from "./_components/DailyAgendaView";
+import { TodaysAppointments } from "./_components/TodaysAppointments";
+import { NextAppointment } from "./_components/NextAppointment";
+import { MedicalConsultationWorkspace } from "./_components/MedicalConsultationWorkspace";
+import type { ConsultationAppointment } from "./_components/MedicalConsultationWorkspace";
+import { MonthlyAppointmentsSummary } from "./_components/MonthlyAppointmentsSummary";
+import { TodayIsDay } from "./_components/TodayIsDay";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from 'lucide-react';
 

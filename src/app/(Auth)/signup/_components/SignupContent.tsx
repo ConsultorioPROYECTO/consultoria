@@ -12,12 +12,12 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { extractAuthParams, buildAuthRedirectUrl } from '@/app/auth-components/auth-utils';
-import type { AuthParams } from '@/app/auth-components/auth-types';
+import { extractAuthParams, buildAuthRedirectUrl } from '@/app/(Auth)/_lib/auth-utils';
+import type { AuthParams } from '@/app/(Auth)/_lib/auth-types';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import LoginGoogle from '@/app/components/auth/LoginButtonGoogle';
+import LoginGoogle from '@/app/(Auth)/_components/LoginButtonGoogle';
 
 export function SignupContent() {
   const [showSignupForm, setShowSignupForm] = useState(false);

@@ -12,8 +12,8 @@ interface UseAICareResult {
 }
 
 // Cambia estos valores por tus credenciales reales
-const BASIC_AUTH_USER = 'devUser';
-const BASIC_AUTH_PASS = 'Rigjeq-jujgy7-vejqexv';
+const USER = process.env.BASIC_AUTH_USER;
+const PASS = process.env.BASIC_AUTH_PASS;
 
 export function useAICare(): UseAICareResult {
   const [data, setData] = useState<AICareResponse | null>(null);
@@ -30,7 +30,7 @@ export function useAICare(): UseAICareResult {
       console.log('[AI Care Hook] URL:', url);
       const headers = {
         'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + btoa(`${BASIC_AUTH_USER}:${BASIC_AUTH_PASS}`),
+        'Authorization': 'Basic ' + btoa(`${USER}:${PASS}`),
       };
       console.log('[AI Care Hook] Headers:', headers);
       const body = JSON.stringify({ text });
