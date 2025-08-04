@@ -26,13 +26,13 @@ const ErrorMessage = ({ message }: { message: string }) => (
   </div>
 );
 
-const AdminDashboard = dynamic(() => import('../rol/Admin/page'), {
+const AdminDashboard = dynamic(() => import('../rol/Admin/admin-view'), {
   loading: () => <LoadingSpinner />,
 });
-const DoctorDashboard = dynamic(() => import('../rol/Doctor/page'), {
+const DoctorDashboard = dynamic(() => import('../rol/Doctor/doctor-view'), {
   loading: () => <LoadingSpinner />,
 });
-const AssistantDashboard = dynamic(() => import('../rol/Assistant/page'), {
+const AssistantDashboard = dynamic(() => import('../rol/Assistant/assistant-view'), {
   loading: () => <LoadingSpinner />,
 });
 
