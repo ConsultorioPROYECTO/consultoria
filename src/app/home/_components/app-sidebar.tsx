@@ -11,9 +11,9 @@ import {
   Activity
 } from "lucide-react"
 
-import { NavMain } from "@/app/home/com/nav-main"
-import { NavSecondary } from "@/app/home/com/nav-secondary"
-import { NavUser } from "@/app/home/com/nav-user"
+import { NavMain } from "@/app/home/_components/nav-main"
+import { NavSecondary } from "@/app/home/_components/nav-secondary"
+import { NavUser } from "@/app/home/_components/nav-user"
 import {
   Sidebar,
   SidebarContent,

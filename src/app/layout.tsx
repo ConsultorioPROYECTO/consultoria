@@ -20,7 +20,7 @@ import { geistFont } from './fonts';
 import './globals.css'; // Asegúrate que Tailwind está configurado aquí
 import { AuthProvider } from './context/AuthContext'; // Importa el AuthProvider
 import { UIStyleProvider } from './context/UIStyleContext'; // Importa el UIStyleProvider
-import { ThemeProvider } from "./home/com/theme-provider";
+import { ThemeProvider } from "./home/_components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ReactElement } from 'react';
 

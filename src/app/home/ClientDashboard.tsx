@@ -1,16 +1,16 @@
 'use client';
 
 import React from 'react';
-import { AppSidebar } from '@/app/home/com/app-sidebar';
-import { SiteHeader } from '@/app/home/com/site-header';
+import { AppSidebar } from '@/app/home/_components/app-sidebar';
+import { SiteHeader } from '@/app/home/_components/site-header';
 import { SidebarInset, SidebarProvider } from '@rutas/components/ui/sidebar';
 import { NavigationProvider } from '@rutas/app/context/NavigationContext';
 import { DashboardDataProvider } from '@rutas/app/context/DashboardDataContext';
 import { useAuthGuard } from '@rutas/app/hooks/useAuthGuard';
-import ViewRenderer from './components/ViewRenderer';
-import { LoadingScreen } from './com/loadingScreen';
+import ViewRenderer from './(manager-view)/ViewRenderer';
+import { LoadingScreen } from './_components/loadingScreen';
 import { useIsMobile } from '@rutas/hooks/use-mobile'; // Importar el hook
-import { MobileNavbar } from './com/mobile-navbar'; // Importar el componente de navbar móvil
+import { MobileNavbar } from './_components/mobile-navbar'; // Importar el componente de navbar móvil
 
 import { useAuth } from '@/app/context/AuthContext';
 
