@@ -25,7 +25,7 @@ const OrganizationConfigView = dynamic(() => import('../(views)/organization/con
   ssr: false,
 });
 
-const ConfigurationView = dynamic(() => import('../configurations/config-view'), {
+const ConfigurationView = dynamic(() => import('../(views)/configurations/config-view'), {
   loading: LoadingSpinner,
   ssr: false,
 });
