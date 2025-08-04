@@ -37,7 +37,7 @@ const MobileNavbar = memo(() => {
 
 const navItems: NavItem[] = useMemo(() => [
     { 
-      title: 'Home', 
+      title: 'Panel', 
       icon: Home, 
       onClick: () => handleViewChange('Home')
     },
