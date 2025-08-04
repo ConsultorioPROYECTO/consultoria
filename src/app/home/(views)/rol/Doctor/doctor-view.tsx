@@ -36,7 +36,7 @@ export default function DoctorDashboard() {
 
   const pendingAppointmentsCount = calendarEvents.filter(event => 'appointmentStatus' in event && event.appointmentStatus !== 'Completada').length;
 
-  const handleSaveAndComplete = async (appointmentId: number, consultationNotes: string, aiCareNotes?: string) => {
+  const handleSaveAndComplete = async (eventId: string, consultationNotes: string, aiCareNotes?: string) => {
     if (!user || !selectedConsultationAppointment) {
       toast.error('Error', {
         description: 'No se puede completar la consulta. Faltan datos necesarios.'
@@ -54,7 +54,7 @@ export default function DoctorDashboard() {
 
       const token = await user.getIdToken();
       const response = await AttendAppointmentService.markAsAttended(
-        appointmentId,
+        eventId,
         combinedNotes,
         token
       );

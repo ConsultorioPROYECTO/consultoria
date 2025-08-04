@@ -39,7 +39,7 @@ import {
 // === Request Validation Schema ===
 
 const attendAppointmentSchema = z.object({
-  appointmentId: z.number().int().positive('Appointment ID must be a positive integer'),
+  eventId: z.string().min(1, 'Event ID is required'),
   notes: z.string().max(DEFAULT_ATTEND_CONFIG.maxNotesLength, `Notes cannot exceed ${DEFAULT_ATTEND_CONFIG.maxNotesLength} characters`).optional()
 });
 
@@ -75,19 +75,20 @@ async function handlePatchRequest(
       return NextResponse.json(validation.error, { status: HTTP_STATUS.BAD_REQUEST });
     }
 
-    const { appointmentId, notes } = validation.data;
+    const { eventId, notes } = validation.data;
 
-    // Check if appointment exists and get current status
+    // Check if appointment exists and get current status using google_event_id
     const existingAppointment = await db
       .select({
         id: appointments.id,
         status: appointments.status,
         organizationId: appointments.organizationId,
         doctorId: appointments.doctorId,
-        attendedAt: appointments.attendedAt
+        attendedAt: appointments.attendedAt,
+        google_event_id: appointments.google_event_id
       })
       .from(appointments)
-      .where(eq(appointments.id, appointmentId))
+      .where(eq(appointments.google_event_id, eventId))
       .limit(1);
 
     if (existingAppointment.length === 0) {
@@ -166,13 +167,14 @@ async function handlePatchRequest(
     await db
       .update(appointments)
       .set(updateData)
-      .where(eq(appointments.id, appointmentId));
+      .where(eq(appointments.google_event_id, eventId));
 
     // The update operation completed successfully if no error was thrown
 
     // Prepare response data
     const responseData: AttendAppointmentResponse = {
-      appointmentId: appointmentId,
+      eventId: eventId,
+      appointmentId: appointment.id,
       status: APPOINTMENT_STATUS.ATTENDED,
       attendedAt: attendedAt.toISOString(),
       ...(notes !== undefined && { notes })
