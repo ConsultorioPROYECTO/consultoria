@@ -12,7 +12,7 @@ import { useAICare } from '@/app/hooks/useAICare';
 import { PatientHistoryView } from "./medical-consultation/PatientHistoryView";
 
 
-import { Appointment, } from '../../../../../db/schema';
+import { Appointment, } from '../../../../../../db/schema';
 
 // Definir el tipo para la cita de consulta con las relaciones necesarias
 export interface ConsultationAppointment extends Omit<Partial<Appointment>, 'patientId' | 'serviceId'> {

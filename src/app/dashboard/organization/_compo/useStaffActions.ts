@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/app/context/AuthContext';
-import { showSuccessToast, showErrorToast } from '../../rol/Admin/_compo/toaster';
+import { showSuccessToast, showErrorToast } from '../../(views)/rol/Admin/_compo/toaster';
 
 interface StaffMember { // Definición de la interfaz StaffMember
   id: number;

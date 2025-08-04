@@ -29,8 +29,8 @@ import { es } from "date-fns/locale";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, isToday, startOfDay, endOfDay } from "date-fns";
 import { EventModal } from "./event-modal";
 import { CalendarEvent } from "@/types/calendar";
-import { useAuth } from "../../context/AuthContext";
-import { useUsersData } from "../../context/DashboardDataContext";
+import { useAuth } from "../../../context/AuthContext";
+import { useUsersData } from "../../../context/DashboardDataContext";
 // import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"; // Removido - usando contexto centralizado
 import dynamic from "next/dynamic";
 import { toast } from "sonner";

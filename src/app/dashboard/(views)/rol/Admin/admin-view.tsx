@@ -1,9 +1,9 @@
 'use client';
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../../context/AuthContext";
 
 // Componentes específicos del Dashboard Master
 import { FinancialMetrics } from "./_compo/FinancialMetrics";
-import { CreateAppointmentCard } from "../../patients/patients/_components/CreateAppointmentCard";
+import { CreateAppointmentCard } from "../../../patients/patients/_components/CreateAppointmentCard";
 import { ChartBarInteractive } from "./_compo/chart-area-interactive"; 
 
 export default function AdminDashboard() {

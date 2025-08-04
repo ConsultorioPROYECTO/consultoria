@@ -15,7 +15,7 @@ const LoadingSpinner = () => (
 );
 
 // Lazy load CalendarView solo cuando sea necesario
-const CalendarView = dynamic(() => import('../calender/calendar-view'), {
+const CalendarView = dynamic(() => import('../(views)/calender/calendar-view'), {
   loading: LoadingSpinner,
   ssr: false,
 });
