@@ -3,8 +3,6 @@
 import { useAuth } from "../../../../context/AuthContext";
 import { useState, useEffect } from "react";
 import { DateTime } from 'luxon';
-import { toast } from 'sonner';
-import { AttendAppointmentService } from '@/lib/api/attend-appointment';
 
 // Componentes específicos del Dashboard Médico
 import { DailyAgendaView } from "./_compo/DailyAgendaView";
@@ -32,68 +30,8 @@ export default function DoctorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isMedicalWorkspaceOpen, setIsMedicalWorkspaceOpen] = useState(false);
-  const [isSavingConsultation, setIsSavingConsultation] = useState(false);
 
   const pendingAppointmentsCount = calendarEvents.filter(event => 'appointmentStatus' in event && event.appointmentStatus !== 'Completada').length;
-
-  const handleSaveAndComplete = async (appointmentId: number, consultationNotes: string, aiCareNotes?: string) => {
-    if (!user || !selectedConsultationAppointment) {
-      toast.error('Error', {
-        description: 'No se puede completar la consulta. Faltan datos necesarios.'
-      });
-      return;
-    }
-
-    setIsSavingConsultation(true);
-
-    try {
-      // Concatenar las notas de consulta con las notas de AI-Care
-      const combinedNotes = aiCareNotes 
-        ? `${consultationNotes}\n\n--- Notas generadas por AI-Care ---\n${aiCareNotes}`
-        : consultationNotes;
-
-      const token = await user.getIdToken();
-      const response = await AttendAppointmentService.markAsAttended(
-        appointmentId,
-        combinedNotes,
-        token
-      );
-
-      if (response.success && response.data) {
-        toast.success('Consulta completada exitosamente', {
-          description: `La cita ha sido marcada como ${response.data.status}.`
-        });
-        
-        // Cerrar el workspace y limpiar el estado
-        setIsMedicalWorkspaceOpen(false);
-        setSelectedConsultationAppointment(null);
-        
-        // Refrescar los eventos del calendario para reflejar el cambio
-        const startDate = DateTime.now().toISODate();
-        const endDate = DateTime.now().plus({ days: 1 }).toISODate();
-        
-        const eventsResponse = await fetch(`/api/doctors/${doctorId}/calendar/events?startDate=${startDate}&endDate=${endDate}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        
-        if (eventsResponse.ok) {
-          const data = await eventsResponse.json();
-          setCalendarEvents(data.events || []);
-        }
-      } else {
-        toast.error('Error al completar la consulta', {
-          description: response.error || 'Ocurrió un error inesperado.'
-        });
-      }
-    } catch (error) {
-      console.error('Error al completar la consulta:', error);
-      toast.error('Error de conexión', {
-        description: 'No se pudo conectar con el servidor. Intenta nuevamente.'
-      });
-    } finally {
-      setIsSavingConsultation(false);
-    }
-  };
 
   const handleStartConsultation = (appointment: AppointmentEventData) => {
     if (!doctorId || !appointment.id || !appointment.patientId || !appointment.serviceId) {
@@ -233,8 +171,9 @@ export default function DoctorDashboard() {
           appointment={selectedConsultationAppointment}
           isOpen={isMedicalWorkspaceOpen}
            onOpenChange={setIsMedicalWorkspaceOpen}
-          onSaveAndComplete={handleSaveAndComplete}
-          isSaving={isSavingConsultation}
+          onSaveAndComplete={() => {
+            // Lógica de guardado
+          }}
         />
       </main>
     </div>
