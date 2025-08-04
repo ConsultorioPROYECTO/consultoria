@@ -22,7 +22,7 @@ const MobileNavbar = memo(() => {
   const { setCurrentView, currentView } = useNavigation()
 
   // Memoize function to handle view changes with useTransition
-  const handleViewChange = useCallback((view: 'dashboard' | 'calendar') => {
+  const handleViewChange = useCallback((view: 'Home' | 'calendar') => {
     startTransition(() => {
       setCurrentView(view);
     });
@@ -37,9 +37,9 @@ const MobileNavbar = memo(() => {
 
 const navItems: NavItem[] = useMemo(() => [
     { 
-      title: 'Dashboard', 
+      title: 'Home', 
       icon: Home, 
-      onClick: () => handleViewChange('dashboard')
+      onClick: () => handleViewChange('Home')
     },
     { 
       title: 'Calendario', 
@@ -63,8 +63,8 @@ const navItems: NavItem[] = useMemo(() => [
     if (item.title === 'Calendario') {
       return currentView === 'calendar';
     }
-    if (item.title === 'Dashboard') {
-      return currentView === 'dashboard';
+    if (item.title === 'Home') {
+      return currentView === 'Home';
     }
     return false;
   }, [currentView]);

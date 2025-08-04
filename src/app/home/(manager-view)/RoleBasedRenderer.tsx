@@ -61,7 +61,7 @@ const RoleBasedRenderer: React.FC<RoleBasedRendererProps> = ({
             return <AdminDashboard />;
           case 'N/A':
             return (
-              <ErrorMessage message="Por favor, completa tu proceso de registro para acceder al dashboard" />
+              <ErrorMessage message="Por favor, completa tu proceso de registro para acceder al Home" />
             );
           case null:
             return (

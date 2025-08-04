@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type ViewType = 'dashboard' | 'calendar' | 'patients' | 'organization' | 'configuration' | 'ai-care';
+export type ViewType = 'Home' | 'calendar' | 'patients' | 'organization' | 'configuration' | 'ai-care';
 
 interface NavigationContextType {
   currentView: ViewType;
@@ -16,7 +16,7 @@ interface NavigationProviderProps {
 }
 
 export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children }) => {
-  const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [currentView, setCurrentView] = useState<ViewType>('Home');
 
   const value = {
     currentView,

@@ -35,9 +35,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
   const navMain = [
     {
-      title: "Dashboard",
+      title: "Home",
       icon: House,
-      onClick: () => setCurrentView('dashboard'),
+      onClick: () => setCurrentView('Home'),
     },
     {
       title: "Calendario",

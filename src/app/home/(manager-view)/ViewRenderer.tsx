@@ -126,7 +126,7 @@ const ViewRenderer: React.FC = React.memo(() => {
       case 'patients':
         return <PatientsWrapper />;
       
-      case 'dashboard':
+      case 'Home':
       default:
         return (
           <RoleBasedRenderer 
