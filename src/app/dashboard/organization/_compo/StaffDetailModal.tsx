@@ -124,17 +124,17 @@ export function StaffDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl overflow-y-auto sm:left-auto sm:right-0 sm:top-0 sm:ml-auto sm:h-screen sm:w-[480px] sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-none sm:border-l sm:border-border data-[state=open]:sm:animate-in data-[state=open]:sm:slide-in-from-right-80 max-sm:fixed max-sm:inset-0 max-sm:w-screen max-sm:h-dvh max-sm:rounded-none max-sm:border-0 max-sm:m-0 max-sm:p-0">
+      <DialogContent className="max-w-2xl flex flex-col sm:left-auto sm:right-0 sm:top-0 sm:ml-auto sm:h-screen sm:w-[480px] sm:max-w-none sm:translate-x-0 sm:translate-y-0 sm:rounded-none sm:border-l sm:border-border data-[state=open]:sm:animate-in data-[state=open]:sm:slide-in-from-right-80 max-sm:fixed max-sm:inset-0 max-sm:w-screen max-sm:h-dvh max-sm:rounded-none max-sm:border-0 max-sm:m-0 !p-0 ">
         {/* Header con imagen de perfil para móviles */}
-        <div className="relative h-[350px] sm:h-[240px]">
+        <div className="relative h-[350px] sm:h-[240px] ">
           {/* Usamos una etiqueta <img> para mayor fiabilidad */}
           <Image
-            src="/img/avatar_1.webp"
+            src="/banners/im2.avif"
             alt="Perfil"
             priority
             width={500}
             height={500}
-            className="absolute inset-0 h-full w-full object-cover mask-b-from-60%" // degrada de negro (visible) a transparente hacia arriba
+            className="h-full w-full object-cover mask-b-from-40% mask-b-to-90%" // degrada de negro (visible) a transparente hacia arriba
           />
 
           <div className="absolute inset-0 flex items-end justify-center pb-6">
@@ -142,7 +142,7 @@ export function StaffDetailModal({
               <div className="w-[80px] h-[80px] mx-auto mb-3 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30">
                 <User className="w-[40px] h-[40px] text-white" />
               </div>
-              <h2 className="text-xl font-bold text-primary">{staffMember.name}</h2>
+              <h2 className="text-2xl font-light text-primary">{staffMember.name}</h2>
               <Badge variant="secondary" className="mt-2 bg-white/20 text-primary border-white/30">
                 {getRoleDisplayName(staffMember.role)}
               </Badge>
@@ -150,15 +150,9 @@ export function StaffDetailModal({
           </div>
         </div>
 
-        {/* Header tradicional para desktop (DISEÑO ORIGINAL RESTAURADO) */}
-        <DialogHeader className="max-sm:hidden p-6">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <User className="h-6 w-6 text-primary" />
-            Información del Personal
-          </DialogTitle>
-        </DialogHeader>
         
-        <div className="space-y-6 p-6 max-sm:p-4">
+        
+        <div className="flex-grow space-y-6 p-6 max-sm:p-4 overflow-y-auto">
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-4 text-lg"><User className="h-5 w-5" />Información Personal</CardTitle></CardHeader>
             <CardContent className="space-y-4">
