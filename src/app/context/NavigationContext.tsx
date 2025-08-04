@@ -1,12 +1,17 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { ViewType, NAVIGATION_VIEWS, isValidView } from '@/app/constants/navigation';
 
-export type ViewType = 'Home' | 'calendar' | 'patients' | 'organization' | 'configuration' | 'ai-care';
+// Re-export for backward compatibility
+export type { ViewType } from '@/app/constants/navigation';
+export { NAVIGATION_VIEWS } from '@/app/constants/navigation';
 
 interface NavigationContextType {
   currentView: ViewType;
   setCurrentView: (view: ViewType) => void;
+  navigateToView: (view: ViewType) => void;
+  isValidView: (view: string) => view is ViewType;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -16,11 +21,22 @@ interface NavigationProviderProps {
 }
 
 export const NavigationProvider: React.FC<NavigationProviderProps> = ({ children }) => {
-  const [currentView, setCurrentView] = useState<ViewType>('Home');
+  const [currentView, setCurrentView] = useState<ViewType>(NAVIGATION_VIEWS.HOME);
+
+  // Enhanced navigation function with validation
+  const navigateToView = useCallback((view: ViewType) => {
+    if (isValidView(view)) {
+      setCurrentView(view);
+    } else {
+      console.warn(`Invalid view type: ${view}`);
+    }
+  }, []);
 
   const value = {
     currentView,
     setCurrentView,
+    navigateToView,
+    isValidView,
   };
 
   return (

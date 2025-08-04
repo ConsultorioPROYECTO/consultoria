@@ -2,13 +2,15 @@
 
 import * as React from "react"
 import {
-  House,
   HelpCircle,
   Layers,
+  House,
   CalendarClock,
-  Factory,
   Users,
-  Activity
+  Factory,
+  Settings,
+  Activity,
+  type LucideIcon
 } from "lucide-react"
 
 import { NavMain } from "@/app/home/_components/nav-main"
@@ -23,6 +25,7 @@ import {
 import { useAuth } from "../../context/AuthContext"
 import { useUIStyle } from "../../context/UIStyleContext"
 import { useNavigation } from "@rutas/app/context/NavigationContext"
+import { NAVIGATION_VIEWS, VIEW_CONFIG, ALL_VIEWS, canUserAccessView } from "@/app/constants/navigation"
 import { geistFont } from "../../fonts"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -33,40 +36,34 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   if (!user) {
     return null
   }
-  const navMain = [
-    {
-      title: "Panel",
-      icon: House,
-      onClick: () => setCurrentView('Home'),
-    },
-    {
-      title: "Calendario",
-      icon: CalendarClock,
-      onClick: () => setCurrentView('calendar'),
-    },
-  ];
+  // Icon mapping for type safety
+  const iconMap: Record<string, LucideIcon> = {
+    House,
+    CalendarClock,
+    Users,
+    Factory,
+    Settings,
+    Activity,
+  };
 
-  if (userRole === 'admin') {
-    navMain.splice(1, 0, {
-      title: "Organización",
-      icon: Factory,
-      onClick: () => setCurrentView('organization'),
+  // Generate navigation items from centralized configuration
+  const navMain = ALL_VIEWS
+    .filter(view => {
+      // Filter out configuration view from main nav
+      if (view === NAVIGATION_VIEWS.CONFIGURATION) return false;
+      // Check user role permissions
+      return canUserAccessView(view, userRole || '');
+    })
+    .map(view => {
+      const config = VIEW_CONFIG[view];
+      const IconComponent = iconMap[config.icon];
+      
+      return {
+        title: config.title,
+        icon: IconComponent,
+        onClick: () => setCurrentView(view),
+      };
     });
-  }
-  if (userRole === 'admin') {
-    navMain.splice(1, 0, {
-      title: "Ai-Care",
-      icon: Activity,
-      onClick: () => setCurrentView('ai-care'),
-    });
-  }
-  if (userRole === 'admin' || userRole === 'asistente') {
-    navMain.splice(1, 0, {
-      title: "Pacientes",
-      icon: Users,
-      onClick: () => setCurrentView('patients'),
-    });
-  }
 
   const data = {
     user: {

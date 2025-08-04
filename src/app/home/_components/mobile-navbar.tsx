@@ -3,6 +3,7 @@
 import { memo, useCallback, useMemo, useTransition, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigation } from "@rutas/app/context/NavigationContext"
+import { NAVIGATION_VIEWS } from "@/app/constants/navigation";
 import dynamic from 'next/dynamic';
 import { ConfigDrawer } from './config-drawer';
 
@@ -22,7 +23,7 @@ const MobileNavbar = memo(() => {
   const { setCurrentView, currentView } = useNavigation()
 
   // Memoize function to handle view changes with useTransition
-  const handleViewChange = useCallback((view: 'Home' | 'calendar') => {
+  const handleViewChange = useCallback((view: typeof NAVIGATION_VIEWS.HOME | typeof NAVIGATION_VIEWS.CALENDAR) => {
     startTransition(() => {
       setCurrentView(view);
     });
@@ -39,12 +40,12 @@ const navItems: NavItem[] = useMemo(() => [
     { 
       title: 'Panel', 
       icon: Home, 
-      onClick: () => handleViewChange('Home')
+      onClick: () => handleViewChange(NAVIGATION_VIEWS.HOME)
     },
     { 
       title: 'Calendario', 
       icon: CalendarClock, 
-      onClick: () => handleViewChange('calendar')
+      onClick: () => handleViewChange(NAVIGATION_VIEWS.CALENDAR)
     },
   ], [handleViewChange]);
 
@@ -57,21 +58,21 @@ const navItems: NavItem[] = useMemo(() => [
 
   // Memoize helper function to determine if an item is active
   const isItemActive = useCallback((item: { title: string }) => {
-    if (!currentView || !['dashboard', 'calendar', 'configuration', 'organization', 'ai-care'].includes(currentView)) {
+    if (!currentView) {
       return false;
     }
     if (item.title === 'Calendario') {
-      return currentView === 'calendar';
+      return currentView === NAVIGATION_VIEWS.CALENDAR;
     }
-    if (item.title === 'Home') {
-      return currentView === 'Home';
+    if (item.title === 'Panel') {
+      return currentView === NAVIGATION_VIEWS.HOME;
     }
     return false;
   }, [currentView]);
 
   // Memoize active index calculation
   const activeIndex = useMemo(() => {
-    if (currentView === 'configuration' || currentView === 'organization' ) {
+    if (currentView === NAVIGATION_VIEWS.CONFIGURATION || currentView === NAVIGATION_VIEWS.ORGANIZATION ) {
       return -1; // No active index for main nav when in configuration
     }
     return navItems.findIndex(item => isItemActive(item));

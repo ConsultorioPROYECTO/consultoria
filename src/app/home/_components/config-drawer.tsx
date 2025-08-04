@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Settings, Bell, Building, LogOut, Users, Activity } from 'lucide-react';
 import { useNavigation } from '@/app/context/NavigationContext';
 import { useAuth } from '@/app/context/AuthContext';
+import { NAVIGATION_VIEWS } from '@/app/constants/navigation';
 
 interface ConfigDrawerProps {
   isOpen: boolean;
@@ -28,25 +29,25 @@ const ConfigDrawer = memo(({ isOpen, onOpenChange }: ConfigDrawerProps) => {
     {
       icon: Settings,
       title: 'Configuración',
-      action: () => setCurrentView('configuration'),
+      action: () => setCurrentView(NAVIGATION_VIEWS.CONFIGURATION),
     },
     // Solo mostrar 'Organizacion' si el rol es 'admin'
     ...(userRole === 'admin' ? [{
       icon: Building,
       title: 'Organizacion',
-      action: () => setCurrentView('organization'),
+      action: () => setCurrentView(NAVIGATION_VIEWS.ORGANIZATION),
     }] : []),
     // Solo mostrar 'Organizacion' si el rol es 'admin'
     ...(userRole === 'admin' ? [{
       icon: Activity,
       title: 'AI-Care',
-      action: () => setCurrentView('ai-care'),
+      action: () => setCurrentView(NAVIGATION_VIEWS.AI_CARE),
     }] : []),
     // Patients if admin or assistant
     ...((userRole === 'admin' || userRole === 'asistente') ? [{
       icon: Users,
       title: 'Patients',
-      action: () => setCurrentView('patients'),
+      action: () => setCurrentView(NAVIGATION_VIEWS.PATIENTS),
     }] : []),
     {
       icon: Bell,

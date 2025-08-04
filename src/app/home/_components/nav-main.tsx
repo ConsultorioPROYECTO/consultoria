@@ -11,6 +11,7 @@ import {
 import Link from 'next/link'
 import { cn } from "@rutas/lib/utils"
 import { useNavigation } from "@rutas/app/context/NavigationContext"
+import { NAVIGATION_VIEWS } from "@/app/constants/navigation"
 
 
 export function NavMain({
@@ -32,13 +33,13 @@ export function NavMain({
       return item.isActive
     }
     
-    // Map titles to views
+    // Map titles to views using constants
     const titleToView: Record<string, string> = {
-      'Dashboard': 'dashboard',
-      'Calendario': 'calendar',
-      'Organización': 'organization',
-      'AI-Care': 'ai-care',
-      'Patients': 'patients'
+      'Panel': NAVIGATION_VIEWS.HOME,
+      'Calendario': NAVIGATION_VIEWS.CALENDAR,
+      'Organización': NAVIGATION_VIEWS.ORGANIZATION,
+      'Ai-Care': NAVIGATION_VIEWS.AI_CARE,
+      'Pacientes': NAVIGATION_VIEWS.PATIENTS
     }
     
     return titleToView[item.title] === currentView

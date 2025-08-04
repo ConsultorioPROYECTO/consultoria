@@ -31,6 +31,7 @@ import {
 } from "@rutas/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigation } from "../../context/NavigationContext"
+import { NAVIGATION_VIEWS } from "@/app/constants/navigation"
 
 
 
@@ -54,7 +55,7 @@ export function NavUser({
 
   const handleOpenSettingsModal = () => {
     setIsDropdownOpen(false); // Cerrar dropdown explícitamente
-    setCurrentView('configuration');
+    setCurrentView(NAVIGATION_VIEWS.CONFIGURATION);
   };
 
   const handleSignOut = async () => {
