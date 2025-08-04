@@ -54,7 +54,7 @@ export function useUserSync() {
       if (userRole === 'N/A' || organizationId === null || organizationId === undefined) {
         router.push('/onboard');
       } else if (userRole && organizationId) {
-        router.push('/dashboard');
+        router.push('/home');
       } else {
         // Caso de seguridad: si no cumple ninguna condición, ir a onboard
         router.push('/onboard');

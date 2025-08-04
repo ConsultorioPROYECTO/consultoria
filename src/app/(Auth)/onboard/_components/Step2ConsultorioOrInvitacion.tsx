@@ -107,7 +107,7 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: J
       if (joinResponse.ok) {
         toast.success("¡Bienvenido a bordo!", { description: "Te has unido exitosamente a la organización." });
         await refreshUserInfo();
-        router.push('/dashboard');
+        router.push('/home');
         return;
       }
 
@@ -129,7 +129,7 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: J
 
         if (requestResponse.ok) {
           toast.info("Solicitud de unión enviada", { description: "Recibirás un correo electrónico cuando sea aprobada por un administrador." });
-          router.push('/dashboard');
+          router.push('/home');
         } else {
           handleRequestError(requestResponse.status, requestData);
         }

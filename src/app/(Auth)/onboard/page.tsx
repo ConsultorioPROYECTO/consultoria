@@ -108,7 +108,7 @@ function OnboardContent() {
         } else {
           // Para otros roles, la unión a la organización ya se manejó en Step2ConsultorioOrInvitacion
           // Este flujo es principalmente para el Admin, pero en caso de llegar aquí, redirigir.
-          router.push('/dashboard');
+          router.push('/home');
           return;
         }
 
@@ -132,7 +132,7 @@ function OnboardContent() {
         // Refrescar la información del usuario para obtener el organizationId actualizado
         await refreshUserInfo();
         
-        router.push('/dashboard');
+        router.push('/home');
       } catch (error) {
         console.error('Error al procesar el plan y la organización:', error);
         toast.error((error as Error).message || 'Ocurrió un error desconocido.');
