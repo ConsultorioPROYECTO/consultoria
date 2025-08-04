@@ -1,8 +1,8 @@
 'use client';
 
-import { StaffManagement } from "./_compo/StaffManagement";
-import { CreateInvitationCard } from "./_compo/CreateInvitationCard";
-import { ServiceManagement } from "./_compo/ServiceManagementCard";
+import { StaffManagement } from "./_components/StaffManagement";
+import { CreateInvitationCard } from "./_components/CreateInvitationCard";
+import { ServiceManagement } from "./_components/ServiceManagementCard";
 import { OrganizationSettings } from "../../_components/OrganizationSettings";
 import { useAuth } from "../../../context/AuthContext";
 
