@@ -206,6 +206,7 @@ export const API_ERRORS = {
   NOT_FOUND: 'Recurso no encontrado',
   VALIDATION_ERROR: 'Error de validación',
   CONFLICT: 'Conflicto con recurso existente',
+  METHOD_NOT_ALLOWED: 'Método no permitido',
 } as const;
 
 /**
@@ -218,6 +219,7 @@ export const HTTP_STATUS = {
   UNAUTHORIZED: 401,
   FORBIDDEN: 403,
   NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
   CONFLICT: 409,
   INTERNAL_ERROR: 500,
 } as const;

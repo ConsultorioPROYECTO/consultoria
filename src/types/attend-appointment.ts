@@ -1,103 +1,66 @@
 /**
- * @fileoverview Types and interfaces for the attend appointment API
+ * Types for the attend appointment API endpoint.
+ * @packageDocumentation
  * @module types/attend-appointment
  * @author Santiago Prada
  */
-
-import { APIResponse } from './api';
-import { AppointmentStatusType } from './appointment-status';
 
 /**
  * Request body for marking an appointment as attended.
  * 
  * @interface AttendAppointmentRequest
  * @property {string} eventId - Google Calendar event ID of the appointment to mark as attended
- * @property {string} [notes] - Optional notes about the attendance (max 1000 characters)
+ * @property {string} [notes] - Optional notes about the attendance/consultation
+ * 
+ * @example
+ * ```typescript
+ * const request: AttendAppointmentRequest = {
+ *   eventId: 'google_event_id_123',
+ *   notes: 'Consulta completada exitosamente. Paciente respondió bien al tratamiento.'
+ * };
+ * ```
  */
 export interface AttendAppointmentRequest {
+  /** Google Calendar event ID of the appointment */
   eventId: string;
+  /** Optional notes about the attendance/consultation */
   notes?: string;
 }
 
 /**
- * Response data for attend appointment operation.
+ * Response data for successful appointment attendance marking.
  * 
  * @interface AttendAppointmentResponse
- * @property {string} eventId - Google Calendar event ID of the updated appointment
- * @property {number} appointmentId - Internal database ID of the updated appointment
- * @property {string} status - New status of the appointment (should be 'attended')
+ * @property {number} appointmentId - Database ID of the attended appointment
+ * @property {string} eventId - Google Calendar event ID
+ * @property {string} status - Updated appointment status (should be 'attended')
  * @property {string} attendedAt - ISO timestamp when the appointment was marked as attended
- * @property {string} [notes] - Updated notes if provided
+ * @property {string} [notes] - Notes added during attendance
+ * @property {string} syncStatus - Calendar synchronization status
+ * 
+ * @example
+ * ```typescript
+ * const response: AttendAppointmentResponse = {
+ *   appointmentId: 456,
+ *   eventId: 'google_event_id_123',
+ *   status: 'attended',
+ *   attendedAt: '2024-01-15T10:30:00.000Z',
+ *   notes: 'Consulta completada exitosamente',
+ *   syncStatus: 'synced'
+ * };
+ * ```
  */
 export interface AttendAppointmentResponse {
-  eventId: string;
+  /** Database ID of the attended appointment */
   appointmentId: number;
-  status: AppointmentStatusType;
+  /** Google Calendar event ID */
+  eventId: string;
+  /** Updated appointment status */
+  status: string;
+  /** ISO timestamp when marked as attended */
   attendedAt: string;
+  /** Notes added during attendance */
   notes?: string;
-}
-
-/**
- * Complete API response type for attend appointment endpoint.
- */
-export type AttendAppointmentApiResponse = APIResponse<AttendAppointmentResponse>;
-
-/**
- * Valid appointment states that can be marked as attended.
- */
-export type ValidAttendanceStates = 'pending' | 'accepted';
-
-/**
- * Configuration for attend appointment validation.
- */
-export interface AttendAppointmentConfig {
-  /** Maximum length for notes field */
-  maxNotesLength: number;
-  /** Valid states that can transition to attended */
-  validStatesForAttendance: ValidAttendanceStates[];
-  /** Required user roles for this operation */
-  requiredRoles: string[];
-}
-
-/**
- * Default configuration for attend appointment operations.
- */
-export const DEFAULT_ATTEND_CONFIG: AttendAppointmentConfig = {
-  maxNotesLength: 1000,
-  validStatesForAttendance: ['pending', 'accepted'],
-  requiredRoles: ['medico', 'asistente', 'admin']
-};
-
-/**
- * Validation result for attend appointment request.
- */
-export interface AttendValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings?: string[];
-}
-
-/**
- * Audit information for attend appointment operation.
- */
-export interface AttendAuditInfo {
-  /** User who performed the operation */
-  performedBy: {
-    userId: number;
-    role: string;
-    organizationId: number;
-  };
-  /** Timestamp of the operation */
-  timestamp: Date;
-  /** Previous state of the appointment */
-  previousState: {
-    status: AppointmentStatusType;
-    notes?: string;
-  };
-  /** New state after the operation */
-  newState: {
-    status: AppointmentStatusType;
-    attendedAt: Date;
-    notes?: string;
-  };
+  /** Calendar synchronization status */
+  syncStatus: string;
 }
