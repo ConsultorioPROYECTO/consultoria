@@ -17,7 +17,6 @@ import { AlertCircle } from 'lucide-react';
 
 // Tipos de datos para eventos de calendario
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
-import { getIdToken } from "firebase/auth";
 
 // Tipo combinado para el estado
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
