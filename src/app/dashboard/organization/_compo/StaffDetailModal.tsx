@@ -5,11 +5,10 @@ import { useStaffActions } from './useStaffActions';
 import { useDoctorServicesForStaff } from '@/hooks/useDoctorServicesForStaff';
 import { useServicesData } from '@/hooks/useDashboardOptimized';
 import { useAuth } from '@/app/context/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User, Mail, Shield, Stethoscope, Building, PencilLine, Trash2, Loader2, Activity, Clock, DollarSign, Plus, Check } from "lucide-react";
 
