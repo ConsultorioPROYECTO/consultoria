@@ -12,8 +12,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { extractAuthParams, buildAuthRedirectUrl } from '@/app/auth-components/auth-utils';
-import type { AuthParams } from '@/app/auth-components/auth-types';
+import { extractAuthParams, buildAuthRedirectUrl } from '@/app/(Auth)/_lib/auth-utils';
+import type { AuthParams } from '@/app/(Auth)/_lib/auth-types';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 

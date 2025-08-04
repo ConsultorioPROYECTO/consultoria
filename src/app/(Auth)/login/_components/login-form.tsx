@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useAuth, EmailPasswordCredentials } from '@/app/context/AuthContext';
-import { handleAuthError } from '@/app/auth-components/auth-error-handler';
-import type { AuthFormState, LoginFormData } from '@/app/auth-components/auth-types';
+import { handleAuthError } from '@/app/(Auth)/_lib/auth-error-handler';
+import type { AuthFormState, LoginFormData } from '@/app/(Auth)/_lib/auth-types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

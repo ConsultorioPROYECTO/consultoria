@@ -6,7 +6,7 @@ import { SiteHeader } from '@/app/home/_components/site-header';
 import { SidebarInset, SidebarProvider } from '@rutas/components/ui/sidebar';
 import { NavigationProvider } from '@rutas/app/context/NavigationContext';
 import { DashboardDataProvider } from '@rutas/app/context/DashboardDataContext';
-import { useAuthGuard } from '@rutas/app/hooks/useAuthGuard';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import ViewRenderer from './(manager-view)/ViewRenderer';
 import { LoadingScreen } from './_components/loadingScreen';
 import { useIsMobile } from '@rutas/hooks/use-mobile'; // Importar el hook
