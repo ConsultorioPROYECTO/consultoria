@@ -43,7 +43,13 @@ export function validateUserRole(userRole: string, requiredRoles: string | strin
   const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
   
   if (!roles.includes(userRole)) {
-    const errorMessage = roles.includes('admin') ? API_ERRORS.ADMIN_ONLY : API_ERRORS.ASSISTANT_ONLY;
+    // Create a more appropriate error message for multiple roles
+    let errorMessage: string;
+    if (roles.length === 1) {
+      errorMessage = roles.includes('admin') ? API_ERRORS.ADMIN_ONLY : API_ERRORS.ASSISTANT_ONLY;
+    } else {
+      errorMessage = `Acceso denegado: Se requiere uno de los siguientes roles: ${roles.join(', ')}`;
+    }
     return createErrorResponse(errorMessage, undefined, HTTP_STATUS.FORBIDDEN);
   }
   return null;
