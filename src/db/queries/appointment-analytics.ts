@@ -8,6 +8,7 @@ import { and, between, count, eq, sql, sum, avg, desc, asc } from 'drizzle-orm';
 import { db } from '../index';
 import { appointments } from '../schema/appointments';
 import { doctors } from '../schema/doctors';
+import { users } from '../schema/users';
 import { patients } from '../schema/patients';
 import { medicalServices } from '../schema/medical_services';
 import {
@@ -93,7 +94,7 @@ export class AppointmentAnalyticsQueries {
     const result = await db
       .select({
         doctorId: appointments.doctorId,
-        doctorName: sql`CONCAT(COALESCE(${doctors.userId}, ''), ' Doctor')`, // Temporal hasta obtener nombres de users
+        doctorName: users.displayName,
         totalAppointments: count(),
         pendingAppointments: sum(
           sql`CASE WHEN ${appointments.status} = 'pending' THEN 1 ELSE 0 END`
@@ -122,13 +123,14 @@ export class AppointmentAnalyticsQueries {
       })
       .from(appointments)
       .innerJoin(doctors, eq(appointments.doctorId, doctors.idDoctor))
+      .innerJoin(users, eq(doctors.userId, users.id))
       .where(
         and(
           eq(appointments.organizationId, organizationId),
           between(appointments.appointmentDate, new Date(dateFrom), new Date(dateTo))
         )
       )
-      .groupBy(appointments.doctorId, doctors.userId)
+      .groupBy(appointments.doctorId, users.displayName)
       .orderBy(desc(count()));
 
     return result.map((row) => {
@@ -328,7 +330,7 @@ export class AppointmentAnalyticsQueries {
       .select({
         id: appointments.id,
         doctorId: appointments.doctorId,
-        doctorName: sql`CONCAT(COALESCE(${doctors.userId}, ''), ' Doctor')`, // Temporal
+        doctorName: users.displayName,
         patientId: appointments.patientId,
         patientName: sql`CONCAT(${patients.firstName}, ' ', ${patients.lastName})`,
         serviceId: appointments.serviceId,
@@ -349,6 +351,7 @@ export class AppointmentAnalyticsQueries {
       })
       .from(appointments)
       .innerJoin(doctors, eq(appointments.doctorId, doctors.idDoctor))
+      .innerJoin(users, eq(doctors.userId, users.id))
       .innerJoin(patients, eq(appointments.patientId, patients.id))
       .innerJoin(medicalServices, eq(appointments.serviceId, medicalServices.id))
       .where(and(...conditions))
