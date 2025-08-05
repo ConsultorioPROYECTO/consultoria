@@ -133,8 +133,10 @@ export function NavUser({
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={handleSignOut}>
-                <LogOut />
+                onClick={handleSignOut} 
+                className="text-red-500 focus:text-red-500"
+              >
+                <LogOut className="text-red-500" />
                 Cerrar sesión
               </DropdownMenuItem>
             </DropdownMenuContent>
