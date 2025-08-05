@@ -867,12 +867,12 @@ export default function CalendarView() {
         {viewMode === "week" && renderWeekView()}
         {viewMode === "day" && renderDayView()}
         {viewMode === "month" && (
-          <div className="flex-grow overflow-auto w-full p-4">
+          <div className="flex-grow overflow-auto w-full p-6">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              className="rounded-md border-0 p-0 w-full"
+              className="rounded-none border-0 p-0 w-full"
               month={currentDate}
               locale={es}
               weekStartsOn={0}
@@ -888,11 +888,11 @@ export default function CalendarView() {
                     <button
                       {...props}
                       className={cn(
-                        "relative w-full flex flex-col items-start p-1 rounded-lg cursor-pointer h-auto min-h-[70px] border-0 bg-transparent hover:bg-primary/5",
-                        isSelected ? "bg-primary/10" : "bg-primary/3",
-                        isDayToday ? "ring-2 ring-primary" : "",
-                        modifiers.selected ? "bg-primary/10" : "",
-                        modifiers.today ? "ring-2 ring-primary" : ""
+                        "relative w-full flex flex-col items-start p-2 rounded-lg cursor-pointer h-auto min-h-[80px] border transition-all duration-200",
+                        "bg-background hover:bg-accent/50",
+                        isSelected ? "bg-primary/10 border-primary/30" : "border-border/50",
+                        isDayToday ? "ring-1 ring-primary/50 bg-primary/5" : "",
+                        modifiers.outside ? "text-muted-foreground/40" : ""
                       )}
                       onClick={(e) => {
                         props.onClick?.(e);
@@ -901,58 +901,77 @@ export default function CalendarView() {
                         }
                       }}
                     >
-                      <div className="flex justify-between w-full items-center">
-                        <div className={cn(
-                          "text-sm font-medium",
-                          isSelected || modifiers.selected ? "text-primary" : ""
+                      <div className="flex justify-between w-full items-start">
+                        <span className={cn(
+                          "text-sm font-medium leading-none",
+                          isSelected ? "text-primary" : "",
+                          isDayToday ? "text-primary font-semibold" : "",
+                          modifiers.outside ? "text-muted-foreground/40" : ""
                         )}>
                           {dayDate.getDate()}
-                        </div>
+                        </span>
                         {dayEvents.length > 0 && (
-                          <div className="flex gap-0.5">
-                            {dayEvents.slice(0, 3).map((event) => (
-                              <div 
-                                key={event.id} 
-                                className={`w-2 h-2 rounded-full ${event.color}`}
-                                title={`${event.title} - ${event.time}`}
-                              />
-                            ))}
-                            {dayEvents.length > 3 && (
-                              <div className="text-[10px] text-muted-foreground ml-0.5">+{dayEvents.length - 3}</div>
+                          <div className="flex items-center gap-1">
+                            <div className="flex gap-0.5">
+                              {dayEvents.slice(0, 2).map((event) => (
+                                <div 
+                                  key={event.id} 
+                                  className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    event.color.replace('bg-', 'bg-'),
+                                    event.status === "cancelada" ? "opacity-40" : ""
+                                  )}
+                                  title={`${event.title} - ${event.time}`}
+                                />
+                              ))}
+                            </div>
+                            {dayEvents.length > 2 && (
+                              <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-1 rounded-sm">
+                                +{dayEvents.length - 2}
+                              </span>
                             )}
                           </div>
                         )}
                       </div>
-                      {/* Mostrar algunos eventos en la vista mensual */}
-                      <div className="w-full mt-1 space-y-0.5">
-                        {dayEvents.slice(0, 2).map((event) => (
-                          <div 
-                            key={event.id}
-                            className={cn(
-                              "text-[10px] px-1 py-0.5 rounded text-white truncate",
-                              event.color,
-                              event.status === "cancelada" ? "opacity-50 line-through" : ""
-                            )}
-                          >
-                            {event.time} {event.title}
-                          </div>
-                        ))}
-                      </div>
+                      
+                      {/* Event previews - más minimalista */}
+                      {dayEvents.length > 0 && (
+                        <div className="w-full flex flex-col gap-0.5">
+                          {dayEvents.slice(0, 1).map((event) => (
+                            <div 
+                              key={event.id}
+                              className={cn(
+                                "text-[10px] font-medium px-1.5 py-0.5 rounded-md truncate leading-tight",
+                                "bg-accent/60 text-accent-foreground border border-border/30",
+                                event.status === "cancelada" ? "opacity-50 line-through" : ""
+                              )}
+                              title={`${event.time} - ${event.title}`}
+                            >
+                              {event.time}
+                            </div>
+                          ))}
+                          {dayEvents.length > 1 && (
+                            <div className="text-[9px] text-muted-foreground font-medium">
+                              +{dayEvents.length - 1} más
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </button>
                   );
                 },
               }}
               classNames={{
                 table: "w-full h-full border-collapse table-fixed",
-                head_row: "flex w-full mb-2",
-                head_cell: "text-muted-foreground w-full text-center font-medium text-sm py-2",
-                row: "flex w-full min-w-full gap-1 mb-1",
-                cell: "text-center p-1 relative w-full flex-1",
-                day: "h-full w-full p-1 font-normal aria-selected:opacity-100 flex flex-col items-start justify-start",
+                head_row: "flex w-full mb-4",
+                head_cell: "text-muted-foreground w-full text-center font-semibold text-xs uppercase tracking-wider py-2",
+                row: "flex w-full min-w-full gap-2 mb-2",
+                cell: "text-center relative w-full flex-1",
+                day: "h-full w-full font-normal aria-selected:opacity-100 flex flex-col items-start justify-start",
                 day_selected: "",
                 day_today: "",
-                day_outside: "text-muted-foreground opacity-50",
-                day_disabled: "text-muted-foreground opacity-50",
+                day_outside: "text-muted-foreground/40",
+                day_disabled: "text-muted-foreground/40 cursor-not-allowed",
                 day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
                 day_hidden: "invisible",
               }}
