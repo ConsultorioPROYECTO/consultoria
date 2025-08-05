@@ -130,6 +130,7 @@ export class AppointmentAnalyticsQueries {
       .where(
         and(
           eq(appointments.organizationId, organizationId),
+          eq(users.organizationId, organizationId),
           between(appointments.appointmentDate, new Date(dateFrom), new Date(dateTo))
         )
       )
