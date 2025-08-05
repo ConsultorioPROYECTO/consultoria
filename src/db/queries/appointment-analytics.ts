@@ -61,9 +61,12 @@ export class AppointmentAnalyticsQueries {
         ),
       })
       .from(appointments)
+      .innerJoin(doctors, eq(appointments.doctorId, doctors.idDoctor))
+      .innerJoin(users, eq(doctors.userId, users.id))
       .where(
         and(
           eq(appointments.organizationId, organizationId),
+          eq(users.organizationId, organizationId),
           between(appointments.appointmentDate, new Date(dateFrom), new Date(dateTo))
         )
       );
@@ -198,9 +201,12 @@ export class AppointmentAnalyticsQueries {
       })
       .from(appointments)
       .innerJoin(medicalServices, eq(appointments.serviceId, medicalServices.id))
+      .innerJoin(doctors, eq(appointments.doctorId, doctors.idDoctor))
+      .innerJoin(users, eq(doctors.userId, users.id))
       .where(
         and(
           eq(appointments.organizationId, organizationId),
+          eq(users.organizationId, organizationId),
           between(appointments.appointmentDate, new Date(dateFrom), new Date(dateTo))
         )
       )
@@ -262,9 +268,12 @@ export class AppointmentAnalyticsQueries {
         ),
       })
       .from(appointments)
+      .innerJoin(doctors, eq(appointments.doctorId, doctors.idDoctor))
+      .innerJoin(users, eq(doctors.userId, users.id))
       .where(
         and(
           eq(appointments.organizationId, organizationId),
+          eq(users.organizationId, organizationId),
           between(appointments.appointmentDate, new Date(dateFrom), new Date(dateTo))
         )
       )
@@ -300,6 +309,7 @@ export class AppointmentAnalyticsQueries {
 
     if (filters.organizationId) {
       conditions.push(eq(appointments.organizationId, filters.organizationId));
+      conditions.push(eq(users.organizationId, filters.organizationId));
     }
     if (filters.doctorId) {
       conditions.push(eq(appointments.doctorId, filters.doctorId));
@@ -414,9 +424,12 @@ export class AppointmentAnalyticsQueries {
         count: count(),
       })
       .from(appointments)
+      .innerJoin(doctors, eq(appointments.doctorId, doctors.idDoctor))
+      .innerJoin(users, eq(doctors.userId, users.id))
       .where(
         and(
           eq(appointments.organizationId, organizationId),
+          eq(users.organizationId, organizationId),
           eq(appointments.appointmentDate, new Date(date))
         )
       )
