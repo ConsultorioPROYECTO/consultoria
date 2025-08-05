@@ -84,6 +84,8 @@ interface AuthContextType {
   signUpWithEmail: (credentials: EmailPasswordCredentials) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUserInfo: () => Promise<void>;
+  startRolePolling: (intervalMs?: number) => void;
+  stopRolePolling: () => void;
   error: AuthError | null;
 }
 
@@ -121,6 +123,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   // Ref para evitar múltiples peticiones con el mismo usuario
   const lastUserUidRef = useRef<string | null>(null);
   const roleRequestRef = useRef<Promise<void> | null>(null);
+  const rolePollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
@@ -141,7 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
           // Crear una promesa para evitar peticiones duplicadas
           const roleRequest = (async () => {
             try {
-              let token = await currentUser.getIdToken();
+              let token = await currentUser.getIdToken(true); // Force refresh token
               
               // Primero sincronizar el usuario con la base de datos local
               try {
@@ -230,7 +233,14 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       },
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      // Limpiar el polling cuando el componente se desmonte
+      if (rolePollingIntervalRef.current) {
+        clearInterval(rolePollingIntervalRef.current);
+        rolePollingIntervalRef.current = null;
+      }
+    };
   }, []); // El array vacío asegura que useEffect se ejecute solo una vez (al montar y desmontar)
 
   /**
@@ -376,7 +386,7 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     
     setIsLoadingRole(true);
     try {
-      const token = await user.getIdToken();
+      const token = await user.getIdToken(true); // Force refresh token
       const response = await fetch('/api/users/rol', {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -399,6 +409,33 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     }
   };
 
+  /**
+   * Inicia un polling para verificar cambios de rol cada cierto tiempo.
+   * Útil para detectar cambios de rol realizados por otros usuarios.
+   * @param {number} intervalMs - Intervalo en milisegundos (por defecto 30 segundos)
+   */
+  const startRolePolling = (intervalMs: number = 30000): void => {
+    if (rolePollingIntervalRef.current) {
+      clearInterval(rolePollingIntervalRef.current);
+    }
+    
+    rolePollingIntervalRef.current = setInterval(() => {
+      if (user && !isLoadingRole) {
+        refreshUserInfo();
+      }
+    }, intervalMs);
+  };
+
+  /**
+    * Detiene el polling de cambios de rol.
+    */
+   const stopRolePolling = (): void => {
+     if (rolePollingIntervalRef.current) {
+       clearInterval(rolePollingIntervalRef.current);
+       rolePollingIntervalRef.current = null;
+     }
+   };
+
   const contextValue: AuthContextType = {
     user,
     loading,
@@ -413,6 +450,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     signUpWithEmail, 
     signOut,
     refreshUserInfo,
+    startRolePolling,
+    stopRolePolling,
     error,
   };
 

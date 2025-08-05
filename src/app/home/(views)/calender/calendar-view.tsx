@@ -34,7 +34,6 @@ import { useUsersData } from "../../../context/DashboardDataContext";
 // import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"; // Removido - usando contexto centralizado
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 // Importación dinámica del DatePicker
 const DatePicker = dynamic(() => import("./_components/date-picker"), {
@@ -87,14 +86,14 @@ export default function CalendarView() {
   }, [getAuthToken]);
   
   // Determinar si es vista móvil para ajustar la altura de las celdas
-  const isMobile = useIsMobile();
+  const [isMobile, setIsMobile] = React.useState(false);
   // Estado para controlar la vista (mes, semana, día) - día en móvil, semana en desktop
-  const [viewMode, setViewMode] = React.useState<ViewMode>("week");
-  
-  // Actualizar viewMode basado en isMobile
-  React.useEffect(() => {
-    setViewMode(isMobile ? "day" : "week");
-  }, [isMobile]);
+  const [viewMode, setViewMode] = React.useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768 ? "day" : "week";
+    }
+    return "week";
+  });
   // Estado para el modal de eventos
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [selectedDayEvents, setSelectedDayEvents] = React.useState<Event[]>([]);
@@ -119,7 +118,12 @@ export default function CalendarView() {
   const [selectedDoctorId, setSelectedDoctorId] = React.useState<string>(""); // Doctor específico seleccionado
   const [openDoctorCombo, setOpenDoctorCombo] = React.useState(false);
 
-
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768); // md breakpoint
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Cargar doctores disponibles
   React.useEffect(() => {
