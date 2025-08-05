@@ -64,34 +64,52 @@ import { eq } from 'drizzle-orm';
 /**
  * Manejador para solicitudes GET a src/app/api/users/rol/route.ts.
  * Devuelve el rol del usuario autenticado junto con doctorId o assistantId según corresponda.
+ * Obtiene toda la información directamente desde la base de datos.
  * @async
  * @param {NextRequest} request
- * @param {DecodedIdToken} decodedToken
+ * @param {AuthenticatedUserInfo} userInfo
  * @returns {Promise<NextResponse | Response>}
  */
 const getUserRoleHandler = async (
   request: NextRequest,
   userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
   try {
-    // La información del usuario ya está disponible en userInfo
-    const user = userInfo.user;
+    // Usar solo el token para identificar al usuario, pero obtener toda la información de la BD
+    const firebaseUid = userInfo.decodedToken.uid;
+    
+    // Obtener información completa del usuario desde la base de datos
+    const user = await db.query.users.findFirst({
+      where: eq(users.firebaseUid, firebaseUid),
+      columns: {
+        id: true,
+        role: true,
+        organizationId: true,
+        email: true,
+        displayName: true
+      }
+    });
+
     if (!user) {
       return NextResponse.json(
-        { error: 'No se pudo obtener la información del usuario.' },
-        { status: 401 }
+        { error: 'Usuario no encontrado en la base de datos.' },
+        { status: 404 }
       );
     }
 
-    console.log(user);
+    console.log('User from database:', user);
 
     const response: {
       role: string;
       organizationId: number | null;
+      email?: string;
+      displayName?: string;
       doctorId?: number;
       assistantId?: number;
     } = {
       role: user.role,
-      organizationId: user.organizationId
+      organizationId: user.organizationId,
+      email: user.email || undefined,
+      displayName: user.displayName || undefined
     };
 
     // Si el usuario es médico, buscar su doctorId
@@ -120,7 +138,7 @@ const getUserRoleHandler = async (
   } catch (error) {
     console.error('Error en el servidor:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor. ' },
+      { error: 'Error interno del servidor.' },
       { status: 500 }
     );
   }
