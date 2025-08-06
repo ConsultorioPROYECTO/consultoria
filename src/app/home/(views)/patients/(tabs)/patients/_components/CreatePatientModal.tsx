@@ -175,8 +175,8 @@ const FormContent = React.memo(({ formData, handleInputChange, handleDateChange,
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="gender">Género *</Label>
             <Select
               value={formData.gender}
@@ -196,17 +196,17 @@ const FormContent = React.memo(({ formData, handleInputChange, handleDateChange,
             </Select>
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
             <BirthDatePicker
               selectedDate={formData.birthDate}
               onDateSelect={handleDateChange}
               className="w-full"
-              placeholder="Seleccionar fecha de nacimiento"
+              placeholder="Seleccionar fecha"
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <Label htmlFor="bloodType">Tipo de Sangre</Label>
             <Select
               value={formData.bloodType}
