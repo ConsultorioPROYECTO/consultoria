@@ -2,9 +2,8 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Check, CheckCheck, Plus } from "lucide-react"
+import { Check, CheckCheck } from "lucide-react"
 
 interface Chat {
   id: string
@@ -67,10 +66,6 @@ export function ChatList({ chats, selectedRemoteJid, onChatSelect }: ChatListPro
       <div className="p-4 border-b bg-background">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Chats</h2>
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo
-          </Button>
         </div>
       </div>
 
