@@ -17,6 +17,7 @@ import { AlertCircle } from 'lucide-react';
 
 // Tipos de datos para eventos de calendario
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
+import { APPOINTMENT_STATUS } from "@/types/appointment-status";
 
 // Tipo combinado para el estado
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
@@ -31,7 +32,10 @@ export default function DoctorDashboard() {
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isMedicalWorkspaceOpen, setIsMedicalWorkspaceOpen] = useState(false);
 
-  const pendingAppointmentsCount = calendarEvents.filter(event => 'appointmentStatus' in event && event.appointmentStatus !== 'Completada').length;
+  const pendingAppointmentsCount = calendarEvents.filter(event => 
+    'appointmentStatus' in event && 
+    event.appointmentStatus !== APPOINTMENT_STATUS.ATTENDED
+  ).length;
 
   const handleStartConsultation = (appointment: AppointmentEventData) => {
     if (!doctorId || !appointment.id || !appointment.patientId || !appointment.serviceId) {
