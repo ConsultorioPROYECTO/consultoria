@@ -1,14 +1,11 @@
 "use client"
 
-//import { TrendingUp } from "lucide-react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 import { useState } from "react"
 
 import {
   Card,
   CardContent,
-  //CardDescription,
-  //CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -30,35 +27,15 @@ import {
 
 import { useDoctorMetrics } from "@/hooks/useDoctorMetrics";
 
+import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+
 export const description = "A stacked bar chart with a legend"
 
-// const chartData = [
-//   // Datos de hace 3 meses (abril 2025)
-//   { doctorname: "Dr. García", citas: 186, horas_ocupadas: 80, date: "2025-06-15" },
-//   { doctorname: "Dr. Rodríguez", citas: 305, horas_ocupadas: 200, date: "2025-06-16" },
-//   { doctorname: "Dr. López", citas: 237, horas_ocupadas: 120, date: "2025-06-17" },
-//   { doctorname: "Dr. Martínez", citas: 173, horas_ocupadas: 190, date: "2025-06-18" },
-//   { doctorname: "Dr. González", citas: 209, horas_ocupadas: 130, date: "2025-06-19" },
-//   
-//   // Datos de hace 2 meses (mayo 2025)
-//   { doctorname: "Dr. García", citas: 195, horas_ocupadas: 85, date: "2025-05-15" },
-//   { doctorname: "Dr. Rodríguez", citas: 320, horas_ocupadas: 210, date: "2025-05-16" },
-//   { doctorname: "Dr. López", citas: 245, horas_ocupadas: 125, date: "2025-05-17" },
-//   
-//   // Datos del mes pasado (junio 2025)
-//   { doctorname: "Dr. García", citas: 210, horas_ocupadas: 90, date: "2025-06-15" },
-//   { doctorname: "Dr. Rodríguez", citas: 335, horas_ocupadas: 220, date: "2025-06-16" },
-//   
-//   // Datos de los últimos 30 días (junio-julio 2025)
-//   { doctorname: "Dr. García", citas: 225, horas_ocupadas: 95, date: "2025-06-25" },
-//   { doctorname: "Dr. Rodríguez", citas: 350, horas_ocupadas: 230, date: "2025-06-26" },
-//   { doctorname: "Dr. López", citas: 260, horas_ocupadas: 135, date: "2025-06-27" },
-//   
-//   // Datos de los últimos 7 días (julio 2025 - más recientes)
-//   { doctorname: "Dr. García", citas: 240, horas_ocupadas: 100, date: "2025-07-07" },
-//   { doctorname: "Dr. Rodríguez", citas: 365, horas_ocupadas: 240, date: "2025-07-08" },
-//   { doctorname: "Dr. López", citas: 275, horas_ocupadas: 140, date: "2025-07-09" },
-// ]
+const LoadingSpinner = () => (
+  <div className="flex h-screen flex-col items-center justify-center">
+    <WaveformLoader className="w-24 h-auto text-muted-foreground" />
+  </div>
+);
 
 const chartConfig = {
   citas: {
@@ -108,7 +85,7 @@ export function ChartBarInteractive() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="gap-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-2xl font-bold">Citas y Horas Ocupadas</CardTitle>
           <Select value={timeRange} onValueChange={setTimeRange} /*enabled now*/>
@@ -126,7 +103,18 @@ export function ChartBarInteractive() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p>Cargando...</p>
+        <div className="flex h-full flex-col items-center justify-center">
+          <WaveformLoader className="w-24 h-auto text-muted-foreground" />
+        </div>
+        ) : !filteredData || filteredData.length === 0 ? (
+          <div className="flex flex-col items-center justify-center text-center">
+            <p className="text-muted-foreground text-lg">
+              No hay doctores disponibles en la organización
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Esta función no está disponible sin doctores registrados
+            </p>
+          </div>
         ) : (
           <ChartContainer config={chartConfig}>
             <BarChart accessibilityLayer data={filteredData}>
