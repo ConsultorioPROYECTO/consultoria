@@ -418,7 +418,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
             <DrawerHeader>
               <DrawerTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DrawerTitle>
             </DrawerHeader>
-            <form onSubmit={handleSubmit} className="grid gap-4 p-4">
+            <form onSubmit={handleSubmit} className="grid gap-4">
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                 <div>
                   <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
@@ -487,7 +487,7 @@ function ServiceFormModal({ isOpen, onOpenChange, onSave, service, isMobile = fa
             <DialogHeader>
               <DialogTitle>{service ? 'Editar Servicio' : 'Crear Nuevo Servicio'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="grid gap-4 p-4">
+            <form onSubmit={handleSubmit} className="grid gap-4">
               <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                 <div>
                   <Label htmlFor="name" className="text-base font-medium">Nombre</Label>
