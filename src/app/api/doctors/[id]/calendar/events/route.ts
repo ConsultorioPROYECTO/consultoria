@@ -396,5 +396,5 @@ const getHandler = async (
 
 export const GET = withOptimizedAuthentication(getHandler, {
   requiredRoles: ['admin', 'medico', 'asistente'],
-  requireOrganization: true
+  requireOrganization: false
 });

@@ -475,7 +475,7 @@ const createDoctorServiceHandler = async (
  */
 export const GET = withOptimizedAuthentication(getDoctorServicesHandler, {
   requiredRoles: ['admin', 'medico', 'asistente'],
-  requireOrganization: true
+  requireOrganization: false
 });
 
 /**

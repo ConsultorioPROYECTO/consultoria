@@ -449,7 +449,7 @@ const createMedicalServiceHandler = async (
  */
 export const GET = withOptimizedAuthentication(getMedicalServicesHandler, {
   requiredRoles: ['admin', 'medico', 'asistente'],
-  requireOrganization: true
+  requireOrganization: false
 });
 
 /**

@@ -292,7 +292,7 @@ const createPatientHandler = async (
  */
 export const GET = withOptimizedAuthentication(getPatientsHandler, {
   requiredRoles: ['admin', 'medico', 'asistente'],
-  requireOrganization: true
+  requireOrganization: false
 });
 
 /**
