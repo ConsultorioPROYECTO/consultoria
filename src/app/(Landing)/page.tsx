@@ -206,6 +206,46 @@ export default function HomePage() {
           </motion.div>
         </motion.div>
 
+        {/* Animated Dots Background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          {Array.from({ length: 20 }).map((_, i) => {
+            const delay = i * 0.1;
+            const angle = (i / 20) * 2 * Math.PI;
+            const distance = 50 + (i % 3) * 20;
+            
+            return (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-primary/20 rounded-full"
+                style={{
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)'
+                }}
+                initial={{
+                  x: 0,
+                  y: 0,
+                  opacity: 0,
+                  scale: 0
+                }}
+                animate={{
+                  x: Math.cos(angle) * distance + 'vw',
+                  y: Math.sin(angle) * distance + 'vh',
+                  opacity: [0, 0.6, 0],
+                  scale: [0, 1, 0]
+                }}
+                transition={{
+                  duration: 3,
+                  delay: delay,
+                  repeat: Infinity,
+                  repeatDelay: 2,
+                  ease: "easeOut"
+                }}
+              />
+            );
+          })}
+        </div>
+
         {/* Botón para Bajar */}
         <motion.button
           onClick={() => {
