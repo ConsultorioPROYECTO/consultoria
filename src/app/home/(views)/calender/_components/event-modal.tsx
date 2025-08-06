@@ -12,6 +12,7 @@ import { es } from "date-fns/locale";
 import { CalendarIcon, Edit2, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/context/AuthContext";
+import { APPOINTMENT_STATUS } from "@/types/appointment-status";
 // import { getFirebaseAuthToken } from "@/app/lib/firebase/clientUtils"; // Removido - usando contexto centralizado
 
 type Event = {
@@ -161,9 +162,11 @@ export function EventModal({ isOpen, onClose, date, events, onEventUpdate }: Eve
                           <h3 className="font-medium text-foreground leading-tight break-words">{event.title}</h3>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
-                              event.status === 'pending' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                              event.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                              event.status === 'canceled' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' : 
+                              event.status === APPOINTMENT_STATUS.PENDING ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                              event.status === APPOINTMENT_STATUS.ACCEPTED ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                              event.status === APPOINTMENT_STATUS.ATTENDED ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                              event.status === APPOINTMENT_STATUS.REJECTED ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' :
+                              event.status === APPOINTMENT_STATUS.CANCELED ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400' : 
                               'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
                             }`}>
                               {event.status.charAt(0).toUpperCase() + event.status.slice(1)}

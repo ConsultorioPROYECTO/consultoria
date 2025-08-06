@@ -433,6 +433,7 @@ export async function verifyTokenAndGetUserInfo(idToken: string): Promise<{
   if (Math.random() < 0.1) { // 10% de probabilidad de limpiar cache
     cleanExpiredCache();
   }
+  cleanExpiredCache();
   
   // Buscar en cache primero
   const cacheKey = decodedToken.uid;
