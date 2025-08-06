@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/t
 import { useState, useRef } from 'react';
 import { useAICare } from '@/hooks/useAICare';
 import { PatientHistoryView } from "./medical-consultation/PatientHistoryView";
+import { useAuth } from '@/app/context/AuthContext';
 
 
 import { Appointment, } from '../../../../../../db/schema';
@@ -42,7 +43,7 @@ interface MedicalConsultationWorkspaceProps {
   appointment: ConsultationAppointment | null; // La cita para la consulta actual
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaveAndComplete: (appointmentId: number, notes: string) => void;
+  onSaveAndComplete?: (appointmentId: number, notes: string) => void;
 }
 
 export function MedicalConsultationWorkspace({
@@ -53,7 +54,10 @@ export function MedicalConsultationWorkspace({
 }: MedicalConsultationWorkspaceProps) {
   const [notes, setNotes] = useState('');
   const [, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -72,10 +76,52 @@ export function MedicalConsultationWorkspace({
 
   if (!appointment) return null; // No renderizar si no hay cita seleccionada
 
-  const handleSaveClick = () => {
-    // Debug logs removidos para producción
-    onSaveAndComplete(appointment.id ?? 0, notes);
-    setNotes('');
+  const handleSaveClick = async () => {
+    if (!appointment?.google_event_id || !user) {
+      setSubmitError('Datos de cita o usuario no disponibles');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      // Concatenar notas de consulta con notas de AI-Care
+       const aiCareText = typeof data?.text === 'string' ? data.text : '';
+       const combinedNotes = notes.trim() + (aiCareText.trim() ? '\n\n--- AI-Care ---\n' + aiCareText.trim() : '');
+
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/appointments/${appointment.google_event_id}/attend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          notes: combinedNotes,
+          durationMinutes: appointment.service?.durationMinutes,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al marcar la cita como atendida');
+      }
+
+      // Llamar callback opcional si existe
+      if (onSaveAndComplete) {
+        onSaveAndComplete(appointment.id ?? 0, combinedNotes);
+      }
+
+      // Limpiar formulario y cerrar modal
+      setNotes('');
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error al guardar consulta:', error);
+      setSubmitError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Para mostrar el resultado de AI Care en el textarea central
@@ -214,8 +260,16 @@ export function MedicalConsultationWorkspace({
         </div>
 
         {/* Añadir pie de diálogo con botón de guardar */}
-        <DialogFooter>
-          <Button onClick={handleSaveClick}>Guardar y Completar Consulta</Button>
+        <DialogFooter className="flex flex-col gap-2">
+          {submitError && (
+            <div className="text-red-500 text-sm text-center">{submitError}</div>
+          )}
+          <Button 
+            onClick={handleSaveClick} 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Guardando...' : 'Guardar y Completar Consulta'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
