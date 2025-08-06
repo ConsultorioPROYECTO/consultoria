@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import {
   ChevronLeft,
   User,
@@ -52,21 +52,21 @@ export default function ConfigView() {
   const { theme, setTheme } = useTheme()
   const { uiStyle } = useUIStyle()
   const { user, userRole } = useAuth()
-  const [activeSection, setActiveSection] = useState("Preferencias")
-  const [selectedTheme, setSelectedTheme] = useState<string>(theme?.replace('-dark', '') || "system")
+  const [activeSection, setActiveSection] = useState("Cuenta")
   const isMobile = useIsMobile()
   const [showMobileNav, setShowMobileNav] = useState(true)
 
-  useEffect(() => {
-    if (theme) {
-      // Handle 'system' theme separately
-      if (theme === 'system') {
-        setSelectedTheme('system');
-      } else {
-        setSelectedTheme(theme?.replace('-dark', '') || 'system');
-      }
-    }
-  }, [theme]);
+  // Memoize selectedTheme to avoid unnecessary re-renders
+  const selectedTheme = useMemo(() => {
+    if (!theme) return "system"
+    if (theme === 'system') return 'system'
+    return theme.replace('-dark', '') || 'system'
+  }, [theme])
+
+  // Early return if contexts are not ready to prevent hydration issues
+  if (!theme || !uiStyle || userRole === undefined) {
+    return null
+  }
 
 
 
@@ -82,7 +82,6 @@ export default function ConfigView() {
   }
 
   const handleThemeChange = (value: string) => {
-    setSelectedTheme(value);
     // Apply the theme immediately while preserving the current mode (light/dark)
     // For 'system' theme, don't append '-dark' suffix
     if (value === 'system') {
