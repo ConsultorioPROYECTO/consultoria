@@ -174,10 +174,7 @@ export default function DoctorDashboard() {
         <MedicalConsultationWorkspace
           appointment={selectedConsultationAppointment}
           isOpen={isMedicalWorkspaceOpen}
-           onOpenChange={setIsMedicalWorkspaceOpen}
-          onSaveAndComplete={() => {
-            // Lógica de guardado
-          }}
+          onOpenChange={setIsMedicalWorkspaceOpen}
         />
       </main>
     </div>
