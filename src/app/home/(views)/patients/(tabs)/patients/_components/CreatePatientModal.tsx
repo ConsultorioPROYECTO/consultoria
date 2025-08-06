@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useAuth } from '@/app/context/AuthContext'
+import { BirthDatePicker } from './BirthDatePicker'
 
 interface CreatePatientModalProps {
   isOpen: boolean
@@ -38,6 +39,24 @@ interface CreatePatientModalProps {
 }
 
 interface CreatePatientRequest {
+  firstName: string
+  lastName: string
+  identificationType: string
+  identificationNumber: string
+  gender: string
+  birthDate?: Date
+  phone?: string
+  email?: string
+  address?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactRelation?: string
+  allergies?: string
+  currentMedications?: string
+  bloodType?: string
+}
+
+interface CreatePatientApiRequest {
   firstName: string
   lastName: string
   identificationType: string
@@ -86,12 +105,13 @@ const BLOOD_TYPES = [
 interface FormContentProps {
   formData: CreatePatientRequest
   handleInputChange: (field: keyof CreatePatientRequest, value: string) => void
+  handleDateChange: (date: Date | undefined) => void
   handleSubmit: (e: React.FormEvent) => void
   handleCloseDialog: () => void
   isLoading: boolean
 }
 
-const FormContent = React.memo(({ formData, handleInputChange, handleSubmit, handleCloseDialog, isLoading }: FormContentProps) => (
+const FormContent = React.memo(({ formData, handleInputChange, handleDateChange, handleSubmit, handleCloseDialog, isLoading }: FormContentProps) => (
   <>
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Información Personal Básica */}
@@ -178,11 +198,11 @@ const FormContent = React.memo(({ formData, handleInputChange, handleSubmit, han
           
           <div className="space-y-2">
             <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
-            <Input
-              id="birthDate"
-              type="date"
-              value={formData.birthDate}
-              onChange={(e) => handleInputChange('birthDate', e.target.value)}
+            <BirthDatePicker
+              selectedDate={formData.birthDate}
+              onDateSelect={handleDateChange}
+              className="w-full"
+              placeholder="Seleccionar fecha de nacimiento"
             />
           </div>
           
@@ -349,7 +369,7 @@ export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: Create
     identificationType: '',
     identificationNumber: '',
     gender: '',
-    birthDate: '',
+    birthDate: undefined,
     phone: '',
     email: '',
     address: '',
@@ -368,6 +388,13 @@ export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: Create
     }))
   }, [])
 
+  const handleDateChange = useCallback((date: Date | undefined) => {
+    setFormData(prev => ({
+      ...prev,
+      birthDate: date
+    }))
+  }, [])
+
   const resetForm = useCallback(() => {
     setFormData({
       firstName: '',
@@ -375,7 +402,7 @@ export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: Create
       identificationType: '',
       identificationNumber: '',
       gender: '',
-      birthDate: '',
+      birthDate: undefined,
       phone: '',
       email: '',
       address: '',
@@ -432,7 +459,7 @@ export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: Create
 
     try {
       // Preparar los datos para enviar (remover campos vacíos opcionales)
-      const dataToSend: Partial<CreatePatientRequest> = {
+      const dataToSend: Partial<CreatePatientApiRequest> = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         identificationType: formData.identificationType,
@@ -441,7 +468,7 @@ export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: Create
       }
 
       // Agregar campos opcionales solo si tienen valor
-      if (formData.birthDate) dataToSend.birthDate = formData.birthDate
+      if (formData.birthDate) dataToSend.birthDate = formData.birthDate.toISOString().split('T')[0]
       if (formData.phone?.trim()) dataToSend.phone = formData.phone.trim()
       if (formData.email?.trim()) dataToSend.email = formData.email.trim()
       if (formData.address?.trim()) dataToSend.address = formData.address.trim()
@@ -504,6 +531,7 @@ export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: Create
                     <FormContent 
                       formData={formData}
                       handleInputChange={handleInputChange}
+                      handleDateChange={handleDateChange}
                       handleSubmit={handleSubmit}
                       handleCloseDialog={handleCloseDialog}
                       isLoading={isLoading}
@@ -525,6 +553,7 @@ export function CreatePatientModal({ isOpen, onClose, onPatientCreated }: Create
                 <FormContent 
                    formData={formData}
                    handleInputChange={handleInputChange}
+                   handleDateChange={handleDateChange}
                    handleSubmit={handleSubmit}
                    handleCloseDialog={handleCloseDialog}
                    isLoading={isLoading}
