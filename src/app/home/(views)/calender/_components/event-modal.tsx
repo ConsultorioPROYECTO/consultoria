@@ -142,125 +142,143 @@ export function EventModal({ isOpen, onClose, date, events, onEventUpdate }: Eve
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="text-xl font-semibold">{capitalizedDate}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 mt-4">
-          {events.length > 0 ? (
-            events.map((event) => (
-              <div key={event.id} className="p-3 rounded-lg bg-card border border-border hover:bg-accent/10 transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className={`w-4 h-4 rounded-full ${event.color} mt-0.5 flex-shrink-0`}></div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="font-medium text-foreground truncate">{event.title}</p>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          event.status === 'confirmada' ? 'bg-green-100 text-green-800' :
-                          event.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                          event.status === 'cancelada' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
-                        </span>
-                        {canEdit && editingEventId !== event.id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditStart(event)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
+        
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="grid gap-3 p-1">
+            {events.length > 0 ? (
+              events.map((event) => (
+                <div key={event.id} className="p-4 rounded-lg bg-card border border-border hover:bg-accent/10 transition-colors">
+                  <div className="grid grid-cols-[auto_1fr_auto] gap-3 items-start">
+                    <div className={`w-4 h-4 rounded-full ${event.color} mt-1 flex-shrink-0`}></div>
+                    
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="font-medium text-foreground leading-tight break-words">{event.title}</h3>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
+                              event.status === 'pending' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                              event.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                              event.status === 'canceled' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' : 
+                              'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+                            }`}>
+                              {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {editingEventId === event.id ? (
+                          <div className="grid gap-4 mt-3">
+                            <div className="grid gap-2">
+                              <Label htmlFor="edit-date" className="text-sm font-medium">Fecha</Label>
+                              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className={cn(
+                                      "w-full justify-start text-left font-normal",
+                                      !editingData.date && "text-muted-foreground"
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">
+                                      {editingData.date ? format(editingData.date, "PPP", { locale: es }) : "Seleccionar fecha"}
+                                    </span>
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={editingData.date}
+                                    onSelect={(date) => {
+                                      if (date) {
+                                        setEditingData(prev => ({ ...prev, date }));
+                                        setIsCalendarOpen(false);
+                                      }
+                                    }}
+                                    disabled={(date) => date < new Date()}
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </div>
+                            
+                            <div className="grid gap-2">
+                              <Label htmlFor="edit-time" className="text-sm font-medium">Hora de inicio</Label>
+                              <Input
+                                id="edit-time"
+                                type="time"
+                                value={editingData.time}
+                                onChange={(e) => setEditingData(prev => ({ ...prev, time: e.target.value }))}
+                                className="w-full"
+                              />
+                            </div>
+                            
+                            <div className="flex gap-2 justify-end pt-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleEditCancel}
+                                disabled={isUpdating}
+                                className="flex items-center gap-1"
+                              >
+                                <X className="h-3 w-3" />
+                                Cancelar
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleEditSave(event)}
+                                disabled={isUpdating || !editingData.time || !editingData.date}
+                                className="flex items-center gap-1"
+                              >
+                                <Save className="h-3 w-3" />
+                                {isUpdating ? 'Guardando...' : 'Guardar'}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid gap-1">
+                            <p className="text-sm text-muted-foreground">{event.type}</p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                              <span className="whitespace-nowrap">{event.time} - {event.endTime}</span>
+                              <span>•</span>
+                              <span className="whitespace-nowrap">
+                                {((parseInt(event.endTime.split(':')[0]) * 60 + parseInt(event.endTime.split(':')[1])) - 
+                                 (parseInt(event.time.split(':')[0]) * 60 + parseInt(event.time.split(':')[1]))) / 60}h
+                              </span>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
                     
-                    {editingEventId === event.id ? (
-                      <div className="space-y-3 mt-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-date" className="text-sm font-medium">Fecha</Label>
-                          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  !editingData.date && "text-muted-foreground"
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {editingData.date ? format(editingData.date, "PPP", { locale: es }) : "Seleccionar fecha"}
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={editingData.date}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    setEditingData(prev => ({ ...prev, date }));
-                                    setIsCalendarOpen(false);
-                                  }
-                                }}
-                                disabled={(date) => date < new Date()}
-                                initialFocus
-                              />
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-time" className="text-sm font-medium">Hora de inicio</Label>
-                          <Input
-                            id="edit-time"
-                            type="time"
-                            value={editingData.time}
-                            onChange={(e) => setEditingData(prev => ({ ...prev, time: e.target.value }))}
-                            className="w-full"
-                          />
-                        </div>
-                        
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleEditCancel}
-                            disabled={isUpdating}
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Cancelar
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleEditSave(event)}
-                            disabled={isUpdating || !editingData.time || !editingData.date}
-                          >
-                            <Save className="h-3 w-3 mr-1" />
-                            {isUpdating ? 'Guardando...' : 'Guardar'}
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm text-muted-foreground mb-1">{event.type}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>{event.time} - {event.endTime}</span>
-                          <span>•</span>
-                          <span>{((parseInt(event.endTime.split(':')[0]) * 60 + parseInt(event.endTime.split(':')[1])) - 
-                                 (parseInt(event.time.split(':')[0]) * 60 + parseInt(event.time.split(':')[1]))) / 60}h</span>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex-shrink-0">
+                      {canEdit && editingEventId !== event.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditStart(event)}
+                          className="h-8 w-8 p-0 hover:bg-accent"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <p className="text-muted-foreground text-sm">No hay citas programadas para este día</p>
+                </div>
               </div>
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No hay citas programadas para este día</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
