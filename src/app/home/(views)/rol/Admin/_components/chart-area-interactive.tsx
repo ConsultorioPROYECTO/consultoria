@@ -31,12 +31,6 @@ import WaveformLoader from '@rutas/components/custom/WaveformLoader';
 
 export const description = "A stacked bar chart with a legend"
 
-const LoadingSpinner = () => (
-  <div className="flex h-screen flex-col items-center justify-center">
-    <WaveformLoader className="w-24 h-auto text-muted-foreground" />
-  </div>
-);
-
 const chartConfig = {
   citas: {
     label: "Citas",
