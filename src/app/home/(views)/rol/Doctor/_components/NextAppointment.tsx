@@ -3,6 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { ClockIcon, UserIcon } from 'lucide-react';
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
+import { APPOINTMENT_STATUS } from "@/types/appointment-status";
 import { DateTime } from 'luxon';
 
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
@@ -21,7 +22,7 @@ export function NextAppointment({ calendarEvents, className }: NextAppointmentPr
 
   const upcomingAppointments = calendarEvents
     .filter(isAppointmentEvent)
-    .filter(apt => apt.appointmentStatus !== 'Completada')
+    .filter(apt => apt.appointmentStatus !== APPOINTMENT_STATUS.ATTENDED)
     .sort((a, b) => {
         const timeA = DateTime.fromISO(a.startDateTime as unknown as string).toMillis();
         const timeB = DateTime.fromISO(b.startDateTime as unknown as string).toMillis();

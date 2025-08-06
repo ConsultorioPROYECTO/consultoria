@@ -8,6 +8,7 @@ import { ClockIcon, UserIcon, Play, MapPinIcon, VideoIcon, Coffee } from "lucide
 import { useState, useMemo, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
+import { APPOINTMENT_STATUS } from "@/types/appointment-status";
 import { DateTime } from 'luxon';
 
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
@@ -27,8 +28,8 @@ export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAg
 
   // Memoizar contadores para evitar recálculos
   const { pendingCount, completedCount } = useMemo(() => {
-    const pending = calendarEvents.filter(e => !isAppointmentEvent(e) || e.appointmentStatus !== 'Completada').length;
-    const completed = calendarEvents.filter(e => isAppointmentEvent(e) && e.appointmentStatus === 'Completada').length;
+    const pending = calendarEvents.filter(e => !isAppointmentEvent(e) || e.appointmentStatus !== APPOINTMENT_STATUS.ATTENDED).length;
+    const completed = calendarEvents.filter(e => isAppointmentEvent(e) && e.appointmentStatus === APPOINTMENT_STATUS.ATTENDED).length;
     return { pendingCount: pending, completedCount: completed };
   }, [calendarEvents]);
 
@@ -54,9 +55,9 @@ export function DailyAgendaView({ calendarEvents, onStartConsultation }: DailyAg
   const filteredEvents = useMemo(() => {
     return calendarEvents.filter(event => {
       if (activeTab === "pending") {
-        return !isAppointmentEvent(event) || (isAppointmentEvent(event) && event.appointmentStatus !== "Completada");
+        return !isAppointmentEvent(event) || (isAppointmentEvent(event) && event.appointmentStatus !== APPOINTMENT_STATUS.ATTENDED);
       } else if (activeTab === "completed") {
-        return isAppointmentEvent(event) && event.appointmentStatus === "Completada";
+        return isAppointmentEvent(event) && event.appointmentStatus === APPOINTMENT_STATUS.ATTENDED;
       }
       return false;
     });
