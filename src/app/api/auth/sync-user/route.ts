@@ -111,9 +111,12 @@ export async function POST(request: NextRequest) {
         },
       });
 
-    // Obtener el usuario actualizado
+    // Obtener el usuario actualizado con información de la organización
     const user = await db.query.users.findFirst({ 
-      where: eq(users.firebaseUid, userData.firebaseUid) 
+      where: eq(users.firebaseUid, userData.firebaseUid),
+      with: {
+        organization: true
+      }
     });
     
     if (!user) {
@@ -171,11 +174,14 @@ export async function POST(request: NextRequest) {
         // Validar y crear calendario si es necesario usando la función centralizada
         try {
           const displayName = user.displayName || 'Doctor';
+          // Usar el timezone de la organización o un fallback
+          const organizationTimezone = user.organization?.timezone || 'America/Bogota';
+          
           const calendarResult = await ensureDoctorHasCalendar(doctor.idDoctor, {
             firstName: displayName.split(' ')[0] || 'Doctor',
             lastName: displayName.split(' ').slice(1).join(' ') || '',
             email: user.email || undefined,
-            timezone: 'America/Bogota'
+            timezone: organizationTimezone
           });
           
           if (calendarResult.success) {
