@@ -23,10 +23,10 @@
  * Si la validación falla, se responde con status 400 y detalles del error.
  *
  * @requires next/server - Para los tipos NextRequest y NextResponse.
- * @requires @rutas/db - Instancia `db` de Drizzle ORM.
- * @requires @rutas/db/schema/organization - Definición de la tabla `organization`.
- * @requires @rutas/db/schema/users - Definición de la tabla `users`.
- * @requires @rutas/app/lib/firebase/server/middleware/authMiddleware - Middleware de autenticación Firebase.
+ * @requires @/db - Instancia `db` de Drizzle ORM.
+ * @requires @/db/schema/organization - Definición de la tabla `organization`.
+ * @requires @/db/schema/users - Definición de la tabla `users`.
+ * @requires @/app/lib/firebase/server/middleware/authMiddleware - Middleware de autenticación Firebase.
  * @requires zod - Para validación de datos.
  */
 
