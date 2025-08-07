@@ -31,16 +31,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rutas/db';
+import { db } from '@/db';
 import { eq } from 'drizzle-orm';
-import { organization } from '@rutas/db/schema/organization';
-import { users } from '@rutas/db/schema/users';
-import { doctors } from '@rutas/db/schema/doctors';
-import { assistants } from '@rutas/db/schema/assistants';
+import { organization } from '@/db/schema/organization';
+import { users } from '@/db/schema/users';
+import { doctors } from '@/db/schema/doctors';
+import { assistants } from '@/db/schema/assistants';
 import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import {z} from 'zod';
-import { organizationInvitationRequest } from '@rutas/db/schema/organization_invitations_request';
+import { organizationInvitationRequest } from '@/db/schema/organization_invitations_request';
 
 // Credenciales para autenticación básica del webhook
 const BASIC_AUTH_USER = 'devUser';

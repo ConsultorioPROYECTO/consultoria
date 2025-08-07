@@ -1,10 +1,10 @@
 'use client'
 
 import { Plan, plansData } from "./prices"; // Importamos los datos y el tipo
-import { Button } from "@rutas/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@rutas/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Zap } from "lucide-react"; // Iconos para características y plan popular
-import { cn } from "@rutas/lib/utils";
+import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContactModal } from "./ContactModal";
 

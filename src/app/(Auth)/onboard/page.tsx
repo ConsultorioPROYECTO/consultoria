@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from "@rutas/components/ui/button"
+import { Button } from "@/components/ui/button"
 import { useEffect, useState, Suspense } from "react"
 import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react" // Zap y CheckCircle pueden ser removidos si no se usan directamente aquí
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,7 @@ import { Step2ConsultorioOrInvitacion } from "./_components/Step2ConsultorioOrIn
 import { Step3PlanSelect } from "./_components/Step3PlanSelect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@rutas/app/context/AuthContext";
+import { useAuth } from "@/app/context/AuthContext";
 
 
 function OnboardContent() {

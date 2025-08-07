@@ -5,9 +5,9 @@
  * 
  * @module api/assistants/doctors-with-appointments
  * @requires NextRequest, NextResponse from 'next/server'
- * @requires db from '@rutas/db'
- * @requires users, assistants, assistantDoctor, doctors from '@rutas/db/schema'
- * @requires withAuthentication from '@rutas/app/lib/firebase/server/middleware/authMiddleware'
+ * @requires db from '@/db'
+ * @requires users, assistants, assistantDoctor, doctors from '@/db/schema'
+ * @requires withAuthentication from '@/app/lib/firebase/server/middleware/authMiddleware'
  * @requires DecodedIdToken from 'firebase-admin/auth'
  * @requires eq, inArray from 'drizzle-orm'
  * @requires createErrorResponse, createSuccessResponse, API_ERRORS, HTTP_STATUS, DoctorsWithAppointmentsResponse from '@/types/api'
@@ -17,8 +17,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@rutas/db";
-import { assistants, assistantDoctor, doctors } from "@rutas/db/schema";
+import { db } from "@/db";
+import { assistants, assistantDoctor, doctors } from "@/db/schema";
 import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { eq, inArray } from "drizzle-orm";

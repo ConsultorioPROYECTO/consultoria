@@ -6,7 +6,7 @@ import { SignupContent } from './_components/SignupContent';
 import dynamic from 'next/dynamic';
 import { useSignupSync } from '../../../hooks/useSignupSync';
 import { useIsMobile } from '@/hooks/use-mobile';
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 
 const FeatureCarousel = dynamic(() => import('../_components/FeatureCarousel').then(mod => mod.FeatureCarousel), { ssr: false });
 

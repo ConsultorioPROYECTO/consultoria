@@ -1,12 +1,12 @@
-import { Button } from "@rutas/components/ui/button";
-import { Input } from "@rutas/components/ui/input";
-import { Label } from "@rutas/components/ui/label";
-import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@rutas/components/ui/input-otp";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import React from "react";
 import { getAuthTokenAndEmail } from "@lib/firebase/clientUtils";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@rutas/app/context/AuthContext";
+import { useAuth } from "@/app/context/AuthContext";
 
 interface AdminSetupProps {
   nameConsultorio: string;

@@ -1,4 +1,4 @@
-import { Button } from "@rutas/components/ui/button";
+import { Button } from "@/components/ui/button";
 import React from "react";
 
 export function Step1RoleSelect({ roles, selectedRole, setSelectedRole, nextStep }: {

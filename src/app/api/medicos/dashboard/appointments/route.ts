@@ -36,8 +36,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
-import { doctors } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
+import { db } from '@/db'; // Ajusta la ruta si es diferente
+import { doctors } from '@/db/schema'; // Ajusta la ruta si es diferente
 import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import { eq } from 'drizzle-orm';

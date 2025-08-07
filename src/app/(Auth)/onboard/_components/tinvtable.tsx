@@ -13,9 +13,9 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { Button } from "@rutas/components/ui/button"
-import { Checkbox } from "@rutas/components/ui/checkbox"
-import { Input } from "@rutas/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -23,13 +23,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@rutas/components/ui/table"
+} from "@/components/ui/table"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@rutas/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 import { ChevronDown, ArrowUpAZ, ArrowDownZA, ArrowUpDown } from "lucide-react"
 import { AlertDelete } from "./alertDele"
 

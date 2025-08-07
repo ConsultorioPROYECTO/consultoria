@@ -10,8 +10,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-  } from "@rutas/components/ui/alert-dialog"
-  import { Button } from "@rutas/components/ui/button"
+  } from "@/components/ui/alert-dialog"
+  import { Button } from "@/components/ui/button"
   import { Trash2 } from "lucide-react"
 
   interface AlertDeleteProps {

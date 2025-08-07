@@ -1,7 +1,7 @@
-import { ToggleGroup, ToggleGroupItem } from "@rutas/components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SubscriptionCards } from "./SubscriptionCards";
 import React from "react";
-import { cn } from "@rutas/lib/utils";
+import { cn } from "@/lib/utils";
 
 export function Step3PlanSelect({
   nameConsultorio,
