@@ -46,7 +46,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { medicalServices } from "@/db/schema";
+import { medicalServices, organization } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createErrorResponse, createSuccessResponse, HTTP_STATUS } from "@/types/api";
 import { handleDatabaseError } from "@/lib/api-helpers";
@@ -295,7 +295,14 @@ const createMedicalServiceHandler = async (
         eq(medicalServices.organizationId, requestingUser.organizationId!),
         eq(medicalServices.code, body.code),
         eq(medicalServices.isActive, true)
-      )
+      ),
+      with: {
+        organization: {
+          columns: {
+            currency: true
+          }
+        }
+      }
     });
 
     if (existingService) {
@@ -320,6 +327,14 @@ const createMedicalServiceHandler = async (
 
     const [createdService] = await db.insert(medicalServices).values(newServiceData);
 
+    // Obtener información de la organización para incluir currency
+    const organizationInfo = await db.query.organization.findFirst({
+      where: eq(organization.id, requestingUser.organizationId!),
+      columns: {
+        currency: true
+      }
+    });
+
     // Sincronizar conocimiento con pgVector
     try {
       await syncKnowledgeAfterCRUD(
@@ -327,7 +342,8 @@ const createMedicalServiceHandler = async (
         'create',
         {
           id: createdService.insertId,
-          ...newServiceData
+          ...newServiceData,
+          organizationCurrency: organizationInfo?.currency
         }
       );
       console.log('✅ [API] Conocimiento sincronizado con pgVector exitosamente');

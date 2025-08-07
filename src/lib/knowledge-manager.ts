@@ -61,6 +61,7 @@ interface ServiceKnowledgeData {
   basePrice: string | null;
   organizationId: number;
   organizationName: string;
+  organizationCurrency: string | null;
 }
 
 interface OrganizationKnowledgeData {
@@ -571,7 +572,8 @@ export class KnowledgeManager {
           durationMinutes: medicalServices.durationMinutes,
           basePrice: medicalServices.basePrice,
           organizationId: medicalServices.organizationId,
-          organizationName: organization.name
+          organizationName: organization.name,
+          organizationCurrency: organization.currency
         })
         .from(medicalServices)
         .innerJoin(organization, eq(medicalServices.organizationId, organization.id))
@@ -679,7 +681,8 @@ export class KnowledgeManager {
     }
 
     if (data.basePrice) {
-      parts.push(`Precio: $${data.basePrice}`);
+      const currency = data.organizationCurrency || 'COP';
+      parts.push(`Precio: ${data.basePrice} ${currency}`);
     }
 
     return parts.join('\n');
