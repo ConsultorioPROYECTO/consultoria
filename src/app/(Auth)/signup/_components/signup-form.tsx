@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function SignupForm() {
-  const { signUpWithEmail, loading } = useAuth();
+  const { signUpWithEmail, signOut, loading } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState<SignupFormData>({ email: '', password: '' });
   const [formState, setFormState] = useState<AuthFormState>({ isLoading: false, error: null, success: false });
@@ -25,6 +25,11 @@ export function SignupForm() {
     try {
       await signUpWithEmail(credentials);
       setFormState({ isLoading: false, success: true, error: null });
+      
+      // Sign out to clear authentication state and avoid conflicts
+      await signOut();
+      
+      // Redirect to login for a clean authentication flow
       router.push('/login');
     } catch (error) {
       handleAuthError(error, 'signup');

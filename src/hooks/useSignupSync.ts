@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { sendEmailVerification } from 'firebase/auth';
@@ -14,20 +14,31 @@ export function useSignupSync() {
   const searchParams = useSearchParams();
   const invitacionCode = searchParams.get('invitacionCode');
   const role = searchParams.get('role');
+  
+  // Ref para trackear usuarios que ya han recibido correo de verificación
+  const sentVerificationEmailsRef = useRef(new Set<string>());
 
   const syncUser = useCallback(async (currentUser: typeof user) => {
     if (!currentUser) return;
 
     // Si el email no está verificado, enviar verificación
     if (!currentUser.emailVerified) {
+      // Verificar si ya se envió correo para este usuario
+      if (sentVerificationEmailsRef.current.has(currentUser.uid)) {
+        return; // Ya se envió correo para este usuario
+      }
+      
       try {
         await sendEmailVerification(currentUser);
+        // Marcar que se envió correo para este usuario
+        sentVerificationEmailsRef.current.add(currentUser.uid);
         toast.success('Correo de verificación enviado', {
           description: 'Te hemos enviado un correo de verificación. Por favor, verifica tu correo antes de continuar.'
         });
       } catch (error) {
         console.error('Error al enviar correo de verificación:', error);
         toast.error('Error al enviar correo de verificación');
+        // No agregar al Set si hay error, para permitir reintento
       }
       return;
     }
