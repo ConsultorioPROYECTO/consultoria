@@ -217,7 +217,7 @@ export function OrganizationSettings({ trigger }: OrganizationSettingsProps) {
                   value={formData.timezone}
                   onValueChange={(value) => handleInputChange("timezone", value)}
                 >
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="col-span-3 w-full">
                     <SelectValue placeholder="Selecciona una zona horaria" />
                   </SelectTrigger>
                   <SelectContent>
@@ -238,7 +238,7 @@ export function OrganizationSettings({ trigger }: OrganizationSettingsProps) {
                   value={formData.currency}
                   onValueChange={(value) => handleInputChange("currency", value)}
                 >
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="col-span-3 w-full">
                     <SelectValue placeholder="Selecciona una moneda" />
                   </SelectTrigger>
                   <SelectContent>
