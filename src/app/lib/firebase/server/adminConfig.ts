@@ -434,11 +434,12 @@ export async function verifyTokenAndGetUserInfo(idToken: string): Promise<{
     cleanExpiredCache();
   }
   cleanExpiredCache();
-  
+  const now = Date.now();
+
+  /** 
   // Buscar en cache primero
   const cacheKey = decodedToken.uid;
   const cachedInfo = userCache.get(cacheKey);
-  const now = Date.now();
   
   if (cachedInfo && (now - cachedInfo.timestamp) < CACHE_TTL) {
     // Cache hit - retornar información cached
@@ -448,7 +449,7 @@ export async function verifyTokenAndGetUserInfo(idToken: string): Promise<{
       organizationInfo: cachedInfo.organizationInfo
     };
   }
-  
+  */
   // Cache miss - consultar base de datos
   const { db } = await import('@/db');
   const { users, organization } = await import('@/db/schema');
@@ -497,7 +498,7 @@ export async function verifyTokenAndGetUserInfo(idToken: string): Promise<{
   };
   
   // Guardar en cache
-  userCache.set(cacheKey, cacheData);
+  //userCache.set(cacheKey, cacheData);
   
   return {
     decodedToken,
