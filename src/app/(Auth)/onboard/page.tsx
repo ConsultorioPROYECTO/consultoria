@@ -128,12 +128,6 @@ function OnboardContent() {
           }
         }
     
-        toast.success(
-          selectedRole === 'Admin' // Asegúrate de usar selectedRole aquí
-            ? '¡Organización creada y plan seleccionado!'
-            : '¡Plan seleccionado!'
-        );
-        
         // Cerrar sesión automáticamente y redirigir al login
         // No necesitamos refrescar info antes de cerrar sesión
         await signOut();
