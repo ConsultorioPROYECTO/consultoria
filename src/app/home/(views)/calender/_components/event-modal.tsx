@@ -1,12 +1,12 @@
 'use client'
 
 import * as React from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@rutas/components/ui/dialog";
-import { Button } from "@rutas/components/ui/button";
-import { Input } from "@rutas/components/ui/input";
-import { Label } from "@rutas/components/ui/label";
-import { Calendar } from "@rutas/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@rutas/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Edit2, Save, X } from "lucide-react";

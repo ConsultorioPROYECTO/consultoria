@@ -3,7 +3,7 @@
 import React, { Suspense, ComponentType } from 'react';
 import dynamic from 'next/dynamic';
 import { ViewType, NAVIGATION_VIEWS } from '@/app/constants/navigation';
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 import RoleBasedRenderer, { UserRole } from './RoleBasedRenderer';
 import { useAuth } from '@/app/context/AuthContext';
 

@@ -70,11 +70,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rutas/db'; // Ajusta la ruta si es diferente
-import { users } from '@rutas/db/schema'; // Ajusta la ruta si es diferente
-import { doctors } from '@rutas/db/schema/doctors'; // Importar esquema de doctors
-import { assistants } from '@rutas/db/schema/assistants'; // Importar esquema de assistants
-import { withOptimizedAdminAuth, AuthenticatedUserInfo } from '@rutas/app/lib/firebase/server/middleware/optimizedAuthMiddleware'; // Middleware optimizado
+import { db } from '@/db'; // Ajusta la ruta si es diferente
+import { users } from '@/db/schema'; // Ajusta la ruta si es diferente
+import { doctors } from '@/db/schema/doctors'; // Importar esquema de doctors
+import { assistants } from '@/db/schema/assistants'; // Importar esquema de assistants
+import { withOptimizedAdminAuth, AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware'; // Middleware optimizado
 import { eq, desc } from 'drizzle-orm';
 
 // --- Definición del Manejador GET con Autenticación y Autorización ---

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useNavigation } from '@rutas/app/context/NavigationContext';
+import { useNavigation } from '@/app/context/NavigationContext';
 import { renderView } from './ViewRegistry';
 
 /**

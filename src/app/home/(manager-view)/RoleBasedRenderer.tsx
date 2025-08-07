@@ -1,7 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 
 export type UserRole = 'medico' | 'asistente' | 'admin' | 'N/A' | null;
 

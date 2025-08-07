@@ -1,20 +1,20 @@
 'use client'
 
 import * as React from "react";
-import { Calendar } from "@rutas/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { ChevronLeftIcon, ChevronRightIcon, LayoutGrid, CalendarDays, Clock, ChevronDown } from "lucide-react";
-import { Button } from "@rutas/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@rutas/components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@rutas/components/ui/popover";
+} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -22,7 +22,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@rutas/components/ui/command";
+} from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
