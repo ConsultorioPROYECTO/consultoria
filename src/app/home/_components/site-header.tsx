@@ -1,6 +1,6 @@
 // import { Button } from "@rutas/components/ui/button"
 // import { Separator } from "@rutas/components/ui/separator"
-import { SidebarTrigger } from "@rutas/components/ui/sidebar"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export function SiteHeader() {
   return (

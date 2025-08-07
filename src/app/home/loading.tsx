@@ -1,4 +1,4 @@
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 
 export default function Loading() {
   return (

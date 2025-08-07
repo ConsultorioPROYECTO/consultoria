@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useMemo, useTransition, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useNavigation } from "@rutas/app/context/NavigationContext"
+import { useNavigation } from "@/app/context/NavigationContext"
 import { NAVIGATION_VIEWS } from "@/app/constants/navigation";
 import dynamic from 'next/dynamic';
 import { ConfigDrawer } from './config-drawer';

@@ -13,7 +13,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@rutas/components/ui/avatar"
+} from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,13 +22,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@rutas/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@rutas/components/ui/sidebar"
+} from "@/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 import { useNavigation } from "../../context/NavigationContext"
 import { NAVIGATION_VIEWS } from "@/app/constants/navigation"

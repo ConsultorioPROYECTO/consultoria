@@ -9,8 +9,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@rutas/components/ui/sidebar"
-import { cn } from "@rutas/lib/utils"
+} from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 export function NavSecondary({
   items,

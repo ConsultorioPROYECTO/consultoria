@@ -3,8 +3,8 @@
 import * as React from "react"
 import { Users, Stethoscope, UserCheck, Calendar, TrendingUp, Activity } from "lucide-react"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"
-import { Badge } from "@rutas/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useDashboardOptimized } from "@/hooks/useDashboardOptimized"
 import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments"
 

@@ -1,5 +1,5 @@
-import UiScreen from '@rutas/components/uiscreen';
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+import UiScreen from '@/components/uiscreen';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 
 export function LoadingScreen() {
   return (

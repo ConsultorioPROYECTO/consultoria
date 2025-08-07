@@ -3,13 +3,13 @@
 import React from 'react';
 import { AppSidebar } from '@/app/home/_components/app-sidebar';
 import { SiteHeader } from '@/app/home/_components/site-header';
-import { SidebarInset, SidebarProvider } from '@rutas/components/ui/sidebar';
-import { NavigationProvider } from '@rutas/app/context/NavigationContext';
-import { DashboardDataProvider } from '@rutas/app/context/DashboardDataContext';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { NavigationProvider } from '@/app/context/NavigationContext';
+import { DashboardDataProvider } from '@/app/context/DashboardDataContext';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import ViewRenderer from './(manager-view)/ViewRenderer';
 import { LoadingScreen } from './_components/loadingScreen';
-import { useIsMobile } from '@rutas/hooks/use-mobile'; // Importar el hook
+import { useIsMobile } from '@/hooks/use-mobile'; // Importar el hook
 import { MobileNavbar } from './_components/mobile-navbar'; // Importar el componente de navbar móvil
 
 import { useAuth } from '@/app/context/AuthContext';

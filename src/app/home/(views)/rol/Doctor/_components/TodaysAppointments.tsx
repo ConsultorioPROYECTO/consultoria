@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent } from "@rutas/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface TodaysAppointmentsProps {
   appointmentCount: number;

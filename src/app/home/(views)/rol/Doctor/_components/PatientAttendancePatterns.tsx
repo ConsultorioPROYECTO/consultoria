@@ -1,7 +1,7 @@
 // src/app/dashboard/2/compo/PatientAttendancePatterns.tsx
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@rutas/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
 interface AttendanceData {

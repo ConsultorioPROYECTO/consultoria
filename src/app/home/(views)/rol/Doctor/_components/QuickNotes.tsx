@@ -1,9 +1,9 @@
 // src/app/dashboard/2/compo/QuickNotes.tsx
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@rutas/components/ui/card";
-import { Textarea } from "@rutas/components/ui/textarea";
-import { Button } from "@rutas/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { MicIcon, SaveIcon } from "lucide-react"; // Asumiendo lucide-react
 import { useState } from "react";
 

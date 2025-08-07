@@ -7,10 +7,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@rutas/components/ui/sidebar"
+} from "@/components/ui/sidebar"
 import Link from 'next/link'
-import { cn } from "@rutas/lib/utils"
-import { useNavigation } from "@rutas/app/context/NavigationContext"
+import { cn } from "@/lib/utils"
+import { useNavigation } from "@/app/context/NavigationContext"
 import { NAVIGATION_VIEWS } from "@/app/constants/navigation"
 
 

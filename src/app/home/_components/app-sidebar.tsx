@@ -21,10 +21,10 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-} from "@rutas/components/ui/sidebar"
+} from "@/components/ui/sidebar"
 import { useAuth } from "../../context/AuthContext"
 import { useUIStyle } from "../../context/UIStyleContext"
-import { useNavigation } from "@rutas/app/context/NavigationContext"
+import { useNavigation } from "@/app/context/NavigationContext"
 import { NAVIGATION_VIEWS, VIEW_CONFIG, ALL_VIEWS, canUserAccessView } from "@/app/constants/navigation"
 import { geistFont } from "../../fonts"
 

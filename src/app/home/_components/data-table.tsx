@@ -18,16 +18,16 @@ import {
 import { CalendarDays, Clock, User, Stethoscope } from "lucide-react"
 import { z } from "zod"
 
-import { Badge } from "@rutas/components/ui/badge"
-import { Button } from "@rutas/components/ui/button"
-import { Input } from "@rutas/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@rutas/components/ui/select"
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -35,7 +35,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@rutas/components/ui/table"
+} from "@/components/ui/table"
 import { useDoctorsWithAppointments } from "@/hooks/useDoctorsWithAppointments"
 
 // Nuevo schema para datos de citas médicas
