@@ -48,6 +48,82 @@ import { generateRandomInvitationCode, generateUniqueInstanceId, generateUniqueA
 import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
 
 /**
+ * Valida si una zona horaria es válida según los estándares IANA.
+ * 
+ * @description
+ * Utiliza el método nativo `Intl.supportedValuesOf('timeZone')` para validar
+ * que la zona horaria proporcionada esté soportada por el entorno de ejecución.
+ * Si el método no está disponible (navegadores antiguos), utiliza un fallback
+ * que intenta crear un objeto `Intl.DateTimeFormat` con la zona horaria.
+ * 
+ * @param {string} timezone - Identificador de zona horaria IANA (ej: 'America/New_York', 'UTC')
+ * @returns {boolean} `true` si la zona horaria es válida, `false` en caso contrario
+ * 
+ * @example
+ * ```typescript
+ * isValidTimezone('America/New_York'); // true
+ * isValidTimezone('UTC'); // true
+ * isValidTimezone('Invalid/Timezone'); // false
+ * ```
+ * 
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/supportedValuesOf | Intl.supportedValuesOf()}
+ * @see {@link https://en.wikipedia.org/wiki/List_of_tz_database_time_zones | IANA Time Zone Database}
+ * 
+ * @since 1.0.0
+ */
+const isValidTimezone = (timezone: string): boolean => {
+  try {
+    if (typeof Intl.supportedValuesOf !== 'undefined') {
+      const supportedTimezones = Intl.supportedValuesOf('timeZone');
+      return supportedTimezones.includes(timezone);
+    }
+    // Fallback: intentar crear un DateTimeFormat con la timezone
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Valida si un código de moneda es válido según el estándar ISO 4217.
+ * 
+ * @description
+ * Utiliza el método nativo `Intl.supportedValuesOf('currency')` para validar
+ * que el código de moneda proporcionado esté soportado por el entorno de ejecución.
+ * Si el método no está disponible (navegadores antiguos), utiliza un fallback
+ * que intenta crear un objeto `Intl.NumberFormat` con el código de moneda.
+ * 
+ * @param {string} currency - Código de moneda ISO 4217 (ej: 'USD', 'EUR', 'COP')
+ * @returns {boolean} `true` si el código de moneda es válido, `false` en caso contrario
+ * 
+ * @example
+ * ```typescript
+ * isValidCurrency('USD'); // true
+ * isValidCurrency('eur'); // true (se convierte a mayúsculas)
+ * isValidCurrency('XYZ'); // false
+ * ```
+ * 
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/supportedValuesOf | Intl.supportedValuesOf()}
+ * @see {@link https://en.wikipedia.org/wiki/ISO_4217 | ISO 4217 Currency Codes}
+ * 
+ * @since 1.0.0
+ */
+const isValidCurrency = (currency: string): boolean => {
+  try {
+    if (typeof Intl.supportedValuesOf !== 'undefined') {
+      const supportedCurrencies = Intl.supportedValuesOf('currency');
+      return supportedCurrencies.includes(currency.toUpperCase());
+    }
+    // Fallback: intentar crear un NumberFormat con la currency
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: currency });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
  * Esquema de validación para la creación de organización
  */
 const createOrganizationSchema = z.object({
@@ -58,9 +134,15 @@ const createOrganizationSchema = z.object({
   planId: z.string().min(1, 'El ID del plan es requerido'), // Cambiado a string
   timezone: z.string()
     .max(40, 'La zona horaria no puede exceder 40 caracteres')
+    .refine(timezone => !timezone || isValidTimezone(timezone), {
+      message: 'La zona horaria proporcionada no es válida según los estándares IANA'
+    })
     .optional(),
   currency: z.string()
     .max(40, 'La moneda no puede exceder 40 caracteres')
+    .refine(currency => !currency || isValidCurrency(currency), {
+      message: 'El código de moneda proporcionado no es válido según ISO 4217'
+    })
     .optional()
 });
 
@@ -93,10 +175,16 @@ const updateOrganizationSchema = z.object({
   timezone: z.string()
     .max(40, 'La zona horaria no puede exceder 40 caracteres')
     .trim()
+    .refine(timezone => !timezone || isValidTimezone(timezone), {
+      message: 'La zona horaria proporcionada no es válida según los estándares IANA'
+    })
     .optional(),
   currency: z.string()
     .max(40, 'La moneda no puede exceder 40 caracteres')
     .trim()
+    .refine(currency => !currency || isValidCurrency(currency), {
+      message: 'El código de moneda proporcionado no es válido según ISO 4217'
+    })
     .optional()
 });
 
