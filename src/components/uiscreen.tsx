@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from "@rutas/lib/utils";
+import { cn } from "@/lib/utils";
 import React from 'react';
 
 interface UiScreenProps {

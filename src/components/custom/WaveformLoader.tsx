@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@rutas/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface WaveformLoaderProps {
   className?: string;
@@ -29,4 +29,4 @@ const WaveformLoader: React.FC<WaveformLoaderProps> = ({ className }) => {
   );
 };
 
-export default WaveformLoader; 
+export default WaveformLoader;
