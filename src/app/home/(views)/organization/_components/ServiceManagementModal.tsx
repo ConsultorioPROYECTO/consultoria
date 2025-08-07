@@ -1,19 +1,19 @@
 'use client';
 
-import { Button } from "@rutas/components/ui/button";
-import { Input } from "@rutas/components/ui/input";
-import { Textarea } from "@rutas/components/ui/textarea";
-import { Switch } from "@rutas/components/ui/switch";
-import { Badge } from "@rutas/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useMedicalServicesData } from "@/app/context/DashboardDataContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@rutas/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerClose } from "@rutas/components/ui/drawer";
-import { Label } from "@rutas/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Skeleton } from "@rutas/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FileText } from "lucide-react";
 

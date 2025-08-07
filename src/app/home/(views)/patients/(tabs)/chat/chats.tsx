@@ -7,7 +7,7 @@ import { useChatMessages } from '@/hooks/useChatMessages'
 import { useWhatsAppConnection } from '@/hooks/useWhatsAppConnection'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 import { WifiOff, RefreshCw, AlertTriangle, MessageCircle } from 'lucide-react'
 
 // Los tipos ahora se importan desde el cliente API

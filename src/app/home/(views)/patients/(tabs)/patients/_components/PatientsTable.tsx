@@ -17,17 +17,17 @@ import {
 } from "@tanstack/react-table"
 import { CalendarDays, User, Phone, Mail, FileText } from "lucide-react"
 
-import { Badge } from "@rutas/components/ui/badge"
-import { Button } from "@rutas/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card"
-import { Input } from "@rutas/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@rutas/components/ui/select"
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -35,7 +35,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@rutas/components/ui/table"
+} from "@/components/ui/table"
 import { usePatientsOnly } from "@/hooks/useDashboardOptimized"
 import { type PatientWithRelations } from "@/hooks/usePatients"
 

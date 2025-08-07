@@ -1,8 +1,8 @@
 // src/app/dashboard/2/compo/PatientHistoryView.tsx
 'use client';
 
-import { ScrollArea } from "@rutas/components/ui/scroll-area";
-import { Badge } from "@rutas/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
 interface MedicalRecord {

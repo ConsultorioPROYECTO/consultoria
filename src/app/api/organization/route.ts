@@ -37,11 +37,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@rutas/db';
-import { organization, plans } from '@rutas/db/schema';
+import { db } from '@/db';
+import { organization, plans } from '@/db/schema';
 import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
-import { users } from '@rutas/db/schema/users';
+import { users } from '@/db/schema/users';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { generateRandomInvitationCode, generateUniqueInstanceId, generateUniqueApiKey } from '@/lib/organization-utils';

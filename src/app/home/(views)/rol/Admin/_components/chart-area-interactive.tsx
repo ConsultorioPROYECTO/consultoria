@@ -27,7 +27,7 @@ import {
 
 import { useDoctorMetrics } from "@/hooks/useDoctorMetrics";
 
-import WaveformLoader from '@rutas/components/custom/WaveformLoader';
+import WaveformLoader from '@/components/custom/WaveformLoader';
 
 export const description = "A stacked bar chart with a legend"
 

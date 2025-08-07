@@ -1,12 +1,12 @@
 'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@rutas/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@rutas/components/ui/card";
-import { Textarea } from "@rutas/components/ui/textarea";
-import { ScrollArea } from "@rutas/components/ui/scroll-area";
-import { Button } from "@rutas/components/ui/button";
-import { DialogFooter } from "@rutas/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@rutas/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useRef } from 'react';
 import { useAICare } from '@/hooks/useAICare';
 import { PatientHistoryView } from "./medical-consultation/PatientHistoryView";

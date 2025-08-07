@@ -13,13 +13,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 // import { getFirebaseAuthToken } from '@/app/lib/firebase/clientUtils'; // Removido - usando contexto centralizado
 import { useAuth } from '@/app/context/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { DAYS_OF_WEEK } from "@rutas/types/working-hours";
+import { DAYS_OF_WEEK } from "@/types/working-hours";
 import type { 
   DoctorWorkingHours, 
   DailyWorkingHours, 
   DayOfWeek, 
   TimeInterval 
-} from "@rutas/types/google-calendar-schemas";
+} from "@/types/google-calendar-schemas";
 import { toast } from 'sonner';
 
 // --- NUEVAS FUNCIONES DE LÓGICA Y VALIDACIÓN ---
