@@ -65,7 +65,7 @@
     "geist": "^1.4.2",
     "googleapis": "^150.0.1",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.510.0",
+    "lucide-react": "^0.537.0",
     "luxon": "^3.6.1",
     "mcp-handler": "^1.0.1",
     "mysql2": "^3.14.1",
