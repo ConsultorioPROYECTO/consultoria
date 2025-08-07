@@ -295,6 +295,20 @@
       "when": 1754541389279,
       "tag": "0041_funny_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1754541953157,
+      "tag": "0042_daffy_zaladane",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "5",
+      "when": 1754542146631,
+      "tag": "0043_panoramic_peter_parker",
+      "breakpoints": true
     }
   ]
 }

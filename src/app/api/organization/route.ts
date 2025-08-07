@@ -56,8 +56,9 @@ const createOrganizationSchema = z.object({
     .max(255, 'El nombre de la organización no puede exceder 255 caracteres')
     .trim(),
   planId: z.string().min(1, 'El ID del plan es requerido'), // Cambiado a string
-  timezone: z.string()
-    .max(40, 'La zona horaria no puede exceder 40 caracteres')
+  timezoneId: z.number()
+    .int('El ID de zona horaria debe ser un número entero')
+    .positive('El ID de zona horaria debe ser positivo')
     .optional(),
   currency: z.string()
     .max(40, 'La moneda no puede exceder 40 caracteres')
@@ -90,9 +91,9 @@ const updateOrganizationSchema = z.object({
     .max(45, 'El NIT no puede exceder 45 caracteres')
     .trim()
     .optional(),
-  timezone: z.string()
-    .max(40, 'La zona horaria no puede exceder 40 caracteres')
-    .trim()
+  timezoneId: z.number()
+    .int('El ID de zona horaria debe ser un número entero')
+    .positive('El ID de zona horaria debe ser positivo')
     .optional(),
   currency: z.string()
     .max(40, 'La moneda no puede exceder 40 caracteres')
@@ -135,7 +136,7 @@ const postUserRoleHandler = async (
         );
       }
       
-      const { organizationName, planId: planIdentifier, timezone, currency } = validationResult.data;
+      const { organizationName, planId: planIdentifier, timezoneId, currency } = validationResult.data;
 
       // Mapeo de identificadores de plan del frontend a nombres en la BD
       const planIdentifierMap: { [key: string]: string } = {
@@ -182,7 +183,7 @@ const postUserRoleHandler = async (
         planId: plan.id, // Usar el ID numérico del plan
         instanceId: instanceId,
         apiKey: apiKey,
-        timezone: timezone,
+        timezoneId: timezoneId,
         currency: currency,
       });
 
