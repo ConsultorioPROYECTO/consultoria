@@ -2,11 +2,12 @@
 
 import { Button } from "@/components/ui/button"
 import { useEffect, useState, Suspense } from "react"
-import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react" // Zap y CheckCircle pueden ser removidos si no se usan directamente aquí
+import { UserCog, Stethoscope, User, ArrowLeft } from "lucide-react"
 import { motion, AnimatePresence } from 'framer-motion';
 import { Step1RoleSelect } from "./_components/Step1RoleSelect";
 import { Step2ConsultorioOrInvitacion } from "./_components/Step2ConsultorioOrInvitacion";
 import { Step3PlanSelect } from "./_components/Step3PlanSelect";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/app/context/AuthContext";
@@ -74,6 +75,7 @@ function OnboardContent() {
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null); // Inicializar como null
     const [isAnnualBilling, setIsAnnualBilling] = useState(false);
     const [isLoading, setIsLoading] = useState(false); // Reintroducido isLoading
+   // Estado para el modal de éxito
   
     useEffect(() => {
       if (user && !isSynced) {
@@ -164,7 +166,10 @@ function OnboardContent() {
         // Refrescar la información del usuario para obtener el organizationId actualizado
         await refreshUserInfo();
         
-        router.push('/home');
+        // Cerrar sesión automáticamente y redirigir al login
+        await signOut();
+        toast.success("¡Onboard completado exitosamente! Por favor, inicia sesión nuevamente para sincronizar tus datos.");
+        router.push('/login');
       } catch (error) {
         console.error('Error al procesar el plan y la organización:', error);
         toast.error((error as Error).message || 'Ocurrió un error desconocido.');
@@ -175,6 +180,8 @@ function OnboardContent() {
     };
   const nextStep = () => setCurrentStep((prev: number) => prev + 1);
   const prevStep = () => setCurrentStep((prev: number) => prev - 1);
+  
+
   
   const handleBackAction = async () => {
     if (currentStep === 1) {
@@ -250,6 +257,12 @@ return (
                 }
                 // Para otros roles, el componente Step2 se encarga de la navegación.
               }}
+              onSuccess={async () => {
+                // Cerrar sesión automáticamente y redirigir al login
+                await signOut();
+                toast.success("¡Onboard completado exitosamente! Por favor, inicia sesión nuevamente para sincronizar tus datos.");
+                router.push('/login');
+              }}
             />
           )}
           {/* Paso 3: Selección de Plan (Solo para Admin) */}
@@ -277,6 +290,8 @@ return (
 
 
     </div>
+    
+
   </div>
   )
 }

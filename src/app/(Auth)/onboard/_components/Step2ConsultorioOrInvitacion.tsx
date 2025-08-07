@@ -18,6 +18,7 @@ interface JoinOrganizationProps {
   invitationCode: string;
   setInvitationCode: (v: string) => void;
   selectedRole: string;
+  onSuccess?: () => void;
 }
 
 function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetupProps) {
@@ -62,7 +63,7 @@ function AdminSetup({ nameConsultorio, setNameConsultorio, nextStep }: AdminSetu
   );
 }
 
-function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: JoinOrganizationProps) {
+function JoinOrganization({ invitationCode, setInvitationCode, selectedRole, onSuccess }: JoinOrganizationProps) {
   const router = useRouter();
   const { refreshUserInfo } = useAuth();
   const [isLoading, setIsLoading] = React.useState(false);
@@ -107,7 +108,11 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: J
       if (joinResponse.ok) {
         toast.success("¡Bienvenido a bordo!", { description: "Te has unido exitosamente a la organización." });
         await refreshUserInfo();
-        router.push('/home');
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push('/home');
+        }
         return;
       }
 
@@ -129,7 +134,11 @@ function JoinOrganization({ invitationCode, setInvitationCode, selectedRole }: J
 
         if (requestResponse.ok) {
           toast.info("Solicitud de unión enviada", { description: "Recibirás un correo electrónico cuando sea aprobada por un administrador." });
-          router.push('/home');
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            router.push('/home');
+          }
         } else {
           handleRequestError(requestResponse.status, requestData);
         }
@@ -229,7 +238,8 @@ export function Step2ConsultorioOrInvitacion({
   setNameConsultorio,
   invitationCode,
   setInvitationCode,
-  nextStep
+  nextStep,
+  onSuccess
 }: {
   selectedRole: string;
   nameConsultorio: string;
@@ -237,6 +247,7 @@ export function Step2ConsultorioOrInvitacion({
   invitationCode: string;
   setInvitationCode: (v: string) => void;
   nextStep: () => void;
+  onSuccess?: () => void;
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -251,6 +262,7 @@ export function Step2ConsultorioOrInvitacion({
           invitationCode={invitationCode}
           setInvitationCode={setInvitationCode}
           selectedRole={selectedRole}
+          onSuccess={onSuccess}
         />
       )}
     </div>
