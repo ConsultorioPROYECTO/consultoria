@@ -209,7 +209,7 @@ export default function AICareView() {
                   onChange={(e) => setCurrentMessage(e.target.value)}
                   placeholder="¿En qué puedo ayudarte hoy?"
                   disabled={isLoading}
-                  className="min-h-[100px] text-2xl md:text-2xl p-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-lg bg-transparent text-center placeholder:text-center"
+                  className="min-h-[100px] text-2xl md:text-2xl resize-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-lg bg-transparent text-start placeholder:text-center"
                 />
                 <Button
                   type="submit"
