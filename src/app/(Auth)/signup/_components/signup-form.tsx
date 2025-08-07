@@ -32,7 +32,7 @@ export function SignupForm() {
       // Redirect to login for a clean authentication flow
       router.push('/login');
     } catch (error) {
-      handleAuthError(error, 'signup');
+      handleAuthError(error);
       setFormState({ isLoading: false, success: false, error: 'Failed to sign up' });
     }
   };

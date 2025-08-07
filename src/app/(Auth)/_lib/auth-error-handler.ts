@@ -56,7 +56,7 @@ const ERROR_MESSAGES: Record<FirebaseAuthErrorCode, { title: string; description
  * @param error - Error de autenticación
  * @param context - Contexto adicional (login, signup, etc.)
  */
-export function handleAuthError(error: unknown, context?: string): void {
+export function handleAuthError(error: unknown): void {
   if (error && typeof error === 'object' && 'code' in error) {
     const authError = error as { code: FirebaseAuthErrorCode; message: string };
     const errorInfo = ERROR_MESSAGES[authError.code];
@@ -81,10 +81,7 @@ export function handleAuthError(error: unknown, context?: string): void {
     });
   }
   
-  // Log del error para debugging (solo en desarrollo)
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`Auth error in ${context || 'unknown context'}:`, error);
-  }
+  // Error logging removed to avoid console noise
 }
 
 /**

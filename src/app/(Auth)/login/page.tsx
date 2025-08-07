@@ -4,14 +4,15 @@ import { Suspense, memo } from 'react';
 import Link from 'next/link';
 import { LoginContent } from './_components/LoginContent';
 import dynamic from 'next/dynamic';
-import { useUserSync } from '@/hooks/useUserSync';
+
+import { useLoginSync } from '@/hooks/useLoginSync';
 import { useIsMobile } from '@/hooks/use-mobile';
 import WaveformLoader from '@/components/custom/WaveformLoader';
 
 const FeatureCarousel = dynamic(() => import('../_components/FeatureCarousel').then(mod => mod.FeatureCarousel), { ssr: false });
 
 function Login() {
-    useUserSync();
+    useLoginSync();
     const isMobile = useIsMobile();
     // Componente de loading centralizado
     const LoadingSpinner = () => (

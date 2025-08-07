@@ -165,10 +165,14 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
                 });
 
                 if (!syncResponse.ok) {
-                  console.error('Error al sincronizar usuario:', syncResponse.statusText);
+                  if (process.env.NODE_ENV === 'development') {
+          console.error('Error al sincronizar usuario:', syncResponse.statusText);
+        }
                 }
               } catch (syncError) {
-                console.error('Error en la sincronización del usuario:', syncError);
+                if (process.env.NODE_ENV === 'development') {
+          console.error('Error en la sincronización del usuario:', syncError);
+        }
               }
               
               token = await currentUser.getIdToken();
@@ -192,7 +196,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
                 setAssistantId(null);
               }
             } catch (error) {
-              console.error("Error fetching user role:", error);
+              if (process.env.NODE_ENV === 'development') {
+          console.error("Error fetching user role:", error);
+        }
               setUserRole(null);
               setOrganizationId(null);
               setDoctorId(null);
@@ -219,7 +225,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         setError(null);
       },
       (authError) => {
+        if (process.env.NODE_ENV === 'development') {
         console.error('Error en onAuthStateChanged:', authError);
+      }
         setError(authError as AuthError);
         setUser(null);
         setUserRole(null);
@@ -257,7 +265,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       await signInWithPopup(auth, googleAuthProvider);
       // `onAuthStateChanged` se encargará de actualizar el estado del usuario.
     } catch (err) {
-      console.error('Error al iniciar sesión con Google:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error al iniciar sesión con Google:', err);
+      }
       if (err instanceof Error && 'code' in err) {
         setError(err as AuthError);
       } else {
@@ -290,7 +300,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       // onAuthStateChanged manejará la actualización del usuario
     } catch (err) {
       const authError = err as AuthError;
-      console.error('Error al iniciar sesión con email:', authError);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error al iniciar sesión con email:', authError);
+      }
       setError(authError);
       setUser(null);
       setLoading(false); // Resetear loading en caso de error
@@ -312,7 +324,6 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       // onAuthStateChanged manejará la actualización del usuario
     } catch (err) {
       const authError = err as AuthError;
-      console.error('Error al registrar con email:', authError);
       setError(authError);
       setUser(null);
       throw authError; // Re-lanzar el error para que el componente pueda manejarlo
@@ -335,7 +346,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     try {
       return await user.getIdToken();
     } catch (error) {
-      console.error('Error al obtener el token de autenticación:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error al obtener el token de autenticación:', error);
+      }
       throw error;
     }
   };
@@ -360,7 +373,9 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
       setIsLoadingRole(false);
       // `onAuthStateChanged` se encargará de confirmar la actualización del estado.
     } catch (err) {
-      console.error('Error al cerrar sesión:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error al cerrar sesión:', err);
+      }
       if (err instanceof Error && 'code' in err) {
         setError(err as AuthError);
       } else {
@@ -400,10 +415,14 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         setDoctorId(data.doctorId || null);
         setAssistantId(data.assistantId || null);
       } else {
-        console.error('Error refreshing user info:', response.status);
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Error refreshing user info:', response.status);
+        }
       }
     } catch (error) {
-      console.error('Error refreshing user info:', error);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error refreshing user info:', error);
+      }
     } finally {
       setIsLoadingRole(false);
     }

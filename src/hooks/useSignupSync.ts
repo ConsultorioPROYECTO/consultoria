@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import { sendEmailVerification } from 'firebase/auth';
 import { toast } from 'sonner';
@@ -7,11 +7,13 @@ import { toast } from 'sonner';
 /**
  * Hook específico para manejar la sincronización del usuario después del registro
  * Maneja la verificación de email y redirección al onboarding
+ * Solo se ejecuta en la página de signup para evitar interferencias
  */
 export function useSignupSync() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const invitacionCode = searchParams.get('invitacionCode');
   const role = searchParams.get('role');
   
@@ -20,6 +22,11 @@ export function useSignupSync() {
 
   const syncUser = useCallback(async (currentUser: typeof user) => {
     if (!currentUser) return;
+    
+    // Solo ejecutar si estamos en la página de signup
+    if (!pathname.includes('/signup')) {
+      return;
+    }
 
     // Si el email no está verificado, enviar verificación
     if (!currentUser.emailVerified) {
@@ -35,8 +42,7 @@ export function useSignupSync() {
         toast.success('Correo de verificación enviado', {
           description: 'Te hemos enviado un correo de verificación. Por favor, verifica tu correo antes de continuar.'
         });
-      } catch (error) {
-        console.error('Error al enviar correo de verificación:', error);
+      } catch {
         toast.error('Error al enviar correo de verificación');
         // No agregar al Set si hay error, para permitir reintento
       }
@@ -62,8 +68,6 @@ export function useSignupSync() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error al sincronizar usuario tras registro:', errorData.details || response.statusText);
         toast.error('Error al sincronizar usuario');
         return;
       }
@@ -76,11 +80,10 @@ export function useSignupSync() {
       if (role) onboardUrl.searchParams.append('role', role);
       router.push(onboardUrl.toString());
       
-    } catch (error) {
-      console.error('Error en la llamada de sincronización tras registro:', error);
+    } catch {
       toast.error('Error en la sincronización');
     }
-  }, [router, invitacionCode, role]);
+  }, [router, invitacionCode, role, pathname]);
 
   useEffect(() => {
     if (user) {

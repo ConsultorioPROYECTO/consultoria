@@ -7,9 +7,12 @@ import type { AuthFormState, LoginFormData } from '@/app/(Auth)/_lib/auth-types'
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from 'sonner';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/app/lib/firebase/firebaseConfig';
 
 export function LoginForm() {
-  const { signInWithEmail, loading } = useAuth();
+  const { signOut, loading } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({ email: '', password: '' });
   const [formState, setFormState] = useState<AuthFormState>({ isLoading: false, error: null, success: false });
 
@@ -21,10 +24,23 @@ export function LoginForm() {
     const credentials: EmailPasswordCredentials = { email: formData.email, password: formData.password };
 
     try {
-      await signInWithEmail(credentials);
+      // Sign in and get the updated user directly from Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+      const currentUser = userCredential.user;
+      
+      // Check if email is verified after successful login
+      if (!currentUser.emailVerified) {
+        await signOut();
+        toast.error('Email no verificado', {
+          description: 'Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.'
+        });
+        setFormState({ isLoading: false, success: false, error: 'Email not verified' });
+        return;
+      }
+      
       setFormState({ isLoading: false, success: true, error: null });
     } catch (error) {
-      handleAuthError(error, 'login');
+      handleAuthError(error);
       setFormState({ isLoading: false, success: false, error: 'Failed to sign in' });
     }
   };
