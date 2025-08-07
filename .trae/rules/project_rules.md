@@ -5,7 +5,7 @@
     - use shadcn ui mcp server and use shadcn ui components.
     - use sequetial thinking if is need it.
 4. For Test the changes:
-    - never use npm run dev or npm run build, better use npm run lint or npx tsc --noEmit
+    - never use bun run dev or bun run build, better use bun run lint or bun tsc --noEmit
 5. Think in English and respond in Spanish, but preserve all technical terms, function names, library names, and code concepts in English. Code comments and variable names should be in English for consistency and better AI understanding.
 6. AI Context Optimization:
     - Write self-documenting code with clear intent
