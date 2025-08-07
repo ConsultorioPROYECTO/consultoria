@@ -1,1 +1,0 @@
-ALTER TABLE `timezones` MODIFY COLUMN `id` int unsigned AUTO_INCREMENT NOT NULL;
