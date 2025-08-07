@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Settings } from "lucide-react";
 import { useOrganization } from "@/hooks/useOrganization";
 import { toast } from "sonner";
@@ -34,6 +41,25 @@ export function OrganizationSettings({ trigger }: OrganizationSettingsProps) {
     timezone: "",
     currency: ""
   });
+
+  // Get supported timezones and currencies using Intl.supportedValuesOf
+  const supportedTimezones = useMemo(() => {
+    try {
+      return Intl.supportedValuesOf('timeZone').sort();
+    } catch (error) {
+      console.warn('Intl.supportedValuesOf not supported for timeZone:', error);
+      return ['America/Bogota', 'America/New_York', 'Europe/London', 'Asia/Tokyo'];
+    }
+  }, []);
+
+  const supportedCurrencies = useMemo(() => {
+    try {
+      return Intl.supportedValuesOf('currency').sort();
+    } catch (error) {
+      console.warn('Intl.supportedValuesOf not supported for currency:', error);
+      return ['USD', 'EUR', 'COP', 'GBP', 'JPY'];
+    }
+  }, []);
 
   // Actualizar el formulario cuando se carga la organización
   useEffect(() => {
@@ -187,26 +213,42 @@ export function OrganizationSettings({ trigger }: OrganizationSettingsProps) {
                 <Label htmlFor="timezone" className="text-right">
                   Zona horaria
                 </Label>
-                <Input
-                  id="timezone"
+                <Select
                   value={formData.timezone}
-                  onChange={(e) => handleInputChange("timezone", e.target.value)}
-                  className="col-span-3"
-                  placeholder="America/Bogota"
-                />
+                  onValueChange={(value) => handleInputChange("timezone", value)}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecciona una zona horaria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedTimezones.map((timezone) => (
+                      <SelectItem key={timezone} value={timezone}>
+                        {timezone}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="currency" className="text-right">
                   Moneda
                 </Label>
-                <Input
-                  id="currency"
+                <Select
                   value={formData.currency}
-                  onChange={(e) => handleInputChange("currency", e.target.value)}
-                  className="col-span-3"
-                  placeholder="COP"
-                />
+                  onValueChange={(value) => handleInputChange("currency", value)}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecciona una moneda" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedCurrencies.map((currency) => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
