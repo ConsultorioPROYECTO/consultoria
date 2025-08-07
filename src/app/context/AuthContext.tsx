@@ -301,11 +301,27 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
     setLoading(true);
     setError(null);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const currentUser = userCredential.user;
+      
+      // Check if email is verified after successful login
+      if (!currentUser.emailVerified) {
+        await firebaseSignOut(auth);
+        const emailError = {
+          code: 'auth/email-not-verified',
+          message: 'Email not verified'
+        } as AuthError;
+        setError(emailError);
+        setUser(null);
+        setLoading(false);
+        throw emailError;
+      }
+      
       // onAuthStateChanged manejará la actualización del usuario
     } catch (err) {
       const authError = err as AuthError;
-      if (process.env.NODE_ENV === 'development') {
+      // Only log unexpected errors, not user validation errors
+      if (process.env.NODE_ENV === 'development' && authError.code !== 'auth/email-not-verified') {
         console.error('Error al iniciar sesión con email:', authError);
       }
       setError(authError);
@@ -404,9 +420,16 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const refreshUserInfo = async (): Promise<void> => {
     if (!user) return;
     
+    // Aplicar el mismo cooldown que en onAuthStateChanged para evitar peticiones duplicadas
+    const now = Date.now();
+    if ((now - lastSyncTimestamp.current) < SYNC_COOLDOWN) {
+      return;
+    }
+    
+    lastSyncTimestamp.current = now;
     setIsLoadingRole(true);
     try {
-      const token = await user.getIdToken(true); // Force refresh token
+      const token = await user.getIdToken(); // Removed force refresh to avoid unnecessary token requests
       const response = await fetch('/api/users/rol', {
         headers: {
           'Authorization': `Bearer ${token}`

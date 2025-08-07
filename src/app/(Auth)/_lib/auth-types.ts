@@ -41,7 +41,8 @@ export type FirebaseAuthErrorCode =
   | 'auth/network-request-failed'
   | 'auth/user-disabled'
   | 'auth/operation-not-allowed'
-  | 'auth/invalid-credential';
+  | 'auth/invalid-credential'
+  | 'auth/email-not-verified';
 
 /**
  * Datos del formulario de login

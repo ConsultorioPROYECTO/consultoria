@@ -48,6 +48,10 @@ const ERROR_MESSAGES: Record<FirebaseAuthErrorCode, { title: string; description
   'auth/operation-not-allowed': {
     title: 'Operación no permitida',
     description: 'Esta operación no está habilitada. Contacta al soporte.'
+  },
+  'auth/email-not-verified': {
+    title: 'Email no verificado',
+    description: 'Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.'
   }
 };
 

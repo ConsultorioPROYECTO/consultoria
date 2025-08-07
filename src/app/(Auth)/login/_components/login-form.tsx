@@ -9,11 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/app/lib/firebase/firebaseConfig';
+// Removed direct Firebase imports - using AuthContext methods instead
 
 export function LoginForm() {
-  const { signOut, loading, userRole, organizationId, isLoadingRole } = useAuth();
+  const { signInWithEmail, loading, userRole, organizationId, isLoadingRole } = useAuth();
   const router = useRouter();
   const [formData, setFormData] = useState<LoginFormData>({ email: '', password: '' });
   const [formState, setFormState] = useState<AuthFormState>({ isLoading: false, error: null, success: false });
@@ -37,19 +36,8 @@ export function LoginForm() {
     const credentials: EmailPasswordCredentials = { email: formData.email, password: formData.password };
 
     try {
-      // Sign in and get the updated user directly from Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-      const currentUser = userCredential.user;
-      
-      // Check if email is verified after successful login
-      if (!currentUser.emailVerified) {
-        await signOut();
-        toast.error('Email no verificado', {
-          description: 'Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.'
-        });
-        setFormState({ isLoading: false, success: false, error: 'Email not verified' });
-        return;
-      }
+      // Use AuthContext method instead of direct Firebase call
+      await signInWithEmail(credentials);
       
       // La navegación se manejará en el useEffect basado en el rol
       setFormState({ isLoading: false, success: true, error: null });
