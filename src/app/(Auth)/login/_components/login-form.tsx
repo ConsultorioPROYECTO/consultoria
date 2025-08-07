@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth, EmailPasswordCredentials } from '@/app/context/AuthContext';
 import { handleAuthError } from '@/app/(Auth)/_lib/auth-error-handler';
 import type { AuthFormState, LoginFormData } from '@/app/(Auth)/_lib/auth-types';
@@ -12,9 +13,21 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/app/lib/firebase/firebaseConfig';
 
 export function LoginForm() {
-  const { signOut, loading } = useAuth();
+  const { signOut, loading, userRole, organizationId, isLoadingRole } = useAuth();
+  const router = useRouter();
   const [formData, setFormData] = useState<LoginFormData>({ email: '', password: '' });
   const [formState, setFormState] = useState<AuthFormState>({ isLoading: false, error: null, success: false });
+
+  // Handle navigation after successful login and role is loaded
+  useEffect(() => {
+    if (formState.success && !isLoadingRole && userRole !== null) {
+      if (userRole === 'N/A' || !organizationId) {
+        router.push('/onboard');
+      } else if (userRole && organizationId) {
+        router.push('/home');
+      }
+    }
+  }, [formState.success, isLoadingRole, userRole, organizationId, router]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,7 +51,11 @@ export function LoginForm() {
         return;
       }
       
+      // La navegación se manejará en el useEffect basado en el rol
       setFormState({ isLoading: false, success: true, error: null });
+      toast.success('Inicio de sesión exitoso', {
+        description: 'Cargando información del usuario...'
+      });
     } catch (error) {
       handleAuthError(error);
       setFormState({ isLoading: false, success: false, error: 'Failed to sign in' });

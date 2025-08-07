@@ -124,6 +124,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
   const lastUserUidRef = useRef<string | null>(null);
   const roleRequestRef = useRef<Promise<void> | null>(null);
   const rolePollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncTimestamp = useRef<number>(0);
+  const SYNC_COOLDOWN = 5000; // 5 segundos de cooldown entre sincronizaciones
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
@@ -132,59 +134,62 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
         setUser(currentUser);
         
         if (currentUser) {
-          // Evitar múltiples peticiones para el mismo usuario
-          if (lastUserUidRef.current === currentUser.uid && roleRequestRef.current) {
-            await roleRequestRef.current;
+          // Evitar múltiples peticiones para el mismo usuario con cooldown
+          const now = Date.now();
+          if (lastUserUidRef.current === currentUser.uid && 
+              (roleRequestRef.current || (now - lastSyncTimestamp.current) < SYNC_COOLDOWN)) {
+            if (roleRequestRef.current) {
+              await roleRequestRef.current;
+            }
             return;
           }
           
           lastUserUidRef.current = currentUser.uid;
+          lastSyncTimestamp.current = now;
           setIsLoadingRole(true);
           
           // Crear una promesa para evitar peticiones duplicadas
           const roleRequest = (async () => {
             try {
-              let token = await currentUser.getIdToken(true); // Force refresh token
+              // Usar un solo token para ambas peticiones
+              const token = await currentUser.getIdToken();
               
-              // Primero sincronizar el usuario con la base de datos local
-              try {
-                const userData = {
-                  firebaseUid: currentUser.uid,
-                  email: currentUser.email,
-                  emailVerified: currentUser.emailVerified,
-                  phoneNumber: currentUser.phoneNumber,
-                  displayName: currentUser.displayName,
-                  photoURL: currentUser.photoURL,
-                  providerId: currentUser.providerData?.[0]?.providerId || 'password',
-                };
+              // Sincronizar usuario y obtener rol en paralelo para optimizar
+              const userData = {
+                firebaseUid: currentUser.uid,
+                email: currentUser.email,
+                emailVerified: currentUser.emailVerified,
+                phoneNumber: currentUser.phoneNumber,
+                displayName: currentUser.displayName,
+                photoURL: currentUser.photoURL,
+                providerId: currentUser.providerData?.[0]?.providerId || 'password',
+              };
 
-                const syncResponse = await fetch('/api/auth/sync-user', {
+              const [syncResponse, roleResponse] = await Promise.allSettled([
+                fetch('/api/auth/sync-user', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify(userData),
-                });
+                }),
+                fetch('/api/users/rol', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                })
+              ]);
 
-                if (!syncResponse.ok) {
-                  if (process.env.NODE_ENV === 'development') {
-          console.error('Error al sincronizar usuario:', syncResponse.statusText);
-        }
-                }
-              } catch (syncError) {
+              // Manejar respuesta de sincronización
+              if (syncResponse.status === 'rejected' || 
+                  (syncResponse.status === 'fulfilled' && !syncResponse.value.ok)) {
                 if (process.env.NODE_ENV === 'development') {
-          console.error('Error en la sincronización del usuario:', syncError);
-        }
+                  console.error('Error al sincronizar usuario:', 
+                    syncResponse.status === 'rejected' ? syncResponse.reason : syncResponse.value.statusText);
+                }
               }
               
-              token = await currentUser.getIdToken();
-              // Luego obtener el rol del usuario
-              const response = await fetch('/api/users/rol', {
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-              
-              if (response.ok) {
-                const data = await response.json();
+              // Manejar respuesta de rol
+              if (roleResponse.status === 'fulfilled' && roleResponse.value.ok) {
+                const data = await roleResponse.value.json();
                 setUserRole(data.role);
                 setOrganizationId(data.organizationId || null);
                 setDoctorId(data.doctorId || null);
@@ -197,8 +202,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.ReactElemen
               }
             } catch (error) {
               if (process.env.NODE_ENV === 'development') {
-          console.error("Error fetching user role:", error);
-        }
+                console.error("Error fetching user role:", error);
+              }
               setUserRole(null);
               setOrganizationId(null);
               setDoctorId(null);

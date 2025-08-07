@@ -5,14 +5,12 @@ import Link from 'next/link';
 import { LoginContent } from './_components/LoginContent';
 import dynamic from 'next/dynamic';
 
-import { useLoginSync } from '@/hooks/useLoginSync';
 import { useIsMobile } from '@/hooks/use-mobile';
 import WaveformLoader from '@/components/custom/WaveformLoader';
 
 const FeatureCarousel = dynamic(() => import('../_components/FeatureCarousel').then(mod => mod.FeatureCarousel), { ssr: false });
 
 function Login() {
-    useLoginSync();
     const isMobile = useIsMobile();
     // Componente de loading centralizado
     const LoadingSpinner = () => (

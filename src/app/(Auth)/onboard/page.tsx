@@ -26,8 +26,7 @@ function OnboardContent() {
     const searchParams = useSearchParams();
     const initialInvitationCode = searchParams.get('invitacionCode');
     const initialRole = searchParams.get('role');
-    const { signOut, getAuthToken, userRole, refreshUserInfo, user } = useAuth();
-    const [isSynced, setIsSynced] = useState(false);
+    const { signOut, getAuthToken, userRole } = useAuth();
   
     useEffect(() => {
         // Verificar que los parámetros no sean null ni la cadena "null"
@@ -77,36 +76,8 @@ function OnboardContent() {
     const [isLoading, setIsLoading] = useState(false); // Reintroducido isLoading
    // Estado para el modal de éxito
   
-    useEffect(() => {
-      if (user && !isSynced) {
-        const forceSync = async () => {
-          try {
-            const token = await user.getIdToken(true);
-            const userData = {
-              firebaseUid: user.uid,
-              email: user.email,
-              emailVerified: user.emailVerified,
-              phoneNumber: user.phoneNumber,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-              providerId: user.providerData?.[0]?.providerId || 'password',
-            };
-            const response = await fetch('/api/auth/sync-user', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-              body: JSON.stringify(userData),
-            });
-            if (response.ok) {
-              setIsSynced(true);
-              await refreshUserInfo();
-            }
-          } catch (error) {
-            console.error('Error forcing sync:', error);
-          }
-        };
-        forceSync();
-      }
-    }, [user, isSynced, refreshUserInfo]);
+    // AuthContext ya maneja la sincronización automáticamente
+    // No necesitamos forzar sync manual aquí
 
     const handlePlanSelectionAndProceed = async (planId: string) => {
       if (!planId) {
@@ -163,10 +134,8 @@ function OnboardContent() {
             : '¡Plan seleccionado!'
         );
         
-        // Refrescar la información del usuario para obtener el organizationId actualizado
-        await refreshUserInfo();
-        
         // Cerrar sesión automáticamente y redirigir al login
+        // No necesitamos refrescar info antes de cerrar sesión
         await signOut();
         toast.success("¡Onboard completado exitosamente! Por favor, inicia sesión nuevamente para sincronizar tus datos.");
         router.push('/login');
