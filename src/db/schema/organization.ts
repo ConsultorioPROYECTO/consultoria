@@ -11,7 +11,7 @@ import { plans } from './plans';
  *
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
  * @property {string} name - Nombre de la organización.
- * @property {string} invitationCode - Código de invitación para la organización.
+ * @property {string} invitationCode - Código de invitación para la organización. (obsoleto, sin uso, previo a ser eliminado.)
  * @property {string} address - Dirección de la organización.
  * @property {string} phone - Número de teléfono de la organización.
  * @property {string} email - Correo electrónico de la organización.

@@ -1,6 +1,6 @@
 // @app/src/db/schema/organization_invitations_request.ts
 
-import { boolean, index, int, mysqlEnum, mysqlTable, timestamp, varchar, foreignKey } from "drizzle-orm/mysql-core";
+import { boolean, index, int, mysqlEnum, mysqlTable, timestamp, varchar, foreignKey, char } from "drizzle-orm/mysql-core";
 import { organization } from "./organization";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
@@ -29,6 +29,9 @@ export const organizationInvitationRequest = mysqlTable('organization_invitation
     .notNull(),
   userEmail: varchar('user_email', {length: 255})
     .notNull(),
+  invitationToken: char('invitation_token', { length: 6 })
+    .notNull()
+    .unique(),
 
   role: mysqlEnum('role', ['admin', 'medico', 'asistente', 'N/A']).default('N/A').notNull(), //'admin', 'medico', 'asistente', 'N/A'
   status: mysqlEnum('status', ['pending', 'approved', 'rejected', 'cancelled', 'expired'])
@@ -56,6 +59,7 @@ export const organizationInvitationRequest = mysqlTable('organization_invitation
   index('rejected_at_idx').on(table.rejectedAt),
   index('cancelled_at_idx').on(table.cancelledAt),
   index('user_email_idx').on(table.userEmail),
+  index('invitation_token_idx').on(table.invitationToken),
   index('role_idx').on(table.role),
 ]);
 

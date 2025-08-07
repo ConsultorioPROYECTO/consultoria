@@ -40,7 +40,6 @@ import { assistants } from '@rutas/db/schema/assistants';
 import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import {z} from 'zod';
-import { generateRandomInvitationCode } from '@/lib/organization-utils';
 import { organizationInvitationRequest } from '@rutas/db/schema/organization_invitations_request';
 
 // Credenciales para autenticación básica del webhook
@@ -131,7 +130,7 @@ const postOrganizationJoinHandler = async (
   }
 
   // Extrae los datos validados
-  const { invitationCode } = parseResult.data;
+  const { invitationCode, role } = parseResult.data;
 
   // La información del usuario ya está disponible en userInfo
   const existingUser = userInfo.user;
@@ -143,39 +142,38 @@ const postOrganizationJoinHandler = async (
     }, { status: 400 });
   }
 
-  // Buscar la organización por invitationCode
-  const existingOrganization = await db.query.organization.findFirst({
-    where: eq(organization.invitationCode, invitationCode),
+  // Buscar invitación por código de 6 dígitos
+  if (!existingUser.email) {
+    return NextResponse.json({ message: 'User email not found' }, { status: 400 });
+  }
+  
+  const invitation = await db.query.organizationInvitationRequest.findFirst({
+    where: (row) =>
+      eq(row.invitationToken, invitationCode) &&
+      eq(row.userEmail, existingUser.email!) &&
+      eq(row.status, 'pending'),
   });
+  
+  if (!invitation) {
+    return NextResponse.json({ 
+      error: 'Código de invitación inválido o no coincide con tu email',
+      message: 'Invalid invitation code or email mismatch' 
+    }, { status: 404 });
+  }
+  
+  // Buscar la organización asociada a la invitación
+  const existingOrganization = await db.query.organization.findFirst({
+    where: eq(organization.id, invitation.organizationId),
+  });
+  
   if (!existingOrganization) {
     return NextResponse.json({ 
-      error: 'Código de invitación inválido',
+      error: 'Organización no encontrada',
       message: 'Organization not found' 
     }, { status: 404 });
   }
 
-  // Buscar invitación pendiente para este usuario y organización
-  if (!existingUser.email) {
-    return NextResponse.json({ message: 'User email not found' }, { status: 400 });
-  }
-  const invitation = await db.query.organizationInvitationRequest.findFirst({
-    where: (row) =>
-      eq(row.userEmail, existingUser.email!) &&
-      eq(row.organizationId, existingOrganization.id) &&
-      eq(row.status, 'pending'),
-  });
-  if (!invitation) {
-    return NextResponse.json({ 
-      error: 'No se encontró una invitación pendiente',
-      message: 'No invitation found for this user and organization' 
-    }, { status: 403 });
-  }
-  if (invitation.status !== 'pending') {
-    return NextResponse.json({ 
-      error: 'La invitación no está pendiente',
-      message: 'Invitation is not pending' 
-    }, { status: 403 });
-  }
+
   if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
     // Marcar la invitación como expirada
     await db.update(organizationInvitationRequest).set({
@@ -194,28 +192,19 @@ const postOrganizationJoinHandler = async (
 
   await db.update(users).set({
     organizationId: existingOrganization.id,
-    role: invitation.role,
+    role: role,
   }).where(eq(users.id, existingUser.id));
   
-  // Actualizar el estado de la invitación a 'accepted'
+  // Actualizar el estado de la invitación a 'approved'
   await db.update(organizationInvitationRequest).set({
     status: 'approved',
     approvedAt: new Date(),
   }).where(
-      eq(organizationInvitationRequest.userEmail, existingUser.email!) &&
-      eq(organizationInvitationRequest.organizationId, existingOrganization.id) &&
-      eq(organizationInvitationRequest.status, 'pending'
-    )
+      eq(organizationInvitationRequest.invitationToken, invitationCode)
   );
 
-  // crear un nuevo codigo de invitación para la organización
-  const code = await generateRandomInvitationCode();
-  await db.update(organization).set({
-    invitationCode: code,
-  }).where(eq(organization.id, existingOrganization.id));
-
   // Crear o actualizar registro en tabla específica según el rol
-  if (invitation.role === 'medico') {
+  if (role === 'medico') {
     try {
       // Usar upsert para crear o actualizar completamente el registro de doctor
       await db.insert(doctors).values({
@@ -267,7 +256,7 @@ const postOrganizationJoinHandler = async (
     } catch (doctorError) {
       console.error('Error creando/actualizando registro de doctor:', doctorError);
     }
-  } else if (invitation.role === 'asistente') {
+  } else if (role === 'asistente') {
     try {
       // Usar upsert para crear o actualizar completamente el registro de asistente
       await db.insert(assistants).values({
@@ -288,9 +277,9 @@ const postOrganizationJoinHandler = async (
     await sendInvitacionEmail(
       existingUser.email!,
       existingOrganization.name,
-      invitation.role,
+      role,
       'Bienvenido a la organización',
-      `¡Bienvenido a ${existingOrganization.name}! Te has unido exitosamente como ${invitation.role}. Ahora puedes acceder a todas las funcionalidades de la plataforma.`
+      `¡Bienvenido a ${existingOrganization.name}! Te has unido exitosamente como ${role}. Ahora puedes acceder a todas las funcionalidades de la plataforma.`
     );
   } catch (emailError) {
     console.error('Error enviando correo de bienvenida:', emailError);
@@ -315,7 +304,7 @@ const postOrganizationJoinHandler = async (
             existingOrganization.name,
             'admin',
             'Nuevo miembro se ha unido a la organización',
-            `${existingUser.email} se ha unido a ${existingOrganization.name} como ${invitation.role}.`
+            `${existingUser.email} se ha unido a ${existingOrganization.name} como ${role}.`
           );
         } catch (emailError) {
           console.error(`Error enviando correo a administrador ${admin.email}:`, emailError);
@@ -331,7 +320,7 @@ const postOrganizationJoinHandler = async (
     message: 'Te has unido exitosamente a la organización',
     organizationId: existingOrganization.id,
     organizationName: existingOrganization.name,
-    role: invitation.role
+    role: role
   }, { status: 200 });
 }
 

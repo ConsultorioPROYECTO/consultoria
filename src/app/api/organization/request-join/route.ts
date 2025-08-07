@@ -5,8 +5,12 @@ import { db } from '@/db';
 import { organization } from '@/db/schema/organization';
 import { organizationInvitationRequest, organizationInvitationRequestInsert } from '@/db/schema/organization_invitations_request';
 
-import { eq } from 'drizzle-orm/sql/expressions/conditions';
+import { eq, and } from 'drizzle-orm/sql/expressions/conditions';
 import { NextRequest, NextResponse } from 'next/server';
+// Función para generar código de invitación de 6 dígitos
+const generateInvitationCode = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 // Cambia estos valores por tus credenciales reales
 const BASIC_AUTH_USER = 'devUser';
@@ -84,24 +88,29 @@ const postOrganizationRequestHandler  = async (
                     { status: 404 }
                 );
             }
-            /** 
             // Verificar si ya existe una solicitud pendiente del usuario a la organización
             const existingRequest = await db.query.organizationInvitationRequest.findFirst({
-                where: eq(organizationInvitationRequest.userEmail, email),
+                where: and(
+                    eq(organizationInvitationRequest.userEmail, email),
+                    eq(organizationInvitationRequest.organizationId, user.organizationId as number),
+                    eq(organizationInvitationRequest.status, 'pending')
+                ),
             });
-            // Verificar si la organización existe
             
             if (existingRequest) {
                 return NextResponse.json(
                     { error: 'Ya existe una solicitud pendiente para esta organización.' },
                     { status: 400 }
                 );
-            }*/
+            }
 
+            // Generar código único de 6 dígitos para esta invitación
+            const invitationCode = generateInvitationCode();
+            
             const subject = `invitacion al grupo de ${organizacion.name}`
-            const url = `http://irina.makilacloud.com:3000/signup?invitacionCode=${organizacion.invitationCode}&role=${role}`;
+            const url = `http://irina.makilacloud.com:3000/signup?invitacionCode=${invitationCode}&role=${role}`;
 
-            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, subject,url,organizacion.invitationCode, user.email as string, user.displayName as string, '' );
+            const invitacionEmail = await sendInvitacionEmail(email, organizacion.name, role, subject,url,invitationCode, user.email as string, user.displayName as string, '' );
             
             if (!invitacionEmail) {
                 return NextResponse.json(
@@ -110,11 +119,12 @@ const postOrganizationRequestHandler  = async (
                 );
             }
 
-            const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutos desde ahora
+            const expiresAt = new Date(Date.now() + 60 * 60 * 1000 * 24); // 24 horas desde ahora
 
             const newRequest: organizationInvitationRequestInsert = {
                 organizationId: user.organizationId as number,
                 userEmail: email,
+                invitationToken: invitationCode,
                 role: role,
                 status: 'pending',
                 message: message || null,
