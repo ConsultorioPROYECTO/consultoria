@@ -1,7 +1,7 @@
 // src/app/components/auth/LoginGoogle.tsx
 'use client'; // Necesario porque usa el hook useAuth y maneja eventos onClick
 
-import { ReactElement } from 'react';
+import { ReactElement, useEffect, useState } from 'react';
 /**
  * @fileoverview Componente para el inicio de sesión con Google y mostrar estado del usuario.
  * @version 
@@ -22,7 +22,8 @@ import { ReactElement } from 'react';
 
 import { useAuth } from '../../context/AuthContext';
 import { Button } from "@/components/ui/button";
-//import { useRouter } from 'next/navigation'; // Importamos el router de Next.js
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 /**
  * Componente LoginGoogle.
@@ -31,23 +32,41 @@ import { Button } from "@/components/ui/button";
  * @returns {React.ReactElement} El elemento JSX del componente de login.
  */
 export default function LoginGoogle(): React.ReactElement<ReactElement> {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, userRole, organizationId, isLoadingRole, loading } = useAuth();
+  const router = useRouter();
+  const [loginSuccess, setLoginSuccess] = useState(false);
+
+  // Handle navigation after successful login and role is loaded
+  useEffect(() => {
+    if (loginSuccess && !isLoadingRole && userRole !== null) {
+      if (userRole === 'N/A' || !organizationId) {
+        router.push('/onboard');
+      } else if (userRole && organizationId) {
+        router.push('/home');
+      }
+    }
+  }, [loginSuccess, isLoadingRole, userRole, organizationId, router]);
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // El estado del usuario se actualizará a través de onAuthStateChanged en AuthContext
+      setLoginSuccess(true);
+      toast.success('Inicio de sesión exitoso', {
+        description: 'Cargando información del usuario...'
+      });
       console.log('Inicio de sesión con Google solicitado.');
     } catch (err) {
       // El error ya se maneja y se muestra en AuthContext,
       // pero se puede registrar aquí si es necesario.
       console.error('Fallo en handleSignIn:', err);
+      setLoginSuccess(false);
     }
   };
 
   return (
     <Button
     onClick={handleSignIn}
+    disabled={loading || isLoadingRole}
     className="h-12 w-full text-base bg-white hover:bg-gray-50 text-gray-950 rounded-lg border border-gray-300 transition-colors duration-200 flex items-center justify-center"
   >
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20" height="20" className="mr-3">
@@ -58,7 +77,7 @@ export default function LoginGoogle(): React.ReactElement<ReactElement> {
     </svg>
 
 
-    Continuar con Google
+    {loading || isLoadingRole ? 'Procesando...' : 'Continuar con Google'}
   </Button>
   );
 }
