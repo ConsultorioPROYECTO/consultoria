@@ -7,7 +7,7 @@ import {
   type Organization,
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateR2BucketName } from '@/lib/cloudflare/r2';
+import { generateR2BucketName, createR2Bucket } from '@/lib/cloudflare/r2';
 import {
   generateRandomInvitationCode,
   generateUniqueInstanceId,
@@ -32,7 +32,7 @@ export const createOrganization = async (
   currency: string | undefined,
   userId: string
 ) => {
-  return await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const planIdentifierMap: { [key: string]: string } = {
       basico: 'Básico',
       profesional: 'Profesional',
@@ -105,6 +105,34 @@ export const createOrganization = async (
       r2BucketName,
     };
   });
+
+  // Create R2 bucket after successful organization creation
+  // This is done outside the transaction to prevent bucket creation errors from affecting organization creation
+  const bucketCreationStatus = {
+    bucketCreated: false,
+    bucketError: null as string | null
+  };
+
+  try {
+    const bucketResult = await createR2Bucket(result.r2BucketName);
+    if (bucketResult.success) {
+      console.log(`R2 bucket created successfully: ${result.r2BucketName}`);
+      bucketCreationStatus.bucketCreated = true;
+    } else {
+      const errorMessage = `Failed to create R2 bucket: ${result.r2BucketName}`;
+      console.error(errorMessage, bucketResult.error);
+      bucketCreationStatus.bucketError = errorMessage;
+    }
+  } catch (bucketError) {
+    const errorMessage = `Error creating R2 bucket: ${result.r2BucketName}`;
+    console.error(errorMessage, bucketError);
+    bucketCreationStatus.bucketError = errorMessage;
+  }
+
+  return {
+    ...result,
+    ...bucketCreationStatus
+  };
 };
 
 /**
