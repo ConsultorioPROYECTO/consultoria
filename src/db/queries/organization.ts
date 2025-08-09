@@ -7,7 +7,7 @@ import {
   type Organization,
 } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { generateR2BucketName, createR2Bucket } from '@/lib/cloudflare/r2';
+import { generateR2BucketName, createR2Bucket, configureR2BucketCorsDefault } from '@/lib/cloudflare/r2';
 import {
   generateRandomInvitationCode,
   generateUniqueInstanceId,
@@ -118,6 +118,17 @@ export const createOrganization = async (
     if (bucketResult.success) {
       console.log(`R2 bucket created successfully: ${result.r2BucketName}`);
       bucketCreationStatus.bucketCreated = true;
+      // Configure default CORS so browser-based uploads with presigned URLs work out of the box
+      try {
+        const corsResult = await configureR2BucketCorsDefault(result.r2BucketName);
+        if (corsResult.success) {
+          console.log(`R2 bucket CORS configured successfully: ${result.r2BucketName}`);
+        } else {
+          console.error(`Failed to configure R2 bucket CORS: ${result.r2BucketName}`, corsResult.error);
+        }
+      } catch (corsError) {
+        console.error(`Error configuring R2 bucket CORS: ${result.r2BucketName}`, corsError);
+      }
     } else {
       const errorMessage = `Failed to create R2 bucket: ${result.r2BucketName}`;
       console.error(errorMessage, bucketResult.error);

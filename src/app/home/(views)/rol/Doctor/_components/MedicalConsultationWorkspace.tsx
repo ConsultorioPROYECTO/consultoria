@@ -128,8 +128,10 @@ export function MedicalConsultationWorkspace({
         method: 'PUT',
         headers: {
           'Content-Type': file.type || 'application/octet-stream',
+          'Content-Length': file.size.toString(),
         },
         body: file,
+        mode : "cors"
       });
 
       if (!putResp.ok) {

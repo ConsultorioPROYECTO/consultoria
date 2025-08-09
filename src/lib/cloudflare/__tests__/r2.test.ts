@@ -1,6 +1,6 @@
 import { r2 } from '../r2-client';
-import { generateR2BucketName, createR2Bucket, uploadToR2, generatePresignedPutUrl, generatePresignedGetUrl } from '../r2';
-import { /**CreateBucketCommand,*/ PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { generateR2BucketName, createR2Bucket, uploadToR2, generatePresignedPutUrl, generatePresignedGetUrl, configureR2BucketCorsDefault } from '../r2';
+import { /**CreateBucketCommand,*/ PutObjectCommand, GetObjectCommand, PutBucketCorsCommand, type PutBucketCorsCommandInput } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 // Mock r2 client
@@ -21,6 +21,7 @@ describe('R2 utilities', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    delete process.env.CLOUDFLARE_R2_CORS_ALLOWED_ORIGINS;
   });
 
   describe('generateR2BucketName', () => {
@@ -170,6 +171,48 @@ describe('R2 utilities', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe(mockError);
+    });
+  });
+
+  describe('configureR2BucketCorsDefault', () => {
+    test('configures CORS with default * origin', async () => {
+      mockSend.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
+
+      const res = await configureR2BucketCorsDefault('bucket');
+
+      expect(res.success).toBe(true);
+      expect(mockSend).toHaveBeenCalledWith(expect.any(PutBucketCorsCommand));
+      const commandArg = mockSend.mock.calls[0][0] as unknown as { input: PutBucketCorsCommandInput };
+      expect(commandArg.input.Bucket).toBe('bucket');
+      expect(commandArg.input.CORSConfiguration).toBeDefined();
+      const allowedOrigins = commandArg.input.CORSConfiguration?.CORSRules?.[0]?.AllowedOrigins;
+      expect(allowedOrigins).toEqual(['*']);
+    });
+
+    test('configures CORS with custom origins from env', async () => {
+      process.env.CLOUDFLARE_R2_CORS_ALLOWED_ORIGINS = 'https://app.example.com,http://localhost:3000';
+      mockSend.mockResolvedValue({ $metadata: { httpStatusCode: 200 } });
+
+      const res = await configureR2BucketCorsDefault('bucket');
+
+      expect(res.success).toBe(true);
+      const commandArg = mockSend.mock.calls[0][0] as unknown as { input: PutBucketCorsCommandInput };
+      expect(commandArg.input.CORSConfiguration).toBeDefined();
+      const allowedOrigins = commandArg.input.CORSConfiguration?.CORSRules?.[0]?.AllowedOrigins;
+      expect(allowedOrigins).toEqual([
+        'https://app.example.com',
+        'http://localhost:3000',
+      ]);
+    });
+
+    test('handles error from PutBucketCorsCommand', async () => {
+      const err = new Error('CORS error');
+      mockSend.mockRejectedValue(err);
+
+      const res = await configureR2BucketCorsDefault('bucket');
+
+      expect(res.success).toBe(false);
+      expect(res.error).toBe(err);
     });
   });
 });

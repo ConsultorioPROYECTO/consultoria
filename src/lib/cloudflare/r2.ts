@@ -1,4 +1,4 @@
-import { CreateBucketCommand, CreateBucketCommandOutput, PutObjectCommand, PutObjectCommandOutput, PutObjectCommandInput, GetObjectCommand } from '@aws-sdk/client-s3';
+import { CreateBucketCommand, CreateBucketCommandOutput, PutObjectCommand, PutObjectCommandOutput, PutObjectCommandInput, GetObjectCommand, PutBucketCorsCommand } from '@aws-sdk/client-s3';
 import { r2 } from './r2-client';
 import { randomUUID } from 'crypto';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -70,6 +70,46 @@ export async function uploadToR2(
     return { success: true, response };
   } catch (error) {
     console.error('Error uploading object to R2:', error);
+    return { success: false, error };
+  }
+}
+
+/**
+ * Configures a default CORS policy for a newly created R2 bucket.
+ * This is important to allow browser-based uploads via presigned URLs (PUT) and reads (GET/HEAD).
+ *
+ * The allowed origins can be customized through the optional environment variable
+ * `CLOUDFLARE_R2_CORS_ALLOWED_ORIGINS` as a comma-separated list (e.g. "https://app.example.com,http://localhost:3000").
+ * If not provided, it defaults to allowing all origins ("*").
+ */
+export async function configureR2BucketCorsDefault(bucketName: string): Promise<{ success: boolean; error?: unknown }> {
+  try {
+    const allowedOriginsEnv = process.env.CLOUDFLARE_R2_CORS_ALLOWED_ORIGINS;
+    const allowedOrigins = allowedOriginsEnv && allowedOriginsEnv.trim().length > 0
+      ? allowedOriginsEnv.split(',').map((s) => s.trim()).filter(Boolean)
+      : ['*'];
+
+    const corsCommand = new PutBucketCorsCommand({
+      Bucket: bucketName,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedMethods: ['PUT', 'GET', 'HEAD'],
+            AllowedOrigins: allowedOrigins,
+            // Allow common headers used in presigned uploads and metadata
+            AllowedHeaders: ['Content-Type', 'Content-Length', 'x-amz-acl', 'x-amz-meta-*'],
+            // Expose useful headers to the browser when needed
+            ExposeHeaders: ['ETag', 'x-amz-request-id', 'x-amz-version-id'],
+            MaxAgeSeconds: 3600,
+          },
+        ],
+      },
+    });
+
+    await r2.send(corsCommand);
+    return { success: true };
+  } catch (error) {
+    console.error('Error configuring R2 bucket CORS:', error);
     return { success: false, error };
   }
 }
