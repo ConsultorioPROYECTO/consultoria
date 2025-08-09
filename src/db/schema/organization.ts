@@ -37,6 +37,7 @@ export const organization = mysqlTable('organization', {
   planId: int('plan_id', {unsigned : true}).references(() => plans.id, {onDelete : "no action", onUpdate : "cascade"}),
   instanceId: varchar('instance_id', { length: 25 }),
   apiKey: varchar('api_key', { length: 25 }),
+  r2BucketName: varchar('r2_bucket_name', { length: 255 }).unique(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (organization) => [

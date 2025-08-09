@@ -74,33 +74,44 @@ Se pueden implementar reglas de Cloudflare DLP para escanear archivos en busca d
 4.  **Respuesta al Cliente:** Tu backend devuelve la URL pre-firmada al cliente.
 5.  **Acceso Directo desde R2:** El cliente (e.g., el navegador) utiliza esta URL para descargar o mostrar el archivo directamente desde Cloudflare R2.
 
-## 5. Gestión de Límites de Tasa (Rate Limits)
+## 5. Gestión de Uso y Límites de Tasa (Rate Limits)
 
-Cloudflare R2 tiene límites de tasa predeterminados para las operaciones de la API. Es crucial gestionar estos límites para asegurar la disponibilidad del servicio.
+En lugar de una gestión proactiva de los límites de tasa basada en el cliente, adoptaremos un enfoque de monitoreo y reacción basado en las métricas que ofrece la API de Cloudflare. El nombre único de cada bucket se almacenará en la columna `r2BucketName` de la tabla `organization`.
 
-### 5.1. Obtención de Límites de Tasa
+### 5.1. Monitoreo del Uso por Bucket
 
-Los límites de tasa de R2 no se exponen directamente a través de una llamada a la API específica para consultarlos. En su lugar, se comunican a través de las cabeceras de respuesta (`Headers`) de la API cuando se realiza una solicitud.
+Para medir el uso del servicio R2 por parte de cada organización, se realizarán consultas periódicas a la API de Cloudflare para obtener métricas a nivel de bucket. Esto nos permite tener una visión clara del consumo de recursos (almacenamiento, número de operaciones, etc.) para cada cliente.
 
-- **Cabeceras a Monitorear:**
-  - `x-ratelimit-limit`: El límite de solicitudes para el intervalo de tiempo actual.
-  - `x-ratelimit-remaining`: El número de solicitudes restantes en el intervalo actual.
-  - `x-ratelimit-reset`: El tiempo (en segundos Unix epoch) hasta que se reinicie el límite.
+**Endpoint de la API a Utilizar:**
 
-### 5.2. Persistencia y Estrategia de Gestión
+Cloudflare proporciona un endpoint para obtener métricas de un bucket específico. Aunque la documentación de la API no detalla un endpoint de "métricas" por bucket de forma explícita en los resultados de búsqueda, la funcionalidad de `Account-Level Metrics` y los `Logs` son los mecanismos recomendados para esta tarea.
 
-1.  **Capa de Abstracción/Proxy para la API:** Centraliza todas las llamadas a la API de Cloudflare R2 a través de un único servicio o módulo en tu backend.
-2.  **Almacenamiento en Caché (Caching):**
-    *   Después de cada llamada a la API de R2, extrae los valores de las cabeceras `x-ratelimit-*`.
-    *   Almacena estos valores en una caché rápida como Redis o Memcached, usando una clave relacionada con el endpoint o la operación (e.g., `r2-api-ratelimit:bucket-creation`).
-    *   Define un TTL (Time-To-Live) para la clave de caché que coincida con el valor de `x-ratelimit-reset`.
-3.  **Middleware de Verificación de Límite:**
-    *   Antes de realizar una nueva llamada a la API de R2, tu servicio debe consultar la caché.
-    *   Si el valor de `x-ratelimit-remaining` en la caché es bajo (e.g., cercano a cero), puedes optar por:
-        *   **Retrasar la Solicitud (Throttling):** Poner la solicitud en una cola y reintentarla después de que el límite se reinicie.
-        *   **Rechazar la Solicitud:** Devolver un error `429 Too Many Requests` al cliente inmediatamente para que pueda reintentarlo más tarde.
+- **Cloudflare Log Explorer/Logpush:** Es la herramienta más poderosa para este caso. Puedes filtrar los logs de R2 por el nombre del bucket (`bucketName`) para obtener un detalle granular de cada solicitud, incluyendo:
+    - Operaciones (Read, Write, Delete)
+    - Tamaño de los objetos
+    - Origen de la solicitud
+    - Timestamps
 
-Este enfoque proactivo evita alcanzar los límites de tasa y mejora la resiliencia de tu aplicación.
+- **API de Métricas a Nivel de Cuenta:** La API de Cloudflare permite obtener métricas agregadas a nivel de cuenta. Aunque no desglosan por bucket directamente en un solo endpoint, se pueden usar en combinación con los logs para obtener una visión general.
+
+### 5.2. Estrategia de Implementación
+
+1.  **Almacenar el Nombre del Bucket:** Al crear una organización, el nombre único del bucket (`org-[organizationId]-[uuid]`) se guarda en la tabla `organization`.
+
+2.  **Servicio de Monitoreo en el Backend:**
+    *   Crear un servicio o un job programado (e.g., un cron job) que se ejecute periódicamente (e.g., cada hora o cada 24 horas).
+    *   Este servicio obtendrá la lista de todas las organizaciones y sus `r2BucketName` de la base de datos.
+    *   Para cada bucket, consultará los logs de Cloudflare (vía Logpush o la API de Log Explorer) para agregar las métricas de uso relevantes del último período.
+
+3.  **Persistencia de Métricas (Opcional pero Recomendado):**
+    *   Almacenar las métricas de uso agregadas en una tabla separada en tu base de datos (e.g., `r2_usage_metrics`) asociada a cada organización.
+    *   Esto permite construir históricos de consumo, generar facturas, y mostrar dashboards a los clientes sin tener que consultar la API de Cloudflare en tiempo real para cada vista.
+
+4.  **Gestión de Límites de Tasa:**
+    *   Con este enfoque, la gestión de límites de tasa se vuelve reactiva. Si se detecta un uso excesivo o abusivo por parte de una organización, se pueden tomar acciones:
+        *   **Notificaciones:** Enviar alertas al administrador del sistema o al cliente.
+        *   **Restricción de Acceso:** Deshabilitar temporalmente la generación de URLs pre-firmadas para esa organización si el abuso persiste.
+        *   **Escalado de Plan:** Invitar al cliente a actualizar su plan si su uso supera consistentemente los límites establecidos.
 
 ## 6. Gestión del Ciclo de Vida de los Datos
 
