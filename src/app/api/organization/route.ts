@@ -37,16 +37,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { organization, plans } from '@/db/schema';
 import { withOptimizedAuthentication } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
 import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
-import { users } from '@/db/schema/users';
-import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { generateRandomInvitationCode, generateUniqueInstanceId, generateUniqueApiKey } from '@/lib/organization-utils';
-import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
-import { generateR2BucketName } from '@/lib/cloudflare/r2';
+import {
+  createOrganization,
+  updateOrganization,
+  getOrganizationById,
+} from '@/db/queries/organization';
 
 /**
  * Valida si una zona horaria es válida según los estándares IANA.
@@ -217,10 +215,8 @@ const createOrganizationHandler = async (
     request: NextRequest,
     userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
     try {
-      // The user information is already available in userInfo
       const body = await request.json();
       
-      // Validate the request body with Zod
       const validationResult = createOrganizationSchema.safeParse(body);
       
       if (!validationResult.success) {
@@ -239,100 +235,25 @@ const createOrganizationHandler = async (
       }
       
       const { organizationName, planId: planIdentifier, timezone, currency } = validationResult.data;
+      const userId = userInfo.user.firebaseUid; // Use Firebase UID from token
 
-      // Map frontend plan identifiers to database names
-      const planIdentifierMap: { [key: string]: string } = {
-        'basico': 'Básico',
-        'profesional': 'Profesional',
-        'empresarial': 'Empresarial'
-      };
-
-      const planName = planIdentifierMap[planIdentifier];
-
-      if (!planName) {
-        return NextResponse.json(
-          { error: `El identificador de plan '${planIdentifier}' es inválido.` },
-          { status: 400 }
-        );
-      }
-
-      // 1. Find the plan by its name
-      const plan = await db.query.plans.findFirst({
-        where: eq(plans.name, planName)
-      });
-
-      if (!plan) {
-        return NextResponse.json(
-          { error: `El plan con el nombre '${planName}' no fue encontrado.` },
-          { status: 404 }
-        );
-      }
-
-      // 2. Update the user's role to 'admin'
-      await db.update(users)
-        .set({ role: "admin" })
-        .where(eq(users.id, userInfo.user.id));
-
-      // 3. Generate invitation code, instanceId, and apiKey
-      const invitacionCode = await generateRandomInvitationCode();
-      const instanceId = await generateUniqueInstanceId();
-      const apiKey = await generateUniqueApiKey();
-      
-      // 4. Create the organization using the numeric ID of the found plan
-      const insertResult = await db.insert(organization).values({
-        name: organizationName,
-        invitationCode: invitacionCode,
-        planId: plan.id, // Use the numeric ID of the plan
-        instanceId: instanceId,
-        apiKey: apiKey,
-        timezone: timezone,
-        currency: currency,
-      });
-
-      const newOrganizationId = insertResult[0].insertId;
-
-      if (!newOrganizationId) {
-        return NextResponse.json(
-          { error: 'Error al crear la organización.' },
-          { status: 500 }
-        );
-      }
-
-      // 5. Generate the R2 bucket name and update the organization
-      const r2BucketName = generateR2BucketName(newOrganizationId);
-      await db.update(organization)
-        .set({ r2BucketName: r2BucketName })
-        .where(eq(organization.id, newOrganizationId));
-
-      // 6. Associate the user with the organization
-      await db.update(users)
-      .set({ organizationId: newOrganizationId })
-      .where(eq(users.id, userInfo.user.id));
-
-      // 7. Synchronize knowledge with pgVector
-      try {
-        await syncKnowledgeAfterCRUD('organization', 'create', {
-          id: newOrganizationId,
-          organizationId: newOrganizationId
-        });
-        console.log(`Conocimiento sincronizado para organización ${newOrganizationId}`);
-      } catch (syncError) {
-        console.error('Error al sincronizar conocimiento:', syncError);
-        // Do not fail the main operation due to synchronization errors
-      }
+      const result = await createOrganization(
+        organizationName,
+        planIdentifier,
+        timezone,
+        currency,
+        userId
+      );
 
       return NextResponse.json({ 
         message: 'Organización creada correctamente.',
-        organizationId: newOrganizationId,
-        invitationCode: invitacionCode,
-        instanceId: instanceId,
-        apiKey: apiKey,
-        r2BucketName: r2BucketName
+        ...result
       });
     } catch (error) {
       console.error('Error en el servidor:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error interno del servidor.';
       return NextResponse.json(
-        { error: 'Error interno del servidor.' },
+        { error: errorMessage },
         { status: 500 }
       );
     }
@@ -352,7 +273,6 @@ const patchOrganizationHandler = async (
   userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    // Verify that the user belongs to an organization
     if (!userInfo.user.organizationId) {
       return NextResponse.json(
         { error: 'Usuario no pertenece a ninguna organización' },
@@ -362,7 +282,6 @@ const patchOrganizationHandler = async (
 
     const body = await request.json();
     
-    // Validate the request body with Zod
     const validationResult = updateOrganizationSchema.safeParse(body);
     
     if (!validationResult.success) {
@@ -382,7 +301,6 @@ const patchOrganizationHandler = async (
 
     const updateData = validationResult.data;
 
-    // Verify that there is at least one field to update
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { error: 'No se proporcionaron campos para actualizar' },
@@ -390,38 +308,10 @@ const patchOrganizationHandler = async (
       );
     }
 
-    // Update the organization
-    const updateResult = await db.update(organization)
-      .set({
-        ...updateData,
-        updatedAt: new Date()
-      })
-      .where(eq(organization.id, userInfo.user.organizationId));
-
-    // Verify that the organization was updated
-    if (updateResult[0].affectedRows === 0) {
-      return NextResponse.json(
-        { error: 'Organización no encontrada o no se pudo actualizar' },
-        { status: 404 }
-      );
-    }
-
-    // Get the updated organization
-    const updatedOrganization = await db.query.organization.findFirst({
-      where: eq(organization.id, userInfo.user.organizationId)
-    });
-
-    // Synchronize knowledge with pgVector
-    try {
-      await syncKnowledgeAfterCRUD('organization', 'update', {
-        id: userInfo.user.organizationId,
-        organizationId: userInfo.user.organizationId
-      });
-      console.log(`Conocimiento sincronizado para organización ${userInfo.user.organizationId}`);
-    } catch (syncError) {
-      console.error('Error al sincronizar conocimiento:', syncError);
-      // Do not fail the main operation due to synchronization errors
-    }
+    const updatedOrganization = await updateOrganization(
+      userInfo.user.organizationId,
+      updateData
+    );
 
     return NextResponse.json({ 
       message: 'Organización actualizada correctamente.',
@@ -429,8 +319,9 @@ const patchOrganizationHandler = async (
     });
   } catch (error) {
     console.error('Error en el servidor:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error interno del servidor.';
     return NextResponse.json(
-      { error: 'Error interno del servidor.' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -450,7 +341,6 @@ const getOrganizationHandler = async (
   userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    // Verify that the user belongs to an organization
     if (!userInfo.user.organizationId) {
       return NextResponse.json(
         { error: 'Usuario no pertenece a ninguna organización' },
@@ -458,10 +348,7 @@ const getOrganizationHandler = async (
       );
     }
 
-    // Get the organization information
-    const organizationData = await db.query.organization.findFirst({
-      where: eq(organization.id, userInfo.user.organizationId)
-    });
+    const organizationData = await getOrganizationById(userInfo.user.organizationId);
 
     if (!organizationData) {
       return NextResponse.json(
