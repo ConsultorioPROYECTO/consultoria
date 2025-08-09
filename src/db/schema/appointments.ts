@@ -1,6 +1,6 @@
 // src/db/schema/appointments.ts 
 
-import { mysqlTable, varchar, timestamp, serial, index, int, mysqlEnum, text } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int, mysqlEnum, text } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { doctors } from './doctors'; // Importar el esquema de doctors
 import { patients } from './patients'; // Importar el esquema de patients
@@ -46,7 +46,7 @@ import { APPOINTMENT_STATUS, SYNC_STATUS } from '@/types/appointment-status';
  * @property {Date} attendedAt - Timestamp de cuando se marcó como atendida.
  */
 export const appointments = mysqlTable('appointments', {
-  id: serial('id').primaryKey(),
+  id: int('id').autoincrement().primaryKey(),
 
   // --- Claves foráneas ---
   doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade' , onUpdate : 'cascade'}).notNull(),

@@ -146,17 +146,258 @@ Cuando se crea una nueva organización, la aplicación realizará una llamada a 
 3.  La aplicación genera una URL prefirmada para la operación solicitada.
 4.  El cliente del usuario utiliza la URL prefirmada para interactuar directamente con R2.
 
-## 9. Consideraciones Adicionales
+## 9. Gestión Local de Archivos y Tracking de Objetos
 
-### 9.1. Límites de Tasa (Rate Limiting)
+### 9.1. Tabla de Tracking de Archivos en R2
+
+Para centralizar el control de acceso y facilitar la búsqueda de archivos por entidades específicas, se implementará una tabla `r2_objects` que almacenará los metadatos de cada archivo subido a R2.
+
+#### 9.1.1. Estructura de la Tabla `r2_objects`
+
+```sql
+-- Tabla para tracking de objetos en R2
+CREATE TABLE r2_objects (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  
+  -- Identificadores del objeto en R2
+  object_key VARCHAR(500) NOT NULL,           -- Key completa del objeto en R2
+  object_name VARCHAR(255) NOT NULL,          -- Nombre original del archivo
+  content_type VARCHAR(100) NOT NULL,         -- MIME type del archivo
+  file_size BIGINT NOT NULL,                  -- Tamaño del archivo en bytes
+  file_hash VARCHAR(64),                      -- Hash del archivo para integridad
+  
+  -- Referencias a entidades del sistema médico (opcionales)
+  patient_id INT,                             -- FK a patients
+  appointment_id INT,                         -- FK a appointments
+  doctor_id INT,                              -- FK a doctors
+  medical_service_id INT,                     -- FK a medical_services
+  
+  -- Referencia obligatoria a organización
+  organization_id INT NOT NULL,               -- FK a organization
+  
+  -- Metadatos adicionales
+  file_category ENUM('medical_document', 'patient_photo', 'medical_image', 'appointment_note', 'prescription', 'lab_result', 'other') NOT NULL,
+  description TEXT,                           -- Descripción opcional del archivo
+  tags JSON,                                  -- Etiquetas adicionales en formato JSON
+  
+  -- URLs de acceso temporal (cache)
+  last_presigned_url TEXT,                    -- Última URL pre-firmada generada
+  presigned_url_expires_at TIMESTAMP,         -- Expiración de la URL pre-firmada
+  
+  -- Control de acceso y estado
+  is_active BOOLEAN DEFAULT true NOT NULL,    -- Estado activo del archivo
+  is_public BOOLEAN DEFAULT false NOT NULL,   -- Si permite acceso público (casos especiales)
+  access_level ENUM('private', 'organization', 'restricted') DEFAULT 'private' NOT NULL,
+  
+  -- Auditoría
+  uploaded_by INT,                            -- FK a users (quien subió el archivo)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,
+  deleted_at TIMESTAMP,                       -- Soft delete
+  
+  -- Índices
+  INDEX idx_r2_objects_organization_id (organization_id),
+  INDEX idx_r2_objects_patient_id (patient_id),
+  INDEX idx_r2_objects_appointment_id (appointment_id),
+  INDEX idx_r2_objects_doctor_id (doctor_id),
+  INDEX idx_r2_objects_medical_service_id (medical_service_id),
+  INDEX idx_r2_objects_category (file_category),
+  INDEX idx_r2_objects_uploaded_by (uploaded_by),
+  INDEX idx_r2_objects_created_at (created_at),
+  INDEX idx_r2_objects_object_key (object_key),
+  UNIQUE KEY unique_object_key_org (object_key, organization_id),
+  
+  -- Restricciones de clave foránea
+  CONSTRAINT fk_r2_objects_organization FOREIGN KEY (organization_id) REFERENCES organization(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_r2_objects_patient FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_r2_objects_appointment FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_r2_objects_doctor FOREIGN KEY (doctor_id) REFERENCES doctors(idDoctor) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_r2_objects_medical_service FOREIGN KEY (medical_service_id) REFERENCES medical_services(id) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_r2_objects_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+```
+
+#### 9.1.2. Beneficios de la Implementación
+
+1. **Control de Acceso Centralizado:** Todos los archivos están registrados localmente con referencias a entidades específicas.
+2. **Búsqueda Eficiente:** Consultas rápidas por paciente, cita, doctor o servicio médico.
+3. **Auditoría Completa:** Tracking de quién subió cada archivo y cuándo.
+4. **Categorización:** Clasificación automática de archivos por tipo médico.
+5. **Soft Delete:** Eliminación lógica para cumplir con regulaciones de retención.
+6. **Cache de URLs:** Almacenamiento temporal de URLs pre-firmadas para optimizar rendimiento.
+
+#### 9.1.3. Flujo de Subida Actualizado
+
+```mermaid
+sequenceDiagram
+    participant C as Cliente
+    participant API as Backend API
+    participant DB as Base de Datos
+    participant R2 as Cloudflare R2
+
+    C->>API: Solicitar subida de archivo
+    API->>API: Validar autenticación y permisos
+    API->>API: Generar object_key único
+    API->>R2: Generar URL pre-firmada
+    API->>DB: Crear registro en r2_objects (estado: uploading)
+    API->>C: Retornar URL pre-firmada + metadata
+    C->>R2: Subir archivo directamente
+    C->>API: Confirmar subida exitosa
+    API->>DB: Actualizar registro (estado: active)
+    API->>C: Confirmación final
+```
+
+#### 9.1.4. Estándares de Nomenclatura de Object Keys
+
+Para garantizar organización y consistencia en R2, se establecen los siguientes estándares:
+
+- **Estructura:** `{category}/{year}/{month}/{entity_type}/{entity_id}/{uuid}_{original_name}`
+- **Ejemplo:** `medical_documents/2024/03/patients/12345/a4e8f8b2-9b6b-4a5c-8e1a-3d9f4c1b0e2d_reporte_medico.pdf`
+
+**Categorías definidas:**
+- `medical_documents/` - Documentos médicos generales
+- `patient_photos/` - Fotografías de pacientes
+- `medical_images/` - Imágenes médicas (rayos X, resonancias, etc.)
+- `appointment_notes/` - Notas y documentos de citas
+- `prescriptions/` - Recetas médicas
+- `lab_results/` - Resultados de laboratorio
+- `other/` - Otros archivos no categorizados
+
+### 9.2. Implementación en el Schema de Drizzle ORM
+
+Basándose en la estructura actual del proyecto que utiliza Drizzle ORM con MySQL, se debe crear el archivo `src/db/schema/r2_objects.ts` con la siguiente implementación:
+
+```typescript
+// src/db/schema/r2_objects.ts
+
+import { mysqlTable, varchar, timestamp, index, int, mysqlEnum, text, boolean, bigint, json, unique } from 'drizzle-orm/mysql-core';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
+import { organization } from './organization';
+import { patients } from './patients';
+import { appointments } from './appointments';
+import { doctors } from './doctors';
+import { medicalServices } from './medical_services';
+import { users } from './users';
+
+export const r2Objects = mysqlTable('r2_objects', {
+  id: int('id').autoincrement().primaryKey(),
+  
+  // Identificadores del objeto en R2
+  objectKey: varchar('object_key', { length: 500 }).notNull(),
+  objectName: varchar('object_name', { length: 255 }).notNull(),
+  contentType: varchar('content_type', { length: 100 }).notNull(),
+  fileSize: bigint('file_size', { mode: 'number' }).notNull(),
+  fileHash: varchar('file_hash', { length: 64 }),
+  
+  // Referencias opcionales a entidades del sistema médico
+  patientId: int('patient_id').references(() => patients.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  appointmentId: int('appointment_id').references(() => appointments.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'set null', onUpdate: 'cascade' }),
+  medicalServiceId: int('medical_service_id').references(() => medicalServices.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  
+  // Referencia obligatoria a organización
+  organizationId: int('organization_id').references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
+  
+  // Metadatos adicionales
+  fileCategory: mysqlEnum('file_category', ['medical_document', 'patient_photo', 'medical_image', 'appointment_note', 'prescription', 'lab_result', 'other']).notNull(),
+  description: text('description'),
+  tags: json('tags'),
+  
+  // URLs de acceso temporal (cache)
+  lastPresignedUrl: text('last_presigned_url'),
+  presignedUrlExpiresAt: timestamp('presigned_url_expires_at'),
+  
+  // Control de acceso y estado
+  isActive: boolean('is_active').default(true).notNull(),
+  isPublic: boolean('is_public').default(false).notNull(),
+  accessLevel: mysqlEnum('access_level', ['private', 'organization', 'restricted']).default('private').notNull(),
+  
+  // Auditoría
+  uploadedBy: int('uploaded_by').references(() => users.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+  
+}, (table) => [
+  // Índices para optimizar consultas
+  index('idx_r2_objects_organization_id').on(table.organizationId),
+  index('idx_r2_objects_patient_id').on(table.patientId),
+  index('idx_r2_objects_appointment_id').on(table.appointmentId),
+  index('idx_r2_objects_doctor_id').on(table.doctorId),
+  index('idx_r2_objects_medical_service_id').on(table.medicalServiceId),
+  index('idx_r2_objects_category').on(table.fileCategory),
+  index('idx_r2_objects_uploaded_by').on(table.uploadedBy),
+  index('idx_r2_objects_created_at').on(table.createdAt),
+  index('idx_r2_objects_object_key').on(table.objectKey),
+  index('idx_r2_objects_active').on(table.isActive),
+  // Índice único: object_key único por organización
+  unique('unique_object_key_org').on(table.objectKey, table.organizationId),
+]);
+
+export const insertR2ObjectSchema = createInsertSchema(r2Objects);
+export const selectR2ObjectSchema = createSelectSchema(r2Objects);
+
+export type R2Object = typeof r2Objects.$inferSelect;
+export type NewR2Object = typeof r2Objects.$inferInsert;
+```
+
+### 9.3. Integración con el Sistema Existente
+
+#### 9.3.1. Modificaciones en el Flujo de Upload
+
+1. **Antes de generar URL pre-firmada:** Crear registro en `r2_objects` con estado pendiente.
+2. **Después de upload exitoso:** Actualizar registro con metadatos finales del archivo.
+3. **En caso de fallo:** Marcar registro como fallido o eliminarlo.
+
+#### 9.3.2. Nuevas Funciones de Utilidad
+
+```typescript
+// src/lib/cloudflare/r2-objects.ts
+
+export async function trackR2Upload(params: {
+  objectKey: string;
+  objectName: string;
+  contentType: string;
+  organizationId: number;
+  patientId?: number;
+  appointmentId?: number;
+  doctorId?: number;
+  medicalServiceId?: number;
+  fileCategory: string;
+  uploadedBy: number;
+}): Promise<R2Object> {
+  // Crear registro de tracking en la base de datos
+}
+
+export async function getR2ObjectsByEntity(params: {
+  organizationId: number;
+  patientId?: number;
+  appointmentId?: number;
+  doctorId?: number;
+  medicalServiceId?: number;
+}): Promise<R2Object[]> {
+  // Obtener archivos por entidad específica
+}
+
+export async function generateTrackedPresignedUrl(
+  objectId: number,
+  action: 'get' | 'put'
+): Promise<string> {
+  // Generar URL pre-firmada y actualizar cache en BD
+}
+```
+
+## 10. Consideraciones Adicionales
+
+### 10.1. Límites de Tasa (Rate Limiting)
 
 Se pueden aplicar límites de tasa a nivel de API para proteger contra el abuso y garantizar un rendimiento justo para todos los usuarios.
 
-### 9.2. Protección contra Ataques de Denegación de Servicio (DDoS)
+### 10.2. Protección contra Ataques de Denegación de Servicio (DDoS)
 
 Cloudflare proporciona protección contra ataques DDoS de forma nativa.
 
-### 9.3. Costos y Optimización
+### 10.3. Costos y Optimización
 
 - **Clases de Almacenamiento:** Utilice la clase de almacenamiento adecuada para sus datos (por ejemplo, `Standard` para datos de acceso frecuente).
 - **Políticas de Ciclo de Vida:** Utilice políticas de ciclo de vida para eliminar datos innecesarios y reducir los costos de almacenamiento.
