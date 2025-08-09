@@ -1,6 +1,6 @@
 import { r2 } from '../r2-client';
-import { generateR2BucketName, createR2Bucket } from '../r2';
-import { CreateBucketCommand } from '@aws-sdk/client-s3';
+import { generateR2BucketName, createR2Bucket, uploadToR2 } from '../r2';
+import { CreateBucketCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
 // Mock the r2 client
 jest.mock('../r2-client', () => ({
@@ -52,6 +52,34 @@ describe('R2 utilities', () => {
       const result = await createR2Bucket(bucketName);
 
       expect(r2.send).toHaveBeenCalledWith(expect.any(CreateBucketCommand));
+      expect(result.success).toBe(false);
+      expect(result.error).toBe(error);
+    });
+  });
+
+  describe('uploadToR2', () => {
+    it('should upload an object successfully', async () => {
+      (r2.send as jest.Mock).mockResolvedValueOnce({});
+
+      const result = await uploadToR2(
+        'test-bucket',
+        'path/file.txt',
+        Buffer.from('hello world'),
+        { contentType: 'text/plain', cacheControl: 'max-age=60' }
+      );
+
+      expect(r2.send).toHaveBeenCalledWith(expect.any(PutObjectCommand));
+      expect(result.success).toBe(true);
+      expect(result.response).toBeDefined();
+    });
+
+    it('should handle upload failure', async () => {
+      const error = new Error('Upload failed');
+      (r2.send as jest.Mock).mockRejectedValueOnce(error);
+
+      const result = await uploadToR2('test-bucket', 'x.txt', Buffer.from('x'));
+
+      expect(r2.send).toHaveBeenCalledWith(expect.any(PutObjectCommand));
       expect(result.success).toBe(false);
       expect(result.error).toBe(error);
     });
