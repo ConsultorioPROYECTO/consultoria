@@ -1,8 +1,9 @@
 // src/db/schema/organization.ts 
 
-import { mysqlTable, varchar, timestamp, index, int  } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { plans } from './plans';
+import { type z } from 'zod';
 
 /**
  * @typedef AppointmentTableSchema
@@ -24,7 +25,7 @@ import { plans } from './plans';
  */
 
 export const organization = mysqlTable('organization', {
-  id: int().autoincrement().primaryKey(),
+  id: int('id').autoincrement().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   invitationCode: varchar('invitation_code', { length: 6 }).unique().notNull(),
   address: varchar('address', { length: 255 }),
@@ -55,4 +56,4 @@ export const insertOrganizationSchema = createInsertSchema(organization);
 export const selectOrganizationSchema = createSelectSchema(organization);
 
 export type Organization = typeof organization.$inferSelect;
-export type NewOrganization = typeof organization.$inferInsert;
+export type NewOrganization = z.infer<typeof insertOrganizationSchema>;

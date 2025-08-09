@@ -160,7 +160,20 @@ const createOrganizationSchema = z.object({
  * @property {string} [timezone] - The new IANA timezone identifier.
  * @property {string} [currency] - The new ISO 4217 currency code.
  */
-const updateOrganizationSchema = z.object({
+import type { NewOrganization } from '@/db/schema';
+
+/**
+ * @description Zod schema for validating the request body when updating an organization.
+ * All fields are optional.
+ * @property {string} [name] - The new name of the organization.
+ * @property {string} [address] - The new address of the organization.
+ * @property {string} [phone] - The new phone number of the organization.
+ * @property {string} [email] - The new contact email for the organization.
+ * @property {string} [nit] - The new tax identification number (NIT).
+ * @property {string} [timezone] - The new IANA timezone identifier.
+ * @property {string} [currency] - The new ISO 4217 currency code.
+ */
+const updateOrganizationSchema: z.ZodType<Partial<NewOrganization>> = z.object({
   name: z.string()
     .min(1, 'El nombre de la organización es requerido')
     .max(255, 'El nombre de la organización no puede exceder 255 caracteres')

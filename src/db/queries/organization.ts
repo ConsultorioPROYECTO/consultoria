@@ -1,8 +1,18 @@
 import { db } from '@/db';
-import { organization, users, plans } from '@/db/schema';
+import {
+  organization,
+  plans,
+  users,
+  type NewOrganization,
+  type Organization,
+} from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateR2BucketName } from '@/lib/cloudflare/r2';
-import { generateRandomInvitationCode, generateUniqueInstanceId, generateUniqueApiKey } from '@/lib/organization-utils';
+import {
+  generateRandomInvitationCode,
+  generateUniqueInstanceId,
+  generateUniqueApiKey,
+} from '@/lib/organization-utils';
 import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
 
 /**
@@ -24,9 +34,9 @@ export const createOrganization = async (
 ) => {
   return await db.transaction(async (tx) => {
     const planIdentifierMap: { [key: string]: string } = {
-      'basico': 'Básico',
-      'profesional': 'Profesional',
-      'empresarial': 'Empresarial',
+      basico: 'Básico',
+      profesional: 'Profesional',
+      empresarial: 'Empresarial',
     };
     const planName = planIdentifierMap[planIdentifier];
 
@@ -42,7 +52,10 @@ export const createOrganization = async (
       throw new Error(`Plan not found: ${planName}`);
     }
 
-    await tx.update(users).set({ role: 'admin' }).where(eq(users.firebaseUid, userId));
+    await tx
+      .update(users)
+      .set({ role: 'admin' })
+      .where(eq(users.firebaseUid, userId));
 
     const invitationCode = await generateRandomInvitationCode();
     const instanceId = await generateUniqueInstanceId();
@@ -65,8 +78,14 @@ export const createOrganization = async (
     }
 
     const r2BucketName = generateR2BucketName(newOrganizationId);
-    await tx.update(organization).set({ r2BucketName }).where(eq(organization.id, newOrganizationId));
-    await tx.update(users).set({ organizationId: newOrganizationId }).where(eq(users.firebaseUid, userId));
+    await tx
+      .update(organization)
+      .set({ r2BucketName })
+      .where(eq(organization.id, newOrganizationId));
+    await tx
+      .update(users)
+      .set({ organizationId: newOrganizationId })
+      .where(eq(users.firebaseUid, userId));
 
     try {
       await syncKnowledgeAfterCRUD('organization', 'create', {
@@ -97,9 +116,10 @@ export const createOrganization = async (
  */
 export const updateOrganization = async (
   organizationId: number,
-  updateData: Partial<typeof organization.$inferInsert>
-) => {
-  const updateResult = await db.update(organization)
+  updateData: Partial<NewOrganization>
+): Promise<Organization | undefined> => {
+  const updateResult = await db
+    .update(organization)
     .set({ ...updateData, updatedAt: new Date() })
     .where(eq(organization.id, organizationId));
 
@@ -129,7 +149,9 @@ export const updateOrganization = async (
  * @param organizationId - The ID of the organization to retrieve.
  * @returns The organization data.
  */
-export const getOrganizationById = async (organizationId: number) => {
+export const getOrganizationById = async (
+  organizationId: number
+): Promise<Organization | undefined> => {
   return await db.query.organization.findFirst({
     where: eq(organization.id, organizationId),
   });
