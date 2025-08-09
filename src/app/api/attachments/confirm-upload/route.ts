@@ -1,0 +1,113 @@
+/**
+ * @fileoverview API endpoint to confirm completed uploads to Cloudflare R2 and persist metadata in DB
+ * @route POST /api/attachments/confirm-upload
+ * @auth Required - withOptimizedAuthentication
+ */
+
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
+import { withOptimizedAuthentication, AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware/optimizedAuthMiddleware';
+import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/types/api';
+import { db } from '@/db';
+import { r2Objects, appointments, patients, medicalServices } from '@/db/schema';
+import { and, eq } from 'drizzle-orm';
+
+const confirmUploadSchema = z.object({
+  objectKey: z.string().min(1),
+  objectName: z.string().min(1).max(255),
+  contentType: z.string().min(1),
+  fileSize: z.number().int().nonnegative(),
+  fileHash: z.string().max(64).optional(),
+  appointmentId: z.number().int().optional(),
+  patientId: z.number().int().optional(),
+  medicalServiceId: z.number().int().optional(),
+  fileCategory: z.enum(['medical_document', 'patient_photo', 'medical_image', 'appointment_note', 'prescription', 'lab_result', 'other']).default('other'),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  isPublic: z.boolean().optional().default(false),
+  accessLevel: z.enum(['private', 'organization', 'restricted']).optional().default('private'),
+});
+
+async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUserInfo): Promise<Response> {
+  try {
+    const body = await req.json();
+    const data = confirmUploadSchema.parse(body);
+
+    // Validate entity ownership by organization, if provided
+    const orgId = userInfo.organizationInfo!.id;
+
+    if (data.patientId) {
+      const patientCheck = await db
+        .select({ id: patients.id })
+        .from(patients)
+        .where(and(eq(patients.id, data.patientId), eq(patients.organizationId, orgId)))
+        .limit(1);
+      if (patientCheck.length === 0) {
+        return createErrorResponse('Invalid patient', 'Patient not found in your organization', HTTP_STATUS.BAD_REQUEST);
+      }
+    }
+
+    if (data.appointmentId) {
+      const appointmentCheck = await db
+        .select({ id: appointments.id })
+        .from(appointments)
+        .where(and(eq(appointments.id, data.appointmentId), eq(appointments.organizationId, orgId)))
+        .limit(1);
+      if (appointmentCheck.length === 0) {
+        return createErrorResponse('Invalid appointment', 'Appointment not found in your organization', HTTP_STATUS.BAD_REQUEST);
+      }
+    }
+
+    if (data.medicalServiceId) {
+      const serviceCheck = await db
+        .select({ id: medicalServices.id })
+        .from(medicalServices)
+        .where(and(eq(medicalServices.id, data.medicalServiceId), eq(medicalServices.organizationId, orgId)))
+        .limit(1);
+      if (serviceCheck.length === 0) {
+        return createErrorResponse('Invalid medical service', 'Service not found in your organization', HTTP_STATUS.BAD_REQUEST);
+      }
+    }
+
+    // Persist metadata
+    const insertResult = await db.insert(r2Objects).values({
+      objectKey: data.objectKey,
+      objectName: data.objectName,
+      contentType: data.contentType,
+      fileSize: data.fileSize,
+      fileHash: data.fileHash,
+      patientId: data.patientId,
+      appointmentId: data.appointmentId,
+      medicalServiceId: data.medicalServiceId,
+      organizationId: orgId,
+      fileCategory: data.fileCategory,
+      description: data.description,
+      tags: data.tags ?? null,
+      isActive: true,
+      isPublic: data.isPublic ?? false,
+      accessLevel: data.accessLevel ?? 'private',
+      uploadedBy: userInfo.user.id,
+    });
+
+    // Fetch the inserted record using the unique constraint (objectKey + organizationId)
+    if (!('insertId' in insertResult)) {
+      console.warn('Insert result does not contain insertId; proceeding to fetch by unique key');
+    }
+
+    const [inserted] = await db
+      .select()
+      .from(r2Objects)
+      .where(and(eq(r2Objects.objectKey, data.objectKey), eq(r2Objects.organizationId, orgId)))
+      .limit(1);
+
+    return createSuccessResponse(inserted, 'Attachment metadata saved', HTTP_STATUS.CREATED);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return createErrorResponse('Invalid request data', error.errors.map(e => `${e.path.join('.')}: ${e.message}`), HTTP_STATUS.BAD_REQUEST);
+    }
+    console.error('Error confirming R2 upload:', error);
+    return createErrorResponse('Internal server error', 'Could not save attachment metadata', HTTP_STATUS.INTERNAL_ERROR);
+  }
+}
+
+export const POST = withOptimizedAuthentication(handleConfirmUpload, { requireOrganization: true });
