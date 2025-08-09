@@ -1,87 +1,175 @@
 import { r2 } from '../r2-client';
-import { generateR2BucketName, createR2Bucket, uploadToR2 } from '../r2';
-import { CreateBucketCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { generateR2BucketName, createR2Bucket, uploadToR2, generatePresignedPutUrl, generatePresignedGetUrl } from '../r2';
+import { /**CreateBucketCommand,*/ PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-// Mock the r2 client
+// Mock r2 client
 jest.mock('../r2-client', () => ({
   r2: {
     send: jest.fn(),
   },
 }));
 
+// Mock getSignedUrl
+jest.mock('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: jest.fn(),
+}));
+
 describe('R2 utilities', () => {
-  // Mock console.error to avoid noise in test output
-  const originalConsoleError = console.error;
-  
+  const mockSend = r2.send as unknown as jest.Mock;
+  const mockGetSignedUrl = getSignedUrl as unknown as jest.Mock;
+
   beforeEach(() => {
-    console.error = jest.fn();
-  });
-  
-  afterEach(() => {
     jest.clearAllMocks();
-    console.error = originalConsoleError;
   });
 
   describe('generateR2BucketName', () => {
-    it('should generate a valid bucket name', () => {
-      const orgId = 123;
-      const bucketName = generateR2BucketName(orgId);
-      // It should be lowercase, and spaces replaced with hyphens
-      expect(bucketName).toMatch(/^[a-z0-9-.]+$/);
-      expect(bucketName).toContain('org-123');
+    test('generates bucket name with correct format', () => {
+      const organizationId = 123;
+      const bucketName = generateR2BucketName(organizationId);
+
+      expect(bucketName).toMatch(/^org-123-[a-f0-9-]{36}$/);
     });
   });
 
   describe('createR2Bucket', () => {
-    it('should create a bucket successfully', async () => {
-      const bucketName = 'test-bucket';
-      (r2.send as jest.Mock).mockResolvedValueOnce({});
+    test('creates bucket successfully', async () => {
+      const mockResponse = { $metadata: { httpStatusCode: 200 } };
+      mockSend.mockResolvedValue(mockResponse);
 
-      const result = await createR2Bucket(bucketName);
+      const result = await createR2Bucket('test-bucket');
 
-      expect(r2.send).toHaveBeenCalledWith(expect.any(CreateBucketCommand));
       expect(result.success).toBe(true);
-      expect(result.response).toBeDefined();
+      expect(result.response).toBe(mockResponse);
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          input: { Bucket: 'test-bucket' },
+        })
+      );
     });
 
-    it('should handle bucket creation failure', async () => {
-      const bucketName = 'test-bucket';
-      const error = new Error('Bucket already exists');
-      (r2.send as jest.Mock).mockRejectedValueOnce(error);
+    test('handles bucket creation error', async () => {
+      const mockError = new Error('Bucket creation failed');
+      mockSend.mockRejectedValue(mockError);
 
-      const result = await createR2Bucket(bucketName);
+      const result = await createR2Bucket('test-bucket');
 
-      expect(r2.send).toHaveBeenCalledWith(expect.any(CreateBucketCommand));
       expect(result.success).toBe(false);
-      expect(result.error).toBe(error);
+      expect(result.error).toBe(mockError);
     });
   });
 
   describe('uploadToR2', () => {
-    it('should upload an object successfully', async () => {
-      (r2.send as jest.Mock).mockResolvedValueOnce({});
+    test('uploads object successfully', async () => {
+      const mockResponse = { $metadata: { httpStatusCode: 200 } };
+      mockSend.mockResolvedValue(mockResponse);
 
-      const result = await uploadToR2(
-        'test-bucket',
-        'path/file.txt',
-        Buffer.from('hello world'),
-        { contentType: 'text/plain', cacheControl: 'max-age=60' }
-      );
+      const result = await uploadToR2('bucket', 'key', 'content', {
+        contentType: 'text/plain',
+        cacheControl: 'public, max-age=3600',
+      });
 
-      expect(r2.send).toHaveBeenCalledWith(expect.any(PutObjectCommand));
       expect(result.success).toBe(true);
-      expect(result.response).toBeDefined();
+      expect(result.response).toBe(mockResponse);
+      expect(mockSend).toHaveBeenCalledWith(expect.any(PutObjectCommand));
     });
 
-    it('should handle upload failure', async () => {
-      const error = new Error('Upload failed');
-      (r2.send as jest.Mock).mockRejectedValueOnce(error);
+    test('handles upload error', async () => {
+      const mockError = new Error('Upload failed');
+      mockSend.mockRejectedValue(mockError);
 
-      const result = await uploadToR2('test-bucket', 'x.txt', Buffer.from('x'));
+      const result = await uploadToR2('bucket', 'key', 'content');
 
-      expect(r2.send).toHaveBeenCalledWith(expect.any(PutObjectCommand));
       expect(result.success).toBe(false);
-      expect(result.error).toBe(error);
+      expect(result.error).toBe(mockError);
+    });
+  });
+
+  describe('generatePresignedPutUrl', () => {
+    test('generates presigned PUT URL successfully', async () => {
+      const mockUrl = 'https://bucket.r2.cloudflarestorage.com/key?signed=true';
+      mockGetSignedUrl.mockResolvedValue(mockUrl);
+
+      const result = await generatePresignedPutUrl('bucket', 'key', {
+        contentType: 'image/jpeg',
+        cacheControl: 'no-cache',
+        expiresInSeconds: 600,
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.url).toBe(mockUrl);
+      expect(mockGetSignedUrl).toHaveBeenCalledWith(
+        r2,
+        expect.any(PutObjectCommand),
+        { expiresIn: 600 }
+      );
+    });
+
+    test('uses default expiration when not provided', async () => {
+      const mockUrl = 'https://bucket.r2.cloudflarestorage.com/key?signed=true';
+      mockGetSignedUrl.mockResolvedValue(mockUrl);
+
+      await generatePresignedPutUrl('bucket', 'key');
+
+      expect(mockGetSignedUrl).toHaveBeenCalledWith(
+        r2,
+        expect.any(PutObjectCommand),
+        { expiresIn: 300 }
+      );
+    });
+
+    test('handles presigned PUT URL generation error', async () => {
+      const mockError = new Error('Presign failed');
+      mockGetSignedUrl.mockRejectedValue(mockError);
+
+      const result = await generatePresignedPutUrl('bucket', 'key');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe(mockError);
+    });
+  });
+
+  describe('generatePresignedGetUrl', () => {
+    test('generates presigned GET URL successfully', async () => {
+      const mockUrl = 'https://bucket.r2.cloudflarestorage.com/key?signed=true';
+      mockGetSignedUrl.mockResolvedValue(mockUrl);
+
+      const result = await generatePresignedGetUrl('bucket', 'key', {
+        expiresInSeconds: 1800,
+        responseContentType: 'application/pdf',
+        responseContentDisposition: 'attachment; filename="document.pdf"',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.url).toBe(mockUrl);
+      expect(mockGetSignedUrl).toHaveBeenCalledWith(
+        r2,
+        expect.any(GetObjectCommand),
+        { expiresIn: 1800 }
+      );
+    });
+
+    test('uses default expiration when not provided', async () => {
+      const mockUrl = 'https://bucket.r2.cloudflarestorage.com/key?signed=true';
+      mockGetSignedUrl.mockResolvedValue(mockUrl);
+
+      await generatePresignedGetUrl('bucket', 'key');
+
+      expect(mockGetSignedUrl).toHaveBeenCalledWith(
+        r2,
+        expect.any(GetObjectCommand),
+        { expiresIn: 300 }
+      );
+    });
+
+    test('handles presigned GET URL generation error', async () => {
+      const mockError = new Error('Presign failed');
+      mockGetSignedUrl.mockRejectedValue(mockError);
+
+      const result = await generatePresignedGetUrl('bucket', 'key');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe(mockError);
     });
   });
 });
