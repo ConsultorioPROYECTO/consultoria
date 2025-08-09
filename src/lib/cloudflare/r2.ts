@@ -26,9 +26,9 @@ export async function createR2Bucket(bucketName: string) {
 
   try {
     const response = await r2.send(command);
-    return response;
+    return { success: true, response };
   } catch (error) {
     console.error('Error creating R2 bucket:', error);
-    throw error;
+    return { success: false, error };
   }
 }

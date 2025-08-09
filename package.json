@@ -21,6 +21,9 @@
           "configFile": "./jest.babel.config.js"
         }
       ]
+    },
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
     }
   },
   "dependencies": {
