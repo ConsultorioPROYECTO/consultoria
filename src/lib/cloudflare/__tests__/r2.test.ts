@@ -10,8 +10,16 @@ jest.mock('../r2-client', () => ({
 }));
 
 describe('R2 utilities', () => {
+  // Mock console.error to avoid noise in test output
+  const originalConsoleError = console.error;
+  
+  beforeEach(() => {
+    console.error = jest.fn();
+  });
+  
   afterEach(() => {
     jest.clearAllMocks();
+    console.error = originalConsoleError;
   });
 
   describe('generateR2BucketName', () => {
@@ -44,7 +52,8 @@ describe('R2 utilities', () => {
       const result = await createR2Bucket(bucketName);
 
       expect(r2.send).toHaveBeenCalledWith(expect.any(CreateBucketCommand));
-      expect(result).toEqual({ success: false, error });
+      expect(result.success).toBe(false);
+      expect(result.error).toBe(error);
     });
   });
 });

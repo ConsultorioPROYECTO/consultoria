@@ -1,4 +1,4 @@
-import { CreateBucketCommand } from '@aws-sdk/client-s3';
+import { CreateBucketCommand, CreateBucketCommandOutput } from '@aws-sdk/client-s3';
 import { r2 } from './r2-client';
 import { randomUUID } from 'crypto';
 
@@ -17,9 +17,13 @@ export function generateR2BucketName(organizationId: number): string {
 /**
  * Creates a new R2 bucket.
  * @param bucketName The name of the bucket to create.
- * @returns The result of the bucket creation operation.
+ * @returns A result object indicating success or failure.
  */
-export async function createR2Bucket(bucketName: string) {
+export async function createR2Bucket(bucketName: string): Promise<{
+  success: boolean;
+  response?: CreateBucketCommandOutput;
+  error?: unknown;
+}> {
   const command = new CreateBucketCommand({
     Bucket: bucketName,
   });
