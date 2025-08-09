@@ -46,6 +46,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { generateRandomInvitationCode, generateUniqueInstanceId, generateUniqueApiKey } from '@/lib/organization-utils';
 import { syncKnowledgeAfterCRUD } from '@/lib/knowledge-manager';
+import { generateR2BucketName } from '@/lib/cloudflare/r2';
 
 /**
  * Valida si una zona horaria es válida según los estándares IANA.
@@ -124,7 +125,11 @@ const isValidCurrency = (currency: string): boolean => {
 };
 
 /**
- * Esquema de validación para la creación de organización
+ * @description Zod schema for validating the request body when creating an organization.
+ * @property {string} organizationName - The name of the organization.
+ * @property {string} planId - The identifier for the selected plan (e.g., 'basico', 'profesional').
+ * @property {string} [timezone] - Optional IANA timezone identifier.
+ * @property {string} [currency] - Optional ISO 4217 currency code.
  */
 const createOrganizationSchema = z.object({
   organizationName: z.string()
@@ -147,7 +152,15 @@ const createOrganizationSchema = z.object({
 });
 
 /**
- * Esquema de validación para la actualización de organización
+ * @description Zod schema for validating the request body when updating an organization.
+ * All fields are optional.
+ * @property {string} [name] - The new name of the organization.
+ * @property {string} [address] - The new address of the organization.
+ * @property {string} [phone] - The new phone number of the organization.
+ * @property {string} [email] - The new contact email for the organization.
+ * @property {string} [nit] - The new tax identification number (NIT).
+ * @property {string} [timezone] - The new IANA timezone identifier.
+ * @property {string} [currency] - The new ISO 4217 currency code.
  */
 const updateOrganizationSchema = z.object({
   name: z.string()
@@ -191,21 +204,23 @@ const updateOrganizationSchema = z.object({
 
 
 /**
- * Manejador para solicitudes POST a src/app/api/organization/route.ts.
- * Permite crear una organizacion a un usuario admin.
- * @async
- * @param {NextRequest} request
- * @param {DecodedIdToken} decodedToken
- * @returns {Promise<NextResponse | Response>}
+ * @summary Handles the creation of a new organization.
+ * @description This handler processes POST requests to create a new organization.
+ * It validates the request body, creates the organization, assigns the user as an admin,
+ * generates necessary identifiers (invitation code, instance ID, API key),
+ * sets up an R2 bucket, and associates the user with the new organization.
+ * @param {NextRequest} request - The incoming Next.js request object.
+ * @param {AuthenticatedUserInfo} userInfo - The authenticated user's information.
+ * @returns {Promise<NextResponse>} A JSON response indicating success or failure.
  */
-const postUserRoleHandler = async (
+const createOrganizationHandler = async (
     request: NextRequest,
     userInfo: AuthenticatedUserInfo): Promise<NextResponse | Response> => {
     try {
-      // La información del usuario ya está disponible en userInfo
+      // The user information is already available in userInfo
       const body = await request.json();
       
-      // Validar el cuerpo de la solicitud con Zod
+      // Validate the request body with Zod
       const validationResult = createOrganizationSchema.safeParse(body);
       
       if (!validationResult.success) {
@@ -225,7 +240,7 @@ const postUserRoleHandler = async (
       
       const { organizationName, planId: planIdentifier, timezone, currency } = validationResult.data;
 
-      // Mapeo de identificadores de plan del frontend a nombres en la BD
+      // Map frontend plan identifiers to database names
       const planIdentifierMap: { [key: string]: string } = {
         'basico': 'Básico',
         'profesional': 'Profesional',
@@ -241,7 +256,7 @@ const postUserRoleHandler = async (
         );
       }
 
-      // 1. Buscar el plan por su nombre
+      // 1. Find the plan by its name
       const plan = await db.query.plans.findFirst({
         where: eq(plans.name, planName)
       });
@@ -253,21 +268,21 @@ const postUserRoleHandler = async (
         );
       }
 
-      // 2. Actualizar el rol del usuario a 'admin'
+      // 2. Update the user's role to 'admin'
       await db.update(users)
         .set({ role: "admin" })
         .where(eq(users.id, userInfo.user.id));
 
-      // 3. Generar código de invitación, instanceId y apiKey
+      // 3. Generate invitation code, instanceId, and apiKey
       const invitacionCode = await generateRandomInvitationCode();
       const instanceId = await generateUniqueInstanceId();
       const apiKey = await generateUniqueApiKey();
       
-      // 4. Crear la organización usando el ID numérico del plan encontrado
+      // 4. Create the organization using the numeric ID of the found plan
       const insertResult = await db.insert(organization).values({
         name: organizationName,
         invitationCode: invitacionCode,
-        planId: plan.id, // Usar el ID numérico del plan
+        planId: plan.id, // Use the numeric ID of the plan
         instanceId: instanceId,
         apiKey: apiKey,
         timezone: timezone,
@@ -283,12 +298,18 @@ const postUserRoleHandler = async (
         );
       }
 
-      // 5. Asociar el usuario a la organización
+      // 5. Generate the R2 bucket name and update the organization
+      const r2BucketName = generateR2BucketName(newOrganizationId);
+      await db.update(organization)
+        .set({ r2BucketName: r2BucketName })
+        .where(eq(organization.id, newOrganizationId));
+
+      // 6. Associate the user with the organization
       await db.update(users)
       .set({ organizationId: newOrganizationId })
       .where(eq(users.id, userInfo.user.id));
 
-      // 6. Sincronizar conocimiento con pgVector
+      // 7. Synchronize knowledge with pgVector
       try {
         await syncKnowledgeAfterCRUD('organization', 'create', {
           id: newOrganizationId,
@@ -297,7 +318,7 @@ const postUserRoleHandler = async (
         console.log(`Conocimiento sincronizado para organización ${newOrganizationId}`);
       } catch (syncError) {
         console.error('Error al sincronizar conocimiento:', syncError);
-        // No fallar la operación principal por errores de sincronización
+        // Do not fail the main operation due to synchronization errors
       }
 
       return NextResponse.json({ 
@@ -305,7 +326,8 @@ const postUserRoleHandler = async (
         organizationId: newOrganizationId,
         invitationCode: invitacionCode,
         instanceId: instanceId,
-        apiKey: apiKey
+        apiKey: apiKey,
+        r2BucketName: r2BucketName
       });
     } catch (error) {
       console.error('Error en el servidor:', error);
@@ -316,19 +338,21 @@ const postUserRoleHandler = async (
     }
   };
 /**
- * Manejador para solicitudes PATCH a src/app/api/organization/route.ts.
- * Permite actualizar la información de una organización.
- * @async
- * @param {NextRequest} request
- * @param {AuthenticatedUserInfo} userInfo
- * @returns {Promise<NextResponse | Response>}
+ * @summary Handles updates to an existing organization.
+ * @description This handler processes PATCH requests to update the details of the
+ * organization associated with the authenticated user. It validates the request body
+ * and applies the changes to the database.
+ * @param {NextRequest} request - The incoming Next.js request object.
+ * @param {AuthenticatedUserInfo} userInfo - The authenticated user's information,
+ * which must include an `organizationId`.
+ * @returns {Promise<NextResponse>} A JSON response with the updated organization data or an error.
  */
 const patchOrganizationHandler = async (
   request: NextRequest,
   userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    // Verificar que el usuario pertenezca a una organización
+    // Verify that the user belongs to an organization
     if (!userInfo.user.organizationId) {
       return NextResponse.json(
         { error: 'Usuario no pertenece a ninguna organización' },
@@ -338,7 +362,7 @@ const patchOrganizationHandler = async (
 
     const body = await request.json();
     
-    // Validar el cuerpo de la solicitud con Zod
+    // Validate the request body with Zod
     const validationResult = updateOrganizationSchema.safeParse(body);
     
     if (!validationResult.success) {
@@ -358,7 +382,7 @@ const patchOrganizationHandler = async (
 
     const updateData = validationResult.data;
 
-    // Verificar que hay al menos un campo para actualizar
+    // Verify that there is at least one field to update
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { error: 'No se proporcionaron campos para actualizar' },
@@ -366,7 +390,7 @@ const patchOrganizationHandler = async (
       );
     }
 
-    // Actualizar la organización
+    // Update the organization
     const updateResult = await db.update(organization)
       .set({
         ...updateData,
@@ -374,7 +398,7 @@ const patchOrganizationHandler = async (
       })
       .where(eq(organization.id, userInfo.user.organizationId));
 
-    // Verificar que la organización fue actualizada
+    // Verify that the organization was updated
     if (updateResult[0].affectedRows === 0) {
       return NextResponse.json(
         { error: 'Organización no encontrada o no se pudo actualizar' },
@@ -382,12 +406,12 @@ const patchOrganizationHandler = async (
       );
     }
 
-    // Obtener la organización actualizada
+    // Get the updated organization
     const updatedOrganization = await db.query.organization.findFirst({
       where: eq(organization.id, userInfo.user.organizationId)
     });
 
-    // Sincronizar conocimiento con pgVector
+    // Synchronize knowledge with pgVector
     try {
       await syncKnowledgeAfterCRUD('organization', 'update', {
         id: userInfo.user.organizationId,
@@ -396,7 +420,7 @@ const patchOrganizationHandler = async (
       console.log(`Conocimiento sincronizado para organización ${userInfo.user.organizationId}`);
     } catch (syncError) {
       console.error('Error al sincronizar conocimiento:', syncError);
-      // No fallar la operación principal por errores de sincronización
+      // Do not fail the main operation due to synchronization errors
     }
 
     return NextResponse.json({ 
@@ -413,19 +437,20 @@ const patchOrganizationHandler = async (
 };
 
 /**
- * Manejador para solicitudes GET a src/app/api/organization/route.ts.
- * Permite obtener la información de la organización del usuario.
- * @async
- * @param {NextRequest} request
- * @param {AuthenticatedUserInfo} userInfo
- * @returns {Promise<NextResponse | Response>}
+ * @summary Retrieves the authenticated user's organization details.
+ * @description This handler processes GET requests to fetch the information of the
+ * organization to which the authenticated user belongs.
+ * @param {NextRequest} request - The incoming Next.js request object.
+ * @param {AuthenticatedUserInfo} userInfo - The authenticated user's information,
+ * which must include an `organizationId`.
+ * @returns {Promise<NextResponse>} A JSON response containing the organization data or an error.
  */
 const getOrganizationHandler = async (
   request: NextRequest,
   userInfo: AuthenticatedUserInfo
 ): Promise<NextResponse | Response> => {
   try {
-    // Verificar que el usuario pertenezca a una organización
+    // Verify that the user belongs to an organization
     if (!userInfo.user.organizationId) {
       return NextResponse.json(
         { error: 'Usuario no pertenece a ninguna organización' },
@@ -433,7 +458,7 @@ const getOrganizationHandler = async (
       );
     }
 
-    // Obtener la información de la organización
+    // Get the organization information
     const organizationData = await db.query.organization.findFirst({
       where: eq(organization.id, userInfo.user.organizationId)
     });
@@ -462,7 +487,7 @@ export const GET = withOptimizedAuthentication(getOrganizationHandler, {
   requireOrganization: true,
 });
 
-export const POST = withOptimizedAuthentication(postUserRoleHandler, {
+export const POST = withOptimizedAuthentication(createOrganizationHandler, {
   requiredRoles: ['admin', 'medico', 'asistente', 'N/A'],
   requireOrganization: false,
 });
