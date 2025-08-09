@@ -1,6 +1,6 @@
 // src/db/schema/medical_services.ts
 
-import { mysqlTable, varchar, timestamp, index, int, decimal, boolean, text } from 'drizzle-orm/mysql-core';
+import { mysqlTable, varchar, timestamp, index, int, decimal, boolean, text, unique } from 'drizzle-orm/mysql-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organization } from './organization';
 
@@ -29,7 +29,7 @@ export const medicalServices = mysqlTable('medical_services', {
   // Información básica del servicio
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
-  code: varchar('code', { length: 50 }).notNull().unique(), // Código único del servicio
+  code: varchar('code', { length: 50 }).notNull(), // Código del servicio (único por organización)
   
   // Detalles operativos
   durationMinutes: int('duration_minutes').notNull().default(30), // Duración en minutos
@@ -56,6 +56,8 @@ export const medicalServices = mysqlTable('medical_services', {
   index('service_name_idx').on(table.name),
   index('service_category_idx').on(table.category),
   index('service_active_idx').on(table.isActive),
+  // Índice único compuesto: código único por organización
+  unique('service_code_organization_unique').on(table.code, table.organizationId),
 ]);
 
 // Esquemas Zod para validación

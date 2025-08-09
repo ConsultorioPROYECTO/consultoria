@@ -1,0 +1,2 @@
+ALTER TABLE `medical_services` DROP INDEX `medical_services_code_unique`;--> statement-breakpoint
+ALTER TABLE `medical_services` ADD CONSTRAINT `service_code_organization_unique` UNIQUE(`code`,`organization_id`);

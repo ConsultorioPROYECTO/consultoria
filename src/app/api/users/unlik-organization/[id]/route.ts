@@ -35,7 +35,7 @@ import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware
  * @throws {Error} Error interno del servidor si falla la operación de base de datos
  * 
  * @example
- * // Solicitud GET a /api/users/unlik-organization/123
+ * // Solicitud DELETE a /api/users/unlik-organization/123
  * // Headers: Authorization: Bearer <firebase-token>
  * // Respuesta exitosa:
  * {
@@ -65,7 +65,7 @@ import type { AuthenticatedUserInfo } from '@/app/lib/firebase/server/middleware
  * - Solo usuarios con rol 'admin' pueden ejecutar esta operación
  * - Solo se pueden desvincular usuarios de la misma organización
  * 
- * @apiEndpoint GET /api/users/unlik-organization/[id]
+ * @apiEndpoint DELETE /api/users/unlik-organization/[id]
  * @apiParam {string} id - ID numérico del usuario a desvincular
  * @apiSuccess {boolean} success - Indica si la operación fue exitosa
  * @apiSuccess {Object} data - Datos del usuario desvinculado
@@ -160,23 +160,23 @@ const unlinkOrganization = async (
 };
 
 /**
- * Endpoint HTTP GET para desvincular un usuario de su organización.
+ * Endpoint HTTP DELETE para desvincular un usuario de su organización.
  * 
  * @description
  * Este endpoint está protegido por autenticación y permite a administradores
- * desvincular usuarios de su organización. El middleware `withAuthentication`
+ * desvincular usuarios de su organización. El middleware `withOptimizedAuthentication`
  * se encarga de validar el token de Firebase y extraer la información del usuario.
  * 
- * @route GET /api/users/unlik-organization/[id]
+ * @route DELETE /api/users/unlik-organization/[id]
  * @middleware withAuthentication - Valida autenticación con Firebase Auth
  * 
  * @see {@link unlinkOrganization} - Función principal que maneja la lógica de negocio
- * @see {@link withAuthentication} - Middleware de autenticación
+ * @see {@link withOptimizedAuthentication} - Middleware de autenticación optimizado
  * 
  * @example
  * // Uso desde el cliente:
  * const response = await fetch('/api/users/unlik-organization/123', {
- *   method: 'GET',
+ *   method: 'DELETE',
  *   headers: {
  *     'Authorization': `Bearer ${firebaseToken}`
  *   }
@@ -198,7 +198,7 @@ const handleUnlinkOrganization = async (
   return unlinkOrganization(request, userInfo, params);
 };
 
-export const GET = withOptimizedAuthentication(handleUnlinkOrganization, {
+export const DELETE = withOptimizedAuthentication(handleUnlinkOrganization, {
   requiredRoles: ['admin'],
   requireOrganization: true
 });
