@@ -12,15 +12,21 @@ import { db } from '@/db';
 import { r2Objects, appointments, patients, medicalServices } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 
+// Treat 0, '0', null, and undefined as "absent" for optional FK IDs
+const positiveOptionalId = z.preprocess((v) => {
+  if (v === 0 || v === '0' || v === null || v === undefined) return undefined;
+  return typeof v === 'string' ? Number(v) : v;
+}, z.number().int().positive().optional());
+
 const confirmUploadSchema = z.object({
   objectKey: z.string().min(1),
   objectName: z.string().min(1).max(255),
   contentType: z.string().min(1),
   fileSize: z.number().int().nonnegative(),
   fileHash: z.string().max(64).optional(),
-  appointmentId: z.number().int().optional(),
-  patientId: z.number().int().optional(),
-  medicalServiceId: z.number().int().optional(),
+  appointmentId: positiveOptionalId,
+  patientId: positiveOptionalId,
+  medicalServiceId: positiveOptionalId,
   fileCategory: z.enum(['medical_document', 'patient_photo', 'medical_image', 'appointment_note', 'prescription', 'lab_result', 'other']).default('other'),
   description: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -36,7 +42,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
     // Validate entity ownership by organization, if provided
     const orgId = userInfo.organizationInfo!.id;
 
-    if (data.patientId) {
+    if (data.patientId !== undefined) {
       const patientCheck = await db
         .select({ id: patients.id })
         .from(patients)
@@ -47,7 +53,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
       }
     }
 
-    if (data.appointmentId) {
+    if (data.appointmentId !== undefined) {
       const appointmentCheck = await db
         .select({ id: appointments.id })
         .from(appointments)
@@ -58,7 +64,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
       }
     }
 
-    if (data.medicalServiceId) {
+    if (data.medicalServiceId !== undefined) {
       const serviceCheck = await db
         .select({ id: medicalServices.id })
         .from(medicalServices)
@@ -69,16 +75,16 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
       }
     }
 
-    // Persist metadata
+    // Persist metadata - coerce optional FKs to null when absent
     const insertResult = await db.insert(r2Objects).values({
       objectKey: data.objectKey,
       objectName: data.objectName,
       contentType: data.contentType,
       fileSize: data.fileSize,
       fileHash: data.fileHash,
-      patientId: data.patientId,
-      appointmentId: data.appointmentId,
-      medicalServiceId: data.medicalServiceId,
+      patientId: data.patientId ?? null,
+      appointmentId: data.appointmentId ?? null,
+      medicalServiceId: data.medicalServiceId ?? null,
       organizationId: orgId,
       fileCategory: data.fileCategory,
       description: data.description,
@@ -102,6 +108,33 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
 
     return createSuccessResponse(inserted, 'Attachment metadata saved', HTTP_STATUS.CREATED);
   } catch (error) {
+    // Handle duplicate key: return existing record
+    const err = error as { code?: string; errno?: number } | undefined;
+    if (err && (err.code === 'ER_DUP_ENTRY' || err?.errno === 1062)) {
+      try {
+        // Attempt to recover by returning the existing record
+        const body = await req.json().catch(() => null as unknown);
+        const orgId = userInfo.organizationInfo!.id;
+        const objectKey = (body as Record<string, unknown> | null)?.objectKey as string | undefined;
+        if (objectKey) {
+          const [existing] = await db
+            .select()
+            .from(r2Objects)
+            .where(and(eq(r2Objects.objectKey, objectKey), eq(r2Objects.organizationId, orgId)))
+            .limit(1);
+          if (existing) {
+            return createSuccessResponse(existing, 'Attachment metadata already exists', HTTP_STATUS.OK);
+          }
+        }
+      } catch {
+        // fallthrough to generic error response
+      }
+    }
+
+    if (err && (err.code === 'ER_NO_REFERENCED_ROW_2' || err?.errno === 1452)) {
+      return createErrorResponse('Invalid reference', 'One or more foreign keys do not reference existing records', HTTP_STATUS.BAD_REQUEST);
+    }
+
     if (error instanceof z.ZodError) {
       return createErrorResponse('Invalid request data', error.errors.map(e => `${e.path.join('.')}: ${e.message}`), HTTP_STATUS.BAD_REQUEST);
     }
