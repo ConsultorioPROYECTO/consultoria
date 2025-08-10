@@ -11,6 +11,7 @@ export const NAVIGATION_VIEWS = {
   ORGANIZATION: 'organization',
   CONFIGURATION: 'configuration',
   AI_CARE: 'ai-care',
+  DOCUMENTS: 'documents',
 } as const;
 
 // Derive ViewType from the configuration object
@@ -62,6 +63,13 @@ export const VIEW_CONFIG: Record<ViewType, ViewMetadata> = {
   [NAVIGATION_VIEWS.AI_CARE]: {
     title: 'Ai-Care',
     icon: 'Activity',
+    requiresAuth: true,
+    allowedRoles: ['admin'],
+    preloadable: true,
+  },
+  [NAVIGATION_VIEWS.DOCUMENTS]: {
+    title: 'Documentos',
+    icon: 'FolderOpen',
     requiresAuth: true,
     allowedRoles: ['admin'],
     preloadable: true,

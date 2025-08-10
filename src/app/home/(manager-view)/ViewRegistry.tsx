@@ -40,6 +40,11 @@ const PatientsView = dynamic(() => import('../(views)/patients/patients-view'), 
   ssr: false,
 });
 
+const DocumentsView = dynamic(() => import('../(views)/documents/documents-view'), {
+  loading: LoadingSpinner,
+  ssr: false,
+});
+
 // Wrapper component factory for consistent layout
 const createViewWrapper = (
   Component: ComponentType<Record<string, unknown>>,
@@ -98,6 +103,7 @@ export const VIEW_REGISTRY: Record<ViewType, ComponentType<Record<string, unknow
   [NAVIGATION_VIEWS.CONFIGURATION]: createViewWrapper(ConfigurationView),
   [NAVIGATION_VIEWS.AI_CARE]: AiCareWrapper,
   [NAVIGATION_VIEWS.PATIENTS]: createViewWrapper(PatientsView),
+  [NAVIGATION_VIEWS.DOCUMENTS]: createViewWrapper(DocumentsView),
 } as const;
 
 // Type-safe view renderer function

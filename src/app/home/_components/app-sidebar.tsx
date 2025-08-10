@@ -10,6 +10,7 @@ import {
   Factory,
   Settings,
   Activity,
+  FolderOpen,
   type LucideIcon
 } from "lucide-react"
 
@@ -44,6 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     Factory,
     Settings,
     Activity,
+    FolderOpen
   };
 
   // Generate navigation items from centralized configuration

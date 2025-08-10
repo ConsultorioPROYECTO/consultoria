@@ -39,7 +39,8 @@ export function NavMain({
       'Calendario': NAVIGATION_VIEWS.CALENDAR,
       'Organización': NAVIGATION_VIEWS.ORGANIZATION,
       'Ai-Care': NAVIGATION_VIEWS.AI_CARE,
-      'Pacientes': NAVIGATION_VIEWS.PATIENTS
+      'Pacientes': NAVIGATION_VIEWS.PATIENTS,
+      'Documentos': NAVIGATION_VIEWS.DOCUMENTS,
     }
     
     return titleToView[item.title] === currentView
