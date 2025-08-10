@@ -134,14 +134,20 @@ export default function DoctorDashboard() {
     const lastName = nameParts.slice(1).join(' ') || '';
 
     // Compute time and map local appointment id
-    const startDT = appointment.startDateTime; // Luxon DateTime
+    // Normalize to Luxon DateTime in case backend sent ISO string
+    const startDT = DateTime.isDateTime(appointment.startDateTime)
+      ? appointment.startDateTime
+      : DateTime.fromISO(appointment.startDateTime as unknown as string);
+    const endDT = DateTime.isDateTime(appointment.endDateTime)
+      ? appointment.endDateTime
+      : DateTime.fromISO(appointment.endDateTime as unknown as string);
     const localAppointmentId = typeof appointment.appointmentId === 'number' ? appointment.appointmentId : 0;
 
     const consultationAppointment: ConsultationAppointment = {
       id: localAppointmentId,
       patientId: Number.isFinite(appointment.patientId) ? (appointment.patientId as number) : 0,
       startDate: startDT.toISO() || '',
-      endDate: appointment.endDateTime.toISO() || '',
+      endDate: endDT.toISO() || '',
       google_event_id: appointment.id || '',
       google_calendar_id: appointment.calendarId,
       doctorId: doctorId,
@@ -164,8 +170,8 @@ export default function DoctorDashboard() {
       sync_error: null,
     } as ConsultationAppointment;
 
-    setSelectedConsultationAppointment(consultationAppointment);
-    setIsMedicalWorkspaceOpen(true);
+     setSelectedConsultationAppointment(consultationAppointment);
+     setIsMedicalWorkspaceOpen(true);
   }, [doctorId, setSelectedConsultationAppointment, setIsMedicalWorkspaceOpen]);
 
   const doctorNames = user?.displayName?.split(' ') || [];
