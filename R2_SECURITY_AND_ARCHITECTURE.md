@@ -493,3 +493,132 @@ Visualización/Descarga
 - Añadir límites de tamaño por categoría de archivo si se requiere (p. ej., imágenes médicas).
 - Integrar métricas de uso por bucket y alertas (Logpush/observabilidad) para planes de consumo por organización.
 - Validar en producción que la corrección de FK en migración esté aplicada en la BD (o emitir migración de alter para entornos ya creados).
+
+## 12. Fase 1: Listados de archivos con metadatos y enlaces pre-firmados bajo demanda
+
+Esta fase habilita el servicio de archivos utilizando exclusivamente los metadatos en base de datos (tabla `r2_objects`), y genera enlaces pre-firmados de descarga (R2 `GetObject`) solo cuando el usuario los solicita explícitamente mediante un botón en la UI. De esta forma, evitamos peticiones innecesarias a R2 y mejoramos el rendimiento y la seguridad.
+
+### 12.1. Objetivos
+- Listar archivos filtrados por contexto de negocio, sin generar URLs de descarga automáticamente.
+- Filtrar por: `appointmentId`, `patientId`, `doctorId`, `medicalServiceId`.
+- Solo administradores pueden consultar "todos los archivos" y navegar por rutas/prefix de `objectKey`.
+- Integrar un botón "Obtener enlace" que usa el endpoint existente `POST /api/attachments/presigned-get-url` para obtener la URL temporal.
+
+### 12.2. Alcance
+- Backend: nuevos endpoints de listados basados en `r2_objects` (sin llamadas a R2).
+- Frontend: componentes consumen los listados, muestran columnas de metadatos y exponen el botón de obtención de enlace.
+- DB: sin migraciones nuevas (se aprovechan índices existentes e integridad referencial ya corregida).
+
+### 12.3. Endpoints (Backend)
+
+1) `GET /api/attachments/list`
+- Parámetros de query:
+  - `filter`: "appointment" | "patient" | "doctor" | "service" | "all" (solo admin)
+  - `id`: number (requerido excepto cuando `filter = "all"`)
+  - `page`: number (default 1)
+  - `pageSize`: number (default 20, máx 100)
+  - `sortBy`: "createdAt" | "fileSize" | "objectName" (default "createdAt")
+  - `sortDir`: "asc" | "desc" (default "desc")
+  - `includeInactive`: boolean (solo admin; default false)
+- Autenticación y scoping:
+  - Siempre scoping por `organizationId` (tomado del usuario autenticado).
+  - `filter = "all"`: requiere rol `admin`.
+  - `includeInactive = true`: requiere rol `admin`; de lo contrario, se ignora y se fuerza `isActive = true`.
+- Validaciones:
+  - Cuando hay `id`, validar que la entidad (appointment/patient/doctor/service) pertenezca a la misma organización.
+- Respuesta:
+  - `items`: lista de metadatos (sin URL pre-firmada) con campos clave: `id`, `objectName`, `contentType`, `fileSize`, `fileCategory`, `createdAt`, `uploadedBy`, `patientId`, `appointmentId`, `doctorId`, `medicalServiceId`, `isActive`.
+  - `pagination`: `{ page, pageSize, total, totalPages }`.
+  - `aggregations` opcionales: conteos por `fileCategory`.
+- Rendimiento: usar índices de `r2_objects` ya existentes en: `organization_id`, `patient_id`, `appointment_id`, `doctor_id`, `medical_service_id`, `created_at`, `object_key`, `is_active`.
+
+2) `GET /api/attachments/list-by-paths` (solo admin)
+- Propósito: navegación por rutas/prefix de `objectKey` para explorar "todos los documentos organizados por rutas".
+- Parámetros de query:
+  - `prefix`: string (opcional, filtra por prefijo de `objectKey`)
+  - `depth`: number (opcional, agrupa por segmentos de `objectKey`)
+  - `page`, `pageSize`, `sortBy`, `sortDir` como en el endpoint anterior.
+- Respuesta (propuesta):
+  - `groups`: [{ `prefix`, `count`, `totalSize`, `latestCreatedAt`, `items?` paginados si se solicita }].
+- Observaciones:
+  - Filtrar siempre por `organizationId` del usuario autenticado.
+  - Usar `LIKE '${prefix}%'` para filtrar por prefijo, y lógica de agrupación por segmentos según `depth` (convención `objectKey` documentada en este archivo).
+
+3) Presigned GET bajo demanda (endpoint existente)
+- `POST /api/attachments/presigned-get-url` permanece sin cambios: recibe `{ id }` u `{ objectKey }`, valida pertenecía a la organización, existencia y `isActive`, y devuelve una URL temporal firmada.
+- No se pre-calcula ni almacena en el listado. Se invoca solo cuando el usuario pulsa el botón correspondiente.
+
+### 12.4. Autorización y seguridad
+- Todos los listados aplican scoping por `organizationId` del usuario.
+- `filter = "all"` y `list-by-paths`: exclusivos de `admin`.
+- `includeInactive`: solo `admin`.
+- Validación de pertenencia a la organización para `appointmentId`, `patientId`, `doctorId`, `medicalServiceId` cuando se provee `id`.
+- Sin exposición de `lastPresignedUrl` ni `presignedUrlExpiresAt` en respuestas de listados.
+
+### 12.5. Integración Frontend (Fase 1)
+- Componentes/Secciones objetivo:
+  - Workspace de Consulta Médica (contexto de cita): consumir `GET /api/attachments/list?filter=appointment&id={appointmentId}` y mostrar lista de archivos de la cita con botón "Obtener enlace" (invoca `POST /api/attachments/presigned-get-url` con `{ id }`).
+  - Vista del Doctor: pestaña "Archivos" consumiendo `GET /api/attachments/list?filter=doctor&id={doctorId}` con la misma UX de botón.
+  - Vistas del Paciente y del Servicio Médico: tabs similares consumiendo los endpoints con sus filtros.
+  - Vista Admin: explorador por rutas usando `GET /api/attachments/list-by-paths` con `prefix`/`depth`.
+- Estado y UX:
+  - La lista muestra solo metadatos; no realiza llamadas a presigned-get-url en render.
+  - El botón "Obtener enlace" realiza la llamada y presenta la URL (abrir en nueva pestaña o copiar al portapapeles, decisión de UX).
+  - Paginación y ordenamiento gestionados en servidor.
+
+### 12.6. Archivos y directorios relevantes
+- Backend API (attachments): `src/app/api/attachments/`
+  - Presigned PUT: `src/app/api/attachments/presigned-put-url/route.ts`
+  - Confirmación de subida: `src/app/api/attachments/confirm-upload/route.ts`
+  - Presigned GET: `src/app/api/attachments/presigned-get-url/route.ts`
+  - Nuevos (Fase 1): `src/app/api/attachments/list/route.ts`, `src/app/api/attachments/list-by-paths/route.ts`
+- Esquema DB: `src/db/schema/r2_objects.ts` (índices y claves foráneas ya listos)
+- Cloudflare R2 utils: `src/lib/cloudflare/` (r2.ts, r2-client.ts, client.ts)
+- Frontend Doctor Workspace: `src/app/home/(views)/rol/Doctor/_components/MedicalConsultationWorkspace.tsx`
+- Documento de arquitectura: `R2_SECURITY_AND_ARCHITECTURE.md` (este archivo)
+
+### 12.7. Plan de implementación
+- Backend
+  - Implementar `GET /api/attachments/list`:
+    - Validar query params con Zod.
+    - Autenticación optimizada y scoping por `organizationId`.
+    - WHERE dinámico por `filter`+`id`, `isActive` por defecto, `includeInactive` para admin.
+    - ORDER BY y paginación (`LIMIT/OFFSET`).
+    - Responder `items`, `pagination`, y `aggregations` opcional.
+  - Implementar `GET /api/attachments/list-by-paths` (admin):
+    - Validar `prefix` y `depth`.
+    - Filtrar por prefijo y agrupar por segmentos de `objectKey`.
+    - Agregaciones por grupo: `count`, `sum(fileSize)`, `max(createdAt)`; items dentro del grupo paginados si se solicita.
+
+- Frontend
+  - Workspace del Doctor: sección "Archivos de la cita" con listado por `appointmentId` + botón "Obtener enlace".
+  - Vista del Doctor: sección "Archivos" por `doctorId` + botón "Obtener enlace".
+  - Añadir tabs equivalentes en vistas de Paciente y Servicio Médico.
+  - Vista Admin: explorador por rutas (`prefix`, `depth`).
+
+### 12.8. Pruebas y validación
+- Unitarias (backend):
+  - Validación de params y construcción de consultas por `filter`.
+  - Control de acceso: `filter=all` y `includeInactive` restringidos a admin.
+- Integración:
+  - Scoping por `organizationId` y validación de pertenencia para `id`.
+  - Paginación/ordenamiento consistentes.
+- E2E manual:
+  - Subir → confirmar → listar por contexto → presigned GET bajo demanda → verificar descarga/expiración.
+- Calidad:
+  - `bun run lint` y `bun tsc --noEmit` sin errores.
+
+### 12.9. Checklist de entrega
+- [ ] `GET /api/attachments/list` (filtros, paginación, seguridad)
+- [ ] `GET /api/attachments/list-by-paths` (admin, prefix/depth, agregaciones)
+- [ ] Integración en Workspace del Doctor (appointment)
+- [ ] Integración en Vista del Doctor (doctor)
+- [ ] Integración en Vistas de Paciente y Servicio
+- [ ] Vista Admin por rutas
+- [ ] Documentación actualizada (esta sección)
+
+### 12.10. Notas de diseño
+- Sin cambios en Cloudflare R2 ni en políticas CORS para esta fase (no se llaman en listados).
+- Se reutiliza el endpoint existente `POST /api/attachments/presigned-get-url` para el acceso bajo demanda.
+- No se exponen URLs temporales en listados.
+- Los índices actuales de `r2_objects` son suficientes para el rendimiento esperado en esta fase.
