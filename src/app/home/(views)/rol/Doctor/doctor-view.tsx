@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from "../../../../context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DateTime } from 'luxon';
 
 // Componentes específicos del Dashboard Médico
@@ -117,38 +117,40 @@ export default function DoctorDashboard() {
     event.appointmentStatus !== APPOINTMENT_STATUS.ATTENDED
   ).length;
 
-  const handleStartConsultation = (appointment: AppointmentEventData) => {
-    if (!doctorId || !appointment.id || !appointment.patientId || !appointment.serviceId) {
-      console.error("Datos insuficientes en el evento para iniciar la consulta.", appointment);
-      setError("No se puede iniciar la consulta, faltan datos clave en el evento.");
-      return;
+  const handleStartConsultation = useCallback((appointment: AppointmentEventData) => {
+    // Validate minimal data
+    if (!doctorId || !appointment.id) {
+      console.error("Insufficient data to start consultation.", appointment);
     }
 
-    const summaryMatch = appointment.summary.match(/Cita con (.*) - (.*)/);
+    // Parse patient full name and service name from summary
+    const summaryMatch = (appointment.summary || '').match(/Cita con\s+(.+?)\s*-\s*(.+)/i);
     const patientFullName = summaryMatch ? summaryMatch[1].trim() : 'Paciente Desconocido';
     const serviceName = summaryMatch ? summaryMatch[2].trim() : 'Servicio Desconocido';
 
-    // Dividir el nombre completo en nombre y apellido
+    // Split name into first and last name
     const nameParts = patientFullName.split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    const startDateTime = typeof appointment.startDateTime === 'string'
-      ? DateTime.fromISO(appointment.startDateTime)
-      : appointment.startDateTime;
+    // Compute time and map local appointment id
+    const startDT = appointment.startDateTime; // Luxon DateTime
+    const localAppointmentId = typeof appointment.appointmentId === 'number' ? appointment.appointmentId : 0;
 
-    const consultationAppointment = {
-      id: 2, 
-      google_event_id: appointment.id,
+    const consultationAppointment: ConsultationAppointment = {
+      id: localAppointmentId,
+      patientId: Number.isFinite(appointment.patientId) ? (appointment.patientId as number) : 0,
+      startDate: startDT.toISO() || '',
+      endDate: appointment.endDateTime.toISO() || '',
+      google_event_id: appointment.id || '',
       google_calendar_id: appointment.calendarId,
       doctorId: doctorId,
       organizationId: appointment.organizationId,
-      time: startDateTime.toFormat('HH:mm'),
+      time: startDT.toFormat('HH:mm'),
       status: appointment.appointmentStatus,
       patient: {
-        // Corregido para usar firstName y lastName
-        firstName: firstName,
-        lastName: lastName,
+        firstName,
+        lastName,
       },
       service: {
         id: appointment.serviceId,
@@ -161,10 +163,10 @@ export default function DoctorDashboard() {
       last_sync_attempt: null,
       sync_error: null,
     } as ConsultationAppointment;
-    
+
     setSelectedConsultationAppointment(consultationAppointment);
     setIsMedicalWorkspaceOpen(true);
-  };
+  }, [doctorId, setSelectedConsultationAppointment, setIsMedicalWorkspaceOpen]);
 
   const doctorNames = user?.displayName?.split(' ') || [];
   const formattedNames = doctorNames.slice(0, 2).map(name => {

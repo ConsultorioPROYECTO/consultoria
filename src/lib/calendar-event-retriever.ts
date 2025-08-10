@@ -2,7 +2,8 @@ import { googleCalendarService } from './google-calendar';
 import { DateTime, Interval } from 'luxon';
 import { db } from '../db';
 import { doctors } from '../db/schema/doctors';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
+import { appointments } from '../db/schema/appointments';
 import { AppointmentEventData, AppointmentExtendedProperties, BreakTimeEventData, BreakTimeExtendedProperties, BreakTimeType, CalendarEventData, DoctorWorkingHours, getTimeIntervalAsLuxonInterval, isBreakTimeType, isValidTimeHHMM } from '../types/google-calendar';
 import type { calendar_v3 } from 'googleapis';
 
@@ -455,6 +456,30 @@ export async function getDoctorEvents(
       eventSummaries: rawEvents.slice(0, 5).map(e => e.summary || 'Sin título')
     });
     
+    // Build a mapping from Google event IDs to local appointment IDs to enrich AppointmentEventData
+    const appointmentEventIds: string[] = rawEvents
+      .filter(e => !!e.id && !!e.extendedProperties?.private && e.extendedProperties.private.isBreakTime !== 'true')
+      .map(e => e.id!) as string[];
+    
+    let eventIdToAppointmentId = new Map<string, number>();
+    if (appointmentEventIds.length > 0) {
+      try {
+        const rows = await db
+          .select({ id: appointments.id, google_event_id: appointments.google_event_id })
+          .from(appointments)
+          .where(inArray(appointments.google_event_id, appointmentEventIds));
+        eventIdToAppointmentId = new Map(rows.map(r => [r.google_event_id, r.id] as [string, number]));
+        console.log(`🔗 [${requestId}] Mapeo google_event_id ➜ appointmentId cargado:`, {
+          inputEventIds: appointmentEventIds.length,
+          mappedCount: eventIdToAppointmentId.size
+        });
+      } catch (err) {
+        console.error(`❌ [${requestId}] Error al cargar mapeo de appointmentId por google_event_id:`, err);
+      }
+    } else {
+      console.log(`ℹ️ [${requestId}] No hay eventos de cita para mapear con la BD local (appointmentEventIds vacío)`);
+    }
+    
     const processedEvents: CalendarEventData[] = [];
     console.log(`🔄 [${requestId}] Iniciando procesamiento de eventos...`);
 
@@ -601,34 +626,30 @@ export async function getDoctorEvents(
           appointmentStatus: privateProps.appointmentStatus,
           meetingLink: event.conferenceData?.entryPoints?.[0]?.uri || undefined,
           attendees: event.attendees || [],
+          appointmentId: event.id ? eventIdToAppointmentId.get(event.id) : undefined,
           extendedProperties: {
             private: privateProps as unknown as AppointmentExtendedProperties,
           },
         };
-        
-        console.log(`👩‍⚕️ [${requestId}] Evento de cita ${eventCounter} construido:`,
-          {
-            id: appointmentEvent.id,
-            calendarId: appointmentEvent.calendarId,
-            summary: appointmentEvent.summary,
-            description: appointmentEvent.description || 'Sin descripción',
-            location: appointmentEvent.location || 'Sin ubicación',
-            startDateTime: appointmentEvent.startDateTime.toISO(),
-            endDateTime: appointmentEvent.endDateTime.toISO(),
-            timezone: appointmentEvent.timezone,
-            patientId: appointmentEvent.patientId,
-            serviceId: appointmentEvent.serviceId,
-            organizationId: appointmentEvent.organizationId,
-            appointmentStatus: appointmentEvent.appointmentStatus,
-            meetingLink: appointmentEvent.meetingLink || 'Sin enlace de reunión',
-            attendees: appointmentEvent.attendees?.length,
-            duration:
-              appointmentEvent.endDateTime.diff(
-                appointmentEvent.startDateTime,
-                'minutes'
-              ).minutes,
-          }
-        );
+
+        console.log(`👩‍⚕️ [${requestId}] Evento de cita ${eventCounter} construido:`, {
+          id: appointmentEvent.id,
+          calendarId: appointmentEvent.calendarId,
+          summary: appointmentEvent.summary,
+          description: appointmentEvent.description || 'Sin descripción',
+          location: appointmentEvent.location || 'Sin ubicación',
+          startDateTime: appointmentEvent.startDateTime.toISO(),
+          endDateTime: appointmentEvent.endDateTime.toISO(),
+          timezone: appointmentEvent.timezone,
+          patientId: appointmentEvent.patientId,
+          serviceId: appointmentEvent.serviceId,
+          organizationId: appointmentEvent.organizationId,
+          appointmentStatus: appointmentEvent.appointmentStatus,
+          appointmentId: appointmentEvent.appointmentId ?? null,
+          meetingLink: appointmentEvent.meetingLink || 'Sin enlace de reunión',
+          attendees: appointmentEvent.attendees?.length,
+          duration: appointmentEvent.endDateTime.diff(appointmentEvent.startDateTime, 'minutes').minutes,
+        });
 
         // Apply appointment filters
         console.log(`🔍 [${requestId}] Aplicando filtros a evento de cita ${eventCounter}:`, {
