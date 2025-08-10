@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAICare } from '@/hooks/useAICare';
 import { PatientHistoryView } from "./medical-consultation/PatientHistoryView";
 import { useAuth } from '@/app/context/AuthContext';
@@ -37,6 +37,37 @@ export interface ConsultationAppointment extends Omit<Partial<Appointment>, 'pat
     createdAt?: string;
     updatedAt?: string;
   };
+}
+
+// Tipos para listar adjuntos (coinciden con el endpoint GET /api/attachments/list)
+interface AppointmentAttachmentItem {
+  id: number;
+  objectKey: string;
+  objectName: string;
+  contentType: string;
+  fileSize: number;
+  fileCategory: string;
+  description: string | null;
+  isActive: boolean;
+  isPublic: boolean;
+  accessLevel: string;
+  createdAt: string; // serializado desde el backend
+}
+
+interface AppointmentAttachmentsResponse {
+  data?: {
+    items: AppointmentAttachmentItem[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+    filters: Record<string, unknown>;
+  };
+  message?: string;
 }
 
 interface MedicalConsultationWorkspaceProps {
@@ -69,6 +100,65 @@ export function MedicalConsultationWorkspace({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
+
+  // Estado para lista de adjuntos por cita
+  const [apptAttachments, setApptAttachments] = useState<AppointmentAttachmentItem[]>([]);
+  const [apptListLoading, setApptListLoading] = useState(false);
+  const [apptListError, setApptListError] = useState<string | null>(null);
+
+  // Cargar adjuntos cuando se abre el workspace y existe appointment.id válido (>0)
+  useEffect(() => {
+    const shouldLoad = Boolean(isOpen && appointment?.id && appointment.id > 0 && user);
+    if (!shouldLoad) {
+      setApptAttachments([]);
+      setApptListError(null);
+      setApptListLoading(false);
+      return;
+    }
+
+    let aborted = false;
+    async function fetchAppointmentAttachments() {
+      try {
+        setApptListLoading(true);
+        setApptListError(null);
+        const token = await user!.getIdToken();
+        const url = `/api/attachments/list?appointmentId=${appointment!.id}&limit=20&sortBy=createdAt&sortOrder=desc`;
+        const resp = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!resp.ok) throw new Error('No se pudo obtener la lista de archivos de la cita');
+        const json: AppointmentAttachmentsResponse = await resp.json();
+        if (!aborted) {
+          setApptAttachments(json?.data?.items ?? []);
+        }
+      } catch (e) {
+        if (!aborted) setApptListError(e instanceof Error ? e.message : 'Error desconocido al listar archivos');
+      } finally {
+        if (!aborted) setApptListLoading(false);
+      }
+    }
+    fetchAppointmentAttachments();
+
+    return () => { aborted = true; };
+  }, [isOpen, appointment, user]);
+
+  // Helper para refrescar lista manualmente (y después de confirmar subida)
+  const refreshAppointmentAttachments = async () => {
+    if (!appointment?.id || appointment.id <= 0 || !user) return;
+    try {
+      setApptListLoading(true);
+      const token = await user.getIdToken();
+      const url = `/api/attachments/list?appointmentId=${appointment.id}&limit=20&sortBy=createdAt&sortOrder=desc`;
+      const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!resp.ok) throw new Error('No se pudo refrescar la lista de archivos');
+      const json: AppointmentAttachmentsResponse = await resp.json();
+      setApptAttachments(json?.data?.items ?? []);
+    } catch (e) {
+      setApptListError(e instanceof Error ? e.message : 'Error desconocido al refrescar');
+    } finally {
+      setApptListLoading(false);
+    }
+  };
 
   // Compute SHA-256 hex for file integrity (optional)
   async function computeSha256Hex(file: File): Promise<string | undefined> {
@@ -171,6 +261,9 @@ export function MedicalConsultationWorkspace({
       const confirmData: { data: { id: number; objectKey: string } } = await confirmResp.json();
 
       setUploads(prev => prev.map(u => u.name === file.name ? { ...u, status: 'done', progress: 100, objectKey: objectKey, id: confirmData.data.id } : u));
+
+      // Refrescar lista de archivos de la cita (si aplica)
+      await refreshAppointmentAttachments();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Error al cargar archivo';
       setUploads(prev => prev.map(u => u.name === file.name ? { ...u, status: 'error', progress: 100, error: message } : u));
@@ -414,6 +507,49 @@ export function MedicalConsultationWorkspace({
                 </div>
               )}
             </Card>
+
+            {/* Lista de archivos de la cita (si hay appointment.id válido) */}
+            {appointment?.id && appointment.id > 0 && (
+              <Card className="flex-shrink-0 rounded-lg shadow-sm p-4">
+                <CardHeader className="px-0 pt-0">
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Archivos de la cita</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" onClick={refreshAppointmentAttachments} disabled={apptListLoading}>
+                        {apptListLoading ? 'Actualizando...' : 'Refrescar'}
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-0">
+                  {apptListError && (
+                    <div className="text-red-500 text-sm mb-2">{apptListError}</div>
+                  )}
+                  {apptListLoading && apptAttachments.length === 0 ? (
+                    <div className="text-sm opacity-70">Cargando archivos...</div>
+                  ) : apptAttachments.length === 0 ? (
+                    <div className="text-sm opacity-70">No hay archivos para esta cita.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {apptAttachments.map((att) => (
+                        <div key={att.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="text-sm font-medium truncate max-w-[220px]" title={att.objectName}>{att.objectName}</span>
+                            <span className="text-xs opacity-70 hidden sm:inline">{new Date(att.createdAt).toLocaleString()}</span>
+                            <span className="text-xs opacity-70 hidden sm:inline">{(att.fileSize / 1024).toFixed(1)} KB</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleViewAttachment(att.objectKey, att.objectName)}>
+                              Ver
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Columna central - Transcripción de voz a texto */}

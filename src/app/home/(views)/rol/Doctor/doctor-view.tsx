@@ -14,6 +14,8 @@ import { MonthlyAppointmentsSummary } from "./_components/MonthlyAppointmentsSum
 import { TodayIsDay } from "./_components/TodayIsDay";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 // Tipos de datos para eventos de calendario
 import { AppointmentEventData, BreakTimeEventData } from "@/types/google-calendar";
@@ -22,7 +24,35 @@ import { APPOINTMENT_STATUS } from "@/types/appointment-status";
 // Tipo combinado para el estado
 type CalendarEvent = AppointmentEventData | BreakTimeEventData;
 
+// Tipos locales para listar adjuntos del doctor (GET /api/attachments/list)
+interface DoctorAttachmentItem {
+  id: number;
+  objectKey: string;
+  objectName: string;
+  contentType: string;
+  fileSize: number;
+  fileCategory: string;
+  description: string | null;
+  isActive: boolean;
+  isPublic: boolean;
+  accessLevel: string;
+  createdAt: string;
+}
 
+interface DoctorAttachmentsResponse {
+  data?: {
+    items: DoctorAttachmentItem[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+      hasNext: boolean;
+      hasPrev: boolean;
+    };
+  };
+  message?: string;
+}
 
 export default function DoctorDashboard() {
   const { user, doctorId } = useAuth();
@@ -31,6 +61,56 @@ export default function DoctorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedConsultationAppointment, setSelectedConsultationAppointment] = useState<ConsultationAppointment | null>(null);
   const [isMedicalWorkspaceOpen, setIsMedicalWorkspaceOpen] = useState(false);
+
+  // Estado para "Archivos del Doctor"
+  const [docAttachments, setDocAttachments] = useState<DoctorAttachmentItem[]>([]);
+  const [docListLoading, setDocListLoading] = useState(false);
+  const [docListError, setDocListError] = useState<string | null>(null);
+
+  const fetchDoctorAttachments = async () => {
+    if (!user || !doctorId) return;
+    try {
+      setDocListLoading(true);
+      setDocListError(null);
+      const token = await user.getIdToken();
+      const url = `/api/attachments/list?doctorId=${doctorId}&limit=20&sortBy=createdAt&sortOrder=desc&page=1`;
+      const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!resp.ok) throw new Error('No se pudo obtener la lista de archivos del doctor');
+      const json: DoctorAttachmentsResponse = await resp.json();
+      setDocAttachments(json?.data?.items ?? []);
+    } catch (e) {
+      setDocListError(e instanceof Error ? e.message : 'Error desconocido al listar archivos');
+    } finally {
+      setDocListLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Cargar al entrar al dashboard
+    fetchDoctorAttachments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, doctorId]);
+
+  const handleViewAttachment = async (objectKey: string, fileName?: string) => {
+    if (!user || !objectKey) return;
+    try {
+      const token = await user.getIdToken();
+      const resp = await fetch('/api/attachments/presigned-get-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ objectKey, disposition: 'inline', fileName: fileName ?? undefined }),
+      });
+      if (!resp.ok) throw new Error('No se pudo obtener URL de descarga');
+      const data: { data: { presignedUrl: string } } = await resp.json();
+      window.open(data.data.presignedUrl, '_blank');
+    } catch (e) {
+      // Silencioso por ahora; se podría mostrar un toast
+      console.error(e);
+    }
+  };
 
   const pendingAppointmentsCount = calendarEvents.filter(event => 
     'appointmentStatus' in event && 
@@ -168,6 +248,47 @@ export default function DoctorDashboard() {
            <div className="col-span-1 sm:col-span-2 lg:col-span-1 flex flex-col gap-4">
              <NextAppointment calendarEvents={isLoading ? [] : calendarEvents} />
             <MonthlyAppointmentsSummary pendingAppointments={isLoading ? 0 : pendingAppointmentsCount} />
+
+            {/* Archivos del Doctor */}
+            <Card className="flex-shrink-0 rounded-lg shadow-sm p-4">
+              <CardHeader className="px-0 pt-0">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Archivos del Doctor</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={fetchDoctorAttachments} disabled={docListLoading || !doctorId}>
+                      {docListLoading ? 'Actualizando...' : 'Refrescar'}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0">
+                {docListError && (
+                  <div className="text-red-500 text-sm mb-2">{docListError}</div>
+                )}
+                {docListLoading && docAttachments.length === 0 ? (
+                  <div className="text-sm opacity-70">Cargando archivos...</div>
+                ) : docAttachments.length === 0 ? (
+                  <div className="text-sm opacity-70">No hay archivos asociados.</div>
+                ) : (
+                  <div className="space-y-2">
+                    {docAttachments.map((att) => (
+                      <div key={att.id} className="flex items-center justify-between rounded-md border px-3 py-2">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="text-sm font-medium truncate max-w-[220px]" title={att.objectName}>{att.objectName}</span>
+                          <span className="text-xs opacity-70 hidden sm:inline">{new Date(att.createdAt).toLocaleString()}</span>
+                          <span className="text-xs opacity-70 hidden sm:inline">{(att.fileSize / 1024).toFixed(1)} KB</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleViewAttachment(att.objectKey, att.objectName)}>
+                            Ver
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
 
