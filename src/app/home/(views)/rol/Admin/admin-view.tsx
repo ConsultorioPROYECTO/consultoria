@@ -5,6 +5,7 @@ import { useAuth } from "../../../../context/AuthContext";
 import { FinancialMetrics } from "./_components/FinancialMetrics";
 import { CreateAppointmentCard } from "../../patients/(tabs)/patients/_components/CreateAppointmentCard";
 import { ChartBarInteractive } from "./_components/chart-area-interactive"; 
+import { AttachmentsExplorer } from "./_components/AttachmentsExplorer";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -33,6 +34,11 @@ export default function AdminDashboard() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
               <FinancialMetrics />
               <CreateAppointmentCard />
+            </div>
+
+            {/* Explorador de Archivos (R2) - Solo Admin */}
+            <div className="grid gap-6 grid-cols-1">
+              <AttachmentsExplorer />
             </div>
             
             {/* Podrías agregar más secciones aquí según sea necesario */}
