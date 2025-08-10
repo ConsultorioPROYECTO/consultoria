@@ -85,7 +85,7 @@ export function PatientHistoryView({
         setLoading(true);
         setError(null);
         const token = await user.getIdToken();
-        const url = `/api/attachments/list?patientId=${patientId}&limit=50&sortBy=createdAt&sortOrder=desc`;
+        const url = `/api/attachments/list?patientId=${patientId}&limit=50&sortBy=createdAt&sortOrder=desc&page=1`;
         const resp = await fetch(url, {
           headers: { 'Authorization': `Bearer ${token}` },
         });

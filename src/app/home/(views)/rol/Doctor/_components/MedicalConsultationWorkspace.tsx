@@ -122,7 +122,7 @@ export function MedicalConsultationWorkspace({
         setApptListLoading(true);
         setApptListError(null);
         const token = await user!.getIdToken();
-        const url = `/api/attachments/list?appointmentId=${appointment!.id}&limit=20&sortBy=createdAt&sortOrder=desc`;
+        const url = `/api/attachments/list?appointmentId=${appointment!.id}&limit=20&sortBy=createdAt&sortOrder=desc&page=1`;
         const resp = await fetch(url, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
@@ -148,7 +148,7 @@ export function MedicalConsultationWorkspace({
     try {
       setApptListLoading(true);
       const token = await user.getIdToken();
-      const url = `/api/attachments/list?appointmentId=${appointment.id}&limit=20&sortBy=createdAt&sortOrder=desc`;
+      const url = `/api/attachments/list?appointmentId=${appointment.id}&limit=20&sortBy=createdAt&sortOrder=desc&page=1`;
       const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
       if (!resp.ok) throw new Error('No se pudo refrescar la lista de archivos');
       const json: AppointmentAttachmentsResponse = await resp.json();

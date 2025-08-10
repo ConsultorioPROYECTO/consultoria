@@ -138,7 +138,7 @@ export default function DoctorDashboard() {
       : appointment.startDateTime;
 
     const consultationAppointment = {
-      id: 0, 
+      id: 2, 
       google_event_id: appointment.id,
       google_calendar_id: appointment.calendarId,
       doctorId: doctorId,

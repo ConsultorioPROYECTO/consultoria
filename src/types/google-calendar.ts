@@ -56,6 +56,7 @@ export interface BreakTimeExtendedProperties {
  * @property {number} serviceId - The unique identifier of the medical service for the appointment.
  * @property {number} organizationId - The unique identifier of the organization to which the appointment belongs.
  * @property {string} appointmentStatus - The status of the appointment (e.g., "Confirmada", "Completada", "Pendiente", "Llegó", "Cancelada").
+ * @property {number} [appointmentId] - Local DB appointment ID mapped from google_event_id. Optional for backward compatibility.
  * @property {string} [id] - The unique identifier of the event.
  * @property {calendar_v3.Schema$EventAttendee[]} [attendees] - An array of attendees for the event. Optional.
  * @property {{ private: AppointmentExtendedProperties }} [extendedProperties] - The raw extended properties from the Google Calendar event.
@@ -66,6 +67,8 @@ export interface AppointmentEventData extends BaseEventData {
   serviceId: number;
   organizationId: number;
   appointmentStatus: string;
+  /** Local DB appointment ID resolved from google_event_id (appointments.id). */
+  appointmentId?: number;
   attendees?: calendar_v3.Schema$EventAttendee[];
   extendedProperties?: {
     private: AppointmentExtendedProperties;
