@@ -132,7 +132,8 @@ export function AttachmentsExplorer() {
   const [error, setError] = useState<string | null>(null);
 
   const breadcrumbs = useMemo(() => {
-    const parts = prefix.split("/").filter(Boolean);
+    if (!prefix.trim()) return [];
+    const parts = prefix.trim().replace(/^\/+|\/+$/g, '').split("/").filter(Boolean);
     const crumbs: { label: string; fullPrefix: string }[] = [];
     for (let i = 0; i < parts.length; i++) {
       const full = parts.slice(0, i + 1).join("/");
@@ -188,22 +189,30 @@ export function AttachmentsExplorer() {
   }, [fetchData]);
 
   const navigateInto = (segment: string) => {
-    const next = prefix ? `${prefix.replace(/\/$/, "")}/${segment}` : segment;
+    // Since backend returns relative segments, we build the next prefix by appending
+    const normalizedPrefix = prefix.trim().replace(/^\/+|\/+$/g, '');
+    const next = normalizedPrefix ? `${normalizedPrefix}/${segment}` : segment;
     setPrefix(next);
     setPage(1);
     setSearchTerm("");
   };
 
   const navigateTo = (targetPrefix: string) => {
-    setPrefix(targetPrefix);
+    // Normalize the target prefix to prevent issues
+    const normalized = targetPrefix.trim().replace(/^\/+|\/+$/g, '');
+    setPrefix(normalized);
     setPage(1);
     setSearchTerm("");
   };
 
   const goUp = () => {
-    if (!prefix) return;
-    const parts = prefix.split("/").filter(Boolean);
-    parts.pop();
+    const normalizedPrefix = prefix.trim().replace(/^\/+|\/+$/g, '');
+    if (!normalizedPrefix) return; // Already at root
+    
+    const parts = normalizedPrefix.split("/").filter(Boolean);
+    if (parts.length === 0) return; // Safety check
+    
+    parts.pop(); // Remove last segment
     setPrefix(parts.join("/"));
     setPage(1);
     setSearchTerm("");

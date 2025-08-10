@@ -96,37 +96,48 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
 
     const orgId = userInfo.organizationInfo!.id;
 
+    // Normalize prefix to avoid leading/trailing slashes and ensure consistent behavior
+    const normalizedPrefix = prefix.trim().replace(/^\/+|\/+$/g, '');
+    const hasPrefix = normalizedPrefix.length > 0;
+
     // Build WHERE conditions
     const whereConditions = [
       eq(r2Objects.organizationId, orgId),
       eq(r2Objects.isActive, true),
     ];
 
-    // Add prefix filter if provided
-    if (prefix.trim().length > 0) {
-      const prefixPattern = `${prefix.trim()}%`;
-      whereConditions.push(sql`${r2Objects.objectKey} LIKE ${prefixPattern}`);
+    // Add precise prefix filter if provided (match only keys under the given folder)
+    if (hasPrefix) {
+      // Match everything under `normalizedPrefix/` (children and descendants)
+      const likePattern = `${normalizedPrefix}/%`;
+      whereConditions.push(sql`${r2Objects.objectKey} LIKE ${likePattern}`);
     }
 
     const whereClause = and(...whereConditions);
 
-    // For simplicity, we'll extract path segments using SQL substring operations
-    // This creates a prefix based on the depth parameter by extracting segments separated by '/'
-    const segmentExtraction = depth === 1
-      ? sql<string>`SUBSTRING_INDEX(${r2Objects.objectKey}, '/', 1)`
-      : sql<string>`SUBSTRING_INDEX(${r2Objects.objectKey}, '/', ${depth})`;
+    // Compute a relative key (portion after the provided prefix and the following slash)
+    // Then group by the first `depth` segments of that relative key.
+    // This makes grouping relative to the current navigation context.
+    const relativeKey = sql<string>`
+      CASE 
+        WHEN ${normalizedPrefix} = '' THEN ${r2Objects.objectKey}
+        ELSE SUBSTRING(${r2Objects.objectKey}, CHAR_LENGTH(${normalizedPrefix}) + 2)
+      END
+    `;
+
+    const groupExtraction = sql<string>`SUBSTRING_INDEX(${relativeKey}, '/', ${depth})`;
 
     // Query to get path groups with aggregations
     const groupsQuery = db
       .select({
-        prefix: segmentExtraction,
+        prefix: groupExtraction,
         count: sql<number>`COUNT(*)`,
         totalSize: sql<number>`SUM(${r2Objects.fileSize})`,
         latestCreatedAt: sql<Date>`MAX(${r2Objects.createdAt})`,
       })
       .from(r2Objects)
       .where(whereClause)
-      .groupBy(segmentExtraction);
+      .groupBy(groupExtraction);
 
     // Get total count of groups for pagination
     const groupsResult = await groupsQuery;
@@ -137,7 +148,7 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
     let orderByClause = sortOrder === 'asc' ? asc(sql`MAX(${r2Objects.createdAt})`) : desc(sql`MAX(${r2Objects.createdAt})`);
     switch (sortBy) {
       case 'prefix':
-        orderByClause = sortOrder === 'asc' ? asc(segmentExtraction) : desc(segmentExtraction);
+        orderByClause = sortOrder === 'asc' ? asc(groupExtraction) : desc(groupExtraction);
         break;
       case 'count':
         orderByClause = sortOrder === 'asc' ? asc(sql`COUNT(*)`) : desc(sql`COUNT(*)`);
@@ -152,14 +163,14 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
     // Get paginated groups with sorting
     const paginatedGroupsQuery = await db
       .select({
-        prefix: segmentExtraction,
+        prefix: groupExtraction,
         count: sql<number>`COUNT(*)`,
         totalSize: sql<number>`SUM(${r2Objects.fileSize})`,
         latestCreatedAt: sql<Date>`MAX(${r2Objects.createdAt})`,
       })
       .from(r2Objects)
       .where(whereClause)
-      .groupBy(segmentExtraction)
+      .groupBy(groupExtraction)
       .orderBy(orderByClause)
       .limit(limit)
       .offset(offset);
@@ -169,14 +180,18 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
 
     for (const group of paginatedGroupsQuery) {
       const pathGroup: PathGroup = {
-        prefix: group.prefix,
+        prefix: group.prefix, // NOTE: relative to current prefix
         count: group.count,
         totalSize: group.totalSize,
         latestCreatedAt: group.latestCreatedAt,
       };
 
-      // If includeItems is true, fetch items for this specific prefix
+      // If includeItems is true, fetch items for this specific group under the computed full prefix
       if (includeItems) {
+        // Build the full absolute prefix for this group (normalizedPrefix + '/' + group.prefix)
+        const groupFullPrefix = hasPrefix ? `${normalizedPrefix}/${group.prefix}` : group.prefix;
+        const groupLikePattern = `${groupFullPrefix}/%`;
+
         const itemsForGroup = await db
           .select({
             id: r2Objects.id,
@@ -193,7 +208,7 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
             and(
               eq(r2Objects.organizationId, orgId),
               eq(r2Objects.isActive, true),
-              sql`${segmentExtraction} = ${group.prefix}`
+              sql`${r2Objects.objectKey} LIKE ${groupLikePattern}`
             )
           )
           .orderBy(desc(r2Objects.createdAt))
@@ -216,7 +231,7 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
         hasPrev: page > 1,
       },
       filters: {
-        prefix: prefix || undefined,
+        prefix: normalizedPrefix || undefined,
         depth,
         includeItems,
       },
