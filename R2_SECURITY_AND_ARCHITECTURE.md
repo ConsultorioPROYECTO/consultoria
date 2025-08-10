@@ -401,3 +401,95 @@ Cloudflare proporciona protección contra ataques DDoS de forma nativa.
 
 - **Clases de Almacenamiento:** Utilice la clase de almacenamiento adecuada para sus datos (por ejemplo, `Standard` para datos de acceso frecuente).
 - **Políticas de Ciclo de Vida:** Utilice políticas de ciclo de vida para eliminar datos innecesarios y reducir los costos de almacenamiento.
+
+## 11. Estado actual de implementación (2025)
+
+Esta sección documenta la implementación final realizada para cumplir con la planificación de seguridad y arquitectura definida previamente, e indica los puntos clave y modificaciones aplicadas en el backend, frontend y utilidades de Cloudflare R2.
+
+### 11.1. Resumen ejecutivo
+- Arquitectura multi-tenant con R2 operativa con aislamiento por organización.
+- Subida de archivos vía URL pre-firmada (PUT) y confirmación de subida con persistencia de metadatos en BD.
+- Acceso a archivos por URL pre-firmada (GET) con control de acceso por organización y cache de URLs.
+- Correcciones críticas aplicadas en migraciones y en validaciones para evitar errores de FK y duplicidad.
+- Código tipado (TypeScript), validado con ESLint y verificación de tipos sin errores.
+
+### 11.2. Secciones de código implementado
+
+Backend (API Attachments)
+- presigned-put-url: Generación de URL pre-firmada para subida
+  - Validación estricta de nombre de archivo, tipo MIME vs extensión, tamaño máximo.
+  - Generación de objectKey seguro e inmutable.
+  - Obtención del bucket de la organización.
+- confirm-upload: Confirmación de subida y persistencia de metadatos en DB
+  - Inserción en r2_objects con campos normalizados y auditoría.
+  - Validación condicional de IDs opcionales y propiedad por organización.
+  - Manejo específico de errores (duplicados, claves foráneas).
+  - Tipificación más segura de errores y parseo robusto del body.
+- presigned-get-url: Generación de URL pre-firmada para descarga
+  - Búsqueda por id u objectKey dentro de la organización del usuario.
+  - Control de acceso y verificación de actividad del objeto (isActive).
+  - Opciones de Content-Disposition y cache de URL + expiración.
+
+Utilidades de Cloudflare R2
+- r2.ts: Generación de nombres de bucket, creación de buckets, CORS por defecto, presigned PUT/GET y subida directa.
+- r2-client.ts: Inicialización del cliente S3 compatible con R2 usando credenciales y endpoint del entorno.
+- client.ts: Cliente de Cloudflare API para operaciones administrativas.
+
+Frontend (UI de consulta médica)
+- MedicalConsultationWorkspace.tsx: Flujo de carga completo
+  - Solicitud de presigned PUT URL, subida directa al bucket y confirmación de subida al backend.
+  - Envío de metadatos asociados (appointmentId/patientId/medicalServiceId cuando aplique).
+  - Estado de progreso y manejo de errores de subida y confirmación.
+  - Acción de “Ver” que solicita presigned GET URL para visualizar en nueva pestaña.
+
+### 11.3. Modificaciones clave para que la planificación funcione
+
+1) Normalización de IDs opcionales para evitar ER_NO_REFERENCED_ROW_2
+- Contexto: El frontend podía enviar valores undefined/0 que terminaban serializándose a 0 y causaban errores de FK.
+- Solución: Uso de un preprocesador que convierte 0, '0', null y undefined en undefined para IDs opcionales, y almacenamiento como NULL en BD.
+- Ejemplo (conceptual):
+```
+const positiveOptionalId = z.preprocess((v) => {
+  if (v === 0 || v === '0' || v === null || v === undefined) return undefined;
+  return typeof v === 'string' ? Number(v) : v;
+}, z.number().int().positive().optional());
+```
+- Inserción: Campos opcionales se mapean a null cuando están undefined.
+
+2) Validación de pertenencia a organización
+- Se valida que patientId, appointmentId y medicalServiceId (si están definidos) pertenecen a la misma organizationId del usuario autenticado, evitando referencias cruzadas entre tenants.
+
+3) Manejo de errores más robusto y tipado estricto
+- Manejo específico de códigos: ER_DUP_ENTRY (único objectKey por organización) y ER_NO_REFERENCED_ROW_2 (violación de FK).
+- Tipificación segura del objeto de error y manejo del parseo de req.json() con fallback.
+
+4) Corrección de migración crítica en FK de doctores
+- Se actualizó la migración para que doctor_id haga referencia a doctors.idDoctor (y no a doctors.id), conforme al schema actual.
+- El esquema Drizzle (r2_objects.ts) también referencia doctors.idDoctor con onDelete: 'set null'.
+
+5) Generación y uso de objectKey seguro
+- Estructura incluye organización, usuario y, cuando aplica, IDs de cita/paciente. Se evita incluir PII sensible en el nombre del objeto.
+- Se garantiza unicidad por combinación de objectKey + organizationId (índice único en BD).
+
+6) Seguridad y CORS
+- URLs pre-firmadas con expiración corta para PUT y GET.
+- CORS por defecto configurado en los buckets R2 para permitir subidas desde el navegador de dominios permitidos.
+
+### 11.4. Flujo final end-to-end
+
+Subida
+- Frontend solicita presigned PUT URL → Sube el archivo directamente a R2 → Llama a confirm-upload con metadatos → Backend valida, normaliza e inserta en r2_objects.
+
+Visualización/Descarga
+- Frontend solicita presigned GET URL por id u objectKey → Backend valida acceso y devuelve URL temporal → Navegador abre el recurso directamente desde R2.
+
+### 11.5. Estado de calidad y validación
+- ESLint: sin errores ni advertencias.
+- TypeScript (noEmit): sin errores de tipos.
+- Endpoints probados con flujos de subida y acceso.
+
+### 11.6. Recomendaciones y próximos pasos
+- Implementar un job de limpieza de URLs en cache (lastPresignedUrl/presignedUrlExpiresAt) para consistencia.
+- Añadir límites de tamaño por categoría de archivo si se requiere (p. ej., imágenes médicas).
+- Integrar métricas de uso por bucket y alertas (Logpush/observabilidad) para planes de consumo por organización.
+- Validar en producción que la corrección de FK en migración esté aplicada en la BD (o emitir migración de alter para entornos ya creados).
