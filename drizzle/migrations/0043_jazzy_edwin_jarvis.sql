@@ -29,7 +29,7 @@ CREATE TABLE `r2_objects` (
 ALTER TABLE `appointments` MODIFY COLUMN `id` int AUTO_INCREMENT NOT NULL;--> statement-breakpoint
 ALTER TABLE `r2_objects` ADD CONSTRAINT `r2_objects_patient_id_patients_id_fk` FOREIGN KEY (`patient_id`) REFERENCES `patients`(`id`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE `r2_objects` ADD CONSTRAINT `r2_objects_appointment_id_appointments_id_fk` FOREIGN KEY (`appointment_id`) REFERENCES `appointments`(`id`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
-ALTER TABLE `r2_objects` ADD CONSTRAINT `r2_objects_doctor_id_doctors_id_fk` FOREIGN KEY (`doctor_id`) REFERENCES `doctors`(`id`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
+ALTER TABLE `r2_objects` ADD CONSTRAINT `r2_objects_doctor_id_doctors_id_fk` FOREIGN KEY (`doctor_id`) REFERENCES `doctors`(`idDoctor`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE `r2_objects` ADD CONSTRAINT `r2_objects_medical_service_id_medical_services_id_fk` FOREIGN KEY (`medical_service_id`) REFERENCES `medical_services`(`id`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE `r2_objects` ADD CONSTRAINT `r2_objects_organization_id_organization_id_fk` FOREIGN KEY (`organization_id`) REFERENCES `organization`(`id`) ON DELETE cascade ON UPDATE cascade;--> statement-breakpoint
 ALTER TABLE `r2_objects` ADD CONSTRAINT `r2_objects_uploaded_by_users_id_fk` FOREIGN KEY (`uploaded_by`) REFERENCES `users`(`id`) ON DELETE set null ON UPDATE cascade;--> statement-breakpoint
