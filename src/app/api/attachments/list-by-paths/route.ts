@@ -10,6 +10,7 @@ import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/types
 import { db } from '@/db';
 import { r2Objects } from '@/db/schema';
 import { and, eq, sql, desc, asc } from 'drizzle-orm';
+import { z } from 'zod';
 
 interface PathGroup {
   prefix: string;
@@ -47,44 +48,74 @@ interface AttachmentListByPathsResponse {
   };
 }
 
+// Zod schema for query parameters validation
+const listByPathsQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  prefix: z.string().trim().optional().default(''),
+  depth: z.coerce.number().int().min(1).max(10).default(1),
+  includeItems: z.coerce.boolean().optional().default(false),
+  sortBy: z.enum(['latestCreatedAt', 'prefix', 'count', 'totalSize']).default('latestCreatedAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
+
 async function handleAttachmentsListByPaths(req: NextRequest, userInfo: AuthenticatedUserInfo): Promise<Response> {
   try {
     const { searchParams } = new URL(req.url);
-    
-    // Pagination parameters
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
+
+    // Parse and validate query params with Zod
+    const parseResult = listByPathsQuerySchema.safeParse({
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit'),
+      prefix: searchParams.get('prefix') ?? undefined,
+      depth: searchParams.get('depth'),
+      includeItems: searchParams.get('includeItems'),
+      sortBy: searchParams.get('sortBy') ?? undefined,
+      sortOrder: searchParams.get('sortOrder') ?? undefined,
+    });
+
+    if (!parseResult.success) {
+      return createErrorResponse(
+        'Invalid query parameters',
+        parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    const {
+      page,
+      limit,
+      prefix,
+      depth,
+      includeItems,
+      sortBy,
+      sortOrder,
+    } = parseResult.data;
+
     const offset = (page - 1) * limit;
-    
-    // Filter parameters
-    const prefix = searchParams.get('prefix') || '';
-    const depth = Math.max(1, Math.min(10, parseInt(searchParams.get('depth') || '1', 10)));
-    const includeItems = searchParams.get('includeItems') === 'true';
-    const sortBy = searchParams.get('sortBy') || 'latestCreatedAt';
-    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
-    
+
     const orgId = userInfo.organizationInfo!.id;
-    
+
     // Build WHERE conditions
     const whereConditions = [
       eq(r2Objects.organizationId, orgId),
-      eq(r2Objects.isActive, true)
+      eq(r2Objects.isActive, true),
     ];
-    
+
     // Add prefix filter if provided
     if (prefix.trim().length > 0) {
       const prefixPattern = `${prefix.trim()}%`;
       whereConditions.push(sql`${r2Objects.objectKey} LIKE ${prefixPattern}`);
     }
-    
+
     const whereClause = and(...whereConditions);
-    
+
     // For simplicity, we'll extract path segments using SQL substring operations
     // This creates a prefix based on the depth parameter by extracting segments separated by '/'
-    const segmentExtraction = depth === 1 
-      ? sql<string>`SUBSTRING_INDEX(${r2Objects.objectKey}, '/', 1)` 
+    const segmentExtraction = depth === 1
+      ? sql<string>`SUBSTRING_INDEX(${r2Objects.objectKey}, '/', 1)`
       : sql<string>`SUBSTRING_INDEX(${r2Objects.objectKey}, '/', ${depth})`;
-    
+
     // Query to get path groups with aggregations
     const groupsQuery = db
       .select({
@@ -96,14 +127,14 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
       .from(r2Objects)
       .where(whereClause)
       .groupBy(segmentExtraction);
-    
+
     // Get total count of groups for pagination
     const groupsResult = await groupsQuery;
     const total = groupsResult.length;
     const totalPages = Math.ceil(total / limit);
-    
+
     // Apply sorting to groups
-    let orderByClause;
+    let orderByClause = sortOrder === 'asc' ? asc(sql`MAX(${r2Objects.createdAt})`) : desc(sql`MAX(${r2Objects.createdAt})`);
     switch (sortBy) {
       case 'prefix':
         orderByClause = sortOrder === 'asc' ? asc(segmentExtraction) : desc(segmentExtraction);
@@ -117,7 +148,7 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
       default: // latestCreatedAt
         orderByClause = sortOrder === 'asc' ? asc(sql`MAX(${r2Objects.createdAt})`) : desc(sql`MAX(${r2Objects.createdAt})`);
     }
-    
+
     // Get paginated groups with sorting
     const paginatedGroupsQuery = await db
       .select({
@@ -132,10 +163,10 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
       .orderBy(orderByClause)
       .limit(limit)
       .offset(offset);
-    
+
     // Transform results and optionally fetch items for each group
     const groups: PathGroup[] = [];
-    
+
     for (const group of paginatedGroupsQuery) {
       const pathGroup: PathGroup = {
         prefix: group.prefix,
@@ -143,7 +174,7 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
         totalSize: group.totalSize,
         latestCreatedAt: group.latestCreatedAt,
       };
-      
+
       // If includeItems is true, fetch items for this specific prefix
       if (includeItems) {
         const itemsForGroup = await db
@@ -167,13 +198,13 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
           )
           .orderBy(desc(r2Objects.createdAt))
           .limit(10); // Limit items per group to avoid huge responses
-        
+
         pathGroup.items = itemsForGroup;
       }
-      
+
       groups.push(pathGroup);
     }
-    
+
     const response: AttachmentListByPathsResponse = {
       groups,
       pagination: {
@@ -190,9 +221,9 @@ async function handleAttachmentsListByPaths(req: NextRequest, userInfo: Authenti
         includeItems,
       },
     };
-    
+
     return createSuccessResponse(response, 'Attachment paths retrieved successfully', HTTP_STATUS.OK);
-    
+
   } catch (error) {
     console.error('Error listing attachments by paths:', error);
     return createErrorResponse('Internal server error', 'Could not retrieve attachment paths', HTTP_STATUS.INTERNAL_ERROR);

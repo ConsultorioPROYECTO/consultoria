@@ -10,6 +10,7 @@ import { createSuccessResponse, createErrorResponse, HTTP_STATUS } from '@/types
 import { db } from '@/db';
 import { r2Objects, doctors, patients, appointments, medicalServices } from '@/db/schema';
 import { and, eq, desc, asc, sql, gte, lte, or } from 'drizzle-orm';
+import { z } from 'zod';
 
 interface AttachmentListItem {
   id: number;
@@ -84,30 +85,69 @@ interface AttachmentListResponse {
   };
 }
 
+// Zod schema for query params validation
+const listQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  doctorId: z.coerce.number().int().positive().optional(),
+  patientId: z.coerce.number().int().positive().optional(),
+  appointmentId: z.coerce.number().int().positive().optional(),
+  medicalServiceId: z.coerce.number().int().positive().optional(),
+  fileCategory: z.string().trim().optional(),
+  isActive: z.coerce.boolean().optional(),
+  search: z.string().trim().optional(),
+  dateFrom: z.string().trim().optional(),
+  dateTo: z.string().trim().optional(),
+  sortBy: z.enum(['createdAt', 'objectName', 'fileSize', 'fileCategory']).default('createdAt'),
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+});
+
 async function handleAttachmentsList(req: NextRequest, userInfo: AuthenticatedUserInfo): Promise<Response> {
   try {
     const { searchParams } = new URL(req.url);
-    
-    // Pagination parameters
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
+
+    // Parse and validate query params
+    const parseResult = listQuerySchema.safeParse({
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit'),
+      doctorId: searchParams.get('doctorId') ?? undefined,
+      patientId: searchParams.get('patientId') ?? undefined,
+      appointmentId: searchParams.get('appointmentId') ?? undefined,
+      medicalServiceId: searchParams.get('medicalServiceId') ?? undefined,
+      fileCategory: searchParams.get('fileCategory') ?? undefined,
+      isActive: searchParams.get('isActive') ?? undefined,
+      search: searchParams.get('search') ?? undefined,
+      dateFrom: searchParams.get('dateFrom') ?? undefined,
+      dateTo: searchParams.get('dateTo') ?? undefined,
+      sortBy: searchParams.get('sortBy') ?? undefined,
+      sortOrder: searchParams.get('sortOrder') ?? undefined,
+    });
+
+    if (!parseResult.success) {
+      return createErrorResponse(
+        'Invalid query parameters',
+        parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
+        HTTP_STATUS.BAD_REQUEST
+      );
+    }
+
+    const {
+      page,
+      limit,
+      doctorId,
+      patientId,
+      appointmentId,
+      medicalServiceId,
+      fileCategory,
+      isActive,
+      search,
+      dateFrom,
+      dateTo,
+      sortBy,
+      sortOrder,
+    } = parseResult.data;
+
     const offset = (page - 1) * limit;
-    
-    // Filter parameters
-    const doctorId = searchParams.get('doctorId') ? parseInt(searchParams.get('doctorId')!, 10) : undefined;
-    const patientId = searchParams.get('patientId') ? parseInt(searchParams.get('patientId')!, 10) : undefined;
-    const appointmentId = searchParams.get('appointmentId') ? parseInt(searchParams.get('appointmentId')!, 10) : undefined;
-    const medicalServiceId = searchParams.get('medicalServiceId') ? parseInt(searchParams.get('medicalServiceId')!, 10) : undefined;
-    const fileCategory = searchParams.get('fileCategory') || undefined;
-    const isActiveParam = searchParams.get('isActive');
-    const isActive = isActiveParam !== null ? isActiveParam === 'true' : undefined;
-    const search = searchParams.get('search') || undefined;
-    const dateFrom = searchParams.get('dateFrom') || undefined;
-    const dateTo = searchParams.get('dateTo') || undefined;
-    
-    // Sort parameters
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 'asc' : 'desc';
     
     const orgId = userInfo.organizationInfo!.id;
     
@@ -155,13 +195,18 @@ async function handleAttachmentsList(req: NextRequest, userInfo: AuthenticatedUs
     }
     
     if (dateFrom) {
-      whereConditions.push(gte(r2Objects.createdAt, new Date(dateFrom)));
+      const fromDate = new Date(dateFrom);
+      if (!Number.isNaN(fromDate.getTime())) {
+        whereConditions.push(gte(r2Objects.createdAt, fromDate));
+      }
     }
     
     if (dateTo) {
       const endDate = new Date(dateTo);
-      endDate.setHours(23, 59, 59, 999); // Include the full day
-      whereConditions.push(lte(r2Objects.createdAt, endDate));
+      if (!Number.isNaN(endDate.getTime())) {
+        endDate.setHours(23, 59, 59, 999); // Include the full day
+        whereConditions.push(lte(r2Objects.createdAt, endDate));
+      }
     }
     
     const whereClause = and(...whereConditions);
