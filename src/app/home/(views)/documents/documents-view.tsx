@@ -19,8 +19,8 @@ export default function DocumentsView() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Documentos</h1>
-        <p className="text-sm text-muted-foreground">Explora y gestiona los adjuntos almacenados en R2.</p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Documentos</h1>
+        <p className="text-muted-foreground">Explora y gestiona los adjuntos almacenados</p>
       </div>
       <AttachmentsExplorer />
     </div>
