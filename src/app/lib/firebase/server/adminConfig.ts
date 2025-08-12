@@ -70,7 +70,7 @@ function cleanExpiredCache(): void {
   }
 }
 import type { DecodedIdToken } from 'firebase-admin/auth'; // Solo para el tipado
-import serviceAccountCredentials_json from '../../../../../etc/secrets/consultoria-d1072-firebase-adminsdk-fbsvc-348d22fe8e.json';
+// Eliminado: import de archivo JSON local de credenciales. Ahora usamos variables de entorno.
 
 // === Tipos y Esquemas ===
 
@@ -242,40 +242,63 @@ export function hasCalendarAccess(role: UserRole): boolean {
 // Asegúrate de que `resolveJsonModule: true` y `esModuleInterop: true` (recomendado)
 // estén en tu `tsconfig.json` para que la importación de JSON funcione correctamente.
 
+// Schema to validate service account JSON from env
+const ServiceAccountJsonSchema = z
+  .object({
+    project_id: z.string(),
+    private_key: z.string(),
+    client_email: z.string(),
+  })
+  .passthrough();
+
 let serviceAccountParams: admin.ServiceAccount | null;
 
 try {
-  // El JSON importado se asigna directamente.
-  // Se realiza una validación básica de los campos esperados del JSON (snake_case)
-  // y se mapean a la interfaz admin.ServiceAccount (camelCase).
-  const credentials = serviceAccountCredentials_json;
+  // Prefer JSON completo en una sola variable si está definido
+  const jsonString = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-  if (credentials && typeof credentials === 'object' &&
-      'project_id' in credentials && typeof credentials.project_id === 'string' &&
-      'private_key' in credentials && typeof credentials.private_key === 'string' &&
-      'client_email' in credentials && typeof credentials.client_email === 'string') {
-    
-    serviceAccountParams = {
-      projectId: credentials.project_id,
-      privateKey: credentials.private_key.replace(/\\n/g, '\n'), // Manejar escapes de nueva línea
-      clientEmail: credentials.client_email,
-      // Otros campos del JSON como client_id, type, etc., son generalmente manejados
-      // internamente por admin.credential.cert() si los necesita.
-    };
+  if (jsonString && jsonString.trim().startsWith('{')) {
+    try {
+      const credentials = ServiceAccountJsonSchema.parse(
+        JSON.parse(jsonString) as unknown
+      );
 
-    // Verificar que los campos mapeados no sean undefined o null si son críticos
-    if (!serviceAccountParams.projectId || !serviceAccountParams.privateKey || !serviceAccountParams.clientEmail) {
-        console.error(' [Firebase Admin] Valores críticos (projectId, privateKey, clientEmail) faltan o son inválidos en el JSON de credenciales importado.');
+      serviceAccountParams = {
+        projectId: credentials.project_id,
+        privateKey: credentials.private_key.replace(/\\n/g, '\n'),
+        clientEmail: credentials.client_email,
+      };
+
+      if (!serviceAccountParams.projectId || !serviceAccountParams.privateKey || !serviceAccountParams.clientEmail) {
+        console.error(' [Firebase Admin] Valores críticos (projectId, privateKey, clientEmail) faltan o son inválidos en FIREBASE_SERVICE_ACCOUNT_JSON.');
         serviceAccountParams = null;
+      }
+    } catch (e) {
+      console.error(
+        ` [Firebase Admin] FIREBASE_SERVICE_ACCOUNT_JSON inválido o malformado: ${e instanceof Error ? e.message : 'unknown error'}`
+      );
+      serviceAccountParams = null;
     }
-
   } else {
-    console.error(' [Firebase Admin] El archivo JSON de credenciales importado está incompleto, no es un objeto, o no tiene el formato esperado (project_id, private_key, client_email deben ser strings).');
-    serviceAccountParams = null;
+    // Fallback a variables separadas (compatible con nombres con/ sin _ADMIN_)
+    const projectId = process.env.FIREBASE_PROJECT_ID ?? process.env.FIREBASE_ADMIN_PROJECT_ID ?? '';
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL ?? process.env.FIREBASE_ADMIN_CLIENT_EMAIL ?? '';
+    const privateKeyRaw = process.env.FIREBASE_PRIVATE_KEY ?? process.env.FIREBASE_ADMIN_PRIVATE_KEY ?? '';
+
+    if (projectId && clientEmail && privateKeyRaw) {
+      serviceAccountParams = {
+        projectId,
+        clientEmail,
+        privateKey: privateKeyRaw.replace(/\\n/g, '\n'),
+      };
+    } else {
+      console.warn(' [Firebase Admin] Variables de entorno incompletas: se requieren FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL y FIREBASE_PRIVATE_KEY (o sus equivalentes con _ADMIN_).');
+      serviceAccountParams = null;
+    }
   }
 } catch (error) {
   const err = error as Error;
-  console.error(` [Firebase Admin] Error al procesar el archivo JSON de credenciales importado: ${err.message}`);
+  console.error(` [Firebase Admin] Error al procesar credenciales desde variables de entorno: ${err.message}`);
   serviceAccountParams = null;
 }
 
