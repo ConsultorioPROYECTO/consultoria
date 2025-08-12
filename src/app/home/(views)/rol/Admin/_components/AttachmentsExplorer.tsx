@@ -267,10 +267,9 @@ export function AttachmentsExplorer() {
 
   return (
     <Card className="h-[800px] flex flex-col">
-      <CardHeader className="flex-shrink-0 pb-4">
+      <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between gap-4">
           <CardTitle className="flex items-center gap-2 text-xl font-semibold">
-            <Folder className="w-5 h-5 text-blue-600" />
             Explorador de Archivos
           </CardTitle>
           <div className="flex items-center gap-2">
@@ -281,33 +280,36 @@ export function AttachmentsExplorer() {
           </div>
         </div>
 
-        {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-sm">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 px-2" 
-            onClick={() => navigateTo("")}
-          >
-            <Home className="w-4 h-4" />
-          </Button>
-          {breadcrumbs.map((crumb) => (
-            <div key={crumb.fullPrefix} className="flex items-center gap-1">
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                onClick={() => navigateTo(crumb.fullPrefix)}
-              >
-                {crumb.label}
-              </Button>
-            </div>
-          ))}
-        </div>
+        
+          
+        
 
         {/* Controls */}
         <div className="flex flex-col md:flex-row gap-3">
+        {/* Breadcrumb Navigation */}
+        <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 px-2" 
+              onClick={() => navigateTo("")}
+            >
+              <Home className="w-4 h-4" />
+            </Button>
+            {breadcrumbs.map((crumb) => (
+              <div key={crumb.fullPrefix} className="flex items-center gap-1">
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => navigateTo(crumb.fullPrefix)}
+                >
+                  {crumb.label}
+                </Button>
+              </div>
+            ))}
+          </div>
           {/* Search */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
