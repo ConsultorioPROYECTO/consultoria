@@ -13,6 +13,10 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    // Optimizaciones para Next.js 15.5 (configuración conservadora)
+    // "verbatimModuleSyntax": true, // Comentado para compatibilidad
+    "allowImportingTsExtensions": false,
+    // "noUncheckedIndexedAccess": true, // Para habilitar gradualmente
     "plugins": [
       {
         "name": "next"

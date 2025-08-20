@@ -4,6 +4,13 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
 
+  // Habilitar Turbopack para builds (estable en Next.js 15.5)
+  // Migrado de experimental.turbo a turbopack según Next.js 15.5
+  turbopack: {
+    // Configuración de Turbopack para builds optimizados
+    // Turbopack ahora es estable para development y alpha para builds
+  },
+
   /* Configuración para imágenes, directorios y URLs externas
   * @link https://nextjs.org/docs/messages/next-image-unconfigured-host
   * domains: Define los dominios permitidos para imágenes.
