@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
   */
   images: {
     remotePatterns: [new URL('https://lh3.googleusercontent.com/**')],
+    qualities: [25, 50, 70, 75, 90, 100],
   },
 
 /**

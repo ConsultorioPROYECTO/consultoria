@@ -148,6 +148,39 @@ ignores: [
 - **Developer Experience**: Mejor integración con TypeScript
 - **Future-proof**: Preparado para Next.js 16
 
+### 4. Image Quality Configuration
+
+**Estado**: Requerido en Next.js 16
+
+**Problema**: Las imágenes que usan calidades específicas (como quality="70") deben estar configuradas explícitamente en `images.qualities`.
+
+**Warning Detectado**:
+```
+Image with src "/_next/static/media/MedDashboardDark.127ede11.webp" is using quality 
+"70" which is not configured in images.qualities. This config will be required starting in Next.js 16.
+```
+
+**Acción Requerida**:
+- Configurar explícitamente las calidades de imagen en `next.config.ts`
+
+**Cambios Implementados**:
+```typescript
+// next.config.ts
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [new URL('https://lh3.googleusercontent.com/**')],
+    // Configuración de calidades de imagen requerida para Next.js 16
+    // Incluye la calidad "70" que está siendo usada en MedDashboardDark.webp
+    qualities: [25, 50, 70, 75, 90, 100],
+  },
+};
+```
+
+**Estado del Proyecto**: ✅ **Preparado**
+- Configuración de `images.qualities` agregada
+- Incluye todas las calidades usadas en el proyecto
+- Compatible con Next.js 16
+
 ## 📚 Referencias
 
 - [Next.js 15.5 Release Notes](https://nextjs.org/blog/next-15-5)
