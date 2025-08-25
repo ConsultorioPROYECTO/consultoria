@@ -39,6 +39,7 @@ export const organization = mysqlTable('organization', {
   instanceId: varchar('instance_id', { length: 25 }),
   apiKey: varchar('api_key', { length: 25 }),
   r2BucketName: varchar('r2_bucket_name', { length: 255 }).unique(),
+  welcomeMessage: varchar('welcome_message', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
 }, (organization) => [
@@ -50,6 +51,7 @@ export const organization = mysqlTable('organization', {
     index('organization_plan_id_idx').on(organization.planId),
     index('organization_instance_id_idx').on(organization.instanceId),
     index('organization_api_key_idx').on(organization.apiKey),
+    index('organization_r2_bucket_name_idx').on(organization.r2BucketName),
 ]);
 
 export const insertOrganizationSchema = createInsertSchema(organization);

@@ -146,6 +146,10 @@ const createOrganizationSchema = z.object({
     .refine(currency => !currency || isValidCurrency(currency), {
       message: 'El código de moneda proporcionado no es válido según ISO 4217'
     })
+    .optional(),
+  welcomeMessage: z.string()
+    .max(255, 'El mensaje de bienvenida no puede exceder 255 caracteres')
+    .trim()
     .optional()
 });
 
@@ -209,6 +213,10 @@ const updateOrganizationSchema: z.ZodType<Partial<NewOrganization>> = z.object({
     .refine(currency => !currency || isValidCurrency(currency), {
       message: 'El código de moneda proporcionado no es válido según ISO 4217'
     })
+    .optional(),
+  welcomeMessage: z.string()
+    .max(255, 'El mensaje de bienvenida no puede exceder 255 caracteres')
+    .trim()
     .optional()
 });
 
