@@ -39,8 +39,7 @@ export function OrganizationSettings({ trigger }: OrganizationSettingsProps) {
     email: "",
     nit: "",
     timezone: "",
-    currency: "",
-    welcomeMessage: "",
+    currency: ""
   });
 
   // Get supported timezones and currencies using Intl.supportedValuesOf
@@ -72,8 +71,7 @@ export function OrganizationSettings({ trigger }: OrganizationSettingsProps) {
         email: organization.email || "",
         nit: organization.nit || "",
         timezone: organization.timezone || "",
-        currency: organization.currency || "",
-        welcomeMessage: organization.welcomeMessage || "",
+        currency: organization.currency || ""
       });
     }
   }, [organization]);
@@ -208,19 +206,6 @@ export function OrganizationSettings({ trigger }: OrganizationSettingsProps) {
                   onChange={(e) => handleInputChange("nit", e.target.value)}
                   className="col-span-3"
                   placeholder="Número de identificación tributaria"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="welcomeMessage" className="text-right">
-                  Bienvenida
-                </Label>
-                <Input
-                  id="welcomeMessage"
-                  value={formData.welcomeMessage}
-                  onChange={(e) => handleInputChange("welcomeMessage", e.target.value)}
-                  className="col-span-3"
-                  placeholder="Mensaje de bienvenida hacia los clientes"
                 />
               </div>
               

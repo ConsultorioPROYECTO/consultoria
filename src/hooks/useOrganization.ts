@@ -18,7 +18,6 @@ interface OrganizationData {
   apiKey?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  welcomeMessage?: string;
 }
 
 interface UpdateOrganizationData {
