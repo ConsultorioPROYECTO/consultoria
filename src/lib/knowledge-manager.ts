@@ -12,7 +12,7 @@ import { eq, and } from 'drizzle-orm';
  */
 
 // Configuración de la API externa
-const PGVECTOR_API_URL = 'https://n8n.srv828784.hstgr.cloud/webhook/3b7d5b57-f750-490a-a047-cccee6818c26';
+const PGVECTOR_API_URL = 'https://n8n.irinacloud.co/webhook/3b7d5b57-f750-490a-a047-cccee6818c26';
 const REQUEST_TIMEOUT = 10000; // 10 segundos
 const MAX_RETRIES = 3;
 

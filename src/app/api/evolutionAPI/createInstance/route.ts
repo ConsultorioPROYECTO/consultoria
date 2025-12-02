@@ -166,7 +166,7 @@ const createInstanceHandler = async (
       groupsIgnore: true,
       syncFullHistory: false,
       webhook: {
-        url: "https://n8n.srv828784.hstgr.cloud/webhook/75372571-9d48-47fb-8e3b-a982ce2e798e",
+        url: "http://n8n:5678/webhook/75372571-9d48-47fb-8e3b-a982ce2e798e",
         byEvents: false,
         base64: true,
         headers: {
