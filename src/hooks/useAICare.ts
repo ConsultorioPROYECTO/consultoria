@@ -26,7 +26,7 @@ export function useAICare(): UseAICareResult {
     setData(null);
     console.log('[AI Care Hook] fetchAICare llamado con:', text);
     try {
-      const url = 'https://n8n.srv828784.hstgr.cloud/webhook/Ai-care';
+      const url = 'http://localhost:5678/webhook/Ai-care';
       console.log('[AI Care Hook] URL:', url);
       const headers = {
         'Content-Type': 'application/json',

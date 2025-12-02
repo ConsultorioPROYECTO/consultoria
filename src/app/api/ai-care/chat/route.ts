@@ -33,7 +33,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 // === Configuración de la API externa ===
-const AI_CARE_API_URL = 'https://n8n.srv828784.hstgr.cloud/webhook/da33f4ed-2439-47a6-bff4-4714e9582e2c';
+const AI_CARE_API_URL = 'http://localhost:5678/webhook/Ai-care';
 
 // === Schemas de validación ===
 const sendMessageSchema = z.object({
