@@ -1,13 +1,14 @@
 // src/db/schema/patients.ts
 
-import { mysqlTable, varchar, timestamp, index, int, mysqlEnum, date as mysqlDate, text, boolean, unique } from 'drizzle-orm/mysql-core';
+import { pgTable, varchar, timestamp, index, integer, date, text, boolean, unique } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organization } from './organization';
+import { identificationType, gender, bloodType } from './enums';
 
 /**
  * @typedef PatientTableSchema
  * @author Santiago Prada
- * @description Define la estructura de la tabla 'patients' en la base de datos MySQL.
+ * @description Define la estructura de la tabla 'patients' en la base de datos PostgreSQL.
  *
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
  * @property {string} patientCode - Código único del paciente generado automáticamente.
@@ -33,43 +34,43 @@ import { organization } from './organization';
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
-export const patients = mysqlTable('patients', {
-  id: int('id').autoincrement().primaryKey(),
-  
+export const patients = pgTable('patients', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+
   // Información personal básica
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
-  // Documento Nacional de Identidad (DNI), cédula de ciudadanía (CC), tarjeta de identidad (TI), cédula de extranjería (CE), pasaporte (PP), regsitro civil (RC), acta de nacimiento (AS)
-  identificationType: mysqlEnum('identification_type', ['DNI','CC', 'TI', 'CE', 'PP', 'RC', 'AS']).notNull(),
+  // Documento Nacional de Identidad (DNI), cédula de ciudadanía (CC), tarjeta de identidad (TI), cédula de extranjería (CE), pasaporte (PP), registro civil (RC), acta de nacimiento (AS)
+  identificationType: identificationType('identification_type').notNull(),
   identificationNumber: varchar('identification_number', { length: 50 }).notNull(),
-  birthDate: mysqlDate('birth_date'),
-  gender: mysqlEnum('gender', ['M', 'F', 'Other']).notNull(),
-  
+  birthDate: date('birth_date'),
+  gender: gender('gender').notNull(),
+
   // Información de contacto
   phone: varchar('phone', { length: 20 }),
   email: varchar('email', { length: 255 }),
   address: text('address'),
-  
+
   // Contacto de emergencia
   emergencyContactName: varchar('emergency_contact_name', { length: 200 }),
   emergencyContactPhone: varchar('emergency_contact_phone', { length: 20 }),
   emergencyContactRelation: varchar('emergency_contact_relation', { length: 50 }),
-  
+
   // Información médica
   medicalHistory: text('medical_history'), // Se puede usar JSON si se necesita estructura
   allergies: text('allergies'),
   currentMedications: text('current_medications'),
-  bloodType: mysqlEnum('blood_type', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']),
-  
+  bloodType: bloodType('blood_type'),
+
   // Organización a la que pertenece
-  organizationId: int('organization_id').references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
-  
+  organizationId: integer('organization_id').references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
+
   // Estado
   isActive: boolean('is_active').default(true).notNull(),
-  
+
   // Timestamps
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
   // Índices para mejorar el rendimiento
   index('patient_organization_id_idx').on(table.organizationId),
