@@ -55,3 +55,4 @@ etc/secrets/irina-462416-2f32be502aa4.json
 GEMINI.md
 package-lock.json
 bun.lock
+.worktrees/
