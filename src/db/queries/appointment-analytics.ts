@@ -421,7 +421,7 @@ export class AppointmentAnalyticsQueries {
   ): Promise<{ [hour: string]: number }> {
     const result = await db
       .select({
-        hour: sql`HOUR(${appointments.appointmentTime})`,
+        hour: sql`EXTRACT(HOUR FROM ${appointments.appointmentTime})`,
         count: count(),
       })
       .from(appointments)
@@ -434,7 +434,7 @@ export class AppointmentAnalyticsQueries {
           eq(appointments.appointmentDate, new Date(date))
         )
       )
-      .groupBy(sql`HOUR(${appointments.appointmentTime})`);
+      .groupBy(sql`EXTRACT(HOUR FROM ${appointments.appointmentTime})`);
 
     const distribution: { [hour: string]: number } = {};
     result.forEach((row) => {
