@@ -1,13 +1,13 @@
 // src/db/schema/medical_services.ts
 
-import { mysqlTable, varchar, timestamp, index, int, decimal, boolean, text, unique } from 'drizzle-orm/mysql-core';
+import { pgTable, varchar, timestamp, index, integer, numeric, boolean, text, unique } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organization } from './organization';
 
 /**
  * @typedef MedicalServiceTableSchema
  * @author Santiago Prada
- * @description Define la estructura de la tabla 'medical_services' en la base de datos MySQL.
+ * @description Define la estructura de la tabla 'medical_services' en la base de datos PostgreSQL.
  *
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
  * @property {string} name - Nombre del servicio médico.
@@ -23,8 +23,8 @@ import { organization } from './organization';
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
-export const medicalServices = mysqlTable('medical_services', {
-  id: int('id').autoincrement().primaryKey(),
+export const medicalServices = pgTable('medical_services', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
   
   // Información básica del servicio
   name: varchar('name', { length: 255 }).notNull(),
@@ -32,8 +32,8 @@ export const medicalServices = mysqlTable('medical_services', {
   code: varchar('code', { length: 50 }).notNull(), // Código del servicio (único por organización)
   
   // Detalles operativos
-  durationMinutes: int('duration_minutes').notNull().default(30), // Duración en minutos
-  basePrice: decimal('base_price', { precision: 10, scale: 2 }).notNull().default('0.00'),
+  durationMinutes: integer('duration_minutes').notNull().default(30), // Duración en minutos
+  basePrice: numeric('base_price', { precision: 10, scale: 2 }).notNull().default('0.00'),
   category: varchar('category', { length: 100 }).notNull(), // Consulta, Procedimiento, Examen, etc.
   
   // Preparación y requisitos
@@ -41,14 +41,14 @@ export const medicalServices = mysqlTable('medical_services', {
   preparationInstructions: text('preparation_instructions'),
   
   // Organización
-  organizationId: int('organization_id').references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
+  organizationId: integer('organization_id').references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
   
   // Estado
   isActive: boolean('is_active').default(true).notNull(),
   
   // Timestamps
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
   // Índices para mejorar el rendimiento
   index('service_code_idx').on(table.code),
