@@ -1,6 +1,6 @@
 // src/db/schema/contact_requests.ts
 
-import { mysqlTable, varchar, timestamp, text, int } from 'drizzle-orm/mysql-core';
+import { pgTable, integer, varchar, timestamp, text } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 /**
@@ -17,9 +17,9 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
  * @property {Date} createdAt - Timestamp de cuándo se creó la solicitud.
  * @property {Date} updatedAt - Timestamp de la última actualización del registro.
  */
-export const contactRequests = mysqlTable('contact_requests', {
+export const contactRequests = pgTable('contact_requests', {
   // Clave primaria
-  id: int('id').autoincrement().primaryKey(),
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
 
   // Campos del formulario de contacto
   name: varchar('name', { length: 255 }).notNull(),
@@ -28,8 +28,8 @@ export const contactRequests = mysqlTable('contact_requests', {
   message: text('message').notNull(),
 
   // Timestamps
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
 // Esquemas de validación con Zod

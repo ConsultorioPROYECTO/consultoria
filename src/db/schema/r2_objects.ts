@@ -1,6 +1,7 @@
 // src/db/schema/r2_objects.ts
 
-import { mysqlTable, varchar, timestamp, index, int, mysqlEnum, text, boolean, bigint, json, unique } from 'drizzle-orm/mysql-core';
+import { pgTable, integer, varchar, timestamp, index, text, boolean, bigint, jsonb, unique } from 'drizzle-orm/pg-core';
+import { fileCategory, accessLevel } from "./enums";
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { organization } from './organization';
 import { patients } from './patients';
@@ -13,8 +14,8 @@ import { users } from './users';
  * @typedef R2ObjectsTableSchema
  * @description Estructura de la tabla `r2_objects` para trackear archivos en Cloudflare R2 por organización y entidades del dominio.
  */
-export const r2Objects = mysqlTable('r2_objects', {
-  id: int('id').autoincrement().primaryKey(),
+export const r2Objects = pgTable('r2_objects', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
 
   // Identificadores del objeto en R2
   objectKey: varchar('object_key', { length: 500 }).notNull(),
@@ -24,33 +25,33 @@ export const r2Objects = mysqlTable('r2_objects', {
   fileHash: varchar('file_hash', { length: 64 }),
 
   // Referencias opcionales a entidades del sistema médico
-  patientId: int('patient_id').references(() => patients.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-  appointmentId: int('appointment_id').references(() => appointments.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-  doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'set null', onUpdate: 'cascade' }),
-  medicalServiceId: int('medical_service_id').references(() => medicalServices.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  patientId: integer('patient_id').references(() => patients.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  appointmentId: integer('appointment_id').references(() => appointments.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  doctorId: integer('doctor_id').references(() => doctors.idDoctor, { onDelete: 'set null', onUpdate: 'cascade' }),
+  medicalServiceId: integer('medical_service_id').references(() => medicalServices.id, { onDelete: 'set null', onUpdate: 'cascade' }),
 
   // Referencia obligatoria a organización
-  organizationId: int('organization_id').references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
+  organizationId: integer('organization_id').references(() => organization.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
 
   // Metadatos adicionales
-  fileCategory: mysqlEnum('file_category', ['medical_document', 'patient_photo', 'medical_image', 'appointment_note', 'prescription', 'lab_result', 'other']).notNull(),
+  fileCategory: fileCategory('file_category').notNull(),
   description: text('description'),
-  tags: json('tags'),
+  tags: jsonb('tags'),
 
   // URLs de acceso temporal (cache)
   lastPresignedUrl: text('last_presigned_url'),
-  presignedUrlExpiresAt: timestamp('presigned_url_expires_at'),
+  presignedUrlExpiresAt: timestamp('presigned_url_expires_at', { mode: 'date' }),
 
   // Control de acceso y estado
   isActive: boolean('is_active').default(true).notNull(),
   isPublic: boolean('is_public').default(false).notNull(),
-  accessLevel: mysqlEnum('access_level', ['private', 'organization', 'restricted']).default('private').notNull(),
+  accessLevel: accessLevel('access_level').default('private').notNull(),
 
   // Auditoría
-  uploadedBy: int('uploaded_by').references(() => users.id, { onDelete: 'set null', onUpdate: 'cascade' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
-  deletedAt: timestamp('deleted_at'),
+  uploadedBy: integer('uploaded_by').references(() => users.id, { onDelete: 'set null', onUpdate: 'cascade' }),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at', { mode: 'date' }),
 }, (table) => [
   // Índices para optimizar consultas
   index('idx_r2_objects_organization_id').on(table.organizationId),
