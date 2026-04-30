@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       ...validationResult.data,
       identificationType: validationResult.data.identificationType as 'DNI'|'CC'|'TI'|'CE'|'PP'|'RC'|'AS',
       gender: validationResult.data.gender as 'M'|'F'|'Other',
-      birthDate: validationResult.data.birthDate ? new Date(validationResult.data.birthDate) : undefined
+      birthDate: validationResult.data.birthDate || undefined
     };
 
     // Verificar que no exista un paciente con la misma identificación
@@ -191,23 +191,17 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(API_ERRORS.CONFLICT, 'Ya existe un paciente con este número de identificación', HTTP_STATUS.CONFLICT);
     }
 
-    // Crear el paciente
-    const newPatient = await db
+    // Crear el paciente y obtener el registro insertado
+    const [newPatient] = await db
       .insert(patients)
       .values({
         ...patientData,
         organizationId
-      });
-
-    // Obtener el paciente creado
-    const createdPatient = await db
-      .select()
-      .from(patients)
-      .where(eq(patients.id, newPatient[0].insertId))
-      .limit(1);
+      })
+      .returning();
 
     return NextResponse.json(
-      createSuccessResponse(createdPatient[0], 'Paciente creado exitosamente'),
+      createSuccessResponse(newPatient, 'Paciente creado exitosamente'),
       { status: HTTP_STATUS.CREATED }
     );
 
@@ -254,7 +248,7 @@ export async function PUT(request: NextRequest) {
       ...restData,
       ...(identificationType && { identificationType: identificationType as 'DNI'|'CC'|'TI'|'CE'|'PP'|'RC'|'AS' }),
       ...(gender && { gender: gender as 'M'|'F'|'Other' }),
-      ...(birthDate && { birthDate: typeof birthDate === 'string' ? new Date(birthDate) : birthDate })
+      ...(birthDate && { birthDate: birthDate })
     };
 
     // Verificar que el paciente existe y pertenece a la organización

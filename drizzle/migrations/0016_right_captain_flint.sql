@@ -1,1 +1,0 @@
-ALTER TABLE `organization_join_request` ADD `role` enum('admin','medico','asistente','N/A') DEFAULT 'N/A' NOT NULL;

@@ -1,12 +1,12 @@
-import { mysqlTable, int, timestamp, index } from 'drizzle-orm/mysql-core';
+import { pgTable, integer, timestamp, index } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
-export const assistants = mysqlTable('assistants', {
-  idAssistant: int('id').autoincrement().primaryKey(),
-  userId: int('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull().unique(),
+export const assistants = pgTable('assistants', {
+  idAssistant: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull().unique(),
   // Puedes agregar más campos relevantes aquí, como organización, contacto, etc.
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
   index('assistant_user_id_idx').on(table.userId),
 ]);

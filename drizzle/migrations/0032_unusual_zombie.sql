@@ -1,1 +1,0 @@
-ALTER TABLE `patients` MODIFY COLUMN `identification_type` enum('DNI','CC','TI','CE','PP','RC','AS') NOT NULL;

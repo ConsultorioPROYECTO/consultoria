@@ -61,7 +61,7 @@ export const createOrganization = async (
     const instanceId = await generateUniqueInstanceId();
     const apiKey = await generateUniqueApiKey();
 
-    const insertResult = await tx.insert(organization).values({
+    const [newOrg] = await tx.insert(organization).values({
       name: organizationName,
       invitationCode,
       planId: plan.id,
@@ -69,11 +69,10 @@ export const createOrganization = async (
       apiKey,
       timezone,
       currency,
-    });
+    }).returning({ id: organization.id });
 
-    const newOrganizationId = insertResult[0].insertId;
+    const newOrganizationId = newOrg.id;
     if (!newOrganizationId) {
-      tx.rollback();
       throw new Error('Failed to create organization');
     }
 
@@ -157,18 +156,15 @@ export const updateOrganization = async (
   organizationId: number,
   updateData: Partial<NewOrganization>
 ): Promise<Organization | undefined> => {
-  const updateResult = await db
+  const [updatedOrganization] = await db
     .update(organization)
     .set({ ...updateData, updatedAt: new Date() })
-    .where(eq(organization.id, organizationId));
+    .where(eq(organization.id, organizationId))
+    .returning();
 
-  if (updateResult[0].affectedRows === 0) {
+  if (!updatedOrganization) {
     throw new Error('Organization not found or could not be updated');
   }
-
-  const updatedOrganization = await db.query.organization.findFirst({
-    where: eq(organization.id, organizationId),
-  });
 
   try {
     await syncKnowledgeAfterCRUD('organization', 'update', {

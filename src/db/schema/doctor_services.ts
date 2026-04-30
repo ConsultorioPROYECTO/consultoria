@@ -1,6 +1,6 @@
 // src/db/schema/doctor_services.ts
 
-import { mysqlTable, int, decimal, boolean, timestamp, index, uniqueIndex } from 'drizzle-orm/mysql-core';
+import { pgTable, integer, numeric, boolean, timestamp, index, uniqueIndex } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { doctors } from './doctors';
 import { medicalServices } from './medical_services';
@@ -14,26 +14,26 @@ import { medicalServices } from './medical_services';
  * @property {number} id - Clave primaria autoincremental única.
  * @property {number} doctorId - Clave foránea a la tabla 'doctors'.
  * @property {number} serviceId - Clave foránea a la tabla 'medical_services'.
- * @property {decimal} customPrice - Precio personalizado para este doctor (opcional, si difiere del precio base).
+ * @property {numeric} customPrice - Precio personalizado para este doctor (opcional, si difiere del precio base).
  * @property {boolean} isAvailable - Si el doctor está disponible para ofrecer este servicio.
  * @property {Date} createdAt - Timestamp de cuándo se asignó el servicio al doctor.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
-export const doctorServices = mysqlTable('doctor_services', {
+export const doctorServices = pgTable('doctor_services', {
   // Clave primaria autoincremental
-  id: int('id').autoincrement().primaryKey(),
-  
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+
   // Claves foráneas
-  doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
-  serviceId: int('service_id').references(() => medicalServices.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
-  
+  doctorId: integer('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
+  serviceId: integer('service_id').references(() => medicalServices.id, { onDelete: 'cascade', onUpdate: 'cascade' }).notNull(),
+
   // Campos adicionales
-  customPrice: decimal('custom_price', { precision: 10, scale: 2 }), // Precio personalizado (opcional)
+  customPrice: numeric('custom_price', { precision: 10, scale: 2 }), // Precio personalizado (opcional)
   isAvailable: boolean('is_available').default(true).notNull(), // Si el doctor está disponible para este servicio
-  
+
   // Timestamps
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
   // Índice único compuesto para evitar duplicados
   uniqueIndex('doctor_services_unique_idx').on(table.doctorId, table.serviceId),

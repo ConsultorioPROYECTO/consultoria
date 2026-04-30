@@ -1,4 +1,4 @@
-import { mysqlTable, int, timestamp, uniqueIndex, index } from 'drizzle-orm/mysql-core';
+import { pgTable, integer, timestamp, uniqueIndex, index } from 'drizzle-orm/pg-core';
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { assistants } from './assistants';
 import { doctors } from './doctors';
@@ -6,7 +6,7 @@ import { doctors } from './doctors';
 /**
  * @typedef AssistantDoctorTableSchema
  * @author Santiago Prada
- * @description Define la estructura de la tabla 'assistant_doctor' en la base de datos MySQL.
+ * @description Define la estructura de la tabla 'assistant_doctor' en la base de datos PostgreSQL.
  * Esta tabla gestiona la relación muchos-a-muchos entre asistentes y doctores.
  *
  * @property {number} id - Clave primaria autoincremental interna de la base de datos.
@@ -15,13 +15,13 @@ import { doctors } from './doctors';
  * @property {Date} createdAt - Timestamp de creación del registro.
  * @property {Date} updatedAt - Timestamp de la última actualización.
  */
-export const assistantDoctor = mysqlTable('assistant_doctor', {
-  id: int('id').autoincrement().primaryKey(),
-  assistantId: int('assistant_id').references(() => assistants.idAssistant, { onDelete: 'cascade' }).notNull(),
-  doctorId: int('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade' }).notNull(),
+export const assistantDoctor = pgTable('assistant_doctor', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  assistantId: integer('assistant_id').references(() => assistants.idAssistant, { onDelete: 'cascade' }).notNull(),
+  doctorId: integer('doctor_id').references(() => doctors.idDoctor, { onDelete: 'cascade' }).notNull(),
   // Timestamps para auditoría
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
   // Índice único combinado para evitar duplicados
   uniqueIndex('assistant_doctor_unique_idx').on(table.assistantId, table.doctorId),

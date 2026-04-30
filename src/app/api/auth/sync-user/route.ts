@@ -102,7 +102,8 @@ export async function POST(request: NextRequest) {
     await db
       .insert(users)
       .values(newUser)
-      .onDuplicateKeyUpdate({
+      .onConflictDoUpdate({
+        target: users.firebaseUid,
         set: {
           ...newUser,
           createdAt: sql`${users.createdAt}`, // No sobreescribas createdAt si ya existe

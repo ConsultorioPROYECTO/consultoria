@@ -1,1 +1,0 @@
-ALTER TABLE `organization` ADD `invitation_code` varchar(6);

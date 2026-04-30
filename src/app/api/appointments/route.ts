@@ -423,7 +423,7 @@ async function handlePostRequest(
     }
 
     // Create appointment in database with all new fields
-    const newAppointment = await db.insert(appointments).values({
+    const [newAppointment] = await db.insert(appointments).values({
       doctorId: doctor.idDoctor,
       patientId: patient.id,
       serviceId: medicalService.id,
@@ -444,9 +444,9 @@ async function handlePostRequest(
       status: APPOINTMENT_STATUS.PENDING,
       sync_status: googleEventId ? SYNC_STATUS.SYNCED : SYNC_STATUS.PENDING,
       last_sync_attempt: googleEventId ? new Date() : null,
-    });
+    }).returning({ id: appointments.id });
 
-    const insertedAppointmentId = newAppointment[0]?.insertId;
+    const insertedAppointmentId = newAppointment?.id;
 
     if (!insertedAppointmentId) {
       return createErrorResponse(

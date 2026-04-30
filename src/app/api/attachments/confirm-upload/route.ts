@@ -76,7 +76,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
     }
 
     // Persist metadata - coerce optional FKs to null when absent
-    const insertResult = await db.insert(r2Objects).values({
+    const [inserted] = await db.insert(r2Objects).values({
       objectKey: data.objectKey,
       objectName: data.objectName,
       contentType: data.contentType,
@@ -93,24 +93,13 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
       isPublic: data.isPublic ?? false,
       accessLevel: data.accessLevel ?? 'private',
       uploadedBy: userInfo.user.id,
-    });
-
-    // Fetch the inserted record using the unique constraint (objectKey + organizationId)
-    if (!('insertId' in insertResult)) {
-      console.warn('Insert result does not contain insertId; proceeding to fetch by unique key');
-    }
-
-    const [inserted] = await db
-      .select()
-      .from(r2Objects)
-      .where(and(eq(r2Objects.objectKey, data.objectKey), eq(r2Objects.organizationId, orgId)))
-      .limit(1);
+    }).returning();
 
     return createSuccessResponse(inserted, 'Attachment metadata saved', HTTP_STATUS.CREATED);
   } catch (error) {
     // Handle duplicate key: return existing record
-    const err = error as { code?: string; errno?: number } | undefined;
-    if (err && (err.code === 'ER_DUP_ENTRY' || err?.errno === 1062)) {
+    const err = error as { code?: string } | undefined;
+    if (err && err.code === '23505') {
       try {
         // Attempt to recover by returning the existing record
         const body = await req.json().catch(() => null as unknown);
@@ -131,7 +120,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
       }
     }
 
-    if (err && (err.code === 'ER_NO_REFERENCED_ROW_2' || err?.errno === 1452)) {
+    if (err && err.code === '23503') {
       return createErrorResponse('Invalid reference', 'One or more foreign keys do not reference existing records', HTTP_STATUS.BAD_REQUEST);
     }
 
