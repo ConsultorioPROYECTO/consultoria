@@ -1,2 +1,0 @@
-ALTER TABLE `appointments` MODIFY COLUMN `time` varchar(12) NOT NULL;--> statement-breakpoint
-ALTER TABLE `appointments` ADD `status` enum('Confirmada','Completada','Pendiente','Llegó') DEFAULT 'Pendiente' NOT NULL;

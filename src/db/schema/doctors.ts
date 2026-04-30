@@ -59,9 +59,7 @@ export const doctors = pgTable('doctors', {
   updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
   // Indices para mejorar el rendimiento de las busquedas
-  index('firebase_uid_idx').on(table.userId),
-  index('email_idx').on(table.userId), // Si buscas frecuentemente por email
-  index('phone_number_idx').on(table.userId),
+  index('doctors_user_id_idx').on(table.userId),
 ]);
 
 // Esquemas Zod para validacion (opcional pero muy recomendado)

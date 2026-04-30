@@ -1,1 +1,0 @@
-ALTER TABLE `doctors` ADD `working_hours` json;

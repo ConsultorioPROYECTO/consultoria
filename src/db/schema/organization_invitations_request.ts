@@ -53,15 +53,15 @@ export const organizationInvitationRequest = pgTable('organization_invitations_r
   })
     .onDelete('cascade')
     .onUpdate('cascade'),
-  index('organization_id_idx').on(table.organizationId),
-  index('status_idx').on(table.status),
-  index('created_at_idx').on(table.createdAt),
-  index('approved_at_idx').on(table.approvedAt),
-  index('rejected_at_idx').on(table.rejectedAt),
-  index('cancelled_at_idx').on(table.cancelledAt),
-  index('user_email_idx').on(table.userEmail),
-  index('invitation_token_idx').on(table.invitationToken),
-  index('role_idx').on(table.role),
+  index('inv_org_id_idx').on(table.organizationId),
+  index('inv_status_idx').on(table.status),
+  index('inv_created_at_idx').on(table.createdAt),
+  index('inv_approved_at_idx').on(table.approvedAt),
+  index('inv_rejected_at_idx').on(table.rejectedAt),
+  index('inv_cancelled_at_idx').on(table.cancelledAt),
+  index('inv_user_email_idx').on(table.userEmail),
+  index('inv_invitation_token_idx').on(table.invitationToken),
+  index('inv_role_idx').on(table.role),
 ]);
 
 export type organizationInvitationRequest = typeof organizationInvitationRequest.$inferSelect;
