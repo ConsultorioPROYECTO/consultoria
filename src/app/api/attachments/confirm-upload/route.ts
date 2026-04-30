@@ -98,8 +98,8 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
     return createSuccessResponse(inserted, 'Attachment metadata saved', HTTP_STATUS.CREATED);
   } catch (error) {
     // Handle duplicate key: return existing record
-    const err = error as { code?: string; errno?: number } | undefined;
-    if (err && (err.code === 'ER_DUP_ENTRY' || err?.errno === 1062)) {
+    const err = error as { code?: string } | undefined;
+    if (err && err.code === '23505') {
       try {
         // Attempt to recover by returning the existing record
         const body = await req.json().catch(() => null as unknown);
@@ -120,7 +120,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
       }
     }
 
-    if (err && (err.code === 'ER_NO_REFERENCED_ROW_2' || err?.errno === 1452)) {
+    if (err && err.code === '23503') {
       return createErrorResponse('Invalid reference', 'One or more foreign keys do not reference existing records', HTTP_STATUS.BAD_REQUEST);
     }
 

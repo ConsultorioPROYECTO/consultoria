@@ -44,7 +44,7 @@ export async function deleteAppointmentEvent(data: { eventId: string; doctorId: 
 
   // Also update the database to reflect the cancellation
   await db.update(appointments)
-    .set({ status: 'cancelled' })
+    .set({ status: 'canceled' })
     .where(eq(appointments.google_event_id, eventId));
 
   return { success: true };

@@ -67,7 +67,7 @@ const DateRangeSchema = z.object({
   endDate: z.string().min(1, 'Fecha de fin es requerida'),
   doctorId: z.number().int().positive().optional(),
   patientId: z.number().int().positive().optional(),
-  status: z.enum(Object.values(APPOINTMENT_STATUS) as [string, ...string[]]).optional(),
+  status: z.enum(['pending', 'accepted', 'attended', 'rejected', 'canceled']).optional(),
   limit: z.number().int().min(1).max(100).default(50),
   offset: z.number().int().min(0).default(0)
 });

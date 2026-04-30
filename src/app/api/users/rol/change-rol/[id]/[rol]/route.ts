@@ -205,7 +205,8 @@ const changeUserRole = async (
             autoAcceptMeetings: false,
             defaultMeetingDuration: 30,
           }
-        }).onDuplicateKeyUpdate({
+        }).onConflictDoUpdate({
+          target: doctors.userId,
           set: {
             speciality: 'General',
             calendar_id: '',
@@ -243,7 +244,8 @@ const changeUserRole = async (
         // Usar upsert para crear o actualizar completamente el registro de asistente
         await db.insert(assistants).values({
           userId: targetUserId,
-        }).onDuplicateKeyUpdate({
+        }).onConflictDoUpdate({
+          target: assistants.userId,
           set: {
             updatedAt: new Date()
           }

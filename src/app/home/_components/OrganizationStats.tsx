@@ -84,9 +84,9 @@ export function OrganizationStats() {
     // Estadísticas de citas
     const allAppointments = allDoctors.flatMap(d => d.appointments || []);
     const totalAppointments = allAppointments.length;
-    const completedAppointments = allAppointments.filter(a => a.status === 'Completada').length;
-    const pendingAppointments = allAppointments.filter(a => a.status === 'Pendiente').length;
-    const confirmedAppointments = allAppointments.filter(a => a.status === 'Confirmada').length;
+    const completedAppointments = allAppointments.filter(a => a.status === 'attended').length;
+    const pendingAppointments = allAppointments.filter(a => a.status === 'pending').length;
+    const confirmedAppointments = allAppointments.filter(a => a.status === 'accepted').length;
 
     // Estadísticas de relaciones doctor-servicio
     const availableRelations = doctorServices.filter(ds => ds.isActive).length;

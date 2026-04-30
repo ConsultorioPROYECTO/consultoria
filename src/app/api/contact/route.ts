@@ -97,7 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         company,
         message
       })
-      .$returningId();
+      .returning({ id: contactRequests.id });
 
     return NextResponse.json(
       {

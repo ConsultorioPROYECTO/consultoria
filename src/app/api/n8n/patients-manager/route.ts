@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       ...validationResult.data,
       identificationType: validationResult.data.identificationType as 'DNI'|'CC'|'TI'|'CE'|'PP'|'RC'|'AS',
       gender: validationResult.data.gender as 'M'|'F'|'Other',
-      birthDate: validationResult.data.birthDate ? new Date(validationResult.data.birthDate) : undefined
+      birthDate: validationResult.data.birthDate || undefined
     };
 
     // Verificar que no exista un paciente con la misma identificación
@@ -248,7 +248,7 @@ export async function PUT(request: NextRequest) {
       ...restData,
       ...(identificationType && { identificationType: identificationType as 'DNI'|'CC'|'TI'|'CE'|'PP'|'RC'|'AS' }),
       ...(gender && { gender: gender as 'M'|'F'|'Other' }),
-      ...(birthDate && { birthDate: typeof birthDate === 'string' ? new Date(birthDate) : birthDate })
+      ...(birthDate && { birthDate: birthDate })
     };
 
     // Verificar que el paciente existe y pertenece a la organización
