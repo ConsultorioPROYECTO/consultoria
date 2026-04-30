@@ -255,10 +255,10 @@ const createPatientHandler = async (
       organizationId: requestingUser.organizationId!
     };
 
-    const [createdPatient] = await db.insert(patients).values(newPatientData);
+    const [createdPatient] = await db.insert(patients).values(newPatientData).returning({ id: patients.id });
 
     return createSuccessResponse(
-      { id: createdPatient.insertId, patientCode },
+      { id: createdPatient.id, patientCode },
       "Paciente creado exitosamente",
       HTTP_STATUS.CREATED
     );

@@ -325,7 +325,7 @@ const createMedicalServiceHandler = async (
       organizationId: requestingUser.organizationId!,
     };
 
-    const [createdService] = await db.insert(medicalServices).values(newServiceData);
+    const [createdService] = await db.insert(medicalServices).values(newServiceData).returning({ id: medicalServices.id });
 
     // Obtener información de la organización para incluir currency
     const organizationInfo = await db.query.organization.findFirst({
@@ -341,7 +341,7 @@ const createMedicalServiceHandler = async (
         'service',
         'create',
         {
-          id: createdService.insertId,
+          id: createdService.id,
           ...newServiceData,
           organizationCurrency: organizationInfo?.currency
         }
@@ -353,7 +353,7 @@ const createMedicalServiceHandler = async (
     }
 
     return createSuccessResponse(
-      { id: createdService.insertId, code: newServiceData.code },
+      { id: createdService.id, code: newServiceData.code },
       "Servicio médico creado exitosamente",
       HTTP_STATUS.CREATED
     );

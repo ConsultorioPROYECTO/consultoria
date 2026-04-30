@@ -191,23 +191,17 @@ export async function POST(request: NextRequest) {
       return createErrorResponse(API_ERRORS.CONFLICT, 'Ya existe un paciente con este número de identificación', HTTP_STATUS.CONFLICT);
     }
 
-    // Crear el paciente
-    const newPatient = await db
+    // Crear el paciente y obtener el registro insertado
+    const [newPatient] = await db
       .insert(patients)
       .values({
         ...patientData,
         organizationId
-      });
-
-    // Obtener el paciente creado
-    const createdPatient = await db
-      .select()
-      .from(patients)
-      .where(eq(patients.id, newPatient[0].insertId))
-      .limit(1);
+      })
+      .returning();
 
     return NextResponse.json(
-      createSuccessResponse(createdPatient[0], 'Paciente creado exitosamente'),
+      createSuccessResponse(newPatient, 'Paciente creado exitosamente'),
       { status: HTTP_STATUS.CREATED }
     );
 

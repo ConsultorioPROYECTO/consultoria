@@ -76,7 +76,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
     }
 
     // Persist metadata - coerce optional FKs to null when absent
-    const insertResult = await db.insert(r2Objects).values({
+    const [inserted] = await db.insert(r2Objects).values({
       objectKey: data.objectKey,
       objectName: data.objectName,
       contentType: data.contentType,
@@ -93,18 +93,7 @@ async function handleConfirmUpload(req: NextRequest, userInfo: AuthenticatedUser
       isPublic: data.isPublic ?? false,
       accessLevel: data.accessLevel ?? 'private',
       uploadedBy: userInfo.user.id,
-    });
-
-    // Fetch the inserted record using the unique constraint (objectKey + organizationId)
-    if (!('insertId' in insertResult)) {
-      console.warn('Insert result does not contain insertId; proceeding to fetch by unique key');
-    }
-
-    const [inserted] = await db
-      .select()
-      .from(r2Objects)
-      .where(and(eq(r2Objects.objectKey, data.objectKey), eq(r2Objects.organizationId, orgId)))
-      .limit(1);
+    }).returning();
 
     return createSuccessResponse(inserted, 'Attachment metadata saved', HTTP_STATUS.CREATED);
   } catch (error) {
